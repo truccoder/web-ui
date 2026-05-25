@@ -1,0 +1,52 @@
+name: Branch CI
+
+on:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  validate-and-build:
+    if: "!startsWith(github.event.head_commit.message, 'Merge')"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn --frozen-lockfile
+
+      - name: Validate branch name
+        run: |
+          BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+
+          echo "Branch: $BRANCH_NAME"
+
+          if [[ ! "$BRANCH_NAME" =~ ^task\/[A-Za-z0-9]+.*$ ]]; then
+            echo "❌ Invalid branch name format."
+            exit 1
+          fi
+
+      - name: Validate commit message
+        run: |
+          COMMIT_MSG="${{ github.event.head_commit.message }}"
+
+          echo "Commit message: $COMMIT_MSG"
+
+          if [[ ! "$COMMIT_MSG" =~ ^\[[A-Za-z0-9]+\] ]]; then
+            echo "❌ Invalid commit message format."
+            exit 1
+          fi
+
+      - name: Code Linting
+        run: yarn lint
+
+      - name: Build project
+        run: yarn build
