@@ -12,6 +12,7 @@ import {
 } from '@/lib/hooks/use-user';
 import { updateProfileSchema, type UpdateProfileFormData } from '@/lib/schemas/user';
 import { changePasswordSchema, type ChangePasswordFormData } from '@/lib/schemas/user';
+import { useT } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,6 +26,7 @@ function ProfilePictureUpload() {
   const { mutate: uploadPicture, isPending } = useUploadProfilePicture();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const t = useT();
 
   const initials = profile?.fullName
     ?.split(' ')
@@ -36,10 +38,7 @@ function ProfilePictureUpload() {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    if (file.size > 5 * 1024 * 1024) {
-      return;
-    }
+    if (file.size > 5 * 1024 * 1024) return;
 
     setPreview(URL.createObjectURL(file));
     uploadPicture(file, {
@@ -81,9 +80,7 @@ function ProfilePictureUpload() {
           onChange={handleFileSelect}
         />
       </div>
-      <p className="text-xs text-muted-foreground">
-        Click to upload new photo (JPG, PNG, WebP, max 5MB)
-      </p>
+      <p className="text-xs text-muted-foreground">{t('profile.uploadHint')}</p>
     </div>
   );
 }
@@ -91,6 +88,7 @@ function ProfilePictureUpload() {
 function ProfileInfoTab() {
   const { data: profile } = useProfile();
   const { mutate: updateProfile, isPending } = useUpdateProfile();
+  const t = useT();
 
   const {
     register,
@@ -98,9 +96,7 @@ function ProfileInfoTab() {
     formState: { errors },
   } = useForm<UpdateProfileFormData>({
     resolver: zodResolver(updateProfileSchema),
-    values: {
-      fullName: profile?.fullName ?? '',
-    },
+    values: { fullName: profile?.fullName ?? '' },
   });
 
   const onSubmit = (data: UpdateProfileFormData) => {
@@ -110,14 +106,14 @@ function ProfileInfoTab() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="fullName">Full Name</Label>
+        <Label htmlFor="fullName">{t('profile.info.fullName')}</Label>
         <Input id="fullName" {...register('fullName')} />
         {errors.fullName && <p className="text-sm text-destructive">{errors.fullName.message}</p>}
       </div>
 
       <Button type="submit" disabled={isPending}>
         {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        Save changes
+        {isPending ? t('profile.info.saving') : t('profile.info.save')}
       </Button>
     </form>
   );
@@ -125,6 +121,7 @@ function ProfileInfoTab() {
 
 function ChangePasswordTab() {
   const { mutate: changePassword, isPending } = useChangePassword();
+  const t = useT();
 
   const {
     register,
@@ -142,11 +139,11 @@ function ChangePasswordTab() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="newPassword">New Password</Label>
+        <Label htmlFor="newPassword">{t('profile.password.newPassword')}</Label>
         <Input
           id="newPassword"
           type="password"
-          placeholder="At least 8 characters"
+          placeholder={t('profile.password.newPlaceholder')}
           {...register('newPassword')}
         />
         {errors.newPassword && (
@@ -155,11 +152,11 @@ function ChangePasswordTab() {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="confirmPassword">Confirm Password</Label>
+        <Label htmlFor="confirmPassword">{t('profile.password.confirm')}</Label>
         <Input
           id="confirmPassword"
           type="password"
-          placeholder="Re-enter your password"
+          placeholder={t('profile.password.confirmPlaceholder')}
           {...register('confirmPassword')}
         />
         {errors.confirmPassword && (
@@ -169,7 +166,7 @@ function ChangePasswordTab() {
 
       <Button type="submit" disabled={isPending}>
         {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        Update password
+        {isPending ? t('profile.password.updating') : t('profile.password.update')}
       </Button>
     </form>
   );
@@ -177,6 +174,7 @@ function ChangePasswordTab() {
 
 export default function ProfilePage() {
   const { data: profile, isLoading } = useProfile();
+  const t = useT();
 
   if (isLoading) {
     return (
@@ -189,18 +187,19 @@ export default function ProfilePage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Profile</h1>
-        <p className="text-muted-foreground mt-1">Manage your account settings</p>
+        <h1 className="text-3xl font-bold tracking-tight">{t('profile.title')}</h1>
+        <p className="text-muted-foreground mt-1">{t('profile.subtitle')}</p>
       </div>
 
-      {/* Profile header with picture upload */}
       <Card>
         <CardContent className="pt-6">
           <div className="flex flex-col sm:flex-row items-center gap-6">
             <ProfilePictureUpload />
             <div className="text-center sm:text-left">
-              <h2 className="text-2xl font-bold">{profile?.fullName ?? 'Unknown'}</h2>
-              <p className="text-muted-foreground text-sm mt-1">ID: {profile?.id}</p>
+              <h2 className="text-2xl font-bold">{profile?.fullName ?? '—'}</h2>
+              <p className="text-muted-foreground text-sm mt-1">
+                {t('profile.id', { id: profile?.id ?? '' })}
+              </p>
             </div>
           </div>
         </CardContent>
@@ -208,18 +207,17 @@ export default function ProfilePage() {
 
       <Separator />
 
-      {/* Settings tabs */}
       <Tabs defaultValue="profile" className="space-y-6">
         <TabsList>
-          <TabsTrigger value="profile">Profile Info</TabsTrigger>
-          <TabsTrigger value="password">Change Password</TabsTrigger>
+          <TabsTrigger value="profile">{t('profile.tabs.info')}</TabsTrigger>
+          <TabsTrigger value="password">{t('profile.tabs.password')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile">
           <Card>
             <CardHeader>
-              <CardTitle>Profile Information</CardTitle>
-              <CardDescription>Update your display name</CardDescription>
+              <CardTitle>{t('profile.info.title')}</CardTitle>
+              <CardDescription>{t('profile.info.desc')}</CardDescription>
             </CardHeader>
             <CardContent>
               <ProfileInfoTab />
@@ -230,8 +228,8 @@ export default function ProfilePage() {
         <TabsContent value="password">
           <Card>
             <CardHeader>
-              <CardTitle>Change Password</CardTitle>
-              <CardDescription>Choose a strong password to secure your account</CardDescription>
+              <CardTitle>{t('profile.password.title')}</CardTitle>
+              <CardDescription>{t('profile.password.desc')}</CardDescription>
             </CardHeader>
             <CardContent>
               <ChangePasswordTab />

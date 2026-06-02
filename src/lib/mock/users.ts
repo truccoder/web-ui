@@ -1,13 +1,3 @@
-/**
- * Mock users for local development/testing.
- * Enable by setting NEXT_PUBLIC_USE_MOCK=true in .env.local
- *
- * Test accounts:
- *  alice@test.com   / Test1234!
- *  bob@test.com     / Test1234!
- *  carol@test.com   / Test1234!
- */
-
 function b64(obj: object): string {
   return btoa(JSON.stringify(obj)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
 }
@@ -15,7 +5,6 @@ function b64(obj: object): string {
 function makeFakeJwt(payload: object): string {
   const header = b64({ alg: 'HS256', typ: 'JWT' });
   const body = b64(payload);
-  // Signature is intentionally fake — only used client-side for display/decode
   const sig = b64({ mock: true });
   return `${header}.${body}.${sig}`;
 }
@@ -63,8 +52,7 @@ export const MOCK_USERS: MockUser[] = RAW_USERS.map((u) => ({
     sub: u.id,
     name: u.fullName,
     email: u.email,
-    picture: u.profilePictureUrl,
-    preferred_username: u.email.split('@')[0],
+    profilePictureUrl: u.profilePictureUrl,
     iat: now(),
     exp: FAR_FUTURE,
   }),

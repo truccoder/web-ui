@@ -11,6 +11,7 @@ import {
   useRejectFriendRequest,
 } from '@/lib/hooks/use-friendship';
 import { useFollowers, useFollowing } from '@/lib/hooks/use-social';
+import { useT } from '@/lib/i18n';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -42,6 +43,7 @@ function StatCard({
 }
 
 export default function DashboardPage() {
+  const t = useT();
   const { data: profile } = useProfile();
   const { data: friends } = useFriends();
   const { data: suggestions } = useFriendSuggestions();
@@ -53,44 +55,45 @@ export default function DashboardPage() {
   const { mutate: acceptRequest } = useAcceptFriendRequest();
   const { mutate: rejectRequest } = useRejectFriendRequest();
 
+  const firstName = profile?.fullName?.split(' ')[0];
+
   return (
     <div className="space-y-8">
       {/* Greeting */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight">
-          Welcome back
-          {profile?.fullName ? `, ${profile.fullName.split(' ')[0]}` : ''}
+          {firstName
+            ? t('dashboard.welcomeName', { name: firstName })
+            : t('dashboard.welcome')}
         </h1>
-        <p className="text-muted-foreground mt-1">
-          Here&apos;s what&apos;s happening on your network
-        </p>
+        <p className="text-muted-foreground mt-1">{t('dashboard.subtitle')}</p>
       </div>
 
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Friends"
+          title={t('dashboard.stats.friends')}
           value={friends?.length}
           icon={Users}
-          description="Total connections"
+          description={t('dashboard.stats.friendsDesc')}
         />
         <StatCard
-          title="Followers"
+          title={t('dashboard.stats.followers')}
           value={followers?.totalElements}
           icon={UserCheck}
-          description="People following you"
+          description={t('dashboard.stats.followersDesc')}
         />
         <StatCard
-          title="Following"
+          title={t('dashboard.stats.following')}
           value={following?.totalElements}
           icon={UserPlus}
-          description="People you follow"
+          description={t('dashboard.stats.followingDesc')}
         />
         <StatCard
-          title="Pending"
+          title={t('dashboard.stats.pending')}
           value={pendingRequests?.length}
           icon={Clock}
-          description="Friend requests"
+          description={t('dashboard.stats.pendingDesc')}
         />
       </div>
 
@@ -99,16 +102,18 @@ export default function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              Friend Requests
+              {t('dashboard.requests.title')}
               {pendingRequests && pendingRequests.length > 0 && (
                 <Badge variant="secondary">{pendingRequests.length}</Badge>
               )}
             </CardTitle>
-            <CardDescription>People who want to connect</CardDescription>
+            <CardDescription>{t('dashboard.requests.desc')}</CardDescription>
           </CardHeader>
           <CardContent>
             {!pendingRequests || pendingRequests.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-6">No pending requests</p>
+              <p className="text-sm text-muted-foreground text-center py-6">
+                {t('dashboard.requests.empty')}
+              </p>
             ) : (
               <div className="space-y-3">
                 {pendingRequests.map((req) => (
@@ -127,10 +132,14 @@ export default function DashboardPage() {
                     </div>
                     <div className="flex gap-2">
                       <Button size="sm" onClick={() => acceptRequest(req.id)}>
-                        Accept
+                        {t('dashboard.requests.accept')}
                       </Button>
-                      <Button size="sm" variant="outline" onClick={() => rejectRequest(req.id)}>
-                        Reject
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => rejectRequest(req.id)}
+                      >
+                        {t('dashboard.requests.reject')}
                       </Button>
                     </div>
                   </div>
@@ -143,13 +152,13 @@ export default function DashboardPage() {
         {/* Suggested friends */}
         <Card>
           <CardHeader>
-            <CardTitle>People You May Know</CardTitle>
-            <CardDescription>Expand your network</CardDescription>
+            <CardTitle>{t('dashboard.suggestions.title')}</CardTitle>
+            <CardDescription>{t('dashboard.suggestions.desc')}</CardDescription>
           </CardHeader>
           <CardContent>
             {!suggestions || suggestions.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-6">
-                No suggestions right now
+                {t('dashboard.suggestions.empty')}
               </p>
             ) : (
               <div className="space-y-3">
@@ -169,7 +178,7 @@ export default function DashboardPage() {
                       onClick={() => sendRequest({ addresseeId: person.id })}
                     >
                       <UserPlus className="h-4 w-4 mr-1" />
-                      Add
+                      {t('dashboard.suggestions.add')}
                     </Button>
                   </div>
                 ))}

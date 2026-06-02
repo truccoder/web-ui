@@ -23,11 +23,7 @@ export function extractProfileFromToken(accessToken: string): Profile | null {
 
   return {
     id: payload.sub,
-    fullName:
-      payload.name ??
-      [payload.given_name, payload.family_name].filter(Boolean).join(' ') ??
-      payload.preferred_username ??
-      '',
-    profilePictureUrl: (payload.picture as string) ?? '',
+    fullName: payload.fullName ?? '',
+    profilePictureUrl: payload.profilePictureUrl ?? '',
   };
 }

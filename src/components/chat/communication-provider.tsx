@@ -86,7 +86,7 @@ function reducer(state: CommunicationState, action: Action): CommunicationState 
   }
 }
 
-interface CommunicationContextType {
+export interface CommunicationContextType {
   state: CommunicationState;
   dispatch: React.Dispatch<Action>;
   conversationsClient: ReturnType<typeof useConversationsClient>;
