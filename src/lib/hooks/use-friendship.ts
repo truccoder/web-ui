@@ -37,7 +37,10 @@ export function useSendFriendRequest() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: friendshipApi.sendRequest,
+    mutationFn: (input: { addresseeId: string | number } | string | number) => {
+      const id = typeof input === 'object' && 'addresseeId' in input ? input.addresseeId : input;
+      return friendshipApi.sendRequest(id);
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['sent-requests'] });
       qc.invalidateQueries({ queryKey: ['friend-suggestions'] });

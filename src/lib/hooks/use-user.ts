@@ -3,10 +3,8 @@
 import { useMemo } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { userApi } from '@/lib/api/user';
-import { getErrorMessage } from '@/lib/api/error';
-import { useAppSelector, useAppDispatch } from '@/lib/store/hooks';
-import { setCredentials } from '@/lib/store/auth-slice';
+import { userApi, getErrorMessage } from '@/lib/api';
+import { useAppSelector } from '@/lib/store/hooks';
 import { extractProfileFromToken } from '@/lib/jwt';
 import type { ChangePasswordRequest, Profile } from '@/lib/types';
 
@@ -22,19 +20,12 @@ export function useProfile(): { data: Profile | null; isLoading: boolean } {
 }
 
 export function useUpdateProfile() {
-  const dispatch = useAppDispatch();
   const refreshToken = useAppSelector((s) => s.auth.refreshToken);
 
   return useMutation({
     mutationFn: (data: { fullName?: string; profilePictureUrl?: string }) =>
       userApi.updateProfile({ ...data, refreshToken: refreshToken ?? '' }),
-    onSuccess: ({ data }) => {
-      dispatch(
-        setCredentials({
-          accessToken: data.accessToken,
-          refreshToken: data.refreshToken,
-        })
-      );
+    onSuccess: () => {
       toast.success('Profile updated');
     },
     onError: (error) => {
@@ -44,18 +35,11 @@ export function useUpdateProfile() {
 }
 
 export function useUploadProfilePicture() {
-  const dispatch = useAppDispatch();
   const refreshToken = useAppSelector((s) => s.auth.refreshToken);
 
   return useMutation({
     mutationFn: (file: File) => userApi.uploadProfilePicture(file, refreshToken ?? ''),
-    onSuccess: ({ data }) => {
-      dispatch(
-        setCredentials({
-          accessToken: data.accessToken,
-          refreshToken: data.refreshToken,
-        })
-      );
+    onSuccess: () => {
       toast.success('Profile picture updated');
     },
     onError: (error) => {

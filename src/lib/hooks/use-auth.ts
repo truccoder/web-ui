@@ -3,9 +3,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { authApi } from '@/lib/api/auth';
-import { userApi } from '@/lib/api/user';
-import { getErrorMessage } from '@/lib/api/error';
+import { authApi, userApi, getErrorMessage } from '@/lib/api';
 import { setCredentials, clearAuth } from '@/lib/store/auth-slice';
 import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
 import type { RegisterRequest } from '@/lib/types';

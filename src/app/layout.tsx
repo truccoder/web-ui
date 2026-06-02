@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'ConnectHub - Social Platform',
+  title: 'Elite Nexus',
   description: 'Connect, share, and grow your social network',
 };
 

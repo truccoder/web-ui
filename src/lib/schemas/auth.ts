@@ -10,7 +10,7 @@ export const loginSchema = z.object({
 
 export const registerSchema = z.object({
   email: z.string().email('Invalid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
   fullName: z.string().min(1, 'Full name is required'),
   profilePicture: z
     .custom<FileList>()
@@ -28,7 +28,7 @@ export const forgotPasswordSchema = z.object({
 
 export const resetPasswordSchema = z
   .object({
-    newPassword: z.string().min(8, 'Password must be at least 8 characters'),
+    newPassword: z.string().min(6, 'Password must be at least 6 characters'),
     confirmPassword: z.string(),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {

@@ -1,14 +1,13 @@
 import api from './axios';
-import type { CreatePostPayload, CreatePostResponse, Page, Post } from '@/lib/types';
+import type { CreatePostRequest, UpdatePostRequest } from '@/lib/types';
 
 export const postsApi = {
-  createPost: (payload: CreatePostPayload) =>
-    api.post<CreatePostResponse>('/v1/api/posts', payload),
+  createPost: (payload: CreatePostRequest) =>
+    api.post<void>('/v1/api/posts', payload),
 
-  getNewsfeed: (offset: number, pageSize: number) =>
-    api.get<Page<Post>>('/v1/api/posts/newsfeed', {
-      params: { offset, pageSize },
-    }),
+  updatePost: (postId: number, payload: UpdatePostRequest) =>
+    api.put<void>(`/v1/api/posts/${postId}`, payload),
 
-  getPost: (id: string) => api.get<Post>(`/v1/api/posts/${id}`),
+  deletePost: (postId: number) =>
+    api.delete<void>(`/v1/api/posts/${postId}`),
 };

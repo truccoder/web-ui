@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { LocationPicker } from './location-picker';
 import { useCreatePost } from '@/lib/hooks/use-posts';
 import { useProfile } from '@/lib/hooks/use-user';
+import { useT } from '@/lib/i18n';
 import type { PostLocation } from '@/lib/types';
 
 export function CreatePostForm() {
@@ -18,6 +19,7 @@ export function CreatePostForm() {
 
   const { data: profile } = useProfile();
   const { mutate: createPost, isPending } = useCreatePost();
+  const t = useT();
 
   const initials = profile?.fullName
     ?.split(' ')
@@ -25,6 +27,8 @@ export function CreatePostForm() {
     .join('')
     .toUpperCase()
     .slice(0, 2);
+
+  const firstName = profile?.fullName?.split(' ')[0] ?? t('createPost.placeholder').replace(' ${name}', '').replace('${name}', '');
 
   const handleTextareaInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setContent(e.target.value);
@@ -69,7 +73,7 @@ export function CreatePostForm() {
               value={content}
               onChange={handleTextareaInput}
               onFocus={() => setFocused(true)}
-              placeholder={`${profile?.fullName?.split(' ')[0] ?? 'Bạn'} đang nghĩ gì vậy?`}
+              placeholder={t('createPost.placeholder', { name: firstName })}
               rows={focused ? 3 : 1}
               className="w-full resize-none bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none leading-relaxed"
             />
@@ -84,14 +88,14 @@ export function CreatePostForm() {
                       className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer rounded-full px-2 py-1 hover:bg-accent"
                     >
                       <ImageIcon className="h-3.5 w-3.5" />
-                      <span className="hidden sm:inline">Ảnh</span>
+                      <span className="hidden sm:inline">{t('createPost.photo')}</span>
                     </button>
                     <button
                       type="button"
                       className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer rounded-full px-2 py-1 hover:bg-accent"
                     >
                       <Smile className="h-3.5 w-3.5" />
-                      <span className="hidden sm:inline">Cảm xúc</span>
+                      <span className="hidden sm:inline">{t('createPost.feeling')}</span>
                     </button>
                   </div>
 
@@ -107,7 +111,7 @@ export function CreatePostForm() {
                       onClick={handleSubmit}
                       className="rounded-full px-5"
                     >
-                      {isPending ? 'Đang đăng...' : 'Đăng'}
+                      {isPending ? t('createPost.posting') : t('createPost.post')}
                     </Button>
                   </div>
                 </div>

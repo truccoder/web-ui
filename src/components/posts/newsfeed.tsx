@@ -5,6 +5,7 @@ import { Loader2, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PostCard } from './post-card';
 import { useNewsfeed } from '@/lib/hooks/use-posts';
+import { useT } from '@/lib/i18n';
 
 function PostSkeleton() {
   return (
@@ -26,6 +27,7 @@ function PostSkeleton() {
 }
 
 export function Newsfeed() {
+  const t = useT();
   const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useNewsfeed();
 
@@ -48,7 +50,7 @@ export function Newsfeed() {
     return () => observer.disconnect();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const posts = data?.pages.flatMap((page) => page.content) ?? [];
+  const posts = data?.pages.flatMap((page) => page.posts) ?? [];
 
   if (isLoading) {
     return (
@@ -63,10 +65,10 @@ export function Newsfeed() {
   if (isError) {
     return (
       <div className="flex flex-col items-center gap-3 py-16 text-center">
-        <p className="text-sm text-muted-foreground">Không thể tải bài viết. Vui lòng thử lại.</p>
+        <p className="text-sm text-muted-foreground">{t('newsfeed.error')}</p>
         <Button variant="outline" size="sm" onClick={() => refetch()} className="gap-2">
           <RefreshCw className="h-4 w-4" />
-          Thử lại
+          {t('newsfeed.retry')}
         </Button>
       </div>
     );
@@ -78,10 +80,8 @@ export function Newsfeed() {
         <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-2">
           <span className="text-3xl">📝</span>
         </div>
-        <p className="font-medium text-sm">Chưa có bài viết nào</p>
-        <p className="text-xs text-muted-foreground">
-          Hãy là người đầu tiên đăng bài hoặc kết bạn thêm để xem tin tức mới!
-        </p>
+        <p className="font-medium text-sm">{t('newsfeed.empty.title')}</p>
+        <p className="text-xs text-muted-foreground">{t('newsfeed.empty.desc')}</p>
       </div>
     );
   }
@@ -89,10 +89,9 @@ export function Newsfeed() {
   return (
     <div className="space-y-4">
       {posts.map((post) => (
-        <PostCard key={post.id} post={post} />
+        <PostCard key={post.postId} post={post} />
       ))}
 
-      {/* Infinite scroll sentinel */}
       <div ref={sentinelRef} />
 
       {isFetchingNextPage && (
@@ -103,7 +102,7 @@ export function Newsfeed() {
 
       {!hasNextPage && posts.length > 0 && (
         <p className="text-center text-xs text-muted-foreground py-4">
-          Bạn đã xem hết bài viết rồi 🎉
+          {t('newsfeed.allLoaded')}
         </p>
       )}
     </div>

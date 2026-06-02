@@ -1,16 +1,31 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, User, LogOut, Menu, Users, Newspaper } from 'lucide-react';
+import {
+  LayoutDashboard,
+  User,
+  LogOut,
+  Menu,
+  Users,
+  Newspaper,
+  MessageCircle,
+  ChevronDown,
+  UserPlus,
+  Gift,
+  UserCheck,
+  Globe,
+} from 'lucide-react';
 import { CommunicationProvider } from '@/components/chat/communication-provider';
 import { ChatBox } from '@/components/chat/chat-box';
 import { VideoCallModal } from '@/components/call/video-call-modal';
 import { VoiceCallModal } from '@/components/call/voice-call-modal';
 import { IncomingCallOverlay } from '@/components/call/incoming-call-overlay';
 import { cn } from '@/lib/utils';
-import { useProfile } from '@/lib/hooks/use-user';
-import { useLogout } from '@/lib/hooks/use-auth';
+import { useProfile, useLogout } from '@/lib/hooks';
+import { usePendingRequests } from '@/lib/hooks/use-friendship';
+import { useI18n, useT } from '@/lib/i18n';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -22,40 +37,165 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 
-const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/newsfeed', label: 'Bảng tin', icon: Newspaper },
-  { href: '/profile', label: 'Profile', icon: User },
-];
-
 function NavLinks({ onClick }: { onClick?: () => void }) {
   const pathname = usePathname();
+  const { data: pendingRequests } = usePendingRequests();
+  const t = useT();
+
+  const isFriendsActive = pathname.startsWith('/friends');
+  const [friendsOpen, setFriendsOpen] = useState(isFriendsActive);
+
+  const pendingCount = pendingRequests?.length ?? 0;
+
+  const friendSubItems = [
+    { href: '/friends/suggestions', label: t('nav.friendsSuggestions'), icon: UserPlus },
+    { href: '/friends/requests', label: t('nav.friendsRequests'), icon: UserCheck },
+    { href: '/friends/birthdays', label: t('nav.friendsBirthdays'), icon: Gift },
+  ];
 
   return (
     <nav className="space-y-1">
-      {navItems.map((item) => (
-        <Link
-          key={item.href}
-          href={item.href}
-          onClick={onClick}
+      {/* Newsfeed */}
+      <Link
+        href="/newsfeed"
+        onClick={onClick}
+        className={cn(
+          'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+          pathname === '/newsfeed'
+            ? 'bg-primary text-primary-foreground'
+            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+        )}
+      >
+        <Newspaper className="h-4 w-4" />
+        {t('nav.newsfeed')}
+      </Link>
+
+      {/* Friends collapsible */}
+      <div>
+        <button
+          onClick={() => setFriendsOpen((v) => !v)}
           className={cn(
-            'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-            pathname === item.href
+            'flex items-center justify-between w-full rounded-lg px-3 py-2 text-sm font-medium transition-colors cursor-pointer',
+            isFriendsActive
               ? 'bg-primary text-primary-foreground'
               : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
           )}
         >
-          <item.icon className="h-4 w-4" />
-          {item.label}
-        </Link>
-      ))}
+          <div className="flex items-center gap-3">
+            <Users className="h-4 w-4" />
+            {t('nav.friends')}
+          </div>
+          <div className="flex items-center gap-1.5">
+            {pendingCount > 0 && (
+              <span className="h-5 min-w-[20px] flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold px-1">
+                {pendingCount > 99 ? '99+' : pendingCount}
+              </span>
+            )}
+            <ChevronDown
+              className={cn('h-3.5 w-3.5 transition-transform', friendsOpen && 'rotate-180')}
+            />
+          </div>
+        </button>
+
+        {friendsOpen && (
+          <div className="ml-3 mt-1 space-y-0.5 border-l pl-3">
+            {friendSubItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={onClick}
+                className={cn(
+                  'flex items-center justify-between rounded-lg px-3 py-1.5 text-sm font-medium transition-colors',
+                  pathname === item.href
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                )}
+              >
+                <div className="flex items-center gap-2">
+                  <item.icon className="h-3.5 w-3.5" />
+                  {item.label}
+                </div>
+                {item.href === '/friends/requests' && pendingCount > 0 && (
+                  <span className="h-5 min-w-[20px] flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold px-1">
+                    {pendingCount > 99 ? '99+' : pendingCount}
+                  </span>
+                )}
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Chats */}
+      <Link
+        href="/chats"
+        onClick={onClick}
+        className={cn(
+          'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+          pathname === '/chats' || pathname.startsWith('/chats')
+            ? 'bg-primary text-primary-foreground'
+            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+        )}
+      >
+        <MessageCircle className="h-4 w-4" />
+        {t('nav.chats')}
+      </Link>
+
+      {/* Profile */}
+      <Link
+        href="/profile"
+        onClick={onClick}
+        className={cn(
+          'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+          pathname === '/profile'
+            ? 'bg-primary text-primary-foreground'
+            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+        )}
+      >
+        <User className="h-4 w-4" />
+        {t('nav.profile')}
+      </Link>
+
+      {/* Dashboard */}
+      <Link
+        href="/dashboard"
+        onClick={onClick}
+        className={cn(
+          'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+          pathname === '/dashboard'
+            ? 'bg-primary text-primary-foreground'
+            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+        )}
+      >
+        <LayoutDashboard className="h-4 w-4" />
+        {t('nav.dashboard')}
+      </Link>
     </nav>
+  );
+}
+
+function LocaleSwitcher() {
+  const { locale, setLocale } = useI18n();
+
+  return (
+    <button
+      onClick={() => setLocale(locale === 'vi' ? 'en' : 'vi')}
+      className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer"
+      title={locale === 'vi' ? 'Switch to English' : 'Chuyển sang Tiếng Việt'}
+    >
+      <Globe className="h-4 w-4 shrink-0" />
+      <span>{locale === 'vi' ? 'Tiếng Việt' : 'English'}</span>
+      <span className="ml-auto text-xs bg-muted rounded px-1.5 py-0.5 font-mono uppercase">
+        {locale === 'vi' ? 'EN' : 'VI'}
+      </span>
+    </button>
   );
 }
 
 function UserMenu() {
   const { data: profile } = useProfile();
   const { mutate: logout } = useLogout();
+  const t = useT();
 
   const initials = profile?.fullName
     ?.split(' ')
@@ -69,53 +209,84 @@ function UserMenu() {
       <DropdownMenuTrigger className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm hover:bg-accent transition-colors cursor-pointer outline-none">
         <Avatar className="h-8 w-8">
           <AvatarImage src={profile?.profilePictureUrl} />
-          <AvatarFallback className="text-xs">{initials ?? '?'}</AvatarFallback>
+          <AvatarFallback className="text-xs" suppressHydrationWarning>
+            {initials ?? '?'}
+          </AvatarFallback>
         </Avatar>
-        <span className="font-medium truncate max-w-[140px]">
-          {profile?.fullName ?? 'Loading...'}
+        <span className="font-medium truncate max-w-[140px]" suppressHydrationWarning>
+          {profile?.fullName ?? '...'}
         </span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" side="top">
         <DropdownMenuItem render={<Link href="/profile" />}>
           <User className="h-4 w-4" />
-          Profile
+          {t('nav.profile')}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => logout()} variant="destructive">
           <LogOut className="h-4 w-4" />
-          Logout
+          {t('nav.logout')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
 }
 
+function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
+  const t = useT();
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex items-center gap-2 px-6 py-5">
+        <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
+          <Users className="h-4 w-4 text-white" />
+        </div>
+        <span className="font-bold text-lg">{t('app.name')}</span>
+      </div>
+
+      <Separator />
+
+      <div className="flex-1 px-3 py-4 overflow-y-auto">
+        <NavLinks onClick={onNavClick} />
+      </div>
+
+      <Separator />
+
+      <div className="px-3 pt-2 pb-1">
+        <LocaleSwitcher />
+      </div>
+
+      <div className="p-3 pt-1">
+        <UserMenu />
+      </div>
+    </div>
+  );
+}
+
+function MainContent({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const isFullBleed = pathname.startsWith('/chats');
+
+  return (
+    <main className="md:ml-64">
+      {isFullBleed ? (
+        children
+      ) : (
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">{children}</div>
+      )}
+    </main>
+  );
+}
+
 export default function MainLayout({ children }: { children: React.ReactNode }) {
+  const t = useT();
+
   return (
     <CommunicationProvider>
       <div className="min-h-screen bg-background">
         {/* Desktop sidebar */}
         <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 border-r bg-card">
-          <div className="flex flex-col h-full">
-            <div className="flex items-center gap-2 px-6 py-5">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
-                <Users className="h-4 w-4 text-white" />
-              </div>
-              <span className="font-bold text-lg">ConnectHub</span>
-            </div>
-
-            <Separator />
-
-            <div className="flex-1 px-3 py-4">
-              <NavLinks />
-            </div>
-
-            <Separator />
-
-            <div className="p-3">
-              <UserMenu />
-            </div>
-          </div>
+          <SidebarContent />
         </aside>
 
         {/* Mobile header */}
@@ -124,7 +295,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
               <Users className="h-4 w-4 text-white" />
             </div>
-            <span className="font-bold text-lg">ConnectHub</span>
+            <span className="font-bold text-lg">{t('app.name')}</span>
           </div>
 
           <Sheet>
@@ -132,30 +303,16 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
               <Menu className="h-5 w-5" />
             </SheetTrigger>
             <SheetContent side="left" className="w-64 p-0">
-              <SheetHeader className="px-6 py-5">
-                <SheetTitle className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
-                    <Users className="h-4 w-4 text-white" />
-                  </div>
-                  ConnectHub
-                </SheetTitle>
+              <SheetHeader className="sr-only">
+                <SheetTitle>Navigation</SheetTitle>
               </SheetHeader>
-              <Separator />
-              <div className="px-3 py-4">
-                <NavLinks />
-              </div>
-              <Separator />
-              <div className="p-3">
-                <UserMenu />
-              </div>
+              <SidebarContent />
             </SheetContent>
           </Sheet>
         </div>
 
         {/* Main content */}
-        <main className="md:ml-64">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">{children}</div>
-        </main>
+        <MainContent>{children}</MainContent>
 
         {/* Chat & Call overlays */}
         <ChatBox />

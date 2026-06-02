@@ -8,6 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, Upload, X } from 'lucide-react';
 import { registerSchema, type RegisterFormData } from '@/lib/schemas/auth';
 import { useRegister } from '@/lib/hooks/use-auth';
+import { useT } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,6 +24,7 @@ import {
 export default function RegisterPage() {
   const { mutate: registerUser, isPending } = useRegister();
   const [preview, setPreview] = useState<string | null>(null);
+  const t = useT();
 
   const {
     register,
@@ -64,8 +66,8 @@ export default function RegisterPage() {
         <div className="mx-auto w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center mb-2">
           <span className="text-white font-bold text-xl">C</span>
         </div>
-        <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
-        <CardDescription>Join ConnectHub and start connecting with others</CardDescription>
+        <CardTitle className="text-2xl font-bold">{t('auth.register.title')}</CardTitle>
+        <CardDescription>{t('auth.register.subtitle')}</CardDescription>
       </CardHeader>
 
       <form onSubmit={handleSubmit(onSubmit)}>
@@ -73,7 +75,8 @@ export default function RegisterPage() {
           {/* Profile picture upload */}
           <div className="space-y-2">
             <Label>
-              Profile Picture <span className="text-muted-foreground">(optional)</span>
+              {t('auth.register.profilePicture')}{' '}
+              <span className="text-muted-foreground">{t('auth.register.optional')}</span>
             </Label>
             <div className="flex items-center gap-4">
               {preview ? (
@@ -110,10 +113,12 @@ export default function RegisterPage() {
                   />
                   <span className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400 font-medium">
                     <Upload className="h-3.5 w-3.5" />
-                    {preview ? 'Change photo' : 'Upload a photo'}
+                    {preview ? t('auth.register.changePhoto') : t('auth.register.uploadPhoto')}
                   </span>
                 </label>
-                <p className="text-xs text-muted-foreground mt-0.5">JPG, PNG or WebP. Max 5MB.</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {t('auth.register.photoFormats')}
+                </p>
               </div>
             </div>
             {errors.profilePicture && (
@@ -122,25 +127,34 @@ export default function RegisterPage() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="fullName">Full Name</Label>
-            <Input id="fullName" placeholder="John Doe" {...register('fullName')} />
+            <Label htmlFor="fullName">{t('auth.fullName')}</Label>
+            <Input
+              id="fullName"
+              placeholder={t('auth.fullNamePlaceholder')}
+              {...register('fullName')}
+            />
             {errors.fullName && (
               <p className="text-sm text-destructive">{errors.fullName.message}</p>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" placeholder="name@example.com" {...register('email')} />
+            <Label htmlFor="email">{t('auth.email')}</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder={t('auth.emailPlaceholder')}
+              {...register('email')}
+            />
             {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">{t('auth.password')}</Label>
             <Input
               id="password"
               type="password"
-              placeholder="At least 8 characters"
+              placeholder={t('auth.register.passwordPlaceholder')}
               {...register('password')}
             />
             {errors.password && (
@@ -152,15 +166,15 @@ export default function RegisterPage() {
         <CardFooter className="flex flex-col gap-4">
           <Button type="submit" className="w-full" disabled={isPending}>
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Create account
+            {isPending ? t('auth.register.submitting') : t('auth.register.submit')}
           </Button>
           <p className="text-sm text-muted-foreground text-center">
-            Already have an account?{' '}
+            {t('auth.register.alreadyHaveAccount')}{' '}
             <Link
               href="/login"
               className="text-blue-600 hover:text-blue-500 dark:text-blue-400 font-medium"
             >
-              Sign in
+              {t('auth.register.signIn')}
             </Link>
           </p>
         </CardFooter>

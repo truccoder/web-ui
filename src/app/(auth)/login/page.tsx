@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
 import { loginSchema, type LoginFormData } from '@/lib/schemas/auth';
 import { useLogin } from '@/lib/hooks/use-auth';
+import { useT } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,6 +21,7 @@ import {
 
 export default function LoginPage() {
   const { mutate: login, isPending } = useLogin();
+  const t = useT();
 
   const {
     register,
@@ -39,32 +41,37 @@ export default function LoginPage() {
         <div className="mx-auto w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center mb-2">
           <span className="text-white font-bold text-xl">C</span>
         </div>
-        <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
-        <CardDescription>Sign in to your ConnectHub account</CardDescription>
+        <CardTitle className="text-2xl font-bold">{t('auth.login.title')}</CardTitle>
+        <CardDescription>{t('auth.login.subtitle')}</CardDescription>
       </CardHeader>
 
       <form onSubmit={handleSubmit(onSubmit)}>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" placeholder="name@example.com" {...register('email')} />
+            <Label htmlFor="email">{t('auth.email')}</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder={t('auth.emailPlaceholder')}
+              {...register('email')}
+            />
             {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
           </div>
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t('auth.password')}</Label>
               <Link
                 href="/forgot-password"
                 className="text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400"
               >
-                Forgot password?
+                {t('auth.login.forgotPassword')}
               </Link>
             </div>
             <Input
               id="password"
               type="password"
-              placeholder="Enter your password"
+              placeholder={t('auth.login.passwordPlaceholder')}
               {...register('password')}
             />
             {errors.password && (
@@ -76,15 +83,15 @@ export default function LoginPage() {
         <CardFooter className="flex flex-col gap-4">
           <Button type="submit" className="w-full" disabled={isPending}>
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Sign in
+            {isPending ? t('auth.login.submitting') : t('auth.login.submit')}
           </Button>
           <p className="text-sm text-muted-foreground text-center">
-            Don&apos;t have an account?{' '}
+            {t('auth.login.noAccount')}{' '}
             <Link
               href="/register"
               className="text-blue-600 hover:text-blue-500 dark:text-blue-400 font-medium"
             >
-              Sign up
+              {t('auth.login.signUp')}
             </Link>
           </p>
         </CardFooter>

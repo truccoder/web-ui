@@ -21,6 +21,7 @@ interface ConversationSummary {
 export function useConversationsClient(identity: string | null) {
   const [client, setClient] = useState<ConversationsClient | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const clientRef = useRef<ConversationsClient | null>(null);
 
@@ -67,7 +68,7 @@ export function useConversationsClient(identity: string | null) {
 
       setConversations(summaries);
     } catch (err) {
-      console.error('Failed to fetch conversations:', err);
+      console.error('[Twilio] Failed to fetch conversations:', err);
     }
   }, []);
 
@@ -77,13 +78,27 @@ export function useConversationsClient(identity: string | null) {
     let cancelled = false;
 
     async function init() {
+      // Reset error state for fresh connection attempt (inside async fn – not synchronous in effect body)
+      if (!cancelled) setConnectionError(null);
+
       try {
+        console.log('[Twilio] Fetching token for identity:', identity);
         const token = await fetchTwilioToken(identity!);
+
         const newClient = new ConversationsClient(token);
 
+        // Calling setState from event callbacks is fine per react-hooks/set-state-in-effect
         newClient.on('connectionStateChanged', (state) => {
           if (cancelled) return;
+          console.log('[Twilio] Connection state:', state);
           setIsConnected(state === 'connected');
+          if (state === 'connected') {
+            // Trigger initial list load from the event callback, not the effect body
+            updateConversationList(newClient);
+          }
+          if (state === 'denied' || state === 'error') {
+            setConnectionError(`Connection ${state}`);
+          }
         });
 
         newClient.on('conversationJoined', () => {
@@ -102,14 +117,21 @@ export function useConversationsClient(identity: string | null) {
         });
 
         newClient.on('tokenAboutToExpire', async () => {
-          const newToken = await fetchTwilioToken(identity!);
-          newClient.updateToken(newToken);
+          try {
+            const newToken = await fetchTwilioToken(identity!);
+            newClient.updateToken(newToken);
+          } catch (err) {
+            console.error('[Twilio] Token refresh failed:', err);
+          }
         });
 
         clientRef.current = newClient;
         if (!cancelled) setClient(newClient);
       } catch (err) {
-        console.error('Failed to initialize Conversations client:', err);
+        console.error('[Twilio] Initialization failed:', err);
+        if (!cancelled) {
+          setConnectionError(err instanceof Error ? err.message : 'Connection failed');
+        }
       }
     }
 
@@ -122,30 +144,76 @@ export function useConversationsClient(identity: string | null) {
     };
   }, [identity, updateConversationList]);
 
-  useEffect(() => {
-    if (!client || !isConnected) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    updateConversationList(client).catch(console.error);
-  }, [client, isConnected, updateConversationList]);
-
   const createOrGetConversation = useCallback(
-    async (participantIdentity: string, friendlyName?: string) => {
-      if (!client) throw new Error('Client not connected');
+    async (participantIdentity: string, friendlyName?: string): Promise<Conversation> => {
+      if (!client) throw new Error('Twilio client not connected. Please wait and try again.');
+      if (!identity) throw new Error('User identity not available.');
 
       const uniqueName = [identity, participantIdentity].sort().join('_');
+      console.log('[Twilio] createOrGetConversation', { uniqueName, friendlyName });
 
+      // ── Step 1: Get or create the conversation ──────────────────────────────
+      let conv: Conversation;
       try {
-        const existing = await client.getConversationByUniqueName(uniqueName);
-        return existing;
+        conv = await client.getConversationByUniqueName(uniqueName);
+        console.log('[Twilio] Found existing conversation:', conv.sid);
       } catch {
-        const conv = await client.createConversation({
-          uniqueName,
-          friendlyName: friendlyName ?? participantIdentity,
-        });
-        await conv.join();
-        await conv.add(participantIdentity);
-        return conv;
+        // Doesn't exist — create it
+        try {
+          conv = await client.createConversation({
+            uniqueName,
+            friendlyName: friendlyName ?? participantIdentity,
+          });
+          console.log('[Twilio] Created new conversation:', conv.sid);
+        } catch (createErr: unknown) {
+          // Race condition: someone else created it between our check and create
+          const msg = String(createErr);
+          if (
+            msg.toLowerCase().includes('already exists') ||
+            msg.includes('50433') ||
+            msg.includes('50107')
+          ) {
+            console.log('[Twilio] Race condition — fetching existing conversation');
+            conv = await client.getConversationByUniqueName(uniqueName);
+          } else {
+            console.error('[Twilio] createConversation failed:', createErr);
+            throw createErr;
+          }
+        }
       }
+
+      // ── Step 2: Ensure current user has joined ──────────────────────────────
+      try {
+        await conv.join();
+        console.log('[Twilio] Joined conversation');
+      } catch (joinErr: unknown) {
+        // "already a participant" / "already joined" errors are expected — ignore them
+        const msg = String(joinErr).toLowerCase();
+        if (!msg.includes('already') && !msg.includes('participant') && !msg.includes('50408')) {
+          console.warn('[Twilio] join() unexpected error:', joinErr);
+        }
+      }
+
+      // ── Step 3: Ensure peer is a participant ────────────────────────────────
+      try {
+        const participants = await conv.getParticipants();
+        console.log('[Twilio] Participants:', participants.map((p) => p.identity));
+
+        const peerExists = participants.some((p) => p.identity === participantIdentity);
+        if (!peerExists) {
+          console.log('[Twilio] Adding peer participant:', participantIdentity);
+          await conv.add(participantIdentity);
+          console.log('[Twilio] Peer added successfully');
+        } else {
+          console.log('[Twilio] Peer already a participant');
+        }
+      } catch (addErr: unknown) {
+        // Log but don't throw — the conversation still works for the creator.
+        // The peer will see it once they connect.
+        console.warn('[Twilio] add() peer warning:', addErr);
+      }
+
+      return conv;
     },
     [client, identity]
   );
@@ -153,6 +221,7 @@ export function useConversationsClient(identity: string | null) {
   return {
     client,
     isConnected,
+    connectionError,
     conversations,
     createOrGetConversation,
     refreshConversations: () => client && updateConversationList(client),
@@ -170,12 +239,7 @@ export function useConversation(
   const [typingParticipant, setTypingParticipant] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!conversationSid || !client) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setConversation(null);
-      setMessages([]);
-      return;
-    }
+    if (!conversationSid || !client) return;
 
     let cancelled = false;
     let activeConv: Conversation | null = null;
@@ -217,7 +281,7 @@ export function useConversation(
           }
         });
       } catch (err) {
-        console.error('Failed to load conversation:', err);
+        console.error('[Twilio] Failed to load conversation:', err);
       }
     }
 
@@ -226,6 +290,9 @@ export function useConversation(
     return () => {
       cancelled = true;
       activeConv?.removeAllListeners();
+      // Reset state in cleanup (dependency changed or component unmounted) – not in effect body
+      setConversation(null);
+      setMessages([]);
     };
   }, [conversationSid, client]);
 
