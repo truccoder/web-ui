@@ -55,7 +55,7 @@ app.prepare().then(() => {
     res.json({ ok: true });
   });
 
-  expressApp.all('*', (req, res) => {
+  expressApp.use((req, res) => {
     const parsedUrl = parse(req.url, true);
     handle(req, res, parsedUrl);
   });
