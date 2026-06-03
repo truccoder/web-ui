@@ -1,0 +1,9 @@
+.git
+.github
+.next
+.husky
+node_modules
+*.md
+.gitignore
+.env
+tsconfig.tsbuildinfo
