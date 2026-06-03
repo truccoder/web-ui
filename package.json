@@ -24,6 +24,9 @@
     "lucide-react": "^1.16.0",
     "next": "16.2.6",
     "next-themes": "^0.4.6",
+    "peer": "^1.0.2",
+    "peerjs": "^1.5.5",
+    "qrcode.react": "^4.2.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-hook-form": "^7.76.0",
@@ -37,9 +40,12 @@
     "zod": "^4.4.3"
   },
   "lint-staged": {
-    "*.{ts,tsx,js,jsx}": [
+    "*.{ts,tsx}": [
       "prettier --write",
       "eslint --fix --max-warnings=0"
+    ],
+    "*.{js,jsx}": [
+      "prettier --write"
     ],
     "*.{css,json,md}": [
       "prettier --write"
