@@ -197,7 +197,7 @@ function UserMenu() {
   const { mutate: logout } = useLogout();
   const t = useT();
 
-  const initials = profile?.fullName
+  const initials = profile?.fullname
     ?.split(' ')
     .map((n) => n[0])
     .join('')
@@ -214,7 +214,7 @@ function UserMenu() {
           </AvatarFallback>
         </Avatar>
         <span className="font-medium truncate max-w-[140px]" suppressHydrationWarning>
-          {profile?.fullName ?? '...'}
+          {profile?.fullname ?? '...'}
         </span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" side="top">

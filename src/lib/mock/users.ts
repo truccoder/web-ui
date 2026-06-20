@@ -13,7 +13,7 @@ export interface MockUser {
   id: string;
   email: string;
   password: string;
-  fullName: string;
+  fullname: string;
   profilePictureUrl: string;
   accessToken: string;
   refreshToken: string;
@@ -27,21 +27,21 @@ const RAW_USERS = [
     id: 'mock-user-001',
     email: 'alice@test.com',
     password: 'Test1234!',
-    fullName: 'Alice Johnson',
+    fullname: 'Alice Johnson',
     profilePictureUrl: 'https://api.dicebear.com/9.x/avataaars/svg?seed=alice',
   },
   {
     id: 'mock-user-002',
     email: 'bob@test.com',
     password: 'Test1234!',
-    fullName: 'Bob Smith',
+    fullname: 'Bob Smith',
     profilePictureUrl: 'https://api.dicebear.com/9.x/avataaars/svg?seed=bob',
   },
   {
     id: 'mock-user-003',
     email: 'carol@test.com',
     password: 'Test1234!',
-    fullName: 'Carol Williams',
+    fullname: 'Carol Williams',
     profilePictureUrl: 'https://api.dicebear.com/9.x/avataaars/svg?seed=carol',
   },
 ];
@@ -50,7 +50,7 @@ export const MOCK_USERS: MockUser[] = RAW_USERS.map((u) => ({
   ...u,
   accessToken: makeFakeJwt({
     sub: u.id,
-    name: u.fullName,
+    name: u.fullname,
     email: u.email,
     profilePictureUrl: u.profilePictureUrl,
     iat: now(),

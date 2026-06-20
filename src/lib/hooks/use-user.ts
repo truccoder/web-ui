@@ -23,7 +23,7 @@ export function useUpdateProfile() {
   const refreshToken = useAppSelector((s) => s.auth.refreshToken);
 
   return useMutation({
-    mutationFn: (data: { fullName?: string; profilePictureUrl?: string }) =>
+    mutationFn: (data: { fullname?: string; profilePictureUrl?: string }) =>
       userApi.updateProfile({ ...data, refreshToken: refreshToken ?? '' }),
     onSuccess: () => {
       toast.success('Profile updated');

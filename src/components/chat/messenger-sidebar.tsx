@@ -56,7 +56,7 @@ function NewChatPanel({
   const [loading, setLoading] = useState<string | null>(null);
 
   const filtered = (friends ?? []).filter((f) =>
-    f.fullName.toLowerCase().includes(search.toLowerCase())
+    f.fullname.toLowerCase().includes(search.toLowerCase())
   );
 
   const handleStart = async (friend: Profile) => {
@@ -140,12 +140,12 @@ function NewChatPanel({
                 <Avatar className="h-11 w-11 shrink-0">
                   <AvatarImage src={friend.profilePictureUrl} />
                   <AvatarFallback className="font-semibold bg-gradient-to-br from-blue-500 to-indigo-500 text-white">
-                    {friend.fullName[0]?.toUpperCase()}
+                    {friend.fullname[0]?.toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-[#050505] dark:text-white truncate">
-                    {friend.fullName}
+                    {friend.fullname}
                   </p>
                   {loading === friend.id && (
                     <p className="text-xs text-[#65676b]">{t('chat.creating')}</p>

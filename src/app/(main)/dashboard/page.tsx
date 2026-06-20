@@ -55,7 +55,7 @@ export default function DashboardPage() {
   const { mutate: acceptRequest } = useAcceptFriendRequest();
   const { mutate: rejectRequest } = useRejectFriendRequest();
 
-  const firstName = profile?.fullName?.split(' ')[0];
+  const firstName = profile?.fullname?.split(' ')[0];
 
   return (
     <div className="space-y-8">
@@ -167,9 +167,9 @@ export default function DashboardPage() {
                     <div className="flex items-center gap-3">
                       <Avatar className="h-10 w-10">
                         <AvatarImage src={person.profilePictureUrl} />
-                        <AvatarFallback>{person.fullName?.[0]?.toUpperCase()}</AvatarFallback>
+                        <AvatarFallback>{person.fullname?.[0]?.toUpperCase()}</AvatarFallback>
                       </Avatar>
-                      <p className="text-sm font-medium">{person.fullName}</p>
+                      <p className="text-sm font-medium">{person.fullname}</p>
                     </div>
                     <Button
                       size="sm"

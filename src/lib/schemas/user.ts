@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const updateProfileSchema = z.object({
-  fullName: z.string().max(255, 'Max 255 characters').optional(),
+  fullname: z.string().max(255, 'Max 255 characters').optional(),
 });
 
 export const changePasswordSchema = z

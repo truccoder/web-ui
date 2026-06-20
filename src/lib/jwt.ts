@@ -23,7 +23,7 @@ export function extractProfileFromToken(accessToken: string): Profile | null {
 
   return {
     id: payload.sub,
-    fullName: payload.fullName ?? '',
+    fullname: payload.fullname ?? '',
     profilePictureUrl: payload.profilePictureUrl ?? '',
   };
 }

@@ -21,7 +21,7 @@ export const vi: Messages = {
     email: 'Email',
     emailPlaceholder: 'ten@example.com',
     password: 'Mật khẩu',
-    fullName: 'Họ và tên',
+    fullname: 'Họ và tên',
     fullNamePlaceholder: 'Nguyễn Văn A',
     login: {
       title: 'Chào mừng trở lại',
@@ -72,7 +72,7 @@ export const vi: Messages = {
   },
 
   createPost: {
-    placeholder: '${fullName} đang nghĩ gì vậy?',
+    placeholder: '${fullname} đang nghĩ gì vậy?',
     photo: 'Ảnh',
     feeling: 'Cảm xúc',
     posting: 'Đang đăng...',
@@ -140,7 +140,7 @@ export const vi: Messages = {
 
   dashboard: {
     welcome: 'Chào mừng trở lại',
-    welcomeName: 'Chào mừng trở lại, ${fullName}',
+    welcomeName: 'Chào mừng trở lại, ${fullname}',
     subtitle: 'Đây là những gì đang xảy ra trong mạng lưới của bạn',
     stats: {
       friends: 'Bạn bè',
@@ -179,7 +179,7 @@ export const vi: Messages = {
     info: {
       title: 'Thông tin cá nhân',
       desc: 'Cập nhật tên hiển thị của bạn',
-      fullName: 'Họ và tên',
+      fullname: 'Họ và tên',
       save: 'Lưu thay đổi',
       saving: 'Đang lưu...',
     },

@@ -69,13 +69,13 @@ export default function FriendSuggestionsPage() {
                     <Avatar className="h-16 w-16 ring-4 ring-card">
                       <AvatarImage src={person.profilePictureUrl} />
                       <AvatarFallback className="text-xl font-semibold bg-gradient-to-br from-blue-500 to-indigo-600 text-white">
-                        {person.fullName?.[0]?.toUpperCase()}
+                        {person.fullname?.[0]?.toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                   </div>
 
                   <div className="pt-10">
-                    <p className="font-semibold text-sm leading-tight">{person.fullName}</p>
+                    <p className="font-semibold text-sm leading-tight">{person.fullname}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {t('friends.suggestions.suggestedForYou')}
                     </p>

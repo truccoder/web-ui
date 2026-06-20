@@ -19,7 +19,7 @@ export const en = {
     email: 'Email',
     emailPlaceholder: 'name@example.com',
     password: 'Password',
-    fullName: 'Full Name',
+    fullname: 'Full Name',
     fullNamePlaceholder: 'John Doe',
     login: {
       title: 'Welcome back',
@@ -70,7 +70,7 @@ export const en = {
   },
 
   createPost: {
-    placeholder: "What's on your mind, ${fullName}?",
+    placeholder: "What's on your mind, ${fullname}?",
     photo: 'Photo',
     feeling: 'Feeling',
     posting: 'Posting...',
@@ -138,7 +138,7 @@ export const en = {
 
   dashboard: {
     welcome: 'Welcome back',
-    welcomeName: 'Welcome back, ${fullName}',
+    welcomeName: 'Welcome back, ${fullname}',
     subtitle: "Here's what's happening on your network",
     stats: {
       friends: 'Friends',
@@ -177,7 +177,7 @@ export const en = {
     info: {
       title: 'Profile Information',
       desc: 'Update your display name',
-      fullName: 'Full Name',
+      fullname: 'Full Name',
       save: 'Save changes',
       saving: 'Saving...',
     },
