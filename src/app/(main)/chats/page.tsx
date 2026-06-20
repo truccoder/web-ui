@@ -44,8 +44,8 @@ function ChatsContent() {
   const handleNewConversation = useCallback(
     async (friend: Profile) => {
       // Build friendly name: "CurrentUser, Friend" — sorted alphabetically for both sides
-      const myName = profile?.fullName ?? currentIdentity ?? 'Me';
-      const names = [myName, friend.fullName].sort();
+      const myName = profile?.fullname ?? currentIdentity ?? 'Me';
+      const names = [myName, friend.fullname].sort();
       const friendlyName = names.join(', ');
 
       try {
@@ -71,8 +71,8 @@ function ChatsContent() {
   // We stored uniqueName as [identity, participantIdentity].sort().join('_')
   // Since we only have friendlyName in the summary, use friend list to find peer avatar
   const activeFriend = friends?.find((f) => {
-    const possibleName = [profile?.fullName ?? '', f.fullName].sort().join(', ');
-    return possibleName === activePeerName || f.fullName === activePeerName;
+    const possibleName = [profile?.fullname ?? '', f.fullname].sort().join(', ');
+    return possibleName === activePeerName || f.fullname === activePeerName;
   });
 
   const MOBILE_HEADER_H = 'h-[calc(100vh-48px)]';

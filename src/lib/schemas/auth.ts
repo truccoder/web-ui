@@ -11,7 +11,7 @@ export const loginSchema = z.object({
 export const registerSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
-  fullName: z.string().min(1, 'Full name is required'),
+  fullname: z.string().min(1, 'Full name is required'),
   profilePicture: z
     .custom<FileList>()
     .optional()

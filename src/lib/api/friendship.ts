@@ -69,7 +69,7 @@ export const friendshipApi = {
       const currentId = getCurrentMockUserId();
       const friends = MOCK_USERS.filter((u) => u.id !== currentId).map((u) => ({
         id: u.id,
-        fullName: u.fullName,
+        fullname: u.fullname,
         profilePictureUrl: u.profilePictureUrl,
       }));
       return mockResponse<Profile[]>(friends);

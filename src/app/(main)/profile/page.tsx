@@ -28,7 +28,7 @@ function ProfilePictureUpload() {
   const [preview, setPreview] = useState<string | null>(null);
   const t = useT();
 
-  const initials = profile?.fullName
+  const initials = profile?.fullname
     ?.split(' ')
     .map((n) => n[0])
     .join('')
@@ -96,7 +96,7 @@ function ProfileInfoTab() {
     formState: { errors },
   } = useForm<UpdateProfileFormData>({
     resolver: zodResolver(updateProfileSchema),
-    values: { fullName: profile?.fullName ?? '' },
+    values: { fullname: profile?.fullname ?? '' },
   });
 
   const onSubmit = (data: UpdateProfileFormData) => {
@@ -106,9 +106,9 @@ function ProfileInfoTab() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="fullName">{t('profile.info.fullName')}</Label>
-        <Input id="fullName" {...register('fullName')} />
-        {errors.fullName && <p className="text-sm text-destructive">{errors.fullName.message}</p>}
+        <Label htmlFor="fullname">{t('profile.info.fullname')}</Label>
+        <Input id="fullname" {...register('fullname')} />
+        {errors.fullname && <p className="text-sm text-destructive">{errors.fullname.message}</p>}
       </div>
 
       <Button type="submit" disabled={isPending}>
@@ -196,7 +196,7 @@ export default function ProfilePage() {
           <div className="flex flex-col sm:flex-row items-center gap-6">
             <ProfilePictureUpload />
             <div className="text-center sm:text-left">
-              <h2 className="text-2xl font-bold">{profile?.fullName ?? '—'}</h2>
+              <h2 className="text-2xl font-bold">{profile?.fullname ?? '—'}</h2>
               <p className="text-muted-foreground text-sm mt-1">
                 {t('profile.id', { id: profile?.id ?? '' })}
               </p>

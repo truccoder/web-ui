@@ -21,14 +21,14 @@ export function CreatePostForm() {
   const { mutate: createPost, isPending } = useCreatePost();
   const t = useT();
 
-  const initials = profile?.fullName
+  const initials = profile?.fullname
     ?.split(' ')
     .map((n) => n[0])
     .join('')
     .toUpperCase()
     .slice(0, 2);
 
-  const firstName = profile?.fullName?.split(' ')[0] ?? t('createPost.placeholder').replace(' ${name}', '').replace('${name}', '');
+  const firstName = profile?.fullname?.split(' ')[0] ?? t('createPost.placeholder').replace(' ${name}', '').replace('${name}', '');
 
   const handleTextareaInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setContent(e.target.value);

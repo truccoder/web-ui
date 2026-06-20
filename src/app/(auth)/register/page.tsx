@@ -54,7 +54,7 @@ export default function RegisterPage() {
       request: {
         email: data.email,
         password: data.password,
-        fullName: data.fullName,
+        fullname: data.fullname,
       },
       profilePicture: data.profilePicture?.[0] ?? null,
     });
@@ -127,14 +127,14 @@ export default function RegisterPage() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="fullName">{t('auth.fullName')}</Label>
+            <Label htmlFor="fullname">{t('auth.fullname')}</Label>
             <Input
-              id="fullName"
+              id="fullname"
               placeholder={t('auth.fullNamePlaceholder')}
-              {...register('fullName')}
+              {...register('fullname')}
             />
-            {errors.fullName && (
-              <p className="text-sm text-destructive">{errors.fullName.message}</p>
+            {errors.fullname && (
+              <p className="text-sm text-destructive">{errors.fullname.message}</p>
             )}
           </div>
 

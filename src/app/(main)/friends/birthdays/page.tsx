@@ -12,8 +12,8 @@ import type { Profile } from '@/lib/types';
 
 function getBirthday(person: Profile): { month: number; day: number } {
   let hash = 0;
-  for (let i = 0; i < (person.id + person.fullName).length; i++) {
-    hash = ((hash << 5) - hash + (person.id + person.fullName).charCodeAt(i)) | 0;
+  for (let i = 0; i < (person.id + person.fullname).length; i++) {
+    hash = ((hash << 5) - hash + (person.id + person.fullname).charCodeAt(i)) | 0;
   }
   const month = (Math.abs(hash) % 12) + 1;
   const maxDay = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1];
@@ -101,11 +101,11 @@ export default function BirthdaysPage() {
                       <Avatar className="h-12 w-12">
                         <AvatarImage src={person.profilePictureUrl} />
                         <AvatarFallback className="font-semibold">
-                          {person.fullName?.[0]?.toUpperCase()}
+                          {person.fullname?.[0]?.toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="font-semibold text-sm">{person.fullName}</p>
+                        <p className="font-semibold text-sm">{person.fullname}</p>
                         <p className="text-xs text-muted-foreground">
                           🎂 {t('friends.birthdays.todayMsg')}
                         </p>
@@ -140,11 +140,11 @@ export default function BirthdaysPage() {
                         <Avatar className="h-11 w-11">
                           <AvatarImage src={person.profilePictureUrl} />
                           <AvatarFallback className="font-semibold">
-                            {person.fullName?.[0]?.toUpperCase()}
+                            {person.fullname?.[0]?.toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="font-medium text-sm">{person.fullName}</p>
+                          <p className="font-medium text-sm">{person.fullname}</p>
                           <p className="text-xs text-muted-foreground">
                             {formatBirthday(person.month, person.day)}
                           </p>
@@ -197,11 +197,11 @@ export default function BirthdaysPage() {
                                 <Avatar className="h-10 w-10">
                                   <AvatarImage src={person.profilePictureUrl} />
                                   <AvatarFallback className="text-sm font-semibold">
-                                    {person.fullName?.[0]?.toUpperCase()}
+                                    {person.fullname?.[0]?.toUpperCase()}
                                   </AvatarFallback>
                                 </Avatar>
                                 <div>
-                                  <p className="font-medium text-sm">{person.fullName}</p>
+                                  <p className="font-medium text-sm">{person.fullname}</p>
                                   <p className="text-xs text-muted-foreground">
                                     {formatBirthday(person.month, person.day)}
                                   </p>

@@ -13,7 +13,7 @@ export interface LoginResponse {
 export interface RegisterRequest {
   email: string;
   password: string;
-  fullName: string;
+  fullname: string;
   profilePictureUrl?: string;
 }
 
@@ -40,12 +40,12 @@ export interface LogoutRequest {
 
 export interface Profile {
   id: string;
-  fullName: string;
+  fullname: string;
   profilePictureUrl: string;
 }
 
 export interface UpdateProfileRequest {
-  fullName?: string;
+  fullname?: string;
   profilePictureUrl?: string;
   refreshToken: string;
 }
@@ -66,7 +66,7 @@ export interface SessionResponse {
 
 export interface JwtPayload {
   sub: string;
-  fullName: string;
+  fullname: string;
   profilePictureUrl: string;
   email: string;
   [key: string]: unknown;
@@ -101,7 +101,7 @@ export interface SentFriendRequest {
 export interface UserProfileDto {
   userId: number;
   username: string;
-  fullName: string;
+  fullname: string;
   profilePictureUrl: string;
 }
 
@@ -166,7 +166,7 @@ export interface UpdatePostRequest {
 }
 
 export interface PostAuthor {
-  fullName: string;
+  fullname: string;
   profilePictureUrl?: string;
 }
 
@@ -295,7 +295,7 @@ export interface UpdatePreferenceRequest {
 
 export interface UserDocument {
   id: number;
-  fullName: string;
+  fullname: string;
   username: string;
   profilePictureUrl: string;
 }
