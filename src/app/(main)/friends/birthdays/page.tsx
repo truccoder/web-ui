@@ -8,9 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { Profile } from '@/lib/types';
+import type { UserSummary } from '@/lib/types';
 
-function getBirthday(person: Profile): { month: number; day: number } {
+function getBirthday(person: UserSummary): { month: number; day: number } {
   let hash = 0;
   for (let i = 0; i < (person.id + person.fullname).length; i++) {
     hash = ((hash << 5) - hash + (person.id + person.fullname).charCodeAt(i)) | 0;
@@ -35,9 +35,18 @@ function getDaysUntil(month: number, day: number): number {
 }
 
 const MONTH_NAMES = [
-  'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4',
-  'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8',
-  'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12',
+  'Tháng 1',
+  'Tháng 2',
+  'Tháng 3',
+  'Tháng 4',
+  'Tháng 5',
+  'Tháng 6',
+  'Tháng 7',
+  'Tháng 8',
+  'Tháng 9',
+  'Tháng 10',
+  'Tháng 11',
+  'Tháng 12',
 ];
 
 export default function BirthdaysPage() {
@@ -48,7 +57,7 @@ export default function BirthdaysPage() {
   const todayMonth = today.getMonth() + 1;
   const todayDay = today.getDate();
 
-  const enriched = (friends ?? []).map((f) => {
+  const enriched = (friends?.friends ?? []).map((f) => {
     const { month, day } = getBirthday(f);
     const daysUntil = getDaysUntil(month, day);
     return { ...f, month, day, daysUntil };

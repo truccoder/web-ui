@@ -62,9 +62,7 @@ export default function DashboardPage() {
       {/* Greeting */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight">
-          {firstName
-            ? t('dashboard.welcomeName', { name: firstName })
-            : t('dashboard.welcome')}
+          {firstName ? t('dashboard.welcomeName', { name: firstName }) : t('dashboard.welcome')}
         </h1>
         <p className="text-muted-foreground mt-1">{t('dashboard.subtitle')}</p>
       </div>
@@ -73,7 +71,7 @@ export default function DashboardPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title={t('dashboard.stats.friends')}
-          value={friends?.length}
+          value={friends?.totalCount}
           icon={Users}
           description={t('dashboard.stats.friendsDesc')}
         />
@@ -134,11 +132,7 @@ export default function DashboardPage() {
                       <Button size="sm" onClick={() => acceptRequest(req.id)}>
                         {t('dashboard.requests.accept')}
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => rejectRequest(req.id)}
-                      >
+                      <Button size="sm" variant="outline" onClick={() => rejectRequest(req.id)}>
                         {t('dashboard.requests.reject')}
                       </Button>
                     </div>

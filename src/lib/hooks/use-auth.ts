@@ -1,20 +1,25 @@
 'use client';
 
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { authApi, userApi, getErrorMessage } from '@/lib/api';
+import { authApi, getErrorMessage } from '@/lib/api';
+import { setTokens, clearTokens, getTokens } from '@/lib/api/axios';
 import { setCredentials, clearAuth } from '@/lib/store/auth-slice';
 import { useAppDispatch, useAppSelector } from '@/lib/store/hooks';
+import { syncRoleFromProfile, clearRoleCookie } from '@/lib/hooks/use-admin-role';
+import { PROFILE_QUERY_KEY } from '@/lib/hooks/use-user';
 import type { RegisterRequest } from '@/lib/types';
 
 export function useLogin() {
   const dispatch = useAppDispatch();
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: authApi.login,
-    onSuccess: ({ data }) => {
+    onSuccess: async ({ data }) => {
+      setTokens(data.accessToken, data.refreshToken);
       dispatch(
         setCredentials({
           accessToken: data.accessToken,
@@ -23,7 +28,8 @@ export function useLogin() {
       );
       document.cookie = 'session=true; path=/';
       toast.success('Logged in successfully');
-      router.push('/dashboard');
+      const role = await syncRoleFromProfile(queryClient);
+      router.push(role === 'ADMIN' ? '/admin/moderation' : '/dashboard');
     },
     onError: (error) => {
       toast.error(getErrorMessage(error, 'Invalid email or password'));
@@ -31,45 +37,10 @@ export function useLogin() {
   });
 }
 
-interface RegisterPayload {
-  request: RegisterRequest;
-  profilePicture: File | null;
-}
-
 export function useRegister() {
-  const dispatch = useAppDispatch();
-  const router = useRouter();
-
   return useMutation({
-    mutationFn: async ({ request, profilePicture }: RegisterPayload) => {
-      await authApi.register(request);
-
-      const { data: loginData } = await authApi.login({
-        email: request.email,
-        password: request.password,
-      });
-
-      if (profilePicture) {
-        const { data: uploadData } = await userApi.uploadProfilePicture(
-          profilePicture,
-          loginData.refreshToken
-        );
-        return uploadData;
-      }
-
-      return loginData;
-    },
-    onSuccess: (data) => {
-      dispatch(
-        setCredentials({
-          accessToken: data.accessToken,
-          refreshToken: data.refreshToken,
-        })
-      );
-      document.cookie = 'session=true; path=/';
-      toast.success('Account created successfully!');
-      router.push('/dashboard');
-    },
+    mutationFn: (vars: { data: RegisterRequest; profilePicture?: File }) =>
+      authApi.register(vars.data, vars.profilePicture),
     onError: (error) => {
       toast.error(getErrorMessage(error, 'Registration failed'));
     },
@@ -106,14 +77,63 @@ export function useResetPassword() {
 export function useLogout() {
   const dispatch = useAppDispatch();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const refreshToken = useAppSelector((s) => s.auth.refreshToken);
 
   return useMutation({
-    mutationFn: () => authApi.logout({ refreshToken: refreshToken ?? '' }),
+    mutationFn: () =>
+      authApi.logout({ refreshToken: refreshToken ?? getTokens()?.refreshToken ?? '' }),
     onSettled: () => {
+      clearTokens();
       dispatch(clearAuth());
       document.cookie = 'session=; path=/; max-age=0';
+      clearRoleCookie();
+      queryClient.removeQueries({ queryKey: PROFILE_QUERY_KEY });
       router.push('/login');
+    },
+  });
+}
+
+export function useVerifyEmail() {
+  return useMutation({
+    mutationFn: authApi.verifyEmail,
+  });
+}
+
+export function useRequestMagicLink() {
+  return useMutation({
+    mutationFn: authApi.requestMagicLink,
+    onSuccess: () => {
+      toast.success('Magic link sent to your email');
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error, 'Failed to send magic link'));
+    },
+  });
+}
+
+export function useMagicLinkLogin() {
+  const dispatch = useAppDispatch();
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: authApi.loginWithMagicLink,
+    onSuccess: async ({ data }) => {
+      setTokens(data.accessToken, data.refreshToken);
+      dispatch(
+        setCredentials({
+          accessToken: data.accessToken,
+          refreshToken: data.refreshToken,
+        })
+      );
+      document.cookie = 'session=true; path=/';
+      toast.success('Logged in successfully');
+      const role = await syncRoleFromProfile(queryClient);
+      router.push(role === 'ADMIN' ? '/admin/moderation' : '/dashboard');
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error, 'This magic link is invalid or has expired'));
     },
   });
 }

@@ -85,6 +85,12 @@ export default function LoginPage() {
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {isPending ? t('auth.login.submitting') : t('auth.login.submit')}
           </Button>
+          <Link
+            href="/magic-link"
+            className="text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400 text-center"
+          >
+            Đăng nhập không mật khẩu với email
+          </Link>
           <p className="text-sm text-muted-foreground text-center">
             {t('auth.login.noAccount')}{' '}
             <Link

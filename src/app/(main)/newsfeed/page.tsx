@@ -8,15 +8,17 @@ export default function NewsfeedPage() {
   const t = useT();
 
   return (
-    <div className="max-w-2xl mx-auto space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">{t('newsfeed.title')}</h1>
-        <p className="text-muted-foreground text-sm mt-0.5">{t('newsfeed.subtitle')}</p>
+    <div className="space-y-4">
+      <div className="max-w-2xl mx-auto space-y-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">{t('newsfeed.title')}</h1>
+          <p className="text-muted-foreground text-sm mt-0.5">{t('newsfeed.subtitle')}</p>
+        </div>
+
+        <CreatePostForm />
+
+        <Newsfeed />
       </div>
-
-      <CreatePostForm />
-
-      <Newsfeed />
     </div>
   );
 }

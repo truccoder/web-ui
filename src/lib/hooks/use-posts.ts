@@ -5,7 +5,14 @@ import { toast } from 'sonner';
 import { postsApi } from '@/lib/api/posts';
 import { newsfeedApi } from '@/lib/api/newsfeed';
 import { getErrorMessage } from '@/lib/api/error';
-import type { CreatePostRequest, UpdatePostRequest, PostLocation } from '@/lib/types';
+import type {
+  CreatePostRequest,
+  UpdatePostRequest,
+  PostLocation,
+  CreateBookRequest,
+  CreateCommentRequest,
+  ReactionType,
+} from '@/lib/types';
 
 const PAGE_SIZE = 10;
 
@@ -24,7 +31,7 @@ export interface CreatePostInput {
   location?: PostLocation;
   images?: string[];
   taggedUserIds?: number[];
-  postType?: 'REGULAR' | 'EVENT';
+  postType?: CreatePostRequest['postType'];
   eventDetails?: CreatePostRequest['eventDetails'];
   visibility?: CreatePostRequest['visibility'];
 }
@@ -35,13 +42,17 @@ function toCreatePostRequest(input: CreatePostInput): CreatePostRequest {
     content: input.content,
     googlePlaceId: loc?.googlePlaceId,
     locationType: loc?.locationType,
-    locationDetails: loc?.locationDetails ?? (loc ? {
-      displayName: loc.displayName,
-      latitude: loc.latitude,
-      longitude: loc.longitude,
-      city: loc.city,
-      country: loc.country,
-    } : undefined),
+    locationDetails:
+      loc?.locationDetails ??
+      (loc
+        ? {
+            display_name: loc.displayName,
+            latitude: loc.latitude,
+            longitude: loc.longitude,
+            city: loc.city,
+            country: loc.country,
+          }
+        : undefined),
     images: input.images,
     taggedUserIds: input.taggedUserIds,
     postType: input.postType,
@@ -58,10 +69,45 @@ export function useCreatePost() {
       postsApi.createPost(toCreatePostRequest(input)).then((r) => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['newsfeed'] });
-      toast.success('Post created successfully!');
+      toast.success('Post submitted! It will appear in the feed once it passes review.');
     },
     onError: (error) => {
       toast.error(getErrorMessage(error, 'Failed to create post'));
+    },
+  });
+}
+
+export interface CreateBookPostInput {
+  content: string;
+  location?: PostLocation;
+  taggedUserIds?: number[];
+  visibility?: CreatePostRequest['visibility'];
+  bookDetails: CreateBookRequest;
+  bookFile: File;
+  coverFile?: File;
+}
+
+export function useCreateBookPost() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: CreateBookPostInput) => {
+      const metadata = toCreatePostRequest({
+        content: input.content,
+        location: input.location,
+        taggedUserIds: input.taggedUserIds,
+        visibility: input.visibility,
+        postType: 'BOOK',
+      });
+      metadata.bookDetails = input.bookDetails;
+      return postsApi.createBookPost(metadata, input.bookFile, input.coverFile).then((r) => r.data);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['newsfeed'] });
+      toast.success('Book submitted! It will appear in the feed once it passes review.');
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error, 'Failed to create book post'));
     },
   });
 }
@@ -74,7 +120,7 @@ export function useUpdatePost() {
       postsApi.updatePost(postId, payload).then((r) => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['newsfeed'] });
-      toast.success('Post updated successfully!');
+      toast.success('Post updated. It has been pulled from feeds until it passes re-review.');
     },
     onError: (error) => {
       toast.error(getErrorMessage(error, 'Failed to update post'));
@@ -93,6 +139,39 @@ export function useDeletePost() {
     },
     onError: (error) => {
       toast.error(getErrorMessage(error, 'Failed to delete post'));
+    },
+  });
+}
+
+// Backend has no GET for the current user's existing reaction, so callers can't know the
+// true prior state on load — this only supports toggling from whatever the UI last showed.
+export function useUpsertReaction(postId: number) {
+  return useMutation({
+    mutationFn: (reactionType: ReactionType) =>
+      postsApi.upsertReaction(postId, { reactionType }).then((r) => r.data),
+    onError: (error) => {
+      toast.error(getErrorMessage(error, 'Failed to react to post'));
+    },
+  });
+}
+
+export function useRemoveReaction(postId: number) {
+  return useMutation({
+    mutationFn: () => postsApi.removeReaction(postId).then((r) => r.data),
+    onError: (error) => {
+      toast.error(getErrorMessage(error, 'Failed to remove reaction'));
+    },
+  });
+}
+
+// Backend has no GET for listing a post's comments, so a posted comment can only be shown
+// optimistically for the rest of this session — see SessionComment.
+export function useCreateComment(postId: number) {
+  return useMutation({
+    mutationFn: (payload: CreateCommentRequest) =>
+      postsApi.createComment(postId, payload).then((r) => r.data),
+    onError: (error) => {
+      toast.error(getErrorMessage(error, 'Failed to post comment'));
     },
   });
 }

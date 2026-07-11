@@ -9,7 +9,7 @@ import { MessengerSidebar } from '@/components/chat/messenger-sidebar';
 import { MessengerConversation, MessengerEmpty } from '@/components/chat/messenger-conversation';
 import { useProfile } from '@/lib/hooks/use-user';
 import { useFriends } from '@/lib/hooks/use-friendship';
-import type { Profile } from '@/lib/types';
+import type { UserSummary } from '@/lib/types';
 
 export default function ChatsPage() {
   return (
@@ -42,7 +42,7 @@ function ChatsContent() {
   );
 
   const handleNewConversation = useCallback(
-    async (friend: Profile) => {
+    async (friend: UserSummary) => {
       // Build friendly name: "CurrentUser, Friend" — sorted alphabetically for both sides
       const myName = profile?.fullname ?? currentIdentity ?? 'Me';
       const names = [myName, friend.fullname].sort();
@@ -70,7 +70,7 @@ function ChatsContent() {
   // Try to match peer identity from uniqueName (format: id1_id2)
   // We stored uniqueName as [identity, participantIdentity].sort().join('_')
   // Since we only have friendlyName in the summary, use friend list to find peer avatar
-  const activeFriend = friends?.find((f) => {
+  const activeFriend = friends?.friends.find((f) => {
     const possibleName = [profile?.fullname ?? '', f.fullname].sort().join(', ');
     return possibleName === activePeerName || f.fullname === activePeerName;
   });

@@ -1,31 +1,46 @@
 'use client';
 
-import { useMemo } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { userApi, getErrorMessage } from '@/lib/api';
+import { profileApi, getErrorMessage } from '@/lib/api';
 import { useAppSelector } from '@/lib/store/hooks';
-import { extractProfileFromToken } from '@/lib/jwt';
-import type { ChangePasswordRequest, Profile } from '@/lib/types';
+import type { ChangePasswordRequest, Profile, UserResponse } from '@/lib/types';
 
-export function useProfile(): { data: Profile | null; isLoading: boolean } {
-  const accessToken = useAppSelector((s) => s.auth.accessToken);
+export const PROFILE_QUERY_KEY = ['profile', 'me'];
 
-  const profile = useMemo(() => {
-    if (!accessToken) return null;
-    return extractProfileFromToken(accessToken);
-  }, [accessToken]);
+export function toProfile(data: UserResponse): Profile {
+  return {
+    id: data.email,
+    userId: data.id,
+    fullname: data.fullName,
+    email: data.email,
+    username: data.username,
+    profilePictureUrl: data.profilePictureUrl,
+    emailVerified: data.emailVerified,
+    role: data.role,
+    createdAt: data.createdAt,
+  };
+}
 
-  return { data: profile, isLoading: false };
+export function useProfile() {
+  const isAuthenticated = useAppSelector((s) => s.auth.isAuthenticated);
+
+  return useQuery({
+    queryKey: PROFILE_QUERY_KEY,
+    queryFn: () => profileApi.getProfile().then((r) => toProfile(r.data)),
+    enabled: isAuthenticated,
+    staleTime: 5 * 60 * 1000,
+  });
 }
 
 export function useUpdateProfile() {
-  const refreshToken = useAppSelector((s) => s.auth.refreshToken);
+  const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: { fullname?: string; profilePictureUrl?: string }) =>
-      userApi.updateProfile({ ...data, refreshToken: refreshToken ?? '' }),
-    onSuccess: () => {
+    mutationFn: (data: { fullname: string }) =>
+      profileApi.updateProfile({ fullName: data.fullname }),
+    onSuccess: ({ data }) => {
+      qc.setQueryData(PROFILE_QUERY_KEY, toProfile(data));
       toast.success('Profile updated');
     },
     onError: (error) => {
@@ -35,11 +50,14 @@ export function useUpdateProfile() {
 }
 
 export function useUploadProfilePicture() {
-  const refreshToken = useAppSelector((s) => s.auth.refreshToken);
+  const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: (file: File) => userApi.uploadProfilePicture(file, refreshToken ?? ''),
-    onSuccess: () => {
+    mutationFn: (file: File) => profileApi.uploadProfilePicture(file),
+    onSuccess: ({ data }) => {
+      qc.setQueryData<Profile | undefined>(PROFILE_QUERY_KEY, (old) =>
+        old ? { ...old, profilePictureUrl: data.profilePictureUrl } : old
+      );
       toast.success('Profile picture updated');
     },
     onError: (error) => {
@@ -50,7 +68,7 @@ export function useUploadProfilePicture() {
 
 export function useChangePassword() {
   return useMutation({
-    mutationFn: (data: ChangePasswordRequest) => userApi.changePassword(data),
+    mutationFn: (data: ChangePasswordRequest) => profileApi.changePassword(data),
     onSuccess: () => {
       toast.success('Password changed successfully');
     },

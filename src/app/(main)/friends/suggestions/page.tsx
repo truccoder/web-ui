@@ -77,7 +77,9 @@ export default function FriendSuggestionsPage() {
                   <div className="pt-10">
                     <p className="font-semibold text-sm leading-tight">{person.fullname}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {t('friends.suggestions.suggestedForYou')}
+                      {person.mutualFriends > 0
+                        ? t('friends.suggestions.mutualFriends', { count: person.mutualFriends })
+                        : t('friends.suggestions.suggestedForYou')}
                     </p>
 
                     <div className="mt-3 space-y-2">

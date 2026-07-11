@@ -1,130 +1,69 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { setOptions, importLibrary } from '@googlemaps/js-api-loader';
-import { MapPin, Navigation, X, Search } from 'lucide-react';
-import type { PostLocation } from '@/lib/types';
+import { useRef, useState } from 'react';
+import { Popover as PopoverPrimitive } from '@base-ui/react/popover';
+import { MapPin, Navigation, X, Search, Loader2 } from 'lucide-react';
+import type { PostLocation, LocationResolutionResponse } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { useResolveLocation } from '@/lib/hooks/use-location';
+import { getErrorMessage } from '@/lib/api/error';
 
 interface LocationPickerProps {
   value?: PostLocation;
   onChange: (location: PostLocation | undefined) => void;
 }
 
-let mapsLoaded = false;
-
-async function loadMapsPlaces() {
-  if (!mapsLoaded) {
-    setOptions({
-      key: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? '',
-      v: 'weekly',
-    });
-  }
-  await importLibrary('places');
-  mapsLoaded = true;
-}
-
 type PickerTab = 'search' | 'coordinate';
+
+function toPostLocation(candidate: LocationResolutionResponse): PostLocation {
+  return {
+    googlePlaceId: candidate.googlePlaceId,
+    locationType: candidate.locationType,
+    displayName: candidate.locationDetails.display_name,
+    latitude: candidate.locationDetails.latitude,
+    longitude: candidate.locationDetails.longitude,
+    city: candidate.locationDetails.city,
+    country: candidate.locationDetails.country,
+  };
+}
 
 export function LocationPicker({ value, onChange }: LocationPickerProps) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<PickerTab>('search');
-  const [searchValue, setSearchValue] = useState('');
+  const [query, setQuery] = useState('');
+  const [candidates, setCandidates] = useState<LocationResolutionResponse[]>([]);
   const [gpsLoading, setGpsLoading] = useState(false);
-  const [mapsReady, setMapsReady] = useState(mapsLoaded);
-  const [suggestions, setSuggestions] = useState<google.maps.places.AutocompletePrediction[]>([]);
-  const [suggestLoading, setSuggestLoading] = useState(false);
+  const triggerRef = useRef<HTMLDivElement>(null);
 
-  const autocompleteServiceRef = useRef<google.maps.places.AutocompleteService | null>(null);
-  const placesServiceRef = useRef<google.maps.places.PlacesService | null>(null);
-  const placesAttrRef = useRef<HTMLDivElement>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const {
+    mutate: resolveLocation,
+    isPending: resolving,
+    error: resolveError,
+  } = useResolveLocation();
 
-  useEffect(() => {
-    if (mapsLoaded) return;
-    loadMapsPlaces()
-      .then(() => setMapsReady(true))
-      .catch(console.error);
-  }, []);
-
-  useEffect(() => {
-    if (!mapsReady || !open) return;
-    if (!autocompleteServiceRef.current) {
-      autocompleteServiceRef.current = new google.maps.places.AutocompleteService();
+  const handleOpenChange = (next: boolean) => {
+    setOpen(next);
+    if (!next) {
+      setQuery('');
+      setCandidates([]);
     }
-    if (!placesServiceRef.current && placesAttrRef.current) {
-      placesServiceRef.current = new google.maps.places.PlacesService(placesAttrRef.current);
-    }
-  }, [mapsReady, open]);
-
-  const fetchSuggestions = useCallback((input: string) => {
-    if (!autocompleteServiceRef.current || input.length < 2) {
-      setSuggestions([]);
-      return;
-    }
-    setSuggestLoading(true);
-    autocompleteServiceRef.current.getPlacePredictions({ input }, (results, status) => {
-      setSuggestLoading(false);
-      if (status === google.maps.places.PlacesServiceStatus.OK && results) {
-        setSuggestions(results);
-      } else {
-        setSuggestions([]);
-      }
-    });
-  }, []);
-
-  const handleSearchChange = (val: string) => {
-    setSearchValue(val);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => fetchSuggestions(val), 300);
   };
 
-  const handleSelectPrediction = (prediction: google.maps.places.AutocompletePrediction) => {
-    if (!placesServiceRef.current) return;
+  const handleSearch = () => {
+    const trimmed = query.trim();
+    if (!trimmed) return;
 
-    placesServiceRef.current.getDetails(
-      {
-        placeId: prediction.place_id,
-        fields: ['place_id', 'name', 'geometry', 'address_components', 'formatted_address'],
-      },
-      (place, status) => {
-        if (status !== google.maps.places.PlacesServiceStatus.OK || !place) return;
+    setCandidates([]);
+    resolveLocation(trimmed, {
+      onSuccess: (data) => setCandidates(data),
+    });
+  };
 
-        const lat = place.geometry?.location?.lat();
-        const lng = place.geometry?.location?.lng();
-
-        let city: string | undefined;
-        let country: string | undefined;
-        place.address_components?.forEach((comp) => {
-          if (
-            comp.types.includes('locality') ||
-            comp.types.includes('administrative_area_level_1')
-          ) {
-            if (!city) city = comp.long_name;
-          }
-          if (comp.types.includes('country')) {
-            country = comp.long_name;
-          }
-        });
-
-        const location: PostLocation = {
-          googlePlaceId: place.place_id,
-          locationType: 'PLACE',
-          displayName: place.name,
-          latitude: lat,
-          longitude: lng,
-          city,
-          country,
-        };
-
-        onChange(location);
-        setOpen(false);
-        setSearchValue('');
-        setSuggestions([]);
-      }
-    );
+  const handleSelectCandidate = (candidate: LocationResolutionResponse) => {
+    onChange(toPostLocation(candidate));
+    handleOpenChange(false);
   };
 
   const handleUseGPS = () => {
@@ -138,7 +77,7 @@ export function LocationPicker({ value, onChange }: LocationPickerProps) {
         };
         onChange(location);
         setGpsLoading(false);
-        setOpen(false);
+        handleOpenChange(false);
       },
       () => {
         setGpsLoading(false);
@@ -162,46 +101,46 @@ export function LocationPicker({ value, onChange }: LocationPickerProps) {
   const valueLabel = getValueLabel();
 
   return (
-    <div className="relative">
-      {/* Hidden div for PlacesService attribution */}
-      <div ref={placesAttrRef} className="hidden" />
-
-      {/* Trigger */}
-      {valueLabel ? (
-        <div className="inline-flex items-center gap-1.5 text-sm text-blue-600 bg-blue-50 border border-blue-200 rounded-full px-3 py-1.5">
-          <MapPin className="h-3.5 w-3.5 shrink-0" />
-          <span className="font-medium max-w-48 truncate">{valueLabel}</span>
+    <PopoverPrimitive.Root open={open} onOpenChange={handleOpenChange}>
+      {/* Trigger wrapper. NOTE: must NOT be `display: contents` — an element with no box
+          geometry returns a zero-size rect at (0,0) from getBoundingClientRect(), which is
+          exactly why the popup was anchoring to the page's top-left corner before this. */}
+      <div ref={triggerRef}>
+        {valueLabel ? (
+          <div className="inline-flex items-center gap-1.5 text-sm text-blue-600 bg-blue-50 border border-blue-200 rounded-full px-3 py-1.5">
+            <MapPin className="h-3.5 w-3.5 shrink-0" />
+            <span className="font-medium max-w-48 truncate">{valueLabel}</span>
+            <button
+              type="button"
+              onClick={handleClear}
+              className="ml-0.5 hover:text-blue-800 transition-colors cursor-pointer"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+        ) : (
           <button
             type="button"
-            onClick={handleClear}
-            className="ml-0.5 hover:text-blue-800 transition-colors cursor-pointer"
+            onClick={() => setOpen(true)}
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground border border-dashed rounded-full px-3 py-1.5 hover:border-foreground/40 transition-colors cursor-pointer"
           >
-            <X className="h-3 w-3" />
+            <MapPin className="h-3.5 w-3.5" />
+            Thêm địa điểm
           </button>
-        </div>
-      ) : (
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground border border-dashed rounded-full px-3 py-1.5 hover:border-foreground/40 transition-colors cursor-pointer"
-        >
-          <MapPin className="h-3.5 w-3.5" />
-          Thêm địa điểm
-        </button>
-      )}
+        )}
+      </div>
 
-      {/* Picker panel */}
-      {open && (
-        <>
-          <div
-            className="fixed inset-0 z-40"
-            onClick={() => {
-              setOpen(false);
-              setSuggestions([]);
-              setSearchValue('');
-            }}
-          />
-          <div className="absolute bottom-full mb-2 left-0 z-50 w-80 bg-card border rounded-xl shadow-xl overflow-hidden">
+      {/* Picker panel — portaled to document.body so it can never be clipped by an
+          ancestor's overflow-hidden (e.g. the composer Card). */}
+      <PopoverPrimitive.Portal>
+        <PopoverPrimitive.Positioner
+          anchor={triggerRef}
+          side="bottom"
+          align="start"
+          sideOffset={8}
+          className="z-50 outline-none"
+        >
+          <PopoverPrimitive.Popup className="w-80 bg-card border rounded-xl shadow-xl overflow-hidden outline-none">
             {/* Tabs */}
             <div className="flex border-b">
               <button
@@ -235,49 +174,75 @@ export function LocationPicker({ value, onChange }: LocationPickerProps) {
             <div className="p-3">
               {tab === 'search' ? (
                 <div className="space-y-2">
-                  {!mapsReady ? (
-                    <p className="text-xs text-muted-foreground text-center py-4">
-                      Đang tải Google Maps...
+                  <div className="flex gap-1.5">
+                    <Input
+                      autoFocus
+                      placeholder="Mô tả địa điểm..."
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleSearch();
+                        }
+                      }}
+                      className="h-8 text-sm"
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="h-8 px-3 shrink-0"
+                      disabled={resolving || !query.trim()}
+                      onClick={handleSearch}
+                    >
+                      {resolving ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Search className="h-3.5 w-3.5" />
+                      )}
+                    </Button>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Nhập tên địa điểm, địa chỉ, hoặc khu vực rồi nhấn Enter
+                  </p>
+                  {resolveError && (
+                    <p className="text-xs text-destructive">
+                      {getErrorMessage(resolveError, 'Không thể xác định địa điểm này')}
                     </p>
-                  ) : (
-                    <>
-                      <Input
-                        autoFocus
-                        placeholder="Tìm tên địa điểm..."
-                        value={searchValue}
-                        onChange={(e) => handleSearchChange(e.target.value)}
-                        className="h-8 text-sm"
-                      />
-                      {suggestLoading && (
-                        <p className="text-xs text-muted-foreground text-center py-2">
-                          Đang tìm...
-                        </p>
-                      )}
-                      {suggestions.length > 0 && (
-                        <div className="space-y-0.5 max-h-48 overflow-y-auto">
-                          {suggestions.map((s) => (
-                            <button
-                              key={s.place_id}
-                              type="button"
-                              onClick={() => handleSelectPrediction(s)}
-                              className="w-full text-left px-2 py-2 rounded-lg hover:bg-accent transition-colors text-xs cursor-pointer"
-                            >
-                              <div className="flex items-start gap-2">
-                                <MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0 text-muted-foreground" />
-                                <div>
-                                  <p className="font-medium leading-tight">
-                                    {s.structured_formatting.main_text}
-                                  </p>
-                                  <p className="text-muted-foreground mt-0.5">
-                                    {s.structured_formatting.secondary_text}
-                                  </p>
-                                </div>
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </>
+                  )}
+                  {candidates.length > 0 && (
+                    <div className="space-y-0.5 max-h-48 overflow-y-auto">
+                      {candidates.map((candidate) => (
+                        <button
+                          key={candidate.googlePlaceId}
+                          type="button"
+                          onClick={() => handleSelectCandidate(candidate)}
+                          className="w-full text-left px-2 py-2 rounded-lg hover:bg-accent transition-colors text-xs cursor-pointer"
+                        >
+                          <div className="flex items-start gap-2">
+                            <MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0 text-muted-foreground" />
+                            <div>
+                              <p className="font-medium leading-tight">
+                                {candidate.locationDetails.display_name ??
+                                  candidate.locationDetails.city ??
+                                  'Địa điểm'}
+                              </p>
+                              {(candidate.locationDetails.city ||
+                                candidate.locationDetails.country) && (
+                                <p className="text-muted-foreground mt-0.5">
+                                  {[
+                                    candidate.locationDetails.city,
+                                    candidate.locationDetails.country,
+                                  ]
+                                    .filter(Boolean)
+                                    .join(', ')}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
                   )}
                 </div>
               ) : (
@@ -299,9 +264,9 @@ export function LocationPicker({ value, onChange }: LocationPickerProps) {
                 </div>
               )}
             </div>
-          </div>
-        </>
-      )}
-    </div>
+          </PopoverPrimitive.Popup>
+        </PopoverPrimitive.Positioner>
+      </PopoverPrimitive.Portal>
+    </PopoverPrimitive.Root>
   );
 }

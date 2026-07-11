@@ -1,17 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, Upload, X } from 'lucide-react';
+import { ArrowLeft, Camera, Loader2, Mail } from 'lucide-react';
 import { registerSchema, type RegisterFormData } from '@/lib/schemas/auth';
 import { useRegister } from '@/lib/hooks/use-auth';
 import { useT } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { getNeutralAvatarColor } from '@/lib/avatar-color';
 import {
   Card,
   CardContent,
@@ -22,110 +23,117 @@ import {
 } from '@/components/ui/card';
 
 export default function RegisterPage() {
-  const { mutate: registerUser, isPending } = useRegister();
-  const [preview, setPreview] = useState<string | null>(null);
+  const { mutate: registerUser, isPending, isSuccess } = useRegister();
+  const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
+  const [profilePicture, setProfilePicture] = useState<File | null>(null);
+  const [picturePreview, setPicturePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const t = useT();
 
   const {
     register,
     handleSubmit,
-    setValue,
+    control,
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
   });
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files?.length) {
-      setValue('profilePicture', files, { shouldValidate: true });
-      const url = URL.createObjectURL(files[0]);
-      setPreview(url);
-    }
-  };
-
-  const clearFile = () => {
-    setValue('profilePicture', undefined, { shouldValidate: true });
-    setPreview(null);
-  };
-
   const onSubmit = (data: RegisterFormData) => {
-    registerUser({
-      request: {
-        email: data.email,
-        password: data.password,
-        fullname: data.fullname,
-      },
-      profilePicture: data.profilePicture?.[0] ?? null,
-    });
+    registerUser(
+      { data, profilePicture: profilePicture ?? undefined },
+      { onSuccess: () => setRegisteredEmail(data.email) }
+    );
   };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) return;
+    setProfilePicture(file);
+    setPicturePreview(URL.createObjectURL(file));
+  };
+
+  const fullname = useWatch({ control, name: 'fullname' });
+  const initials = fullname
+    ?.trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+  const avatarColor = getNeutralAvatarColor(fullname?.trim() || 'default');
+
+  if (isSuccess) {
+    return (
+      <Card className="shadow-xl border-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
+        <CardHeader className="text-center space-y-2">
+          <div className="mx-auto w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-2">
+            <Mail className="h-6 w-6 text-green-600 dark:text-green-400" />
+          </div>
+          <CardTitle className="text-2xl font-bold">Verify your email</CardTitle>
+          <CardDescription>
+            {registeredEmail
+              ? `We've sent a verification link to ${registeredEmail}. Please check your inbox to activate your account.`
+              : "We've sent a verification link to your email. Please check your inbox to activate your account."}
+          </CardDescription>
+        </CardHeader>
+        <CardFooter>
+          <Link href="/login" className="w-full">
+            <Button variant="outline" className="w-full">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to login
+            </Button>
+          </Link>
+        </CardFooter>
+      </Card>
+    );
+  }
 
   return (
     <Card className="shadow-xl border-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
       <CardHeader className="text-center space-y-2">
-        <div className="mx-auto w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center mb-2">
-          <span className="text-white font-bold text-xl">C</span>
+        <div className="relative mx-auto h-16 w-16 mb-2 group">
+          <Avatar className="h-16 w-16">
+            {picturePreview ? <AvatarImage src={picturePreview} /> : null}
+            <AvatarFallback className={`${avatarColor} text-white text-xl font-bold`}>
+              {initials || <span className="text-2xl">?</span>}
+            </AvatarFallback>
+          </Avatar>
+
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+          >
+            <Camera className="h-5 w-5 text-white" />
+          </button>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={handleFileSelect}
+          />
         </div>
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+        >
+          {picturePreview ? t('auth.register.changePhoto') : t('auth.register.uploadPhoto')}
+          <span className="mx-1">·</span>
+          {t('auth.register.optional')}
+        </button>
+        <p className="text-[11px] text-muted-foreground">{t('auth.register.photoFormats')}</p>
         <CardTitle className="text-2xl font-bold">{t('auth.register.title')}</CardTitle>
         <CardDescription>{t('auth.register.subtitle')}</CardDescription>
       </CardHeader>
 
       <form onSubmit={handleSubmit(onSubmit)}>
         <CardContent className="space-y-4">
-          {/* Profile picture upload */}
-          <div className="space-y-2">
-            <Label>
-              {t('auth.register.profilePicture')}{' '}
-              <span className="text-muted-foreground">{t('auth.register.optional')}</span>
-            </Label>
-            <div className="flex items-center gap-4">
-              {preview ? (
-                <div className="relative">
-                  <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-border">
-                    <Image
-                      src={preview}
-                      alt="Preview"
-                      width={64}
-                      height={64}
-                      className="object-cover w-full h-full"
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={clearFile}
-                    className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-white rounded-full flex items-center justify-center hover:bg-destructive/90 cursor-pointer"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              ) : (
-                <div className="w-16 h-16 rounded-full border-2 border-dashed border-border flex items-center justify-center bg-muted/50">
-                  <Upload className="h-5 w-5 text-muted-foreground" />
-                </div>
-              )}
-              <div className="flex-1">
-                <label className="cursor-pointer">
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    className="hidden"
-                    onChange={handleFileChange}
-                  />
-                  <span className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400 font-medium">
-                    <Upload className="h-3.5 w-3.5" />
-                    {preview ? t('auth.register.changePhoto') : t('auth.register.uploadPhoto')}
-                  </span>
-                </label>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {t('auth.register.photoFormats')}
-                </p>
-              </div>
-            </div>
-            {errors.profilePicture && (
-              <p className="text-sm text-destructive">{errors.profilePicture.message as string}</p>
-            )}
-          </div>
-
           <div className="space-y-2">
             <Label htmlFor="fullname">{t('auth.fullname')}</Label>
             <Input

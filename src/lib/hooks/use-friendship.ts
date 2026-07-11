@@ -1,24 +1,74 @@
 'use client';
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { friendshipApi } from '@/lib/api/friendship';
 import { getErrorMessage } from '@/lib/api/error';
+import type {
+  FriendProfileWire,
+  FriendListResult,
+  FriendSuggestion,
+  UserSummary,
+} from '@/lib/types';
 
-export function useFriends() {
+// NOTE: this DTO has no email field, only userId/username/fullName/profilePictureUrl.
+// Chat identity (see communication-provider.tsx) is keyed by email for the current user,
+// so using String(userId) here means "start a chat with this friend" won't address their
+// real Twilio identity until the backend adds email to this endpoint too.
+function toUserSummary(profile: FriendProfileWire): UserSummary {
+  return {
+    id: String(profile.userId),
+    fullname: profile.fullName,
+    profilePictureUrl: profile.profilePictureUrl,
+  };
+}
+
+export function useFriends(limit = 100) {
   return useQuery({
-    queryKey: ['friends'],
-    queryFn: () => friendshipApi.getFriends().then((r) => r.data),
+    queryKey: ['friends', limit],
+    queryFn: (): Promise<FriendListResult> =>
+      friendshipApi.getFriends(undefined, limit).then((r) => ({
+        friends: r.data.friends.map(toUserSummary),
+        nextCursor: r.data.nextCursor,
+        hasMore: r.data.hasMore,
+        totalCount: r.data.totalCount,
+      })),
   });
 }
 
-export function useFriendSuggestions() {
-  return useQuery({
-    queryKey: ['friend-suggestions'],
-    queryFn: () => friendshipApi.getSuggestions().then((r) => r.data),
+const FRIENDS_PAGE_SIZE = 20;
+
+// Cursor-paginated variant of useFriends, for a dedicated "all friends" list rather than
+// the fixed one-shot batch useFriends fetches for previews (dashboard, chat picker, birthdays).
+export function useInfiniteFriends(limit = FRIENDS_PAGE_SIZE) {
+  return useInfiniteQuery({
+    queryKey: ['friends', 'infinite', limit],
+    queryFn: ({ pageParam }: { pageParam: number | undefined }) =>
+      friendshipApi.getFriends(pageParam, limit).then((r) => ({
+        friends: r.data.friends.map(toUserSummary),
+        nextCursor: r.data.nextCursor,
+        hasMore: r.data.hasMore,
+        totalCount: r.data.totalCount,
+      })),
+    initialPageParam: undefined as number | undefined,
+    getNextPageParam: (lastPage) =>
+      lastPage.hasMore ? (lastPage.nextCursor ?? undefined) : undefined,
   });
 }
 
+export function useFriendSuggestions(limit = 10) {
+  return useQuery({
+    queryKey: ['friend-suggestions', limit],
+    queryFn: (): Promise<FriendSuggestion[]> =>
+      friendshipApi
+        .getSuggestions(limit)
+        .then((r) =>
+          r.data.map((s) => ({ ...toUserSummary(s.profile), mutualFriends: s.mutualFriends }))
+        ),
+  });
+}
+
+// NOTE: backing endpoint doesn't exist on the backend yet — see friendshipApi.getPendingRequests.
 export function usePendingRequests() {
   return useQuery({
     queryKey: ['pending-requests'],
@@ -26,6 +76,7 @@ export function usePendingRequests() {
   });
 }
 
+// NOTE: backing endpoint doesn't exist on the backend yet — see friendshipApi.getSentRequests.
 export function useSentRequests() {
   return useQuery({
     queryKey: ['sent-requests'],

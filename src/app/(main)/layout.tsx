@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   User,
@@ -10,18 +10,17 @@ import {
   Menu,
   Users,
   Newspaper,
+  TrendingUp,
   MessageCircle,
   ChevronDown,
   UserPlus,
-  Gift,
   UserCheck,
   Globe,
 } from 'lucide-react';
+import { setRoleCookie } from '@/lib/hooks/use-admin-role';
+import { getNeutralAvatarColor } from '@/lib/avatar-color';
 import { CommunicationProvider } from '@/components/chat/communication-provider';
 import { ChatBox } from '@/components/chat/chat-box';
-import { VideoCallModal } from '@/components/call/video-call-modal';
-import { VoiceCallModal } from '@/components/call/voice-call-modal';
-import { IncomingCallOverlay } from '@/components/call/incoming-call-overlay';
 import { cn } from '@/lib/utils';
 import { useProfile, useLogout } from '@/lib/hooks';
 import { usePendingRequests } from '@/lib/hooks/use-friendship';
@@ -36,6 +35,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { SearchBar } from '@/components/search/search-bar';
 
 function NavLinks({ onClick }: { onClick?: () => void }) {
   const pathname = usePathname();
@@ -48,9 +48,9 @@ function NavLinks({ onClick }: { onClick?: () => void }) {
   const pendingCount = pendingRequests?.length ?? 0;
 
   const friendSubItems = [
+    { href: '/friends/all', label: t('nav.friendsAll'), icon: Users },
     { href: '/friends/suggestions', label: t('nav.friendsSuggestions'), icon: UserPlus },
     { href: '/friends/requests', label: t('nav.friendsRequests'), icon: UserCheck },
-    { href: '/friends/birthdays', label: t('nav.friendsBirthdays'), icon: Gift },
   ];
 
   return (
@@ -68,6 +68,21 @@ function NavLinks({ onClick }: { onClick?: () => void }) {
       >
         <Newspaper className="h-4 w-4" />
         {t('nav.newsfeed')}
+      </Link>
+
+      {/* Trending */}
+      <Link
+        href="/trending"
+        onClick={onClick}
+        className={cn(
+          'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+          pathname === '/trending'
+            ? 'bg-primary text-primary-foreground'
+            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+        )}
+      >
+        <TrendingUp className="h-4 w-4" />
+        {t('nav.trending')}
       </Link>
 
       {/* Friends collapsible */}
@@ -203,13 +218,14 @@ function UserMenu() {
     .join('')
     .toUpperCase()
     .slice(0, 2);
+  const avatarColor = getNeutralAvatarColor(profile?.id ?? 'default');
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm hover:bg-accent transition-colors cursor-pointer outline-none">
         <Avatar className="h-8 w-8">
           <AvatarImage src={profile?.profilePictureUrl} />
-          <AvatarFallback className="text-xs" suppressHydrationWarning>
+          <AvatarFallback className={`${avatarColor} text-white text-xs`} suppressHydrationWarning>
             {initials ?? '?'}
           </AvatarFallback>
         </Avatar>
@@ -269,6 +285,14 @@ function MainContent({ children }: { children: React.ReactNode }) {
 
   return (
     <main className="md:ml-64">
+      {/* Spans the full width of this content region (viewport minus the sidebar), not the
+          max-w-5xl box below it, so it reaches all the way to the right edge of the screen.
+          Only sticky at md+ — below that, the mobile header above is already sticky at top-0,
+          and stacking two independent top-0 stickies would overlap them. */}
+      <div className="md:sticky md:top-0 z-30 border-b bg-card px-4 sm:px-6 lg:px-8 py-3">
+        <SearchBar />
+      </div>
+
       {isFullBleed ? (
         children
       ) : (
@@ -280,6 +304,17 @@ function MainContent({ children }: { children: React.ReactNode }) {
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const t = useT();
+  const router = useRouter();
+  const { data: profile } = useProfile();
+
+  useEffect(() => {
+    if (!profile) return;
+    // Keep the middleware cookie in sync so the next navigation doesn't need this
+    // client-side check at all — and catch admins who shouldn't be in the regular
+    // app right now, in case this render beat the cookie-based redirect to it.
+    setRoleCookie(profile.role === 'ADMIN');
+    if (profile.role === 'ADMIN') router.replace('/admin/moderation');
+  }, [profile, router]);
 
   return (
     <CommunicationProvider>
@@ -314,11 +349,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         {/* Main content */}
         <MainContent>{children}</MainContent>
 
-        {/* Chat & Call overlays */}
+        {/* Chat overlay */}
         <ChatBox />
-        <VideoCallModal />
-        <VoiceCallModal />
-        <IncomingCallOverlay />
       </div>
     </CommunicationProvider>
   );

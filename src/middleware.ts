@@ -11,8 +11,16 @@ const publicPaths = [
   '/call',
 ];
 
+// Reachable regardless of session state: a just-registered (and thus already
+// logged-in) user still needs to open their verification/magic-link email.
+const alwaysAccessiblePaths = ['/verify-email', '/magic-link', '/magic-login'];
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  if (alwaysAccessiblePaths.some((p) => pathname.startsWith(p))) {
+    return NextResponse.next();
+  }
 
   const hasSession = request.cookies.get('session')?.value === 'true';
 
@@ -22,7 +30,23 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
+  // Role isn't known from the JWT (no role claim, no /me endpoint) — the client
+  // probes an admin-only route after login and caches the verdict in this cookie.
+  // Absent cookie ("unknown role") is left to the (admin)/(main) layouts to resolve
+  // client-side, so we only redirect here on a *confirmed* role.
+  const role = request.cookies.get('role')?.value;
+  const isAdminArea = pathname.startsWith('/admin');
+  const homePath = role === 'ADMIN' ? '/admin/moderation' : '/dashboard';
+
   if (hasSession && isPublicPath) {
+    return NextResponse.redirect(new URL(homePath, request.url));
+  }
+
+  if (hasSession && role === 'ADMIN' && !isAdminArea) {
+    return NextResponse.redirect(new URL('/admin/moderation', request.url));
+  }
+
+  if (hasSession && role === 'USER' && isAdminArea) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
@@ -30,5 +54,9 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|api).*)'],
+  // `v1` excludes the backend's `/v1/api/...` prefix: if NEXT_PUBLIC_API_URL is ever
+  // unset, axios calls resolve to same-origin relative paths (e.g. /v1/api/auth/login)
+  // instead of hitting the backend. Without this exclusion those requests were silently
+  // 307-redirected to /login by this middleware instead of failing with a clear 404.
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|api|v1).*)'],
 };
