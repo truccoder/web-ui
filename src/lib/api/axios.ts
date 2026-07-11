@@ -30,6 +30,11 @@ api.interceptors.request.use((config) => {
   if (tokens?.accessToken) {
     config.headers.Authorization = `Bearer ${tokens.accessToken}`;
   }
+  // The instance-level default Content-Type (application/json) would otherwise override
+  // the browser's auto-generated multipart boundary for FormData bodies, so strip it here.
+  if (config.data instanceof FormData) {
+    delete config.headers['Content-Type'];
+  }
   return config;
 });
 
