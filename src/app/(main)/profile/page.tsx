@@ -1,7 +1,7 @@
 'use client';
 
-import { useRef, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useEffect, useRef, useState } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Camera, Loader2 } from 'lucide-react';
 import {
@@ -19,21 +19,25 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import { getNeutralAvatarColor } from '@/lib/avatar-color';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-function ProfilePictureUpload() {
+function ProfilePictureUpload({ liveFullname }: { liveFullname?: string }) {
   const { data: profile } = useProfile();
   const { mutate: uploadPicture, isPending } = useUploadProfilePicture();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const t = useT();
 
-  const initials = profile?.fullname
-    ?.split(' ')
+  const initials = (liveFullname || profile?.fullname)
+    ?.trim()
+    .split(/\s+/)
+    .filter(Boolean)
     .map((n) => n[0])
     .join('')
     .toUpperCase()
     .slice(0, 2);
+  const avatarColor = getNeutralAvatarColor(profile?.id ?? liveFullname ?? 'default');
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -56,7 +60,9 @@ function ProfilePictureUpload() {
       <div className="relative group">
         <Avatar className="h-28 w-28">
           {displayUrl ? <AvatarImage src={displayUrl} /> : null}
-          <AvatarFallback className="text-3xl">{initials ?? '?'}</AvatarFallback>
+          <AvatarFallback className={`${avatarColor} text-white text-3xl`}>
+            {initials ?? '?'}
+          </AvatarFallback>
         </Avatar>
 
         <button
@@ -85,7 +91,7 @@ function ProfilePictureUpload() {
   );
 }
 
-function ProfileInfoTab() {
+function ProfileInfoTab({ onFullnameChange }: { onFullnameChange: (value: string) => void }) {
   const { data: profile } = useProfile();
   const { mutate: updateProfile, isPending } = useUpdateProfile();
   const t = useT();
@@ -93,6 +99,7 @@ function ProfileInfoTab() {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm<UpdateProfileFormData>({
     resolver: zodResolver(updateProfileSchema),
@@ -102,6 +109,11 @@ function ProfileInfoTab() {
   const onSubmit = (data: UpdateProfileFormData) => {
     updateProfile(data);
   };
+
+  const fullname = useWatch({ control, name: 'fullname' });
+  useEffect(() => {
+    onFullnameChange(fullname ?? '');
+  }, [fullname, onFullnameChange]);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -133,11 +145,27 @@ function ChangePasswordTab() {
   });
 
   const onSubmit = (data: ChangePasswordFormData) => {
-    changePassword({ newPassword: data.newPassword }, { onSuccess: () => reset() });
+    changePassword(
+      { currentPassword: data.currentPassword, newPassword: data.newPassword },
+      { onSuccess: () => reset() }
+    );
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="currentPassword">{t('profile.password.currentPassword')}</Label>
+        <Input
+          id="currentPassword"
+          type="password"
+          placeholder={t('profile.password.currentPlaceholder')}
+          {...register('currentPassword')}
+        />
+        {errors.currentPassword && (
+          <p className="text-sm text-destructive">{errors.currentPassword.message}</p>
+        )}
+      </div>
+
       <div className="space-y-2">
         <Label htmlFor="newPassword">{t('profile.password.newPassword')}</Label>
         <Input
@@ -174,6 +202,7 @@ function ChangePasswordTab() {
 
 export default function ProfilePage() {
   const { data: profile, isLoading } = useProfile();
+  const [liveFullname, setLiveFullname] = useState('');
   const t = useT();
 
   if (isLoading) {
@@ -194,11 +223,11 @@ export default function ProfilePage() {
       <Card>
         <CardContent className="pt-6">
           <div className="flex flex-col sm:flex-row items-center gap-6">
-            <ProfilePictureUpload />
+            <ProfilePictureUpload liveFullname={liveFullname} />
             <div className="text-center sm:text-left">
-              <h2 className="text-2xl font-bold">{profile?.fullname ?? '—'}</h2>
+              <h2 className="text-2xl font-bold">{liveFullname || profile?.fullname || '—'}</h2>
               <p className="text-muted-foreground text-sm mt-1">
-                {t('profile.id', { id: profile?.id ?? '' })}
+                {t('profile.id', { id: profile?.userId ?? '' })}
               </p>
             </div>
           </div>
@@ -220,7 +249,7 @@ export default function ProfilePage() {
               <CardDescription>{t('profile.info.desc')}</CardDescription>
             </CardHeader>
             <CardContent>
-              <ProfileInfoTab />
+              <ProfileInfoTab onFullnameChange={setLiveFullname} />
             </CardContent>
           </Card>
         </TabsContent>

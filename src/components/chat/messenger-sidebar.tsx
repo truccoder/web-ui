@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { useT } from '@/lib/i18n';
 import { useCommunication } from './communication-provider';
 import { useFriends } from '@/lib/hooks/use-friendship';
-import type { Profile } from '@/lib/types';
+import type { UserSummary } from '@/lib/types';
 
 interface ConversationSummary {
   sid: string;
@@ -23,7 +23,7 @@ interface MessengerSidebarProps {
   conversations: ConversationSummary[];
   activeSid: string | null;
   onSelect: (sid: string) => void;
-  onNewConversation: (friend: Profile) => Promise<void>;
+  onNewConversation: (friend: UserSummary) => Promise<void>;
   isConnected: boolean;
   connectionError: string | null;
 }
@@ -47,7 +47,7 @@ function NewChatPanel({
   isConnected,
 }: {
   onClose: () => void;
-  onStart: (friend: Profile) => Promise<void>;
+  onStart: (friend: UserSummary) => Promise<void>;
   isConnected: boolean;
 }) {
   const t = useT();
@@ -55,11 +55,11 @@ function NewChatPanel({
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState<string | null>(null);
 
-  const filtered = (friends ?? []).filter((f) =>
+  const filtered = (friends?.friends ?? []).filter((f) =>
     f.fullname.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleStart = async (friend: Profile) => {
+  const handleStart = async (friend: UserSummary) => {
     if (!isConnected) {
       toast.error('Twilio not connected yet. Please wait a moment.');
       return;
@@ -97,7 +97,6 @@ function NewChatPanel({
             <Loader2 className="h-4 w-4 text-yellow-500 animate-spin" />
           )}
         </div>
-
       </div>
 
       {/* Search */}
@@ -120,9 +119,9 @@ function NewChatPanel({
           <div className="flex flex-col items-center justify-center h-40 gap-2 px-4 text-center">
             <MessageCircle className="h-8 w-8 text-[#65676b] opacity-40" />
             <p className="text-sm text-[#65676b] dark:text-[#b0b3b8]">
-              {friends?.length === 0 ? t('chat.noFriendsToMessage') : 'No results'}
+              {friends?.friends.length === 0 ? t('chat.noFriendsToMessage') : 'No results'}
             </p>
-            {friends?.length === 0 && (
+            {friends?.friends.length === 0 && (
               <p className="text-xs text-[#65676b] dark:text-[#b0b3b8]">
                 {t('chat.addFriendsFirst')}
               </p>
@@ -200,9 +199,13 @@ export function MessengerSidebar({
         <div className="flex items-center gap-2">
           {/* Connection indicator */}
           {isConnected ? (
-            <span title="Connected"><Wifi className="h-4 w-4 text-green-500" /></span>
+            <span title="Connected">
+              <Wifi className="h-4 w-4 text-green-500" />
+            </span>
           ) : (
-            <span title="Connecting..."><Loader2 className="h-4 w-4 text-yellow-500 animate-spin" /></span>
+            <span title="Connecting...">
+              <Loader2 className="h-4 w-4 text-yellow-500 animate-spin" />
+            </span>
           )}
           <button
             onClick={() => setShowNewChat(true)}
@@ -226,7 +229,9 @@ export function MessengerSidebar({
       {!isConnected && !connectionError && (
         <div className="mx-3 mb-2 flex items-center gap-2 px-3 py-2 rounded-lg bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 shrink-0">
           <WifiOff className="h-4 w-4 text-yellow-500 shrink-0" />
-          <p className="text-xs text-yellow-700 dark:text-yellow-400">Connecting to chat server...</p>
+          <p className="text-xs text-yellow-700 dark:text-yellow-400">
+            Connecting to chat server...
+          </p>
         </div>
       )}
 
@@ -241,7 +246,10 @@ export function MessengerSidebar({
             className="flex-1 bg-transparent text-sm text-[#050505] dark:text-white placeholder:text-[#65676b] outline-none"
           />
           {search && (
-            <button onClick={() => setSearch('')} className="text-[#65676b] hover:text-[#050505] cursor-pointer">
+            <button
+              onClick={() => setSearch('')}
+              className="text-[#65676b] hover:text-[#050505] cursor-pointer"
+            >
               <X className="h-3.5 w-3.5" />
             </button>
           )}

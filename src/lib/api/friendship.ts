@@ -3,7 +3,8 @@ import type { AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import type {
   PendingFriendRequest,
   SentFriendRequest,
-  Profile,
+  FriendListResponseWire,
+  FriendSuggestionWire,
 } from '@/lib/types';
 import { MOCK_USERS } from '@/lib/mock/users';
 import { decodeJwt } from '@/lib/jwt';
@@ -54,6 +55,9 @@ export const friendshipApi = {
     return api.post<void>(`/v1/api/friendships/requests/${requestId}/reject`);
   },
 
+  // NOTE: the backend has no endpoint to list pending/sent friend requests yet (no
+  // repository query, service method, or controller route exists for it) — these two
+  // calls hit routes that don't exist until that's added.
   getPendingRequests: (): Promise<AxiosResponse<PendingFriendRequest[]>> => {
     if (USE_MOCK) return mockResponse<PendingFriendRequest[]>([]);
     return api.get<PendingFriendRequest[]>('/v1/api/friendships/requests/pending');
@@ -64,21 +68,29 @@ export const friendshipApi = {
     return api.get<SentFriendRequest[]>('/v1/api/friendships/requests/sent');
   },
 
-  getFriends: (): Promise<AxiosResponse<Profile[]>> => {
+  getFriends: (cursor?: number, limit = 100): Promise<AxiosResponse<FriendListResponseWire>> => {
     if (USE_MOCK) {
       const currentId = getCurrentMockUserId();
-      const friends = MOCK_USERS.filter((u) => u.id !== currentId).map((u) => ({
-        id: u.id,
-        fullname: u.fullname,
+      const friends = MOCK_USERS.filter((u) => u.id !== currentId).map((u, i) => ({
+        userId: i + 1,
+        username: u.email.split('@')[0],
+        fullName: u.fullname,
         profilePictureUrl: u.profilePictureUrl,
       }));
-      return mockResponse<Profile[]>(friends);
+      return mockResponse<FriendListResponseWire>({
+        friends,
+        nextCursor: null,
+        hasMore: false,
+        totalCount: friends.length,
+      });
     }
-    return api.get<Profile[]>('/v1/api/friendships/friends');
+    return api.get<FriendListResponseWire>('/v1/api/friendships', { params: { cursor, limit } });
   },
 
-  getSuggestions: (): Promise<AxiosResponse<Profile[]>> => {
-    if (USE_MOCK) return mockResponse<Profile[]>([]);
-    return api.get<Profile[]>('/v1/api/friendships/suggestions');
+  getSuggestions: (limit = 10): Promise<AxiosResponse<FriendSuggestionWire[]>> => {
+    if (USE_MOCK) return mockResponse<FriendSuggestionWire[]>([]);
+    return api.get<FriendSuggestionWire[]>('/v1/api/friendships/suggestions', {
+      params: { limit },
+    });
   },
 };

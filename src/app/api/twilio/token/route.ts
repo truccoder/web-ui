@@ -3,14 +3,12 @@ import twilio from 'twilio';
 
 export async function POST(request: NextRequest) {
   const {
-  TWILIO_ACCOUNT_SID,
-  TWILIO_API_KEY_SID,
-  TWILIO_API_KEY_SECRET,
-  TWILIO_CONVERSATIONS_SERVICE_SID,
-  TWILIO_TWIML_APP_SID,
-} = process.env;
+    TWILIO_ACCOUNT_SID,
+    TWILIO_API_KEY_SID,
+    TWILIO_API_KEY_SECRET,
+    TWILIO_CONVERSATIONS_SERVICE_SID,
+  } = process.env;
 
-  console.log('>>TWILIO_ACCOUNT_SID', TWILIO_ACCOUNT_SID);
   try {
     const { identity } = await request.json();
 
@@ -34,19 +32,6 @@ export async function POST(request: NextRequest) {
         serviceSid: TWILIO_CONVERSATIONS_SERVICE_SID,
       });
       token.addGrant(conversationsGrant);
-    }
-
-    // Video grant
-    const videoGrant = new AccessToken.VideoGrant({});
-    token.addGrant(videoGrant);
-
-    // Voice grant
-    if (TWILIO_TWIML_APP_SID) {
-      const voiceGrant = new AccessToken.VoiceGrant({
-        outgoingApplicationSid: TWILIO_TWIML_APP_SID,
-        incomingAllow: true,
-      });
-      token.addGrant(voiceGrant);
     }
 
     return NextResponse.json({ token: token.toJwt() });

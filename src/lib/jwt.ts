@@ -1,4 +1,4 @@
-import type { JwtPayload, Profile } from '@/lib/types';
+import type { JwtPayload } from '@/lib/types';
 
 export function decodeJwt(token: string): JwtPayload | null {
   try {
@@ -15,15 +15,4 @@ export function decodeJwt(token: string): JwtPayload | null {
   } catch {
     return null;
   }
-}
-
-export function extractProfileFromToken(accessToken: string): Profile | null {
-  const payload = decodeJwt(accessToken);
-  if (!payload) return null;
-
-  return {
-    id: payload.sub,
-    fullname: payload.fullname ?? '',
-    profilePictureUrl: payload.profilePictureUrl ?? '',
-  };
 }

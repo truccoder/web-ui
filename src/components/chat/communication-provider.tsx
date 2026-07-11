@@ -3,8 +3,6 @@
 import { createContext, useContext, useReducer, type ReactNode } from 'react';
 import { useProfile } from '@/lib/hooks/use-user';
 import { useConversationsClient } from '@/lib/twilio/use-conversations';
-import { useVideoCall } from '@/lib/twilio/use-video';
-import { useVoiceCall } from '@/lib/twilio/use-voice';
 
 interface ChatWindow {
   conversationSid: string;
@@ -17,24 +15,13 @@ interface ChatWindow {
 interface CommunicationState {
   isChatListOpen: boolean;
   openWindows: ChatWindow[];
-  activeCallPeer: {
-    identity: string;
-    name: string;
-    avatar?: string;
-  } | null;
-  callType: 'video' | 'voice' | null;
 }
 
 type Action =
   | { type: 'TOGGLE_CHAT_LIST' }
   | { type: 'OPEN_CHAT_WINDOW'; payload: ChatWindow }
   | { type: 'CLOSE_CHAT_WINDOW'; payload: string }
-  | { type: 'MINIMIZE_CHAT_WINDOW'; payload: string }
-  | {
-      type: 'START_CALL';
-      payload: { peer: CommunicationState['activeCallPeer']; callType: 'video' | 'voice' };
-    }
-  | { type: 'END_CALL' };
+  | { type: 'MINIMIZE_CHAT_WINDOW'; payload: string };
 
 function reducer(state: CommunicationState, action: Action): CommunicationState {
   switch (action.type) {
@@ -71,16 +58,6 @@ function reducer(state: CommunicationState, action: Action): CommunicationState 
         ),
       };
 
-    case 'START_CALL':
-      return {
-        ...state,
-        activeCallPeer: action.payload.peer,
-        callType: action.payload.callType,
-      };
-
-    case 'END_CALL':
-      return { ...state, activeCallPeer: null, callType: null };
-
     default:
       return state;
   }
@@ -90,8 +67,6 @@ export interface CommunicationContextType {
   state: CommunicationState;
   dispatch: React.Dispatch<Action>;
   conversationsClient: ReturnType<typeof useConversationsClient>;
-  videoCall: ReturnType<typeof useVideoCall>;
-  voiceCall: ReturnType<typeof useVoiceCall>;
   currentIdentity: string | null;
 }
 
@@ -104,13 +79,9 @@ export function CommunicationProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, {
     isChatListOpen: false,
     openWindows: [],
-    activeCallPeer: null,
-    callType: null,
   });
 
   const conversationsClient = useConversationsClient(identity);
-  const videoCall = useVideoCall(identity);
-  const voiceCall = useVoiceCall(identity);
 
   return (
     <CommunicationContext.Provider
@@ -118,8 +89,6 @@ export function CommunicationProvider({ children }: { children: ReactNode }) {
         state,
         dispatch,
         conversationsClient,
-        videoCall,
-        voiceCall,
         currentIdentity: identity,
       }}
     >

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Phone, Video, Info, Smile, ThumbsUp, Send, MessageCircle } from 'lucide-react';
+import { Info, Smile, ThumbsUp, Send, MessageCircle } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { useT } from '@/lib/i18n';
@@ -32,17 +32,25 @@ function getPosition(messages: { author: string | null }[], index: number): Mess
 function bubbleRadius(isOwn: boolean, pos: MessagePosition) {
   if (isOwn) {
     switch (pos) {
-      case 'single': return 'rounded-[18px]';
-      case 'first':  return 'rounded-[18px] rounded-br-[4px]';
-      case 'middle': return 'rounded-[18px] rounded-r-[4px]';
-      case 'last':   return 'rounded-[18px] rounded-tr-[4px]';
+      case 'single':
+        return 'rounded-[18px]';
+      case 'first':
+        return 'rounded-[18px] rounded-br-[4px]';
+      case 'middle':
+        return 'rounded-[18px] rounded-r-[4px]';
+      case 'last':
+        return 'rounded-[18px] rounded-tr-[4px]';
     }
   } else {
     switch (pos) {
-      case 'single': return 'rounded-[18px]';
-      case 'first':  return 'rounded-[18px] rounded-bl-[4px]';
-      case 'middle': return 'rounded-[18px] rounded-l-[4px]';
-      case 'last':   return 'rounded-[18px] rounded-tl-[4px]';
+      case 'single':
+        return 'rounded-[18px]';
+      case 'first':
+        return 'rounded-[18px] rounded-bl-[4px]';
+      case 'middle':
+        return 'rounded-[18px] rounded-l-[4px]';
+      case 'last':
+        return 'rounded-[18px] rounded-tl-[4px]';
     }
   }
 }
@@ -54,17 +62,21 @@ function formatMessageTime(date: Date | null): string {
   if (diff < 86_400_000) {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
-  return date.toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  return date.toLocaleDateString([], {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 }
 
 export function MessengerConversation({
   conversationSid,
   peerName,
   peerAvatar,
-  peerIdentity,
 }: MessengerConversationProps) {
   const t = useT();
-  const { dispatch, conversationsClient, currentIdentity } = useCommunication();
+  const { conversationsClient, currentIdentity } = useCommunication();
   const { messages, isTyping, sendMessage, sendTyping } = useConversation(
     conversationSid,
     conversationsClient.client
@@ -97,24 +109,6 @@ export function MessengerConversation({
     }
   };
 
-  const startVideoCall = () =>
-    dispatch({
-      type: 'START_CALL',
-      payload: {
-        peer: { identity: peerIdentity, name: peerName, avatar: peerAvatar },
-        callType: 'video',
-      },
-    });
-
-  const startVoiceCall = () =>
-    dispatch({
-      type: 'START_CALL',
-      payload: {
-        peer: { identity: peerIdentity, name: peerName, avatar: peerAvatar },
-        callType: 'voice',
-      },
-    });
-
   return (
     <div className="flex flex-col h-full bg-white dark:bg-[#1c1e21]">
       {/* Header */}
@@ -133,30 +127,19 @@ export function MessengerConversation({
             <p className="font-semibold text-sm text-[#050505] dark:text-white leading-tight">
               {peerName}
             </p>
-            <p className="text-xs text-green-500 font-medium leading-tight">{t('chat.activeNow')}</p>
+            <p className="text-xs text-green-500 font-medium leading-tight">
+              {t('chat.activeNow')}
+            </p>
           </div>
         </div>
 
         <div className="flex items-center gap-0.5">
-          {[
-            { icon: Phone, onClick: startVoiceCall, label: t('chat.voiceCall'), color: true },
-            { icon: Video, onClick: startVideoCall, label: t('chat.videoCall'), color: true },
-            { icon: Info, onClick: () => {}, label: 'Info', color: false },
-          ].map(({ icon: Icon, onClick, label, color }) => (
-            <button
-              key={label}
-              onClick={onClick}
-              title={label}
-              className={cn(
-                'w-9 h-9 flex items-center justify-center rounded-full transition-colors cursor-pointer',
-                color
-                  ? 'text-[#0084ff] hover:bg-[#e7f3ff] dark:hover:bg-[#263951]'
-                  : 'text-[#65676b] dark:text-[#b0b3b8] hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c]'
-              )}
-            >
-              <Icon className="h-[18px] w-[18px]" />
-            </button>
-          ))}
+          <button
+            title="Info"
+            className="w-9 h-9 flex items-center justify-center rounded-full transition-colors cursor-pointer text-[#65676b] dark:text-[#b0b3b8] hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c]"
+          >
+            <Info className="h-[18px] w-[18px]" />
+          </button>
         </div>
       </div>
 
@@ -185,7 +168,11 @@ export function MessengerConversation({
           return (
             <div
               key={msg.sid}
-              className={cn('flex items-end gap-2', isOwn ? 'flex-row-reverse' : 'flex-row', isGroupStart && index > 0 && 'mt-3')}
+              className={cn(
+                'flex items-end gap-2',
+                isOwn ? 'flex-row-reverse' : 'flex-row',
+                isGroupStart && index > 0 && 'mt-3'
+              )}
               onMouseEnter={() => setHoveredMsg(msg.sid)}
               onMouseLeave={() => setHoveredMsg(null)}
             >
@@ -218,10 +205,12 @@ export function MessengerConversation({
 
                 {/* Timestamp on hover */}
                 {showTime && hoveredMsg === msg.sid && msg.dateCreated && (
-                  <p className={cn(
-                    'text-[11px] text-[#65676b] mt-1 px-1',
-                    isOwn ? 'text-right' : 'text-left'
-                  )}>
+                  <p
+                    className={cn(
+                      'text-[11px] text-[#65676b] mt-1 px-1',
+                      isOwn ? 'text-right' : 'text-left'
+                    )}
+                  >
                     {formatMessageTime(msg.dateCreated)}
                   </p>
                 )}

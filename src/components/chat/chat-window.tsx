@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { X, Phone, Video, ChevronDown, Smile, ThumbsUp, Send } from 'lucide-react';
+import { X, ChevronDown, Smile, ThumbsUp, Send } from 'lucide-react';
 import { useCommunication } from './communication-provider';
 import { useConversation } from '@/lib/twilio/use-conversations';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -20,10 +20,7 @@ interface ChatWindowProps {
 
 type MessagePosition = 'single' | 'first' | 'middle' | 'last';
 
-function getPosition(
-  messages: { author: string | null }[],
-  index: number
-): MessagePosition {
+function getPosition(messages: { author: string | null }[], index: number): MessagePosition {
   const msg = messages[index];
   const prev = messages[index - 1];
   const next = messages[index + 1];
@@ -38,17 +35,25 @@ function getPosition(
 function bubbleRadius(isOwn: boolean, pos: MessagePosition) {
   if (isOwn) {
     switch (pos) {
-      case 'single': return 'rounded-[18px]';
-      case 'first':  return 'rounded-[18px] rounded-br-[4px]';
-      case 'middle': return 'rounded-[18px] rounded-r-[4px]';
-      case 'last':   return 'rounded-[18px] rounded-tr-[4px]';
+      case 'single':
+        return 'rounded-[18px]';
+      case 'first':
+        return 'rounded-[18px] rounded-br-[4px]';
+      case 'middle':
+        return 'rounded-[18px] rounded-r-[4px]';
+      case 'last':
+        return 'rounded-[18px] rounded-tr-[4px]';
     }
   } else {
     switch (pos) {
-      case 'single': return 'rounded-[18px]';
-      case 'first':  return 'rounded-[18px] rounded-bl-[4px]';
-      case 'middle': return 'rounded-[18px] rounded-l-[4px]';
-      case 'last':   return 'rounded-[18px] rounded-tl-[4px]';
+      case 'single':
+        return 'rounded-[18px]';
+      case 'first':
+        return 'rounded-[18px] rounded-bl-[4px]';
+      case 'middle':
+        return 'rounded-[18px] rounded-l-[4px]';
+      case 'last':
+        return 'rounded-[18px] rounded-tl-[4px]';
     }
   }
 }
@@ -89,24 +94,6 @@ export function ChatWindow({ window: win }: ChatWindowProps) {
     sendTyping();
   };
 
-  const startVideoCall = () =>
-    dispatch({
-      type: 'START_CALL',
-      payload: {
-        peer: { identity: win.peerIdentity, name: win.peerName, avatar: win.peerAvatar },
-        callType: 'video',
-      },
-    });
-
-  const startVoiceCall = () =>
-    dispatch({
-      type: 'START_CALL',
-      payload: {
-        peer: { identity: win.peerIdentity, name: win.peerName, avatar: win.peerAvatar },
-        callType: 'voice',
-      },
-    });
-
   if (win.isMinimized) {
     return (
       <button
@@ -125,8 +112,6 @@ export function ChatWindow({ window: win }: ChatWindowProps) {
   }
 
   const headerActions = [
-    { icon: Phone, onClick: startVoiceCall, label: t('chat.voiceCall') },
-    { icon: Video, onClick: startVideoCall, label: t('chat.videoCall') },
     {
       icon: ChevronDown,
       onClick: () => dispatch({ type: 'MINIMIZE_CHAT_WINDOW', payload: win.conversationSid }),
@@ -141,7 +126,6 @@ export function ChatWindow({ window: win }: ChatWindowProps) {
 
   return (
     <div className="w-[328px] h-[455px] bg-white dark:bg-[#242526] rounded-t-2xl shadow-2xl flex flex-col overflow-hidden">
-
       {/* Header */}
       <div className="flex items-center gap-2 px-3 py-2 shrink-0">
         <div className="relative shrink-0">
@@ -169,12 +153,7 @@ export function ChatWindow({ window: win }: ChatWindowProps) {
               key={label}
               onClick={onClick}
               title={label}
-              className={cn(
-                'w-8 h-8 flex items-center justify-center rounded-full transition-colors cursor-pointer',
-                label === t('chat.voiceCall') || label === t('chat.videoCall')
-                  ? 'text-[#0084ff] hover:bg-blue-50 dark:hover:bg-[#3a3b3c]'
-                  : 'text-[#65676b] dark:text-[#b0b3b8] hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c]'
-              )}
+              className="w-8 h-8 flex items-center justify-center rounded-full transition-colors cursor-pointer text-[#65676b] dark:text-[#b0b3b8] hover:bg-[#f0f2f5] dark:hover:bg-[#3a3b3c]"
             >
               <Icon className="h-4 w-4" />
             </button>
@@ -201,8 +180,7 @@ export function ChatWindow({ window: win }: ChatWindowProps) {
           const isOwn = msg.author === currentIdentity;
           const pos = getPosition(messages as { author: string | null }[], index);
           const showAvatar = !isOwn && (pos === 'single' || pos === 'last');
-          const isGroupStart =
-            index === 0 || messages[index - 1].author !== msg.author;
+          const isGroupStart = index === 0 || messages[index - 1].author !== msg.author;
 
           return (
             <div
