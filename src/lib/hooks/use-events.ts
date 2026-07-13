@@ -6,11 +6,11 @@ import { eventsApi } from '@/lib/api/events';
 import { getErrorMessage } from '@/lib/api/error';
 import type { RsvpStatus } from '@/lib/types';
 
-export function useEventAttendees(postId: number) {
+export function useEventAttendees(postId: number, enabled = true) {
   return useQuery({
     queryKey: ['events', postId, 'attendees'],
     queryFn: () => eventsApi.getAttendees(postId).then((r) => r.data),
-    enabled: postId > 0,
+    enabled: enabled && postId > 0,
   });
 }
 
@@ -54,6 +54,24 @@ export function useGoogleCalendarStatus() {
   return useQuery({
     queryKey: ['google-calendar', 'status'],
     queryFn: () => eventsApi.getCalendarStatus().then((r) => r.data.connected),
+  });
+}
+
+export function useExportEventIcs() {
+  return useMutation({
+    mutationFn: async (postId: number) => {
+      const { data } = await eventsApi.exportIcs(postId);
+      // Trigger a client-side download of the blob the API returned.
+      const url = URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'event.ics';
+      a.click();
+      URL.revokeObjectURL(url);
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error, 'Could not download the calendar file'));
+    },
   });
 }
 

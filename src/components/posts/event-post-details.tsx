@@ -1,9 +1,32 @@
 'use client';
 
-import { Calendar, Clock, MapPin, Link as LinkIcon, Users } from 'lucide-react';
+import { useState } from 'react';
+import {
+  Calendar,
+  CalendarPlus,
+  Check,
+  Clock,
+  Download,
+  Loader2,
+  MapPin,
+  Link as LinkIcon,
+  Star,
+  Users,
+  X,
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useT } from '@/lib/i18n';
-import type { EventDetails } from '@/lib/types';
+import {
+  useEventAttendeeCount,
+  useEventRsvp,
+  useExportEventIcs,
+  useAddToGoogleCalendar,
+  useGoogleCalendarStatus,
+  useGoogleCalendarAuthUrl,
+} from '@/lib/hooks/use-events';
+import { EventAttendeesDialog } from './event-attendees-dialog';
+import type { EventDetails, RsvpStatus } from '@/lib/types';
 
 const DEFAULT_TIMEZONE = 'Asia/Ho_Chi_Minh';
 
@@ -44,12 +67,46 @@ const STATUS_BADGE_CLASS: Record<EventStatus, string> = {
   past: 'bg-muted text-muted-foreground',
 };
 
+const RSVP_OPTIONS: { status: RsvpStatus; icon: React.ElementType; labelKey: string }[] = [
+  { status: 'GOING', icon: Check, labelKey: 'post.event.rsvp.going' },
+  { status: 'INTERESTED', icon: Star, labelKey: 'post.event.rsvp.interested' },
+  { status: 'NOT_GOING', icon: X, labelKey: 'post.event.rsvp.notGoing' },
+];
+
 interface EventPostDetailsProps {
+  postId: number;
   event: EventDetails;
 }
 
-export function EventPostDetails({ event }: EventPostDetailsProps) {
+export function EventPostDetails({ postId, event }: EventPostDetailsProps) {
   const t = useT();
+
+  const { data: attendeeCount } = useEventAttendeeCount(postId);
+  const { mutate: rsvp, isPending: isRsvping } = useEventRsvp();
+  const { mutate: exportIcs, isPending: isExporting } = useExportEventIcs();
+  const { mutate: addToCalendar, isPending: isAddingToCalendar } = useAddToGoogleCalendar();
+  const { data: calendarConnected } = useGoogleCalendarStatus();
+  const { refetch: fetchAuthUrl, isFetching: isFetchingAuthUrl } = useGoogleCalendarAuthUrl();
+
+  // Backend exposes no "my RSVP" endpoint, so highlight is session-only optimistic state.
+  const [myRsvp, setMyRsvp] = useState<RsvpStatus | null>(null);
+  const [attendeesOpen, setAttendeesOpen] = useState(false);
+
+  const handleRsvp = (status: RsvpStatus) => {
+    if (isRsvping) return;
+    setMyRsvp(status);
+    rsvp({ postId, status });
+  };
+
+  const handleCalendarClick = async () => {
+    if (calendarConnected) {
+      addToCalendar(postId);
+      return;
+    }
+    // Not connected yet: send the user through Google's OAuth consent flow first.
+    const { data: authUrl } = await fetchAuthUrl();
+    if (authUrl) window.open(authUrl, '_blank', 'noopener');
+  };
   // Backend sends absolute UTC instants either way — timezone only affects display, not the
   // past/ongoing/upcoming comparison, which works on instants regardless of display timezone.
   const timeZone = event.timezone || DEFAULT_TIMEZONE;
@@ -100,12 +157,69 @@ export function EventPostDetails({ event }: EventPostDetailsProps) {
         </a>
       )}
 
-      {event.maxAttendees != null && (
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Users className="h-3.5 w-3.5 shrink-0" />
-          {t('post.event.maxAttendees', { count: event.maxAttendees })}
+      <button
+        type="button"
+        onClick={() => setAttendeesOpen(true)}
+        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground hover:underline transition-colors cursor-pointer"
+      >
+        <Users className="h-3.5 w-3.5 shrink-0" />
+        <span>
+          {t('post.event.attendeeCount', { count: attendeeCount ?? 0 })}
+          {event.maxAttendees != null && (
+            <> · {t('post.event.maxAttendees', { count: event.maxAttendees })}</>
+          )}
+        </span>
+      </button>
+
+      <EventAttendeesDialog postId={postId} open={attendeesOpen} onOpenChange={setAttendeesOpen} />
+
+      {/* RSVP + calendar actions */}
+      <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t mt-2">
+        {RSVP_OPTIONS.map(({ status: rsvpStatus, icon: Icon, labelKey }) => (
+          <Button
+            key={rsvpStatus}
+            variant={myRsvp === rsvpStatus ? 'default' : 'outline'}
+            size="sm"
+            className="h-7 px-2.5 text-xs"
+            disabled={isRsvping || status === 'past'}
+            onClick={() => handleRsvp(rsvpStatus)}
+          >
+            <Icon className="h-3.5 w-3.5" />
+            {t(labelKey)}
+          </Button>
+        ))}
+
+        <div className="ml-auto flex items-center gap-1.5">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2.5 text-xs"
+            disabled={isAddingToCalendar || isFetchingAuthUrl}
+            onClick={handleCalendarClick}
+          >
+            {isAddingToCalendar || isFetchingAuthUrl ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <CalendarPlus className="h-3.5 w-3.5" />
+            )}
+            {calendarConnected ? t('post.event.addToCalendar') : t('post.event.connectCalendar')}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2.5 text-xs"
+            disabled={isExporting}
+            onClick={() => exportIcs(postId)}
+          >
+            {isExporting ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Download className="h-3.5 w-3.5" />
+            )}
+            {t('post.event.exportIcs')}
+          </Button>
         </div>
-      )}
+      </div>
     </div>
   );
 }

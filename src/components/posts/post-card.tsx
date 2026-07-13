@@ -1,18 +1,52 @@
 'use client';
 
 import { useState } from 'react';
-import { MoreHorizontal, Heart, MessageCircle, Share2, MapPin, Loader2 } from 'lucide-react';
+import {
+  MoreHorizontal,
+  Heart,
+  MessageCircle,
+  Share2,
+  MapPin,
+  Loader2,
+  Pencil,
+  Sparkles,
+  Trash2,
+} from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useT } from '@/lib/i18n';
 import { useProfile } from '@/lib/hooks/use-user';
-import { useUpsertReaction, useRemoveReaction, useCreateComment } from '@/lib/hooks/use-posts';
+import {
+  useUpsertReaction,
+  useRemoveReaction,
+  useMyReaction,
+  useComments,
+  useCreateComment,
+  useDeleteComment,
+  useUpdateComment,
+  useUpdatePost,
+  useDeletePost,
+} from '@/lib/hooks/use-posts';
 import { getNeutralAvatarColor } from '@/lib/avatar-color';
 import { cn } from '@/lib/utils';
 import { EventPostDetails } from './event-post-details';
 import { BookPostSummary } from './book-post-summary';
-import type { FeedPostData, SessionComment } from '@/lib/types';
+import { ExplainDialog } from './explain-dialog';
+import type { CommentResponse, FeedPostData } from '@/lib/types';
 
 interface PostCardProps {
   post: FeedPostData;
@@ -46,10 +80,119 @@ function getLocationLabel(post: FeedPostData): string | null {
   return locationDetails?.display_name ?? 'Địa điểm';
 }
 
+function CommentRow({
+  comment,
+  isOwn,
+  onDelete,
+  onUpdate,
+  isUpdating,
+}: {
+  comment: CommentResponse;
+  isOwn: boolean;
+  onDelete: () => void;
+  onUpdate: (content: string, onSuccess: () => void) => void;
+  isUpdating: boolean;
+}) {
+  const t = useT();
+  const authorName = comment.authorFullName ?? '?';
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(comment.content);
+
+  const startEdit = () => {
+    setDraft(comment.content);
+    setEditing(true);
+  };
+
+  const saveEdit = () => {
+    const trimmed = draft.trim();
+    if (!trimmed || trimmed === comment.content) {
+      setEditing(false);
+      return;
+    }
+    onUpdate(trimmed, () => setEditing(false));
+  };
+
+  return (
+    <div className="group flex items-start gap-2">
+      <Avatar className="h-7 w-7 shrink-0">
+        <AvatarImage src={comment.authorProfilePictureUrl ?? undefined} />
+        <AvatarFallback
+          className={`${getNeutralAvatarColor(authorName)} text-white text-[10px] font-medium`}
+        >
+          {nameInitials(authorName) || '?'}
+        </AvatarFallback>
+      </Avatar>
+
+      {editing ? (
+        <div className="flex-1 space-y-1.5">
+          <input
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                saveEdit();
+              }
+              if (e.key === 'Escape') setEditing(false);
+            }}
+            autoFocus
+            className="w-full bg-muted rounded-full px-3 py-1.5 text-xs focus:outline-none"
+          />
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={saveEdit}
+              disabled={isUpdating}
+              className="text-[11px] font-medium text-primary hover:underline cursor-pointer disabled:opacity-50"
+            >
+              {isUpdating ? <Loader2 className="h-3 w-3 animate-spin" /> : t('post.saveComment')}
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditing(false)}
+              className="text-[11px] text-muted-foreground hover:underline cursor-pointer"
+            >
+              {t('post.cancelEditComment')}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="bg-muted rounded-2xl px-3 py-1.5 text-xs max-w-[85%]">
+            <p className="font-medium leading-tight">{authorName}</p>
+            <p className="mt-0.5 whitespace-pre-wrap break-words">{comment.content}</p>
+          </div>
+          {isOwn && (
+            <span className="mt-1.5 hidden group-hover:flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={startEdit}
+                aria-label={t('post.editComment')}
+                className="text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={onDelete}
+                aria-label={t('post.deleteComment')}
+                className="text-muted-foreground hover:text-destructive cursor-pointer"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </span>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 export function PostCard({ post }: PostCardProps) {
   const t = useT();
   const {
     postId,
+    authorId,
     authorFullName,
     authorProfilePictureUrl,
     authorJobTitle,
@@ -61,28 +204,47 @@ export function PostCard({ post }: PostCardProps) {
   const initials = nameInitials(authorFullName);
 
   const { data: profile } = useProfile();
+  const isOwnPost = profile?.userId === authorId;
+
   const { mutate: upsertReaction, isPending: isReacting } = useUpsertReaction(postId);
   const { mutate: removeReaction } = useRemoveReaction(postId);
   const { mutate: createComment, isPending: isCommenting } = useCreateComment(postId);
+  const { mutate: deleteComment } = useDeleteComment(postId);
+  const { mutate: updateComment, isPending: isUpdatingComment } = useUpdateComment(postId);
+  const { mutate: updatePost, isPending: isUpdatingPost } = useUpdatePost();
+  const { mutate: deletePost, isPending: isDeletingPost } = useDeletePost();
 
-  // Session-only optimistic state: the backend has no GET for the current user's existing
-  // reaction or for a post's comment list, so neither can be restored on load.
-  const [liked, setLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(post.likeCount);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [commentDraft, setCommentDraft] = useState('');
-  const [sessionComments, setSessionComments] = useState<SessionComment[]>([]);
-  const commentCount = post.commentCount + sessionComments.length;
+  const [explainOpen, setExplainOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editDraft, setEditDraft] = useState(content);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+
+  // Server state for the viewer's reaction; fall back to it unless the user toggled locally.
+  const { data: myReaction } = useMyReaction(postId);
+  const [likedOverride, setLikedOverride] = useState<boolean | null>(null);
+  const liked = likedOverride ?? myReaction?.reactionType != null;
+  const [likeDelta, setLikeDelta] = useState(0);
+  const likeCount = post.likeCount + likeDelta;
+
+  // Only fetch the comment list once the section is opened.
+  const {
+    data: comments,
+    isLoading: isLoadingComments,
+    isError: commentsError,
+  } = useComments(postId, commentsOpen);
+  const commentCount = comments?.length ?? post.commentCount;
 
   const handleToggleLike = () => {
     if (isReacting) return;
     if (liked) {
-      setLiked(false);
-      setLikeCount((c) => c - 1);
+      setLikedOverride(false);
+      setLikeDelta((d) => d - 1);
       removeReaction();
     } else {
-      setLiked(true);
-      setLikeCount((c) => c + 1);
+      setLikedOverride(true);
+      setLikeDelta((d) => d + 1);
       upsertReaction('LIKE');
     }
   };
@@ -90,25 +252,13 @@ export function PostCard({ post }: PostCardProps) {
   const handleSubmitComment = () => {
     const trimmed = commentDraft.trim();
     if (!trimmed) return;
+    createComment({ content: trimmed }, { onSuccess: () => setCommentDraft('') });
+  };
 
-    createComment(
-      { content: trimmed },
-      {
-        onSuccess: () => {
-          setSessionComments((prev) => [
-            ...prev,
-            {
-              id: crypto.randomUUID(),
-              content: trimmed,
-              authorFullName: profile?.fullname ?? 'You',
-              authorProfilePictureUrl: profile?.profilePictureUrl ?? '',
-              createdAt: new Date().toISOString(),
-            },
-          ]);
-          setCommentDraft('');
-        },
-      }
-    );
+  const handleSaveEdit = () => {
+    const trimmed = editDraft.trim();
+    if (!trimmed) return;
+    updatePost({ postId, payload: { content: trimmed } }, { onSuccess: () => setEditOpen(false) });
   };
 
   function formatRelativeTime(dateStr: string): string {
@@ -164,12 +314,31 @@ export function PostCard({ post }: PostCardProps) {
             </div>
           </div>
 
-          <button
-            type="button"
-            className="p-1 rounded-full hover:bg-accent transition-colors cursor-pointer text-muted-foreground shrink-0"
-          >
-            <MoreHorizontal className="h-4 w-4" />
-          </button>
+          {isOwnPost && (
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                aria-label={t('post.menu.edit')}
+                className="p-1 rounded-full hover:bg-accent transition-colors cursor-pointer text-muted-foreground shrink-0 outline-none"
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={() => {
+                    setEditDraft(content);
+                    setEditOpen(true);
+                  }}
+                >
+                  <Pencil className="h-4 w-4" />
+                  {t('post.menu.edit')}
+                </DropdownMenuItem>
+                <DropdownMenuItem variant="destructive" onClick={() => setDeleteOpen(true)}>
+                  <Trash2 className="h-4 w-4" />
+                  {t('post.menu.delete')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
 
         {/* Content */}
@@ -178,7 +347,7 @@ export function PostCard({ post }: PostCardProps) {
         )}
 
         {post.postType === 'EVENT' && post.eventDetails && (
-          <EventPostDetails event={post.eventDetails} />
+          <EventPostDetails postId={postId} event={post.eventDetails} />
         )}
 
         {post.postType === 'BOOK' && post.book && <BookPostSummary book={post.book} />}
@@ -211,6 +380,14 @@ export function PostCard({ post }: PostCardProps) {
           </button>
           <button
             type="button"
+            onClick={() => setExplainOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors cursor-pointer"
+          >
+            <Sparkles className="h-4 w-4" />
+            {t('knowledge.explain.button')}
+          </button>
+          <button
+            type="button"
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors cursor-pointer ml-auto"
           >
             <Share2 className="h-4 w-4" />
@@ -222,26 +399,32 @@ export function PostCard({ post }: PostCardProps) {
         {/* Comments */}
         {commentsOpen && (
           <div className="mt-3 pt-3 border-t space-y-3">
-            {sessionComments.map((c) => (
-              <div key={c.id} className="flex items-start gap-2">
-                <Avatar className="h-7 w-7 shrink-0">
-                  <AvatarImage src={c.authorProfilePictureUrl} />
-                  <AvatarFallback
-                    className={`${getNeutralAvatarColor(c.authorFullName)} text-white text-[10px] font-medium`}
-                  >
-                    {nameInitials(c.authorFullName) || '?'}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="bg-muted rounded-2xl px-3 py-1.5 text-xs max-w-[85%]">
-                  <p className="font-medium leading-tight">{c.authorFullName}</p>
-                  <p className="mt-0.5 whitespace-pre-wrap break-words">{c.content}</p>
-                </div>
+            {isLoadingComments && (
+              <div className="flex justify-center py-2">
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
               </div>
-            ))}
-
-            {post.commentCount > 0 && sessionComments.length === 0 && (
-              <p className="text-xs text-muted-foreground">{t('post.olderCommentsHidden')}</p>
             )}
+
+            {commentsError && (
+              <p className="text-xs text-muted-foreground">{t('post.commentsError')}</p>
+            )}
+
+            {!isLoadingComments && !commentsError && (comments?.length ?? 0) === 0 && (
+              <p className="text-xs text-muted-foreground">{t('post.noComments')}</p>
+            )}
+
+            {comments?.map((c) => (
+              <CommentRow
+                key={c.id}
+                comment={c}
+                isOwn={profile?.userId === c.authorId}
+                onDelete={() => deleteComment(c.id)}
+                onUpdate={(content, onSuccess) =>
+                  updateComment({ commentId: c.id, payload: { content } }, { onSuccess })
+                }
+                isUpdating={isUpdatingComment}
+              />
+            ))}
 
             <div className="flex items-center gap-2">
               <Avatar className="h-7 w-7 shrink-0">
@@ -276,6 +459,61 @@ export function PostCard({ post }: PostCardProps) {
           </div>
         )}
       </CardContent>
+
+      {/* AI explanation */}
+      <ExplainDialog postId={postId} open={explainOpen} onOpenChange={setExplainOpen} />
+
+      {/* Edit own post */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('post.menu.editTitle')}</DialogTitle>
+          </DialogHeader>
+          <textarea
+            value={editDraft}
+            onChange={(e) => setEditDraft(e.target.value)}
+            rows={5}
+            className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:border-ring resize-none"
+          />
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={() => setEditOpen(false)}>
+              {t('post.menu.cancel')}
+            </Button>
+            <Button
+              size="sm"
+              disabled={isUpdatingPost || !editDraft.trim()}
+              onClick={handleSaveEdit}
+            >
+              {isUpdatingPost && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              {isUpdatingPost ? t('post.menu.saving') : t('post.menu.save')}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete own post */}
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t('post.menu.confirmDeleteTitle')}</DialogTitle>
+            <DialogDescription>{t('post.menu.confirmDeleteDesc')}</DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={() => setDeleteOpen(false)}>
+              {t('post.menu.cancel')}
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              disabled={isDeletingPost}
+              onClick={() => deletePost(postId, { onSuccess: () => setDeleteOpen(false) })}
+            >
+              {isDeletingPost && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              {t('post.menu.confirm')}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

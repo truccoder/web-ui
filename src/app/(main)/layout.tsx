@@ -12,6 +12,7 @@ import {
   Newspaper,
   TrendingUp,
   MessageCircle,
+  BookOpen,
   ChevronDown,
   UserPlus,
   UserCheck,
@@ -36,6 +37,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { SearchBar } from '@/components/search/search-bar';
+import { NotificationBell } from '@/components/notifications/notification-bell';
 
 function NavLinks({ onClick }: { onClick?: () => void }) {
   const pathname = usePathname();
@@ -154,6 +156,21 @@ function NavLinks({ onClick }: { onClick?: () => void }) {
       >
         <MessageCircle className="h-4 w-4" />
         {t('nav.chats')}
+      </Link>
+
+      {/* Knowledge */}
+      <Link
+        href="/knowledge"
+        onClick={onClick}
+        className={cn(
+          'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+          pathname.startsWith('/knowledge')
+            ? 'bg-primary text-primary-foreground'
+            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+        )}
+      >
+        <BookOpen className="h-4 w-4" />
+        {t('nav.knowledge')}
       </Link>
 
       {/* Profile */}
@@ -290,7 +307,12 @@ function MainContent({ children }: { children: React.ReactNode }) {
           Only sticky at md+ — below that, the mobile header above is already sticky at top-0,
           and stacking two independent top-0 stickies would overlap them. */}
       <div className="md:sticky md:top-0 z-30 border-b bg-card px-4 sm:px-6 lg:px-8 py-3">
-        <SearchBar />
+        <div className="flex items-center gap-2">
+          <div className="flex-1 min-w-0">
+            <SearchBar />
+          </div>
+          <NotificationBell />
+        </div>
       </div>
 
       {isFullBleed ? (

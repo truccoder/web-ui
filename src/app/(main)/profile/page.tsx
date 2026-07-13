@@ -21,6 +21,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { getNeutralAvatarColor } from '@/lib/avatar-color';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { NotificationPreferences } from '@/components/notifications/notification-preferences';
 
 function ProfilePictureUpload({ liveFullname }: { liveFullname?: string }) {
   const { data: profile } = useProfile();
@@ -240,6 +241,7 @@ export default function ProfilePage() {
         <TabsList>
           <TabsTrigger value="profile">{t('profile.tabs.info')}</TabsTrigger>
           <TabsTrigger value="password">{t('profile.tabs.password')}</TabsTrigger>
+          <TabsTrigger value="notifications">{t('profile.tabs.notifications')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile">
@@ -262,6 +264,18 @@ export default function ProfilePage() {
             </CardHeader>
             <CardContent>
               <ChangePasswordTab />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="notifications">
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('notifications.prefs.title')}</CardTitle>
+              <CardDescription>{t('notifications.prefs.desc')}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <NotificationPreferences />
             </CardContent>
           </Card>
         </TabsContent>

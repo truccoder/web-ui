@@ -13,8 +13,7 @@ export const eventsApi = {
       params: { status },
     }),
 
-  getAttendees: (postId: number) =>
-    api.get<EventRsvp[]>(`/v1/api/events/${postId}/attendees`),
+  getAttendees: (postId: number) => api.get<EventRsvp[]>(`/v1/api/events/${postId}/attendees`),
 
   getAttendeeCount: (postId: number) =>
     api.get<AttendeeCountResponse>(`/v1/api/events/${postId}/attendees/count`),
@@ -22,12 +21,12 @@ export const eventsApi = {
   addToGoogleCalendar: (postId: number) =>
     api.post<void>(`/v1/api/events/${postId}/add-to-calendar`),
 
-  getExportIcsUrl: (postId: number) =>
-    `${process.env.NEXT_PUBLIC_API_URL}/v1/api/events/${postId}/export.ics`,
+  // The endpoint requires the session JWT, so a plain <a href> can't reach it —
+  // fetch as a blob through the authenticated axios instance instead.
+  exportIcs: (postId: number) =>
+    api.get<Blob>(`/v1/api/events/${postId}/export.ics`, { responseType: 'blob' }),
 
-  getGoogleAuthUrl: () =>
-    api.get<AuthUrlResponse>('/v1/api/events/google/auth-url'),
+  getGoogleAuthUrl: () => api.get<AuthUrlResponse>('/v1/api/events/google/auth-url'),
 
-  getCalendarStatus: () =>
-    api.get<CalendarStatusResponse>('/v1/api/events/google/status'),
+  getCalendarStatus: () => api.get<CalendarStatusResponse>('/v1/api/events/google/status'),
 };
