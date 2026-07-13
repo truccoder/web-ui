@@ -8,6 +8,8 @@ import type {
   FriendProfileWire,
   FriendListResult,
   FriendSuggestion,
+  PendingFriendRequest,
+  SentFriendRequest,
   UserSummary,
 } from '@/lib/types';
 
@@ -68,19 +70,39 @@ export function useFriendSuggestions(limit = 10) {
   });
 }
 
-// NOTE: backing endpoint doesn't exist on the backend yet — see friendshipApi.getPendingRequests.
+// Wire ids are numeric; the UI-facing types keep string ids (same boundary-mapping
+// pattern as toUserSummary above).
 export function usePendingRequests() {
   return useQuery({
     queryKey: ['pending-requests'],
-    queryFn: () => friendshipApi.getPendingRequests().then((r) => r.data),
+    queryFn: (): Promise<PendingFriendRequest[]> =>
+      friendshipApi.getPendingRequests().then((r) =>
+        r.data.map((req) => ({
+          id: String(req.id),
+          requesterId: String(req.requesterId),
+          requesterFullName: req.requesterFullName ?? '',
+          requesterProfilePictureUrl: req.requesterProfilePictureUrl ?? '',
+          status: req.status,
+          createdAt: req.createdAt,
+        }))
+      ),
   });
 }
 
-// NOTE: backing endpoint doesn't exist on the backend yet — see friendshipApi.getSentRequests.
 export function useSentRequests() {
   return useQuery({
     queryKey: ['sent-requests'],
-    queryFn: () => friendshipApi.getSentRequests().then((r) => r.data),
+    queryFn: (): Promise<SentFriendRequest[]> =>
+      friendshipApi.getSentRequests().then((r) =>
+        r.data.map((req) => ({
+          id: String(req.id),
+          addresseeId: String(req.addresseeId),
+          addresseeFullName: req.addresseeFullName ?? '',
+          addresseeProfilePictureUrl: req.addresseeProfilePictureUrl ?? '',
+          status: req.status,
+          createdAt: req.createdAt,
+        }))
+      ),
   });
 }
 
