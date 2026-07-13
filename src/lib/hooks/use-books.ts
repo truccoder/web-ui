@@ -17,6 +17,31 @@ export function useBook(bookId: number, enabled = true) {
   });
 }
 
+export function useBooksByAuthor(authorId: number, enabled = true) {
+  return useQuery({
+    queryKey: ['books', 'author', authorId],
+    queryFn: () => booksApi.getBooksByAuthor(authorId).then((r) => r.data),
+    enabled,
+  });
+}
+
+export function useDeleteBook() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (bookId: number) => booksApi.deleteBook(bookId).then((r) => r.data),
+    onSuccess: (_data, bookId) => {
+      qc.removeQueries({ queryKey: ['book', bookId] });
+      qc.invalidateQueries({ queryKey: ['books', 'author'] });
+      qc.invalidateQueries({ queryKey: ['newsfeed'] });
+      toast.success('Book deleted');
+    },
+    onError: (error) => {
+      toast.error(getErrorMessage(error, 'Failed to delete book'));
+    },
+  });
+}
+
 // Presigned URLs are short-lived (per FeedBookSummaryDto's own doc comment) — enabled only on
 // demand (e.g. clicking "Preview") and not held onto with a long staleTime, so re-opening the
 // preview after a while fetches a fresh URL instead of reusing one that may have expired.
@@ -51,6 +76,14 @@ export function useBookReviews(bookId: number, enabled: boolean) {
   });
 }
 
+export function useRatingBreakdown(bookId: number, enabled: boolean) {
+  return useQuery({
+    queryKey: ['book', bookId, 'rating-breakdown'],
+    queryFn: () => booksApi.getRatingBreakdown(bookId).then((r) => r.data),
+    enabled,
+  });
+}
+
 export function useCreateReview(bookId: number) {
   const qc = useQueryClient();
 
@@ -58,7 +91,9 @@ export function useCreateReview(bookId: number) {
     mutationFn: (payload: CreateReviewRequest) =>
       booksApi.createReview(bookId, payload).then((r) => r.data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['book', bookId, 'reviews'] });
+      // Invalidate the whole ['book', bookId] prefix: a new review changes the reviews
+      // list, the rating breakdown, and the book detail's avgRating/reviewCount together.
+      qc.invalidateQueries({ queryKey: ['book', bookId] });
       toast.success('Review submitted');
     },
     onError: (error) => {
