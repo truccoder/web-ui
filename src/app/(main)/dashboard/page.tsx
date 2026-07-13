@@ -1,16 +1,17 @@
 'use client';
 
-import { Users, UserPlus, UserCheck, Clock } from 'lucide-react';
+import { Users, UserPlus, UserCheck, Clock, Bell } from 'lucide-react';
 import { useProfile } from '@/lib/hooks/use-user';
 import {
   useFriends,
   useFriendSuggestions,
   usePendingRequests,
+  useSentRequests,
   useSendFriendRequest,
   useAcceptFriendRequest,
   useRejectFriendRequest,
 } from '@/lib/hooks/use-friendship';
-import { useFollowers, useFollowing } from '@/lib/hooks/use-social';
+import { useUnreadNotificationCount } from '@/lib/hooks/use-notifications';
 import { useT } from '@/lib/i18n';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -48,8 +49,8 @@ export default function DashboardPage() {
   const { data: friends } = useFriends();
   const { data: suggestions } = useFriendSuggestions();
   const { data: pendingRequests } = usePendingRequests();
-  const { data: followers } = useFollowers();
-  const { data: following } = useFollowing();
+  const { data: sentRequests } = useSentRequests();
+  const { data: unreadCount } = useUnreadNotificationCount();
 
   const { mutate: sendRequest, isPending: isSending } = useSendFriendRequest();
   const { mutate: acceptRequest } = useAcceptFriendRequest();
@@ -76,16 +77,16 @@ export default function DashboardPage() {
           description={t('dashboard.stats.friendsDesc')}
         />
         <StatCard
-          title={t('dashboard.stats.followers')}
-          value={followers?.totalElements}
+          title={t('dashboard.stats.sent')}
+          value={sentRequests?.length}
           icon={UserCheck}
-          description={t('dashboard.stats.followersDesc')}
+          description={t('dashboard.stats.sentDesc')}
         />
         <StatCard
-          title={t('dashboard.stats.following')}
-          value={following?.totalElements}
-          icon={UserPlus}
-          description={t('dashboard.stats.followingDesc')}
+          title={t('dashboard.stats.unread')}
+          value={unreadCount}
+          icon={Bell}
+          description={t('dashboard.stats.unreadDesc')}
         />
         <StatCard
           title={t('dashboard.stats.pending')}

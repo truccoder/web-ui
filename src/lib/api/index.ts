@@ -12,5 +12,4 @@ export * from './payments';
 export * from './posts';
 export * from './profile';
 export * from './search';
-export * from './social';
 export * from './trending';
