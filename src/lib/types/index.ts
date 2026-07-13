@@ -132,6 +132,27 @@ export interface SentFriendRequest {
   createdAt: string;
 }
 
+// Raw shapes of GET /v1/api/friendships/requests/pending|sent (PendingFriendRequestDto /
+// SentFriendRequestDto) — ids are numeric on the wire; mapped to the string-id
+// PendingFriendRequest/SentFriendRequest types above at the hook boundary.
+export interface PendingFriendRequestWire {
+  id: number;
+  requesterId: number;
+  requesterFullName: string | null;
+  requesterProfilePictureUrl: string | null;
+  status: FriendRequestStatus;
+  createdAt: string;
+}
+
+export interface SentFriendRequestWire {
+  id: number;
+  addresseeId: number;
+  addresseeFullName: string | null;
+  addresseeProfilePictureUrl: string | null;
+  status: FriendRequestStatus;
+  createdAt: string;
+}
+
 // Raw shape of the friendships module's UserProfileDto (GET /v1/api/friendships,
 // GET /v1/api/friendships/suggestions) — mapped to UserSummary at the API/hook boundary,
 // same pattern as UserResponse -> Profile.
@@ -258,6 +279,15 @@ export interface CreateReviewRequest {
   feedback?: string;
 }
 
+export interface RatingBreakdown {
+  oneStarCount: number;
+  twoStarsCount: number;
+  threeStarsCount: number;
+  fourStarsCount: number;
+  fiveStarsCount: number;
+  totalRatings: number;
+}
+
 export interface PresignedUrlResponse {
   url: string;
 }
@@ -302,6 +332,12 @@ export interface UpsertReactionRequest {
   reactionType: ReactionType;
 }
 
+// Wire shape of GET /v1/api/posts/{postId}/reactions/me — reactionType is null
+// when the current user hasn't reacted to the post.
+export interface MyReactionResponse {
+  reactionType: ReactionType | null;
+}
+
 export interface CreateCommentRequest {
   content: string;
   parentId?: number;
@@ -311,14 +347,27 @@ export interface UpdateCommentRequest {
   content: string;
 }
 
-// Backend has no GET for listing a post's comments yet, so this only represents a
-// comment added during the current session — it's optimistic display, not a real thread.
+/** @deprecated Backend now exposes GET /posts/{postId}/comments — use CommentResponse via useComments instead. */
 export interface SessionComment {
   id: string;
   content: string;
   authorFullName: string;
   authorProfilePictureUrl: string;
   createdAt: string;
+}
+
+// Wire shape of GET /v1/api/posts/{postId}/comments (CommentResponseDto). Flat list ordered
+// by createdAt asc — thread replies client-side via parentId (replies are one level deep only).
+export interface CommentResponse {
+  id: number;
+  postId: number;
+  authorId: number;
+  authorFullName: string | null;
+  authorProfilePictureUrl: string | null;
+  content: string;
+  parentId: number | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface PostAuthor {
