@@ -2,12 +2,15 @@
 
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Loader2, Users as UsersIcon, FileText, BookOpen, Star } from 'lucide-react';
+import { Loader2, Users as UsersIcon, FileText, BookOpen, Star, UserPlus } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import { useSearch } from '@/lib/hooks/use-search';
 import { useT } from '@/lib/i18n';
 import { getNeutralAvatarColor } from '@/lib/avatar-color';
 import { getErrorMessage } from '@/lib/api/error';
+import { useFriends, useSentRequests, useSendFriendRequest } from '@/lib/hooks/use-friendship';
+import { useProfile } from '@/lib/hooks/use-user';
 import type { SearchBook } from '@/lib/types';
 
 function initials(name: string): string {
@@ -58,6 +61,14 @@ function SearchContent() {
 
   const { data, isLoading, isError, error } = useSearch(query, 20, query.length >= 2);
 
+  const { data: profile } = useProfile();
+  const { data: friendsData } = useFriends();
+  const { data: sentRequests } = useSentRequests();
+  const { mutate: sendRequest, isPending: isSending } = useSendFriendRequest();
+
+  const friendIds = new Set(friendsData?.friends.map((f) => String(f.id)) ?? []);
+  const sentIds = new Set(sentRequests?.map((r) => String(r.addresseeId)) ?? []);
+
   const hasResults = Boolean(data && (data.users.length > 0 || data.posts.length > 0));
 
   return (
@@ -96,6 +107,10 @@ function SearchContent() {
               <div className="rounded-lg border divide-y overflow-hidden">
                 {data!.users.map((u) => {
                   const color = getNeutralAvatarColor(String(u.id));
+                  const isSelf = String(u.id) === String(profile?.userId);
+                  const isFriend = friendIds.has(String(u.id));
+                  const isSent = sentIds.has(String(u.id));
+
                   return (
                     <div key={u.id} className="flex items-center gap-3 px-3 py-3">
                       <Avatar className="h-10 w-10 shrink-0">
@@ -104,10 +119,24 @@ function SearchContent() {
                           {initials(u.fullName) || '?'}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium truncate">{u.fullName}</p>
                         <p className="text-xs text-muted-foreground truncate">@{u.username}</p>
                       </div>
+                      {!isSelf && !isFriend && (
+                        <Button
+                          size="sm"
+                          variant={isSent ? 'secondary' : 'default'}
+                          disabled={isSent || isSending}
+                          onClick={() => sendRequest({ addresseeId: u.id })}
+                          className="shrink-0"
+                        >
+                          <UserPlus className="h-4 w-4 mr-1.5" />
+                          {isSent
+                            ? t('friends.suggestions.requestSent')
+                            : t('friends.suggestions.addFriend')}
+                        </Button>
+                      )}
                     </div>
                   );
                 })}
