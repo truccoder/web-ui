@@ -1,8 +1,8 @@
 import api from './axios';
 import type { AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import type {
-  PendingFriendRequest,
-  SentFriendRequest,
+  PendingFriendRequestWire,
+  SentFriendRequestWire,
   FriendListResponseWire,
   FriendSuggestionWire,
 } from '@/lib/types';
@@ -55,17 +55,14 @@ export const friendshipApi = {
     return api.post<void>(`/v1/api/friendships/requests/${requestId}/reject`);
   },
 
-  // NOTE: the backend has no endpoint to list pending/sent friend requests yet (no
-  // repository query, service method, or controller route exists for it) — these two
-  // calls hit routes that don't exist until that's added.
-  getPendingRequests: (): Promise<AxiosResponse<PendingFriendRequest[]>> => {
-    if (USE_MOCK) return mockResponse<PendingFriendRequest[]>([]);
-    return api.get<PendingFriendRequest[]>('/v1/api/friendships/requests/pending');
+  getPendingRequests: (): Promise<AxiosResponse<PendingFriendRequestWire[]>> => {
+    if (USE_MOCK) return mockResponse<PendingFriendRequestWire[]>([]);
+    return api.get<PendingFriendRequestWire[]>('/v1/api/friendships/requests/pending');
   },
 
-  getSentRequests: (): Promise<AxiosResponse<SentFriendRequest[]>> => {
-    if (USE_MOCK) return mockResponse<SentFriendRequest[]>([]);
-    return api.get<SentFriendRequest[]>('/v1/api/friendships/requests/sent');
+  getSentRequests: (): Promise<AxiosResponse<SentFriendRequestWire[]>> => {
+    if (USE_MOCK) return mockResponse<SentFriendRequestWire[]>([]);
+    return api.get<SentFriendRequestWire[]>('/v1/api/friendships/requests/sent');
   },
 
   getFriends: (cursor?: number, limit = 100): Promise<AxiosResponse<FriendListResponseWire>> => {
