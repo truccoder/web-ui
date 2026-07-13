@@ -2,9 +2,11 @@ import api from './axios';
 import type {
   CreatePostRequest,
   UpdatePostRequest,
+  CommentResponse,
   CreateCommentRequest,
   UpdateCommentRequest,
   UpsertReactionRequest,
+  MyReactionResponse,
 } from '@/lib/types';
 
 export const postsApi = {
@@ -26,7 +28,8 @@ export const postsApi = {
 
   deletePost: (postId: number) => api.delete<void>(`/v1/api/posts/${postId}`),
 
-  // NOTE: no GET endpoint exists yet to list a post's comments — see CommentController.
+  getComments: (postId: number) => api.get<CommentResponse[]>(`/v1/api/posts/${postId}/comments`),
+
   createComment: (postId: number, payload: CreateCommentRequest) =>
     api.post<void>(`/v1/api/posts/${postId}/comments`, payload),
 
@@ -36,8 +39,9 @@ export const postsApi = {
   deleteComment: (postId: number, commentId: number) =>
     api.delete<void>(`/v1/api/posts/${postId}/comments/${commentId}`),
 
-  // NOTE: no GET endpoint exists yet to read back the current user's reaction — see
-  // PostReactionController.
+  getMyReaction: (postId: number) =>
+    api.get<MyReactionResponse>(`/v1/api/posts/${postId}/reactions/me`),
+
   upsertReaction: (postId: number, payload: UpsertReactionRequest) =>
     api.put<void>(`/v1/api/posts/${postId}/reactions`, payload),
 
