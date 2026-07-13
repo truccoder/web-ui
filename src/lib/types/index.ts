@@ -682,6 +682,124 @@ export interface AdminReviewRequest {
   feedback?: string;
 }
 
+// ─── Knowledge (AI explanations, professional profile, personal access tokens) ─
+
+export type SeniorityLevel = 'JUNIOR' | 'MID' | 'SENIOR' | 'LEAD' | 'PRINCIPAL';
+
+export type PrimaryRole =
+  | 'BACKEND'
+  | 'FRONTEND'
+  | 'FULLSTACK'
+  | 'MOBILE'
+  | 'DEVOPS'
+  | 'DATA_ML'
+  | 'SECURITY'
+  | 'QA'
+  | 'OTHER';
+
+export type ExplanationStyle = 'CONCISE' | 'DETAILED' | 'CODE_HEAVY' | 'ANALOGY_HEAVY';
+
+export type VaultPermission = 'WRITE_ONLY' | 'BIDIRECTIONAL';
+
+export interface ExplanationExternalLink {
+  title: string;
+  url: string;
+  reason: string;
+}
+
+export interface ExplanationResponse {
+  id: number;
+  postId: number;
+  originalContent: string;
+  explanationContent: string;
+  concepts: string[] | null;
+  prerequisites: string[] | null;
+  complexityScore: number | null;
+  version: number;
+  externalLinks: ExplanationExternalLink[] | null;
+  createdAt: string;
+}
+
+export interface ExplainPostRequest {
+  feedbackNote?: string;
+}
+
+export interface SaveExplanationRequest {
+  postId: number;
+  originalContent: string;
+  explanationContent: string;
+  concepts?: string[];
+  prerequisites?: string[];
+  complexityScore?: number;
+}
+
+export interface KnowledgeLibraryResponse {
+  explanations: ExplanationResponse[];
+  totalCount: number;
+}
+
+export interface WorkExperience {
+  company?: string;
+  domain?: string;
+  role?: string;
+  durationMonths?: number;
+}
+
+// Wire shape of GET/PUT /v1/api/profile/professional (UserProfessionalProfileEntity).
+// Backend also uses this to rank friend suggestions (same primaryRole, tech stack overlap).
+export interface ProfessionalProfile {
+  userId: number;
+  jobTitle: string | null;
+  seniorityLevel: SeniorityLevel | null;
+  yearsOfExperience: number | null;
+  primaryRole: PrimaryRole | null;
+  explanationStyle: ExplanationStyle | null;
+  knownTechStack: string[] | null;
+  workHistory: WorkExperience[] | null;
+  interestedDomains: string[] | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpdateProfessionalProfileRequest {
+  jobTitle?: string;
+  /** Required by the backend (@NotNull) — the only mandatory field. */
+  seniorityLevel: SeniorityLevel;
+  yearsOfExperience?: number;
+  primaryRole?: PrimaryRole;
+  explanationStyle?: ExplanationStyle;
+  knownTechStack?: string[];
+  workHistory?: WorkExperience[];
+  interestedDomains?: string[];
+}
+
+export interface CreateTokenRequest {
+  name: string;
+  expiresInDays?: number;
+  vaultPermission?: VaultPermission;
+}
+
+// The raw token value is only returned once, at creation — it cannot be retrieved again.
+export interface CreateTokenResponse {
+  id: number;
+  token: string;
+  name: string;
+  expiresAt: string | null;
+}
+
+// Wire shape of GET /v1/api/tokens (PersonalAccessTokenEntity). tokenHash is the stored
+// hash, not the usable token — present on the wire but never something the UI should show.
+export interface PersonalAccessToken {
+  id: number;
+  userId: number;
+  tokenHash: string;
+  name: string;
+  lastUsedAt: string | null;
+  expiresAt: string | null;
+  vaultPermission: VaultPermission;
+  createdAt: string;
+}
+
 // ─── Pagination (Spring Boot style) ─────────────────────────────────────────
 
 export interface Page<T> {

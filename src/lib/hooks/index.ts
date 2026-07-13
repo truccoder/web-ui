@@ -3,6 +3,7 @@ export * from './use-auth';
 export * from './use-books';
 export * from './use-events';
 export * from './use-friendship';
+export * from './use-knowledge';
 export * from './use-location';
 export * from './use-moderation';
 export * from './use-notifications';
