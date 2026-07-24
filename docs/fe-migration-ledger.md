@@ -44,9 +44,17 @@ FE feature.
 ### DS deviation
 
 Ghi mọi chi tiết trong bản Design System bị **cắt** vì BE không có dữ liệu, kèm lý do.
-Cấm chế số liệu giả cho giống mockup.
+Cấm chế số liệu giả cho giống mockup. Ghi luôn chỗ nào cố tình làm khác bản DS.
 
-_(chưa có — điền từ bước `c` của domain đầu tiên)_
+| #   | chỗ lệch                         | DS nói                                                                                      | làm gì                                     | lý do                                                                                                                                                                                                                              |
+| --- | -------------------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | focus ring của `Input`           | `Input.prompt.md`: "amber focus ring"                                                       | **xanh** (`--nx-focus-ring` = blue-500)    | Constitution §1.3 giữ amber riêng cho reputation, §1.2 giao focus cho xanh, và chính `tokens/base.css` của DS đặt `outline: 2px solid var(--focus-ring)` toàn cục với focus-ring = blue-500. §0: constitution thắng khi mâu thuẫn. |
+| 2   | `Card selected`                  | `Card.d.ts`: "Amber border for selected state"                                              | **viền + nền xanh**                        | Như trên. §2.1 định nghĩa selected = "blue tint + accent edge".                                                                                                                                                                    |
+| 3   | `Button variant="primary"`       | `colors-neutrals` nói nút chính là ink `#101820`; `colors-accent` nói nút chính là blue-600 | **ink fill**                               | Hai guideline mâu thuẫn nhau. §1.2 cho phép cả hai ("reads blue or ink"), nên theo `Button.d.ts` — spec riêng của component thì cụ thể hơn.                                                                                        |
+| 4   | hover/pressed của bề mặt inverse | DS không có alias nào cho việc này                                                          | thêm `--nx-surface-inverse-hover/-pressed` | DS có tint 4%/8% cho surface sáng nhưng không có cho surface đảo, mà nút primary ink lại cần. Lấy đúng nấc kế tiếp trên thang ink (gray-800/700, dark thì gray-100/200) chứ không bịa màu mới.                                     |
+
+Ba dòng đầu là **mâu thuẫn nội bộ của DS**, không phải BE thiếu dữ liệu — nên báo ngược
+lại cho chủ Design System, đừng để mỗi người tự quyết một kiểu.
 
 ---
 
@@ -171,8 +179,12 @@ Cột "hook có UI dùng" đếm hook được import từ `app/` hoặc `compon
 
 ## 4. Nhật ký checkpoint
 
-| ngày       | task        | nội dung                                                                                                        |
-| ---------- | ----------- | --------------------------------------------------------------------------------------------------------------- |
-| 2026-07-22 | P0.1 + P0.2 | Boot BE, verify `/v3/api-docs` → 200. Sinh `src/core/api/schema.gen.ts` (90 path / 101 operation / 108 schema). |
-| 2026-07-22 | P0.3        | Đối chiếu spec ↔ `src/lib/api/*`: 58 OK · 5 wire sai · 36 chưa có · 2 n/a · 7 FE thừa.                          |
-| 2026-07-22 | P0.4        | Bản đồ route → domain (mục 2), chốt domain chủ của `/dashboard`, đo độ phủ UI (mục 3).                          |
+| ngày       | task        | nội dung                                                                                                                                                      |
+| ---------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-07-22 | P0.1 + P0.2 | Boot BE, verify `/v3/api-docs` → 200. Sinh `src/core/api/schema.gen.ts` (90 path / 101 operation / 108 schema).                                               |
+| 2026-07-22 | P0.3        | Đối chiếu spec ↔ `src/lib/api/*`: 58 OK · 5 wire sai · 36 chưa có · 2 n/a · 7 FE thừa.                                                                        |
+| 2026-07-22 | P0.4        | Bản đồ route → domain (mục 2), chốt domain chủ của `/dashboard`, đo độ phủ UI (mục 3).                                                                        |
+| 2026-07-22 | P0.5        | `docs/design-tokens-map.md`. Phát hiện: app render bằng serif, dark mode là code chết, palette không có màu thương hiệu, alias DS đụng alias shadcn.          |
+| 2026-07-24 | P1.1        | Scaffold `core/` `shared/` `features/` + tsconfig paths.                                                                                                      |
+| 2026-07-24 | P1.2        | Move axios / Redux store / providers vào `core/`; tách `core/query/client.ts`.                                                                                |
+| 2026-07-24 | P1.3        | Transcribe token DS vào `globals.css` (tiền tố `nx-`), sửa lỗi font serif, mount `ThemeProvider` theo `data-theme`, dựng 3 primitive `Button` `Input` `Card`. |

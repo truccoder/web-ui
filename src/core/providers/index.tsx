@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
+import { ThemeProvider } from 'next-themes';
 import { makeQueryClient } from '@/core/query/client';
 import { StoreProvider } from '@/core/store/provider';
 import { Toaster } from '@/components/ui/sonner';
@@ -17,13 +18,18 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(makeQueryClient);
 
   return (
-    <I18nProvider>
-      <StoreProvider>
-        <QueryClientProvider client={queryClient}>
-          {children}
-          <Toaster richColors position="top-right" />
-        </QueryClientProvider>
-      </StoreProvider>
-    </I18nProvider>
+    // `data-theme` rather than the class strategy: the design system's dark block is
+    // keyed on [data-theme="dark"], so its token file transcribes verbatim instead of
+    // needing a selector translation on every future sync.
+    <ThemeProvider attribute="data-theme" defaultTheme="light" enableSystem={false}>
+      <I18nProvider>
+        <StoreProvider>
+          <QueryClientProvider client={queryClient}>
+            {children}
+            <Toaster richColors position="top-right" />
+          </QueryClientProvider>
+        </StoreProvider>
+      </I18nProvider>
+    </ThemeProvider>
   );
 }
