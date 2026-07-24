@@ -11,6 +11,18 @@
 
 export { authApi, refreshSession } from './api';
 
+export {
+  securityKeys,
+  useEstablishSession,
+  useClearSession,
+  useSession,
+  useLogin,
+  useRegister,
+  useLogout,
+  useOAuthUrl,
+  useOAuthCallback,
+} from './hooks';
+
 export type {
   LoginRequest,
   RegisterRequest,
