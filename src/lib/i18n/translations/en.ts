@@ -150,6 +150,23 @@ export const en = {
       invalidDesc: 'This magic link is invalid or has expired. Please request a new one.',
       requestNewLink: 'Request a new link',
     },
+    resetPassword: {
+      title: 'Reset your password',
+      subtitle: 'Enter a new password for your account',
+      newPassword: 'New password',
+      newPasswordPlaceholder: 'At least 6 characters',
+      confirmPassword: 'Confirm password',
+      confirmPasswordPlaceholder: 'Re-enter your password',
+      submit: 'Reset password',
+      submitting: 'Resetting…',
+      invalidTitle: 'Invalid link',
+      invalidDesc: 'This reset link is invalid or has expired. Please request a new one.',
+      requestNewLink: 'Request a new link',
+      successTitle: 'Password reset',
+      successDesc: 'Your password has been changed. You can now sign in.',
+      continue: 'Continue to sign in',
+      backToLogin: 'Back to login',
+    },
   },
 
   newsfeed: {

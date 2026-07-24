@@ -153,6 +153,23 @@ export const vi: Messages = {
       invalidDesc: 'Magic link này không hợp lệ hoặc đã hết hạn. Vui lòng yêu cầu link mới.',
       requestNewLink: 'Yêu cầu link mới',
     },
+    resetPassword: {
+      title: 'Đặt lại mật khẩu',
+      subtitle: 'Nhập mật khẩu mới cho tài khoản của bạn',
+      newPassword: 'Mật khẩu mới',
+      newPasswordPlaceholder: 'Ít nhất 6 ký tự',
+      confirmPassword: 'Xác nhận mật khẩu',
+      confirmPasswordPlaceholder: 'Nhập lại mật khẩu của bạn',
+      submit: 'Đặt lại mật khẩu',
+      submitting: 'Đang đặt lại…',
+      invalidTitle: 'Link không hợp lệ',
+      invalidDesc: 'Link đặt lại này không hợp lệ hoặc đã hết hạn. Vui lòng yêu cầu link mới.',
+      requestNewLink: 'Yêu cầu link mới',
+      successTitle: 'Đã đặt lại mật khẩu',
+      successDesc: 'Mật khẩu của bạn đã được thay đổi. Bạn có thể đăng nhập ngay.',
+      continue: 'Tiếp tục đăng nhập',
+      backToLogin: 'Quay lại đăng nhập',
+    },
   },
 
   newsfeed: {

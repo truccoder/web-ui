@@ -41,6 +41,7 @@ export {
   VerifyEmailStatus,
   MagicLoginCallback,
   type MagicLoginCallbackProps,
+  ResetPasswordForm,
 } from './components';
 
 export type {

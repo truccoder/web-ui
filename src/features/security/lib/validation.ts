@@ -18,8 +18,23 @@ export const registerSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
+/**
+ * `newPassword` mirrors the backend `@Size(min = 6)`. `confirmPassword` is FE-only — the
+ * request DTO is just `{ token, newPassword }`, so the match check never leaves the client.
+ */
+export const resetPasswordSchema = z
+  .object({
+    newPassword: z.string().min(6, 'Password must be at least 6 characters'),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ['confirmPassword'],
+  });
+
 export type LoginFormValues = z.infer<typeof loginSchema>;
 export type RegisterFormValues = z.infer<typeof registerSchema>;
+export type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
 
 /** Matches ProfileService.MAX_PROFILE_PICTURE_SIZE (5MB) on the backend. */
 export const MAX_PROFILE_PICTURE_BYTES = 5 * 1024 * 1024;
