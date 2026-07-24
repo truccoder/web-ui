@@ -26,6 +26,10 @@ export {
   useVerifyEmail,
   useRequestMagicLink,
   useMagicLinkLogin,
+  useMyProfile,
+  useUpdateProfile,
+  useChangePassword,
+  useChangeProfilePicture,
 } from './hooks';
 
 export {

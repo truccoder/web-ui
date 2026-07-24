@@ -9,3 +9,9 @@ export {
   useRequestMagicLink,
   useMagicLinkLogin,
 } from './use-recovery';
+export {
+  useMyProfile,
+  useUpdateProfile,
+  useChangePassword,
+  useChangeProfilePicture,
+} from './use-profile';
