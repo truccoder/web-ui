@@ -1,18 +1,10 @@
 import api from '@/core/api/axios';
 import type { AxiosResponse, InternalAxiosRequestConfig } from 'axios';
-import type {
-  LoginResponse,
-  ForgotPasswordRequest,
-  ResetPasswordRequest,
-  LogoutRequest,
-  VerifyEmailRequest,
-  MagicLinkRequest,
-  MagicLinkLoginRequest,
-} from '@/lib/types';
-import { MOCK_USERS } from '@/lib/mock/users';
+import type { LogoutRequest } from '@/lib/types';
 
-// Login + register have moved to features/security (P2.1a/P2.1d). What remains here is
-// the recovery + magic-link + logout surface, migrated in later security cycles.
+// Only logout remains here. Login/register moved to features/security (P2.1a/P2.1d);
+// recovery + magic-link moved in P2.1'a–d. This last stub backs the app shell's logout
+// button (admin/main layouts) and dies when the shell migrates in Phase 3.4.
 
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === 'true';
 
@@ -27,41 +19,8 @@ function mockResponse<T>(data: T): Promise<AxiosResponse<T>> {
 }
 
 export const authApi = {
-  forgotPassword: (data: ForgotPasswordRequest): Promise<AxiosResponse<void>> => {
-    if (USE_MOCK) return mockResponse<void>(undefined);
-    return api.post<void>('/v1/api/auth/forgot-password', data);
-  },
-
-  resetPassword: (data: ResetPasswordRequest): Promise<AxiosResponse<void>> => {
-    if (USE_MOCK) return mockResponse<void>(undefined);
-    return api.post<void>('/v1/api/auth/reset-password', data);
-  },
-
   logout: (data: LogoutRequest): Promise<AxiosResponse<void>> => {
     if (USE_MOCK) return mockResponse<void>(undefined);
     return api.post<void>('/v1/api/auth/logout', data);
-  },
-
-  verifyEmail: (data: VerifyEmailRequest): Promise<AxiosResponse<void>> => {
-    if (USE_MOCK) return mockResponse<void>(undefined);
-    return api.post<void>('/v1/api/auth/verify-email', data);
-  },
-
-  requestMagicLink: (data: MagicLinkRequest): Promise<AxiosResponse<void>> => {
-    if (USE_MOCK) return mockResponse<void>(undefined);
-    return api.post<void>('/v1/api/auth/magic-link', data);
-  },
-
-  loginWithMagicLink: (data: MagicLinkLoginRequest): Promise<AxiosResponse<LoginResponse>> => {
-    if (USE_MOCK) {
-      const user = MOCK_USERS[0];
-      return mockResponse<LoginResponse>({
-        accessToken: user.accessToken,
-        refreshToken: user.refreshToken,
-        tokenType: 'Bearer',
-        expiresIn: 900,
-      });
-    }
-    return api.post<LoginResponse>('/v1/api/auth/magic-link/login', data);
   },
 };
