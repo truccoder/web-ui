@@ -424,6 +424,7 @@ export const vi: Messages = {
       fullname: 'Họ và tên',
       save: 'Lưu thay đổi',
       saving: 'Đang lưu...',
+      saved: 'Đã lưu',
     },
     password: {
       title: 'Đổi mật khẩu',
@@ -431,11 +432,12 @@ export const vi: Messages = {
       currentPassword: 'Mật khẩu hiện tại',
       currentPlaceholder: 'Nhập mật khẩu hiện tại',
       newPassword: 'Mật khẩu mới',
-      newPlaceholder: 'Ít nhất 8 ký tự',
+      newPlaceholder: 'Ít nhất 6 ký tự',
       confirm: 'Xác nhận mật khẩu',
       confirmPlaceholder: 'Nhập lại mật khẩu',
       update: 'Cập nhật mật khẩu',
       updating: 'Đang cập nhật...',
+      updated: 'Đã đổi mật khẩu',
     },
   },
 

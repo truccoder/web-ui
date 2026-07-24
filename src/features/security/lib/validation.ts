@@ -32,9 +32,31 @@ export const resetPasswordSchema = z
     path: ['confirmPassword'],
   });
 
+/** `PUT /profile` — the only editable field. `fullName` mirrors the DTO's `@NotBlank`. */
+export const updateProfileSchema = z.object({
+  fullName: z.string().min(1, 'Full name is required'),
+});
+
+/**
+ * `PUT /profile/password`. `newPassword` mirrors the backend `@Size(min = 6)`;
+ * `confirmPassword` is FE-only (the DTO is `{ currentPassword, newPassword }`).
+ */
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, 'Current password is required'),
+    newPassword: z.string().min(6, 'Password must be at least 6 characters'),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ['confirmPassword'],
+  });
+
 export type LoginFormValues = z.infer<typeof loginSchema>;
 export type RegisterFormValues = z.infer<typeof registerSchema>;
 export type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
+export type UpdateProfileFormValues = z.infer<typeof updateProfileSchema>;
+export type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;
 
 /** Matches ProfileService.MAX_PROFILE_PICTURE_SIZE (5MB) on the backend. */
 export const MAX_PROFILE_PICTURE_BYTES = 5 * 1024 * 1024;

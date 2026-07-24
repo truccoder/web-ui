@@ -46,6 +46,9 @@ export {
   MagicLoginCallback,
   type MagicLoginCallbackProps,
   ResetPasswordForm,
+  ProfileIdentityCard,
+  ProfileInfoForm,
+  ChangePasswordForm,
 } from './components';
 
 export type {

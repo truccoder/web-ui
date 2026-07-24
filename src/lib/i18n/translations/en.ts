@@ -421,6 +421,7 @@ export const en = {
       fullname: 'Full Name',
       save: 'Save changes',
       saving: 'Saving...',
+      saved: 'Saved',
     },
     password: {
       title: 'Change Password',
@@ -428,11 +429,12 @@ export const en = {
       currentPassword: 'Current Password',
       currentPlaceholder: 'Enter your current password',
       newPassword: 'New Password',
-      newPlaceholder: 'At least 8 characters',
+      newPlaceholder: 'At least 6 characters',
       confirm: 'Confirm Password',
       confirmPlaceholder: 'Re-enter your password',
       update: 'Update password',
       updating: 'Updating...',
+      updated: 'Password updated',
     },
   },
 

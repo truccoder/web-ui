@@ -10,3 +10,6 @@ export {
 export { VerifyEmailStatus } from './verify-email-status';
 export { MagicLoginCallback, type MagicLoginCallbackProps } from './magic-login-callback';
 export { ResetPasswordForm } from './reset-password-form';
+export { ProfileIdentityCard } from './profile-identity-card';
+export { ProfileInfoForm } from './profile-info-form';
+export { ChangePasswordForm } from './change-password-form';
