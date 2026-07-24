@@ -1,15 +1,7 @@
 import { z } from 'zod';
 
-export const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(1, 'Password is required'),
-});
-
-export const registerSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-  fullname: z.string().min(1, 'Full name is required'),
-});
+// login + register schemas have moved to features/security/lib/validation (P2.1d).
+// Recovery + magic-link schemas remain until those cycles migrate.
 
 export const forgotPasswordSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -29,8 +21,6 @@ export const resetPasswordSchema = z
     path: ['confirmPassword'],
   });
 
-export type LoginFormData = z.infer<typeof loginSchema>;
-export type RegisterFormData = z.infer<typeof registerSchema>;
 export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
 export type MagicLinkRequestFormData = z.infer<typeof magicLinkRequestSchema>;
