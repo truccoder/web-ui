@@ -6,6 +6,9 @@ const publicPaths = [
   '/register',
   '/forgot-password',
   '/reset-password',
+  // OAuth callback runs BEFORE a session exists — it is what establishes one — so it
+  // must be reachable while logged out.
+  '/oauth',
   '/room',
   '/join',
   '/call',

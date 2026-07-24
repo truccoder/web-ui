@@ -9,43 +9,10 @@ import { setCredentials, clearAuth } from '@/core/store/auth-slice';
 import { useAppDispatch, useAppSelector } from '@/core/store/hooks';
 import { syncRoleFromProfile, clearRoleCookie } from '@/lib/hooks/use-admin-role';
 import { PROFILE_QUERY_KEY } from '@/lib/hooks/use-user';
-import type { RegisterRequest } from '@/lib/types';
 
-export function useLogin() {
-  const dispatch = useAppDispatch();
-  const router = useRouter();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: authApi.login,
-    onSuccess: async ({ data }) => {
-      setTokens(data.accessToken, data.refreshToken);
-      dispatch(
-        setCredentials({
-          accessToken: data.accessToken,
-          refreshToken: data.refreshToken,
-        })
-      );
-      document.cookie = 'session=true; path=/';
-      toast.success('Logged in successfully');
-      const role = await syncRoleFromProfile(queryClient);
-      router.push(role === 'ADMIN' ? '/admin/moderation' : '/dashboard');
-    },
-    onError: (error) => {
-      toast.error(getErrorMessage(error, 'Invalid email or password'));
-    },
-  });
-}
-
-export function useRegister() {
-  return useMutation({
-    mutationFn: (vars: { data: RegisterRequest; profilePicture?: File }) =>
-      authApi.register(vars.data, vars.profilePicture),
-    onError: (error) => {
-      toast.error(getErrorMessage(error, 'Registration failed'));
-    },
-  });
-}
+// Login + register have moved to features/security (useLogin/useRegister there).
+// What remains here — recovery, magic-link, logout — migrates in later security cycles.
+// useLogout still backs the app shell (admin/main layouts) until Phase 3.4.
 
 export function useForgotPassword() {
   return useMutation({

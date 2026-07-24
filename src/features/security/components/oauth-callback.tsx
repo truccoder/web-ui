@@ -12,6 +12,11 @@ import { useOAuthCallback } from '../hooks/use-oauth';
 
 export interface OAuthCallbackProps {
   provider: OAuthProvider;
+  /**
+   * Where to go after a successful exchange. The route injects role-aware routing;
+   * without it the component falls back to `/dashboard`.
+   */
+  onSuccess?: () => void;
 }
 
 /**
@@ -21,7 +26,7 @@ export interface OAuthCallbackProps {
  * The provider sends the browser here (redirect uri is :3000/oauth/{provider}/callback).
  * If the user denied consent it returns `?error=...` instead of a code.
  */
-export function OAuthCallback({ provider }: OAuthCallbackProps) {
+export function OAuthCallback({ provider, onSuccess }: OAuthCallbackProps) {
   const t = useT();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -38,12 +43,13 @@ export function OAuthCallback({ provider }: OAuthCallbackProps) {
     fired.current = true;
     callback.mutate(code, {
       onSuccess: () => {
-        // Role-based routing needs GET /profile/me (security cycle 3); until then
-        // everyone lands on /dashboard. See ledger §6.
-        router.replace('/dashboard');
+        // The route injects role-aware routing (legacy bridge, ledger §6). Fallback
+        // sends everyone to /dashboard.
+        if (onSuccess) onSuccess();
+        else router.replace('/dashboard');
       },
     });
-  }, [code, providerError, callback, router]);
+  }, [code, providerError, callback, router, onSuccess]);
 
   const hasError = providerError || !code || callback.isError;
 
