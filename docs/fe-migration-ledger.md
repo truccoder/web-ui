@@ -16,23 +16,23 @@ Trạng thái: `not started` · `in progress` · `done` · `n/a`
 Các cột theo dõi việc chuyển vào `src/features/`. Chưa có gì trong `features/` nên
 tất cả đang là `not started` — **không** có nghĩa là FE chưa viết gì (xem mục 3).
 
-| domain        | BE package                    | #ep | boundary note                                                                                                                                             | types       | api         | store/hooks | UI          | wired       | legacy removed | verified    |
-| ------------- | ----------------------------- | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ----------- | ----------- | ----------- | ----------- | -------------- | ----------- |
-| posts         | `com.socialapp.posts`         | 22  | `EventController` (`/events`) nằm trong package `posts` — mirror theo package, không tách `features/events/`                                              | not started | not started | not started | not started | not started | not started    | not started |
-| security      | `com.socialapp.security`      | 17  |                                                                                                                                                           | not started | not started | not started | not started | not started | not started    | not started |
-| bookstore     | `com.socialapp.bookstore`     | 11  | `PaymentController` (`/payments`) nằm trong `bookstore`; route `/payment/success` đứng riêng                                                              | not started | not started | not started | not started | not started | not started    | not started |
-| knowledge     | `com.socialapp.knowledge`     | 10  | `PersonalAccessTokenController` (`/tokens`) và `ProfessionalProfileController` (`/profile/professional`) nằm trong `knowledge` dù path trông như security | not started | not started | not started | not started | not started | not started    | not started |
-| friendships   | `com.socialapp.friendships`   | 8   |                                                                                                                                                           | not started | not started | not started | not started | not started | not started    | not started |
-| roadmap       | `com.socialapp.roadmap`       | 8   |                                                                                                                                                           | not started | not started | not started | not started | not started | not started    | not started |
-| notifications | `com.socialapp.notifications` | 6   |                                                                                                                                                           | not started | not started | not started | not started | not started | not started    | not started |
-| github        | `com.socialapp.github`        | 5   |                                                                                                                                                           | not started | not started | not started | not started | not started | not started    | not started |
-| matchmaking   | `com.socialapp.matchmaking`   | 5   |                                                                                                                                                           | not started | not started | not started | not started | not started | not started    | not started |
-| moderation    | `com.socialapp.moderation`    | 4   |                                                                                                                                                           | not started | not started | not started | not started | not started | not started    | not started |
-| chat          | `com.socialapp.chat`          | 1   |                                                                                                                                                           | not started | not started | not started | not started | not started | not started    | not started |
-| newsfeed      | `com.socialapp.newsfeed`      | 1   |                                                                                                                                                           | not started | not started | not started | not started | not started | not started    | not started |
-| reputation    | `com.socialapp.reputation`    | 1   |                                                                                                                                                           | not started | not started | not started | not started | not started | not started    | not started |
-| search        | `com.socialapp.search`        | 1   |                                                                                                                                                           | not started | not started | not started | not started | not started | not started    | not started |
-| trending      | `com.socialapp.trending`      | 1   |                                                                                                                                                           | not started | not started | not started | not started | not started | not started    | not started |
+| domain        | BE package                    | #ep | boundary note                                                                                                                                                                 | types              | api                | store/hooks | UI          | wired       | legacy removed | verified    |
+| ------------- | ----------------------------- | --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ------------------ | ----------- | ----------- | ----------- | -------------- | ----------- |
+| posts         | `com.socialapp.posts`         | 22  | `EventController` (`/events`) nằm trong package `posts` — mirror theo package, không tách `features/events/`                                                                  | not started        | not started        | not started | not started | not started | not started    | not started |
+| security      | `com.socialapp.security`      | 17  | `/profile/professional` (GET+PUT) **không** thuộc security — `ProfessionalProfileController` nằm trong package `knowledge`. Lọc path `/v1/api/profile*` sẽ ra 19, đúng là 17. | in progress (8/17) | in progress (8/17) | not started | not started | not started | not started    | not started |
+| bookstore     | `com.socialapp.bookstore`     | 11  | `PaymentController` (`/payments`) nằm trong `bookstore`; route `/payment/success` đứng riêng                                                                                  | not started        | not started        | not started | not started | not started | not started    | not started |
+| knowledge     | `com.socialapp.knowledge`     | 10  | `PersonalAccessTokenController` (`/tokens`) và `ProfessionalProfileController` (`/profile/professional`) nằm trong `knowledge` dù path trông như security                     | not started        | not started        | not started | not started | not started | not started    | not started |
+| friendships   | `com.socialapp.friendships`   | 8   |                                                                                                                                                                               | not started        | not started        | not started | not started | not started | not started    | not started |
+| roadmap       | `com.socialapp.roadmap`       | 8   |                                                                                                                                                                               | not started        | not started        | not started | not started | not started | not started    | not started |
+| notifications | `com.socialapp.notifications` | 6   |                                                                                                                                                                               | not started        | not started        | not started | not started | not started | not started    | not started |
+| github        | `com.socialapp.github`        | 5   |                                                                                                                                                                               | not started        | not started        | not started | not started | not started | not started    | not started |
+| matchmaking   | `com.socialapp.matchmaking`   | 5   |                                                                                                                                                                               | not started        | not started        | not started | not started | not started | not started    | not started |
+| moderation    | `com.socialapp.moderation`    | 4   |                                                                                                                                                                               | not started        | not started        | not started | not started | not started | not started    | not started |
+| chat          | `com.socialapp.chat`          | 1   |                                                                                                                                                                               | not started        | not started        | not started | not started | not started | not started    | not started |
+| newsfeed      | `com.socialapp.newsfeed`      | 1   |                                                                                                                                                                               | not started        | not started        | not started | not started | not started | not started    | not started |
+| reputation    | `com.socialapp.reputation`    | 1   |                                                                                                                                                                               | not started        | not started        | not started | not started | not started | not started    | not started |
+| search        | `com.socialapp.search`        | 1   |                                                                                                                                                                               | not started        | not started        | not started | not started | not started | not started    | not started |
+| trending      | `com.socialapp.trending`      | 1   |                                                                                                                                                                               | not started        | not started        | not started | not started | not started | not started    | not started |
 
 Σ 15 domain · 101 endpoint. `cloud` và `common` không có REST controller → không thành
 FE feature.
@@ -188,3 +188,33 @@ Cột "hook có UI dùng" đếm hook được import từ `app/` hoặc `compon
 | 2026-07-24 | P1.1        | Scaffold `core/` `shared/` `features/` + tsconfig paths.                                                                                                      |
 | 2026-07-24 | P1.2        | Move axios / Redux store / providers vào `core/`; tách `core/query/client.ts`.                                                                                |
 | 2026-07-24 | P1.3        | Transcribe token DS vào `globals.css` (tiền tố `nx-`), sửa lỗi font serif, mount `ThemeProvider` theo `data-theme`, dựng 3 primitive `Button` `Input` `Card`. |
+| 2026-07-24 | P2.1a       | `features/security/` types + api, chu kỳ 1/3 (session + OAuth, 8/8 endpoint). Phát hiện drift alarm của `schema.gen.ts` đang hỏng — xem mục 5.                |
+
+---
+
+## 5. Cảnh báo drift của `schema.gen.ts` đang hỏng (phát hiện 2026-07-24, P2.1a)
+
+`git diff src/core/api/schema.gen.ts` **không dùng được làm chuông báo drift** như
+CLAUDE.md Phase 4.1 giả định. Chạy lại lệnh sinh ở P2.1a cho diff 12.881 dòng thêm /
+12.951 dòng bớt, trong khi backend **không đổi gì** — đã chứng minh bằng cách so hai
+file dưới dạng multiset các dòng: giống hệt nhau, không field nào thêm/mất/đổi tên.
+
+Hai nguyên nhân cộng dồn:
+
+1. **`lint-staged` chạy `prettier --write` trên `*.ts`**, nên file được commit không bao
+   giờ là thứ generator sinh ra: 12.894 dòng → 12.964 dòng, nháy kép → nháy đơn, thụt
+   lề 4 → 2. CLAUDE.md cấm sửa tay file này; prettier sửa hộ cũng là sửa.
+2. **springdoc xuất property trong schema theo thứ tự không ổn định** — `first`, `last`,
+   `pageNumber` đổi chỗ giữa hai lần chạy dù nội dung y hệt.
+
+Hệ quả: mỗi lần regenerate đều ra ~13k dòng nhiễu, nên drift thật sẽ chìm nghỉm. Đây
+đúng là loại lệch âm thầm mà springdoc được đưa vào để chống.
+
+**Cách sửa, chưa làm (không thuộc phạm vi P2.1a):**
+
+- FE: thêm `src/core/api/schema.gen.ts` vào `.prettierignore`, rồi commit lại bản thô
+  do generator sinh để lấy mốc so sánh đúng.
+- BE: bật `springdoc.writer-with-order-by-keys: true` trong `application.yml` để thứ tự
+  key ổn định giữa các lần chạy.
+
+Làm cả hai thì `git diff` mới rỗng khi contract không đổi — tức là P4.1 mới có ý nghĩa.
