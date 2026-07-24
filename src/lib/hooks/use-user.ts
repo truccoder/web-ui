@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { profileApi, getErrorMessage } from '@/lib/api';
-import { useAppSelector } from '@/lib/store/hooks';
+import { useAppSelector } from '@/core/store/hooks';
 import type { ChangePasswordRequest, Profile, UserResponse } from '@/lib/types';
 
 export const PROFILE_QUERY_KEY = ['profile', 'me'];
