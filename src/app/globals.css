@@ -383,6 +383,7 @@
   --radius-nx-md: 8px;
   --radius-nx-lg: 12px;
   --radius-nx-xl: 16px;
+  --radius-nx-full: 9999px;
 
   /* Type scale — closed set (constitution §7.2); new sizes need an amendment. */
   --text-nx-display: 32px;
