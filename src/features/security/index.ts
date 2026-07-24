@@ -21,6 +21,11 @@ export {
   useLogout,
   useOAuthUrl,
   useOAuthCallback,
+  useForgotPassword,
+  useResetPassword,
+  useVerifyEmail,
+  useRequestMagicLink,
+  useMagicLinkLogin,
 } from './hooks';
 
 export {
