@@ -17,3 +17,11 @@ export type {
   MagicLinkRequest,
   MagicLinkLoginRequest,
 } from './recovery';
+
+export type {
+  UserProfile,
+  UserRole,
+  UpdateProfileRequest,
+  ChangePasswordRequest,
+  ProfilePictureResponse,
+} from './profile';
