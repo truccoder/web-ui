@@ -38,6 +38,9 @@ export {
   RequestLinkForm,
   type RequestLinkFormProps,
   type RequestLinkVariant,
+  VerifyEmailStatus,
+  MagicLoginCallback,
+  type MagicLoginCallbackProps,
 } from './components';
 
 export type {

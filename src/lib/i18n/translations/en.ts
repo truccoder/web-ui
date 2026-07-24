@@ -133,6 +133,23 @@ export const en = {
       successDesc: 'If an account exists for that email, we sent a sign-in link. Check your inbox.',
       backToLogin: 'Back to login',
     },
+    verifyEmail: {
+      verifying: 'Verifying your email…',
+      verifiedTitle: 'Email verified',
+      verifiedDesc: 'Your email has been verified. You can now sign in.',
+      failedTitle: 'Verification failed',
+      failedDesc: 'This verification link is invalid or has expired.',
+      invalidTitle: 'Invalid link',
+      invalidDesc: 'This verification link is missing its token. Use the link from your email.',
+      continue: 'Continue to sign in',
+      backToLogin: 'Back to login',
+    },
+    magicLogin: {
+      signingIn: 'Signing you in…',
+      invalidTitle: 'Invalid link',
+      invalidDesc: 'This magic link is invalid or has expired. Please request a new one.',
+      requestNewLink: 'Request a new link',
+    },
   },
 
   newsfeed: {

@@ -7,3 +7,5 @@ export {
   type RequestLinkFormProps,
   type RequestLinkVariant,
 } from './request-link-form';
+export { VerifyEmailStatus } from './verify-email-status';
+export { MagicLoginCallback, type MagicLoginCallbackProps } from './magic-login-callback';

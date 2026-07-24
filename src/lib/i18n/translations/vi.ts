@@ -136,6 +136,23 @@ export const vi: Messages = {
         'Nếu email này có tài khoản, chúng tôi đã gửi link đăng nhập. Vui lòng kiểm tra hộp thư.',
       backToLogin: 'Quay lại đăng nhập',
     },
+    verifyEmail: {
+      verifying: 'Đang xác minh email của bạn…',
+      verifiedTitle: 'Đã xác minh email',
+      verifiedDesc: 'Email của bạn đã được xác minh. Bạn có thể đăng nhập ngay.',
+      failedTitle: 'Xác minh thất bại',
+      failedDesc: 'Link xác minh này không hợp lệ hoặc đã hết hạn.',
+      invalidTitle: 'Link không hợp lệ',
+      invalidDesc: 'Link xác minh thiếu mã. Vui lòng dùng link trong email của bạn.',
+      continue: 'Tiếp tục đăng nhập',
+      backToLogin: 'Quay lại đăng nhập',
+    },
+    magicLogin: {
+      signingIn: 'Đang đăng nhập cho bạn…',
+      invalidTitle: 'Link không hợp lệ',
+      invalidDesc: 'Magic link này không hợp lệ hoặc đã hết hạn. Vui lòng yêu cầu link mới.',
+      requestNewLink: 'Yêu cầu link mới',
+    },
   },
 
   newsfeed: {
