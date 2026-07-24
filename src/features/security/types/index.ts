@@ -9,3 +9,11 @@ export type {
   OAuthUrlResponse,
   OAuthProvider,
 } from './auth';
+
+export type {
+  ForgotPasswordRequest,
+  ResetPasswordRequest,
+  VerifyEmailRequest,
+  MagicLinkRequest,
+  MagicLinkLoginRequest,
+} from './recovery';

@@ -9,7 +9,7 @@
  * Everything outside this folder imports from here, never from a subpath.
  */
 
-export { authApi, refreshSession } from './api';
+export { authApi, refreshSession, recoveryApi } from './api';
 
 export {
   securityKeys,
@@ -42,4 +42,9 @@ export type {
   AuthResponse,
   OAuthUrlResponse,
   OAuthProvider,
+  ForgotPasswordRequest,
+  ResetPasswordRequest,
+  VerifyEmailRequest,
+  MagicLinkRequest,
+  MagicLinkLoginRequest,
 } from './types';

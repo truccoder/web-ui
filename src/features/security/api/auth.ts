@@ -24,8 +24,8 @@ import type {
  *   defeat the single-flight dedupe that keeps concurrent 401s from burning the
  *   single-use refresh token. It is counted against this cycle's 8 endpoints
  *   because core already consumes it.
- * - Password recovery, magic link and email verification belong to the next
- *   security cycle; profile endpoints to the one after.
+ * - Password recovery, magic link and email verification live in `./recovery`
+ *   (cycle 2); profile endpoints come in the cycle after.
  */
 
 export const authApi = {
