@@ -126,6 +126,16 @@ export const vi: Messages = {
         'Chúng tôi đã gửi link đặt lại mật khẩu đến địa chỉ email của bạn. Vui lòng kiểm tra hộp thư.',
       backToLogin: 'Quay lại đăng nhập',
     },
+    magicLink: {
+      title: 'Đăng nhập không mật khẩu',
+      subtitle: 'Chúng tôi sẽ gửi cho bạn một link để đăng nhập không cần mật khẩu',
+      submit: 'Gửi magic link',
+      submitting: 'Đang gửi...',
+      successTitle: 'Kiểm tra email của bạn',
+      successDesc:
+        'Nếu email này có tài khoản, chúng tôi đã gửi link đăng nhập. Vui lòng kiểm tra hộp thư.',
+      backToLogin: 'Quay lại đăng nhập',
+    },
   },
 
   newsfeed: {

@@ -35,6 +35,9 @@ export {
   OAuthButtons,
   OAuthCallback,
   type OAuthCallbackProps,
+  RequestLinkForm,
+  type RequestLinkFormProps,
+  type RequestLinkVariant,
 } from './components';
 
 export type {

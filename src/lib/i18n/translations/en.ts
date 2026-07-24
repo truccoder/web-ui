@@ -124,6 +124,15 @@ export const en = {
         "We've sent a password reset link to your email address. Please check your inbox.",
       backToLogin: 'Back to login',
     },
+    magicLink: {
+      title: 'Sign in with a magic link',
+      subtitle: "We'll email you a link to sign in without a password",
+      submit: 'Send magic link',
+      submitting: 'Sending...',
+      successTitle: 'Check your email',
+      successDesc: 'If an account exists for that email, we sent a sign-in link. Check your inbox.',
+      backToLogin: 'Back to login',
+    },
   },
 
   newsfeed: {
