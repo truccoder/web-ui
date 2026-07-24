@@ -15,6 +15,7 @@ import {
   registerSchema,
   type RegisterFormValues,
 } from '../lib/validation';
+import { OAuthButtons } from './oauth-buttons';
 
 export function RegisterForm() {
   const t = useT();
@@ -157,6 +158,8 @@ export function RegisterForm() {
           {register.isPending ? t('auth.register.submitting') : t('auth.register.submit')}
         </Button>
       </form>
+
+      <OAuthButtons />
 
       <p className="mt-4 text-center text-nx-body-sm text-nx-text-muted">
         {t('auth.register.alreadyHaveAccount')}{' '}

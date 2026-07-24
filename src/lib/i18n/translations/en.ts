@@ -103,6 +103,17 @@ export const en = {
       alreadyHaveAccount: 'Already have an account?',
       signIn: 'Sign in',
     },
+    oauth: {
+      divider: 'or',
+      google: 'Continue with Google',
+      github: 'Continue with GitHub',
+      exchanging: 'Signing you in…',
+      failedTitle: 'Sign-in failed',
+      failed: "We couldn't complete sign-in. Please try again.",
+      denied: 'Access was denied. You can try a different method.',
+      missingCode: 'The sign-in link is missing its authorization code.',
+      backToLogin: 'Back to login',
+    },
     forgotPassword: {
       title: 'Forgot password?',
       subtitle: "Enter your email and we'll send you a reset link",

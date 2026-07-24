@@ -105,6 +105,17 @@ export const vi: Messages = {
       alreadyHaveAccount: 'Đã có tài khoản?',
       signIn: 'Đăng nhập',
     },
+    oauth: {
+      divider: 'hoặc',
+      google: 'Tiếp tục với Google',
+      github: 'Tiếp tục với GitHub',
+      exchanging: 'Đang đăng nhập cho bạn…',
+      failedTitle: 'Đăng nhập thất bại',
+      failed: 'Không thể hoàn tất đăng nhập. Vui lòng thử lại.',
+      denied: 'Truy cập bị từ chối. Bạn có thể thử cách khác.',
+      missingCode: 'Link đăng nhập thiếu mã xác thực.',
+      backToLogin: 'Quay lại đăng nhập',
+    },
     forgotPassword: {
       title: 'Quên mật khẩu?',
       subtitle: 'Nhập email của bạn và chúng tôi sẽ gửi link đặt lại mật khẩu',

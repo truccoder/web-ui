@@ -12,6 +12,7 @@ import { useT } from '@/lib/i18n';
 import { useLogin } from '../hooks/use-auth';
 import { loginSchema, type LoginFormValues } from '../lib/validation';
 import { BrandMark } from './brand-mark';
+import { OAuthButtons } from './oauth-buttons';
 
 export interface LoginFormProps {
   /** Called after a successful sign-in. The page decides where to route. */
@@ -90,6 +91,8 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
           {login.isPending ? t('auth.login.submitting') : t('auth.login.submit')}
         </Button>
       </form>
+
+      <OAuthButtons />
 
       <div className="mt-4 flex flex-col items-center gap-3 text-center">
         <Link

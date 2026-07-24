@@ -23,7 +23,14 @@ export {
   useOAuthCallback,
 } from './hooks';
 
-export { LoginForm, type LoginFormProps, RegisterForm } from './components';
+export {
+  LoginForm,
+  type LoginFormProps,
+  RegisterForm,
+  OAuthButtons,
+  OAuthCallback,
+  type OAuthCallbackProps,
+} from './components';
 
 export type {
   LoginRequest,
