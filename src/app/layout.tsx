@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
-import { Providers } from '@/providers';
+import { Providers } from '@/core/providers';
 import { ServiceWorkerRegister } from '@/components/service-worker-register';
 import './globals.css';
 
