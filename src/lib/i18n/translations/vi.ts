@@ -231,6 +231,9 @@ export const vi: Messages = {
   },
 
   createPost: {
+    visibilityLabel: 'Ai xem được bài này',
+    submittedPendingReview:
+      'Đã gửi bài. Bài viết có thể phải qua kiểm duyệt trước khi xuất hiện trên bảng tin.',
     placeholder: '${fullname} đang nghĩ gì vậy?',
     photo: 'Ảnh',
     posting: 'Đang đăng...',
