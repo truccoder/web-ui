@@ -466,3 +466,58 @@
     }
   }
 }
+
+/* ── Design-system keyframes ──────────────────────────────────────────────────
+   Transcribed verbatim from the DS `tokens/base.css` (plain data, §1). The
+   sanctioned entrance/feedback set — no others. reduced-motion (above) collapses
+   them all. */
+@keyframes nx-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes nx-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes nx-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+@keyframes nx-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* Skeleton shimmer: a quiet sunken→card→sunken sweep, calm in both themes. The
+   1.6s pace is the DS default (Skeleton.prompt.md). */
+.nx-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--nx-surface-sunken) 25%,
+    var(--nx-surface-card) 50%,
+    var(--nx-surface-sunken) 75%
+  );
+  background-size: 200% 100%;
+  animation: nx-shimmer 1.6s linear infinite;
+}
+
+/* EmptyState's blinking cursor — the one sanctioned non-reputation amber (brand
+   motif from the logo), per EmptyState.prompt.md. */
+.nx-cursor {
+  animation: nx-blink 1s step-end infinite;
+}
