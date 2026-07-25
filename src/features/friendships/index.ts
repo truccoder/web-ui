@@ -6,6 +6,19 @@
 
 export { friendshipApi } from './api';
 
+export {
+  friendshipKeys,
+  useFriends,
+  useInfiniteFriends,
+  useFriendSuggestions,
+  usePendingRequests,
+  useSentRequests,
+  useSendFriendRequest,
+  useAcceptFriendRequest,
+  useRejectFriendRequest,
+  useCancelFriendRequest,
+} from './hooks';
+
 export type {
   FriendProfile,
   FriendListResponse,
