@@ -11,6 +11,7 @@ export {
   type FriendListItemProps,
   FriendsList,
   FriendRequests,
+  FriendSuggestions,
 } from './components';
 
 export {
