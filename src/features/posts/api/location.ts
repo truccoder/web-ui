@@ -4,8 +4,13 @@ import type { LocationResolution, LocationResolutionRequest } from '../types/loc
 /**
  * LocationController (`com.socialapp.posts`) — 1 endpoint.
  *
- * Resolution runs through Gemini, so it is slow and lossy compared with a normal geocoder:
- * a query can legitimately come back as an empty list.
+ * Resolution runs through Gemini, so it is slow and lossy compared with a normal geocoder.
+ *
+ * MEASURED (P2.4c-2): a query Gemini cannot place returns **400** with
+ * `"Could not resolve location: <query>"`, not an empty 200 list — `LocationResolutionService`
+ * throws `ValidationException`. An empty array is still reachable (every candidate failing to
+ * parse is filtered out), so callers must handle both, but the ordinary "no such place" case
+ * is an error, not an empty result.
  */
 export const locationApi = {
   /**

@@ -215,6 +215,7 @@ Cột "hook có UI dùng" đếm hook được import từ `app/` hoặc `compon
 | 2026-07-24 | P2.2a       | friendships data layer: `features/friendships/{types,api}` (`friendshipApi`, 8/8 endpoint). Nullability từ Java: `nextCursor`/`username`/`profilePictureUrl` nullable; `friends` là list (non-null). Extraction test SẠCH (chỉ core/). Drift rỗng.                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | 2026-07-24 | P2.2b       | friendships state layer: `hooks/use-friendship.ts` — friends (one-shot + infinite), suggestions, pending, sent + 4 mutation. Invalidate tường minh: accept→pending+friends, send→sent+suggestions, reject→pending, cancel→sent. Hooks không toast (UI lo). Bỏ mock/toUserSummary legacy.                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | 2026-07-25 | P2.4b       | posts state layer chu kỳ 1/3: `hooks/` — `useCreatePost` `useCreateBookPost` `useUpdatePost` `useDeletePost` `useAcceptAnswer` `useSubmitQuiz` (mutation) + `useResolveLocation` (**query**, không phải mutation: resolve là read, Gemini chậm nên cache 10 phút, `retry:false`). Namespace `postKeys`. **Chốt cách invalidate xuyên domain**: posts KHÔNG đụng key của newsfeed/search — mọi mutation nhận `UseMutationOptions` để bên compose tự truyền, giữ chiều phụ thuộc newsfeed→posts. Chỉ `useAcceptAnswer` có invalidate nội domain (`postKeys.comments`, key đặt sẵn cho chu kỳ 2).                                                                                                               |
+| 2026-07-25 | P2.4c-2     | posts UI chu kỳ 1 (tách 2/5): `LocationPicker` + `LocationBadge`, gắn vào `PostComposer` nên payload có `googlePlaceId`/`locationType`/`locationDetails`. Panel **inline** thay vì popover (DS không có spec floating-layer). Debounce 500ms + tối thiểu 3 ký tự trong component. Verify BE thật: gõ 16 ký tự → **đúng 1 request**, Gemini trả "Chợ Bến Thành…" PLACE → chọn → chip có link Maps của BE → đăng → **DB lưu đủ `google_place_id` + `location_details`** (legacy mất trắng, xem mục 6); query vô nghĩa → **400 có message** (không phải mảng rỗng — sửa lại ghi chú P2.4a); GPS bị chặn → thông báo đúng; dark remap; nút GPS bị wrap 2 dòng → sửa. Post test đã xoá.                           |
 | 2026-07-25 | P2.4c-1     | posts UI chu kỳ 1 (tách 1/5): shared `Textarea` (**DS không có spec** — mirror Input) + `Select` (từ `Select.d.ts` + specimen); feature `PostComposer` (REGULAR: content + visibility + submit). **Sửa fidelity `Input`**: specimen dùng `border-default`/pad 10px/label `text-primary`, bản cũ dùng `border-strong`/12px/`text-secondary` → sửa cho 3 primitive cùng họ. Cross-domain refresh qua prop `onPosted`, không import key của newsfeed. Verify BE thật: create→200→clear + thông báo chờ kiểm duyệt, lỗi 400 → banner + **giữ nguyên nội dung nháp**, autoResize 42→84px, Select khớp specimen, dark remap; 2 post test đã xoá.                                                                   |
 | 2026-07-25 | P2.4a       | posts data layer chu kỳ 1/3 (core): `features/posts/{types,api}` — `postsApi`(5) `locationApi`(1) `quizApi`(1) = **7/7 endpoint** của PostController+LocationController+QuizController. Nullability xác nhận từ Java: `googleMapsUrl` **nullable** (không có toạ độ), 3 field còn lại của resolve luôn có; `QuizResult` đủ 3 field. `LocationResolutionRequest` dựng thành union query \| toạ độ để sai tổ hợp chết lúc compile thay vì 400. Extraction test **chỉ `core/`**. Smoke test BE thật: resolve→shape khớp, thiếu cả 2 field→400, createPost BOOK→400 đúng message, create→update→delete→quiz submit (score 1/2, lệch số câu→400); post test đã xoá. Phát hiện: **domain write-only** — xem mục 6. |
 | 2026-07-25 | P2.3        | `features/reputation` trọn gói (Tier C, 1 stop): types+api (1/1) + `useReputation` + UI `RepScore` `ReputationCard` `MyReputationCard`, wire vào `/profile`. **Không hardcode ngưỡng lần 3** — `RepScore` nhận `levelName` từ API thay vì tự suy (deviation #11), thanh tiến trình chạy 0→`nextLevelMin` vì BE không gửi sàn cấp hiện tại. i18n `reputation.*`. Verify BE thật ở 4 trạng thái score (0/15.8k/50k/404) + loading + dark. Extraction test sạch (thêm cạnh `@/features/security` qua barrel, hợp lệ §4).                                                                                                                                                                                        |
@@ -307,7 +308,7 @@ convention `[<id>]: [BE] …`, nếu không thì `git checkout` bên đó là th
   | ID     | surface                                                     | endpoint                                         |
   | ------ | ----------------------------------------------------------- | ------------------------------------------------ |
   | c-1 ✅ | shared `Textarea`+`Select`; `PostComposer` (REGULAR)        | createPost                                       |
-  | c-2    | `LocationPicker` + `LocationBadge`                          | resolve                                          |
+  | c-2 ✅ | `LocationPicker` + `LocationBadge`                          | resolve                                          |
   | c-3    | ô nhập theo loại: CODE_SNIPPET, ARTICLE, QNA, POLL, LINK    | createPost (biến thể)                            |
   | c-4    | `BookPostFields` (multipart), `QuizComposer` (tác giả)      | createBookPost                                   |
   | c-5    | phía người đọc: `QuizTaker`, sửa/xoá, chọn câu trả lời đúng | submitQuiz, updatePost, deletePost, acceptAnswer |
@@ -392,8 +393,31 @@ convention `[<id>]: [BE] …`, nếu không thì `git checkout` bên đó là th
   `schema.gen.ts` nên có đủ, và đã xác nhận **nullable** (`GoogleMapsUrlBuilder.build` trả
   null khi thiếu toạ độ — xảy ra ở nhánh tìm theo tên).
 
-- **Resolve location chạy qua Gemini**, không phải geocoder thường: chậm, và **trả mảng rỗng
-  là kết quả hợp lệ**. UI chọn địa điểm phải có trạng thái "không tìm thấy" thật sự.
+- **Resolve location chạy qua Gemini**, không phải geocoder thường: chậm (đo được ~5–9s).
+  **ĐÍNH CHÍNH ghi chú P2.4a** ("mảng rỗng là kết quả hợp lệ"): đo thật ở P2.4c-2 —
+  query không đặt được trả **400** kèm `"Could not resolve location: <query>"`
+  (`LocationResolutionService` ném `ValidationException`), **không** phải 200 với `[]`.
+  Mảng rỗng vẫn xảy ra được (mọi candidate parse lỗi bị `filter(Objects::nonNull)` loại),
+  nên UI giữ cả hai nhánh, nhưng ca "không có địa điểm này" thường là **lỗi**, không phải
+  kết quả rỗng. `retry: false` ở hook nhờ vậy càng đúng: 400 thử lại không hết.
+
+- **Legacy đính địa điểm nhưng BE ném đi hết — bug legacy, đã sửa ở P2.4c-2.**
+  `create-post-form` cũ gửi `{content, location, visibility}` với `location` là object dẹt
+  (`displayName`/`latitude`/`city`…). `CreatePostRequestDto` **không có field `location`** —
+  nó cần `googlePlaceId` + `locationType` + `locationDetails`. Nghĩa là **mọi địa điểm người
+  dùng chọn ở bản cũ đều bị bỏ im lặng**, không có lỗi nào báo. Bản mới spread thẳng candidate
+  từ response (response được thiết kế mirror đúng shape request), verify bằng SQL: post lưu
+  đủ `google_place_id`, `location_type=PLACE`, `location_details` JSON.
+
+- **`location-badge.tsx` legacy là code chết** (0 consumer) và tự **dựng lại URL Google Maps
+  ở client** từ locationType + city/country + placeId. BE đã trả `googleMapsUrl`
+  (`GoogleMapsUrlBuilder`) nên logic đó bị **xoá, không port** — hai bản dựng cùng một URL
+  scheme thì sẽ lệch.
+
+- **DS không có spec popover/floating panel** (chỉ Dialog/Menu/Tooltip/Toast). Picker vì vậy
+  là **panel inline mở tại chỗ**, không phải popover: không cần anchor, không portal, không
+  bị clip. Bản legacy dùng `@base-ui` popover và đã phải tự sửa bug anchor (trigger
+  `display: contents` đo ra rect 0×0 ở gốc trang) — không tái tạo lại chuyện đó.
 
 ### reputation
 

@@ -228,6 +228,19 @@ export const en = {
   },
 
   createPost: {
+    location: {
+      add: 'Add location',
+      placeholder: 'Describe a place...',
+      myLocation: 'My location',
+      searching: 'Looking up places...',
+      notFoundTitle: 'No places found',
+      notFoundDesc: 'Try describing it differently, or use your current location.',
+      clear: 'Remove location',
+      openInMaps: 'Open in Google Maps',
+      cancel: 'Cancel',
+      gpsDenied: "Couldn't get your location. Allow location access and try again.",
+      gpsUnavailable: 'This browser does not support geolocation.',
+    },
     visibilityLabel: 'Who can see this',
     submittedPendingReview:
       'Post submitted. It may need to pass moderation before it shows up in the feed.',

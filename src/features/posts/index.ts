@@ -13,7 +13,15 @@
 
 export { postsApi, locationApi, quizApi } from './api';
 
-export { PostComposer, type PostComposerProps } from './components';
+export {
+  PostComposer,
+  type PostComposerProps,
+  LocationPicker,
+  type LocationPickerProps,
+  LocationBadge,
+  locationLabel,
+  type LocationBadgeProps,
+} from './components';
 
 export {
   postKeys,

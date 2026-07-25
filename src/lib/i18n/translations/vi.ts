@@ -231,6 +231,19 @@ export const vi: Messages = {
   },
 
   createPost: {
+    location: {
+      add: 'Thêm địa điểm',
+      placeholder: 'Mô tả địa điểm...',
+      myLocation: 'Vị trí của tôi',
+      searching: 'Đang tìm địa điểm...',
+      notFoundTitle: 'Không tìm thấy địa điểm',
+      notFoundDesc: 'Thử mô tả khác, hoặc dùng vị trí hiện tại của bạn.',
+      clear: 'Bỏ địa điểm',
+      openInMaps: 'Mở trong Google Maps',
+      cancel: 'Huỷ',
+      gpsDenied: 'Không lấy được vị trí. Hãy cho phép quyền truy cập vị trí rồi thử lại.',
+      gpsUnavailable: 'Trình duyệt này không hỗ trợ định vị.',
+    },
     visibilityLabel: 'Ai xem được bài này',
     submittedPendingReview:
       'Đã gửi bài. Bài viết có thể phải qua kiểm duyệt trước khi xuất hiện trên bảng tin.',

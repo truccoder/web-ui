@@ -6,7 +6,9 @@ import { getErrorMessage } from '@/shared/lib/api-error';
 import { useMyProfile } from '@/features/security';
 import { useT } from '@/lib/i18n';
 import { useCreatePost } from '../hooks/use-post';
+import type { LocationResolution } from '../types/location';
 import type { PostVisibility } from '../types/post';
+import { LocationPicker } from './location-picker';
 
 /**
  * The post composer — cycle 1, `REGULAR` posts (`POST /v1/api/posts`).
@@ -33,11 +35,13 @@ export function PostComposer({ onPosted }: PostComposerProps) {
   const { data: profile } = useMyProfile();
   const [content, setContent] = useState('');
   const [visibility, setVisibility] = useState<PostVisibility>('PUBLIC');
+  const [location, setLocation] = useState<LocationResolution | undefined>();
   const [justPosted, setJustPosted] = useState(false);
 
   const create = useCreatePost({
     onSuccess: () => {
       setContent('');
+      setLocation(undefined);
       setJustPosted(true);
       onPosted?.();
     },
@@ -50,7 +54,20 @@ export function PostComposer({ onPosted }: PostComposerProps) {
   const submit = () => {
     if (!canSubmit) return;
     setJustPosted(false);
-    create.mutate({ content: trimmed, visibility, postType: 'REGULAR' });
+    create.mutate({
+      content: trimmed,
+      visibility,
+      postType: 'REGULAR',
+      // Spread the resolved candidate's own fields: the response mirrors the create request's
+      // location shape on purpose. The legacy composer instead sent a flattened `location`
+      // object, a key `CreatePostRequestDto` does not have — so every location it collected
+      // was silently discarded by the backend.
+      ...(location && {
+        googlePlaceId: location.googlePlaceId,
+        locationType: location.locationType,
+        locationDetails: location.locationDetails,
+      }),
+    });
   };
 
   return (
@@ -67,6 +84,10 @@ export function PostComposer({ onPosted }: PostComposerProps) {
             placeholder={t('createPost.placeholder', { fullname: firstName })}
             aria-label={t('createPost.post')}
           />
+
+          <div>
+            <LocationPicker value={location} onChange={setLocation} />
+          </div>
 
           {create.isError && (
             <p
