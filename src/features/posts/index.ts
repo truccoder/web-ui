@@ -13,6 +13,22 @@
 
 export { postsApi, locationApi, quizApi } from './api';
 
+export {
+  postKeys,
+  useCreatePost,
+  useCreateBookPost,
+  useUpdatePost,
+  useDeletePost,
+  useAcceptAnswer,
+  useResolveLocation,
+  useSubmitQuiz,
+  type PostMutationOptions,
+  type CreateBookPostVariables,
+  type UpdatePostVariables,
+  type AcceptAnswerVariables,
+  type SubmitQuizVariables,
+} from './hooks';
+
 export type {
   PostType,
   PostVisibility,
