@@ -30,7 +30,7 @@ tất cả đang là `not started` — **không** có nghĩa là FE chưa viết
 | moderation    | `com.socialapp.moderation`    | 4   |                                                                                                                                                                               | not started  | not started  | not started  | not started         | not started | not started                                                     | not started |
 | chat          | `com.socialapp.chat`          | 1   |                                                                                                                                                                               | not started  | not started  | not started  | not started         | not started | not started                                                     | not started |
 | newsfeed      | `com.socialapp.newsfeed`      | 1   |                                                                                                                                                                               | not started  | not started  | not started  | not started         | not started | not started                                                     | not started |
-| reputation    | `com.socialapp.reputation`    | 1   |                                                                                                                                                                               | not started  | not started  | not started  | not started         | not started | not started                                                     | not started |
+| reputation    | `com.socialapp.reputation`    | 1   |                                                                                                                                                                               | done (1/1)   | done (1/1)   | done (1/1)   | done (card + chip)  | done        | n/a (chưa từng có code legacy)                                  | done        |
 | search        | `com.socialapp.search`        | 1   |                                                                                                                                                                               | not started  | not started  | not started  | not started         | not started | not started                                                     | not started |
 | trending      | `com.socialapp.trending`      | 1   |                                                                                                                                                                               | not started  | not started  | not started  | not started         | not started | not started                                                     | not started |
 
@@ -58,7 +58,9 @@ Cấm chế số liệu giả cho giống mockup. Ghi luôn chỗ nào cố tìn
 | 8   | chỉ báo tab đang chọn (`Tabs`)   | `Tabs.d.ts` + `Tabs.prompt.md`: "amber active indicator"                                    | **xanh** (`--nx-accent`)                   | Cùng loại với #1/#2, nhưng lần này **specimen của chính DS phản bác spec**: `navigation.card.html` render `border-bottom: 2px solid var(--accent)` — xanh, không amber. Tab đang chọn là trạng thái tương tác (§1.2 = xanh), amber dành riêng cho uy tín (§1.3). Specimen + constitution cùng phía → xanh.                                                                                                                                                                                                 |
 | 9   | nút "Bỏ qua" ở gợi ý kết bạn     | legacy có nút Ignore cạnh nút Thêm bạn bè                                                   | **CẮT nút**                                | BE **không có endpoint bỏ qua gợi ý** (`FriendshipController` chỉ có 8 endpoint, không cái nào là dismiss). Nút legacy **không có `onClick`** — bấm không xảy ra gì. Ship một nút chết là nói dối người dùng; mở lại khi BE có endpoint. Ảnh bìa gradient của card legacy cũng bỏ (§1.5 cấm gradient trang trí).                                                                                                                                                                                           |
 
-Bốn dòng 1–4 + dòng 5 chỗ đầu + dòng 8 là **mâu thuẫn nội bộ của DS** (hoặc giới hạn token), không
+| 10 | cỡ chữ của `RepScore` | specimen render 11.5 / 12.5 / 16px cho sm/md/lg | **11 / 12 / 15px** (micro/caption/body) | Cả ba đều **không nằm trong thang chữ** — §7.2 nói thang là tập đóng, sửa phải có amendment, §0 cho constitution thắng. Ánh xạ về token gần nhất; lệch ≤1px, mắt không thấy. Hình học chip (cao 20/24/32, padding, thanh amber 3×10/4×12/5×16) **giữ đúng specimen** vì đó là spec component, không phải thang chữ. |
+| 11 | `RepScore` tự suy cấp từ điểm | `RepScore.d.ts` xuất `REP_LEVELS` + `repLevel(score)` để component tự tính cấp | **nhận `levelName` từ API** | CLAUDE.md §1 three-way sync: ngưỡng đã tồn tại ở enum `RepLevel` (BE) và `REP_LEVELS` (DS). Chép lần thứ ba vào FE là tạo nguồn sự thật thứ ba, lệch lúc nào không ai biết. Không có `levelName` thì **bỏ hậu tố**, tuyệt đối không đoán từ điểm. Cùng lý do: thanh tiến trình chạy 0→`nextLevelMin` chứ không phải sàn-cấp→trần-cấp, vì BE không gửi sàn. |
+Bốn dòng 1–4 + dòng 5 chỗ đầu + dòng 8 + dòng 10 là **mâu thuẫn nội bộ của DS** (hoặc giới hạn token), không
 phải BE thiếu dữ liệu — nên báo ngược lại cho chủ Design System, đừng để mỗi người tự
 quyết một kiểu.
 
@@ -145,7 +147,7 @@ Chi tiết từng endpoint: [`p03-endpoint-reconciliation.md`](p03-endpoint-reco
 | github         | 0/5             | —               | chưa động tới                                                                           |
 | matchmaking    | 0/5             | —               | chưa động tới                                                                           |
 | chat           | 0/1             | —               | FE tự phát token qua `app/api/twilio/token`, không dùng `GET /v1/api/chat/token` của BE |
-| reputation     | 0/1             | —               | chưa động tới                                                                           |
+| reputation     | 0/1             | —               | chưa từng có code legacy → P2.3 dựng thẳng trong `features/`, không có gì để xoá        |
 
 Cột "hook có UI dùng" đếm hook được import từ `app/` hoặc `components/`. 5 symbol của
 `security` bị đếm là không-có-UI (`syncRoleFromProfile`, `clearRoleCookie`,
@@ -212,6 +214,7 @@ Cột "hook có UI dùng" đếm hook được import từ `app/` hoặc `compon
 | 2026-07-24 | P2.1"d      | Wire /profile → 3 feature component; xoá legacy chỉ /profile dùng (3 hook edit trong use-user, cả file lib/schemas/user.ts). **GIỮ useProfile + use-admin-role + post-auth-redirect + lib/api/profile** — shell/dashboard/chats/posts còn dùng, chết ở P2.4/P2.7/P3.4. Verify BE thật: /profile render trong shell, GET /profile/me×2 (feature+shell key)→200. **SECURITY DOMAIN XONG (mọi surface).**                                                                                                                                                           |
 | 2026-07-24 | P2.2a       | friendships data layer: `features/friendships/{types,api}` (`friendshipApi`, 8/8 endpoint). Nullability từ Java: `nextCursor`/`username`/`profilePictureUrl` nullable; `friends` là list (non-null). Extraction test SẠCH (chỉ core/). Drift rỗng.                                                                                                                                                                                                                                                                                                               |
 | 2026-07-24 | P2.2b       | friendships state layer: `hooks/use-friendship.ts` — friends (one-shot + infinite), suggestions, pending, sent + 4 mutation. Invalidate tường minh: accept→pending+friends, send→sent+suggestions, reject→pending, cancel→sent. Hooks không toast (UI lo). Bỏ mock/toUserSummary legacy.                                                                                                                                                                                                                                                                         |
+| 2026-07-25 | P2.3        | `features/reputation` trọn gói (Tier C, 1 stop): types+api (1/1) + `useReputation` + UI `RepScore` `ReputationCard` `MyReputationCard`, wire vào `/profile`. **Không hardcode ngưỡng lần 3** — `RepScore` nhận `levelName` từ API thay vì tự suy (deviation #11), thanh tiến trình chạy 0→`nextLevelMin` vì BE không gửi sàn cấp hiện tại. i18n `reputation.*`. Verify BE thật ở 4 trạng thái score (0/15.8k/50k/404) + loading + dark. Extraction test sạch (thêm cạnh `@/features/security` qua barrel, hợp lệ §4).                                            |
 | 2026-07-25 | P2.2d       | Wire 3 route friends → component feature (`/friends` giữ redirect). **Cắt `/friends/birthdays`** (deviation #7) + key i18n mồ côi. Xoá legacy hết consumer: `useInfiniteFriends` `useSentRequests` `useCancelFriendRequest`, `friendshipApi.getSentRequests`/`cancelRequest`, type `SentFriendRequest(Wire)`, **cả `src/lib/mock/`**. Giữ 6 hook legacy còn consumer ngoài domain — xem mục 6. Verify BE thật: 3 route render qua feature, `/friends`→`/friends/all` (13 bạn), birthdays→404, nav 3 link + badge 1, dashboard/chats/picker bạn bè không hồi quy. |
 | 2026-07-25 | P2.2c-3     | UI 1 màn (tách 3/3): `FriendSuggestions` (`/friends/suggestions`) — gợi ý + số bạn chung + gửi lời mời, chéo `sent` để khoá nút đã gửi. Cắt nút "Bỏ qua" (DS deviation #9). Verify BE thật: 3 gợi ý xếp theo bạn chung 2/1/1, gửi→`POST /requests/9009` 200→invalidate sent+suggestions→nút thành "Đã gửi lời mời" disabled; nút secondary 28px/13px, icon 16px, dark remap. Suggestions rỗng do graph thiếu FoF — xem mục 6. **UI friendships xong 3/3 màn.**                                                                                                   |
 | 2026-07-25 | P2.2c-2     | UI 2 màn (tách 2/3): `FriendsList` (`/friends/all`) + `FriendRequests` (`/friends/requests`, tab nhận/gửi), primitive `Tabs`. Sửa lỗi hạ tầng `cn()` nuốt class cỡ chữ DS (xem mục 6). Verify BE thật: 13 bạn (cursor 3 trang), accept→pending 2→1 + friends 12→13, reject→empty state, cancel→rời tab gửi; tab xanh 2px + pill mono, arrow-key nav, dark remap. Phát hiện Neo4j rỗng — xem mục 6.                                                                                                                                                               |
@@ -293,6 +296,33 @@ convention `[<id>]: [BE] …`, nếu không thì `git checkout` bên đó là th
   sau khi sửa: tab = 14px, Button sm = 13px, màu chữ vẫn đúng.
   → Nếu sau này thêm cỡ chữ mới vào `@theme`, **phải** thêm vào `NX_FONT_SIZES` trong
   `cn.ts`, nếu không lỗi này quay lại âm thầm.
+
+### reputation
+
+- **Không có code legacy để xoá** — `reputation` chưa từng được FE cũ đụng tới (mục 3:
+  0/1 endpoint). Cột "legacy removed" là `n/a`, không phải bỏ sót.
+
+- **`verifiedExpert` chưa verify được bằng dữ liệu thật** (P2.3). BE suy field này từ
+  `UserRoadmapProgress.status == VERIFIED`, mà `t_roadmap_nodes` **rỗng hoàn toàn** (0
+  dòng) nên không user nào có thể `true`. Muốn dựng dữ liệu thì phải bịa cả roadmap lẫn
+  node — đúng thứ CLAUDE.md cấm. Nhánh badge để lại **chưa chạy thật**, sẽ phủ khi làm
+  `roadmap` (P2.12) — cũng chính là domain sinh ra field này.
+
+- **Thanh tiến trình chạy 0 → `nextLevelMin`, không phải sàn-cấp → trần-cấp.** Response
+  không có sàn của cấp hiện tại, và lấy sàn từ bảng ngưỡng là chép nguồn sự thật lần thứ
+  ba (§1). Nếu sau này muốn thanh "trong cấp", **BE phải trả thêm `currentLevelMin`** —
+  đừng sửa bằng cách hardcode ở FE.
+
+- **`RepScore` xuất qua barrel cho domain khác dùng** (WBS P2.3 đặt sớm chính vì việc
+  này). `eliteScore` đã nằm sẵn trong payload feed/search nên posts/newsfeed/search chỉ
+  cần `<RepScore score={...} />`, **không gọi endpoint reputation**. Nhưng payload đó
+  **không có `levelName`** → ở feed/search chip sẽ hiện số trần, không hậu tố cấp. Đó là
+  giới hạn dữ liệu, không phải thiếu sót UI; muốn hiện cấp ở feed thì BE phải thêm
+  `levelName` vào các DTO đó.
+
+- **Kiểm thử ở dev DB**: để verify 4 trạng thái, `elite_score` của 9001 được đặt tạm
+  15800 rồi 50000 (BE tự tính cấp — verify logic thật, không giả UI) và **trả về 0** —
+  đúng giá trị seed ban đầu. Nhánh lỗi verify bằng cách tạm trỏ `userId=99999` → 404.
 
 ### friendships
 

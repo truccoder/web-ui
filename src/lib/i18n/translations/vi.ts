@@ -393,6 +393,14 @@ export const vi: Messages = {
     },
   },
 
+  reputation: {
+    title: 'Elite Score',
+    desc: 'Điểm uy tín tích luỹ từ đóng góp của bạn',
+    verifiedExpert: 'Chuyên gia đã xác minh',
+    toNextLevel: 'Còn ${remaining} điểm nữa để đạt ${next}',
+    topLevel: 'Bạn đã ở cấp cao nhất',
+  },
+
   profile: {
     title: 'Trang cá nhân',
     subtitle: 'Quản lý cài đặt tài khoản của bạn',

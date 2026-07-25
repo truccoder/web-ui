@@ -390,6 +390,14 @@ export const en = {
     },
   },
 
+  reputation: {
+    title: 'Elite Score',
+    desc: 'Reputation earned from your contributions',
+    verifiedExpert: 'Verified Expert',
+    toNextLevel: '${remaining} points to reach ${next}',
+    topLevel: "You're at the top level",
+  },
+
   profile: {
     title: 'Profile',
     subtitle: 'Manage your account settings',

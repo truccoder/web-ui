@@ -1,5 +1,6 @@
 'use client';
 
+import { MyReputationCard } from '@/features/reputation';
 import { ChangePasswordForm, ProfileIdentityCard, ProfileInfoForm } from '@/features/security';
 import { useT } from '@/lib/i18n';
 
@@ -15,6 +16,7 @@ export default function ProfilePage() {
       </div>
 
       <ProfileIdentityCard />
+      <MyReputationCard />
       <ProfileInfoForm />
       <ChangePasswordForm />
     </div>
