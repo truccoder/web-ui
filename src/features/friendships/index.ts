@@ -6,7 +6,12 @@
 
 export { friendshipApi } from './api';
 
-export { FriendListItem, type FriendListItemProps } from './components';
+export {
+  FriendListItem,
+  type FriendListItemProps,
+  FriendsList,
+  FriendRequests,
+} from './components';
 
 export {
   friendshipKeys,
