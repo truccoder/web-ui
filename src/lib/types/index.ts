@@ -123,32 +123,14 @@ export interface PendingFriendRequest {
   createdAt: string;
 }
 
-export interface SentFriendRequest {
-  id: string;
-  addresseeId: string;
-  addresseeFullName: string;
-  addresseeProfilePictureUrl: string;
-  status: FriendRequestStatus;
-  createdAt: string;
-}
-
-// Raw shapes of GET /v1/api/friendships/requests/pending|sent (PendingFriendRequestDto /
-// SentFriendRequestDto) — ids are numeric on the wire; mapped to the string-id
-// PendingFriendRequest/SentFriendRequest types above at the hook boundary.
+// Raw shape of GET /v1/api/friendships/requests/pending (PendingFriendRequestDto) — ids
+// are numeric on the wire; mapped to the string-id PendingFriendRequest type above at the
+// hook boundary.
 export interface PendingFriendRequestWire {
   id: number;
   requesterId: number;
   requesterFullName: string | null;
   requesterProfilePictureUrl: string | null;
-  status: FriendRequestStatus;
-  createdAt: string;
-}
-
-export interface SentFriendRequestWire {
-  id: number;
-  addresseeId: number;
-  addresseeFullName: string | null;
-  addresseeProfilePictureUrl: string | null;
   status: FriendRequestStatus;
   createdAt: string;
 }
