@@ -20,6 +20,12 @@ export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextArea
   error?: string;
   /** Grows with content instead of scrolling at a fixed height. @default false */
   autoResize?: boolean;
+  /**
+   * Render the value in Geist Mono at the code size. Mirrors `Input.mono` — added for the
+   * code-snippet field, where the content genuinely is code (constitution §7.1: code and
+   * metadata are mono). @default false
+   */
+  mono?: boolean;
 }
 
 export function Textarea({
@@ -27,6 +33,7 @@ export function Textarea({
   hint,
   error,
   autoResize = false,
+  mono = false,
   className,
   id,
   disabled,
@@ -89,6 +96,7 @@ export function Textarea({
           className={cn(
             'min-w-0 flex-1 resize-none bg-transparent text-nx-ui text-nx-text-primary outline-none',
             'placeholder:text-nx-text-faint',
+            mono && 'font-mono text-nx-code',
             autoResize && 'overflow-hidden'
           )}
           {...props}
