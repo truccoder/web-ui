@@ -73,18 +73,40 @@ Quay lại [`fe-migration-ledger.md`](../../fe-migration-ledger.md).
 
 - **Cách tách UI chu kỳ 2 (công bố ở P2.4′c-1) — 5 bước, không phải 4:**
 
-  | ID     | surface                                                            | endpoint                                      |
-  | ------ | ------------------------------------------------------------------ | --------------------------------------------- |
-  | c-1 ✅ | shared `DeveloperIdentity`+`DeveloperMeta`; `PostCard` (vỏ + slot) | — (render payload feed)                       |
-  | c-1′   | thân bài theo loại: code, article, qna, poll, link, book, event    | — (render payload feed)                       |
-  | c-2    | hàng reaction                                                      | getMyReaction · upsert · remove               |
-  | c-3    | thread comment                                                     | 4 ep CommentController                        |
-  | c-4    | nợ c-5 chu kỳ 1: `QuizTaker`, sửa/xoá bài, chọn đáp án             | submitQuiz · updatePost · deletePost · accept |
+  | ID       | surface                                                            | endpoint                                      |
+  | -------- | ------------------------------------------------------------------ | --------------------------------------------- |
+  | c-1 ✅   | shared `DeveloperIdentity`+`DeveloperMeta`; `PostCard` (vỏ + slot) | — (render payload feed)                       |
+  | c-1′a ✅ | `CodeSnippetBody` `ArticleBody` `LinkBody` `QnaBody`               | — (render payload feed)                       |
+  | c-1′b    | `PollBody` `BookBody` `EventBody`                                  | — (render payload feed)                       |
+  | c-2      | hàng reaction                                                      | getMyReaction · upsert · remove               |
+  | c-3      | thread comment                                                     | 4 ep CommentController                        |
+  | c-4      | nợ c-5 chu kỳ 1: `QuizTaker`, sửa/xoá bài, chọn đáp án             | submitQuiz · updatePost · deletePost · accept |
 
   **Vì sao tách c-1 thành c-1 + c-1′** (phát hiện lúc đọc `FeedPostDataDto`, trước khi viết code):
   payload feed mang **8 khối details** (event/book/quiz/codeSnippet/article/qna/poll/link). Dựng
   hết trong một checkpoint là vượt xa trần 5 component. Nên c-1 chỉ ship **vỏ card + hàng danh
   tính**, thân bài vào **slot `body`**.
+
+- **4 khối body của c-1′a: quyết định "không dựng" quan trọng hơn thứ dựng ra** (P2.4′c-1′a):
+  - **`CodeSnippetBody` không highlight cú pháp.** `CodeSnippetDetails.language` là String tự
+    do, không enum — highlighter sẽ phải đoán grammar từ nhãn bất kỳ. Cộng thêm một dependency
+    runtime và một bộ màu mà DS **không hề spec** (thang chữ có `--text-nx-code` + họ mono, không
+    có token màu cho syntax). Mono trong khối sunken là cách render trung thực; mở lại khi DS có
+    spec để bám.
+  - **`ArticleBody.coverImage` và `LinkBody.thumbnailUrl` là URL người dùng TỰ DÁN**, không phải
+    upload (không có endpoint upload ảnh dùng chung). Chúng trỏ ra host bên thứ ba, có thể 404
+    hoặc chặn hotlink → cả hai dùng `onError` để **ẩn hẳn ảnh**, không để lại glyph ảnh vỡ giữa
+    feed. Đây là lý do hai component này phải `'use client'` còn code/qna thì không.
+  - **`LinkBody` chặn URL không parse được.** `hostOf` trả null thì render null. Nếu cứ đổ vào
+    `<a href>` thì chuỗi rác sẽ **resolve tương đối theo origin của mình** — link nội bộ giả.
+    Host luôn hiện (đã bỏ `www.`) vì đó là mảnh duy nhất của preview mà tác giả **không** khai
+    man được: BE không unfurl, `title`/`description`/`thumbnail` là thứ người đăng gõ vào.
+  - **`QnaBody` chỉ có một pill trạng thái.** `bountyPoints` cắt (ds-deviation #12 — BE thưởng
+    một lượng **cố định** qua `ACCEPTED_ANSWER`, không trừ người hỏi, không nhân theo bounty).
+    `acceptedAnswerId` cũng không render ở đây: nó trỏ tới một **comment**, mà card không fetch
+    thread — đánh dấu đáp án là việc của c-4.
+  - Cả 4 khối đều **render `null` khi rỗng**. BE không validate 4 loại này (`BeanUtils` copy
+    thẳng), nên block rỗng tới được feed thật; để lại khung trống trông như lỗi render.
 
 - **`PostCard` KHÔNG nhận DTO của feed — nhận props đã tách** (chốt P2.4′c-1, user chọn phương án
   này). `FeedPostDataDto` nằm ở package BE `com.socialapp.newsfeed`, nên type FE của nó thuộc
@@ -103,6 +125,15 @@ Quay lại [`fe-migration-ledger.md`](../../fe-migration-ledger.md).
 - **`likeCount` cố ý KHÔNG nằm ở footer card.** Nó thuộc về cạnh nút reaction mà c-2 sẽ đặt vào
   slot `actions`. Hiện hai chỗ trên cùng màn hình là mời chúng lệch nhau — nhất là khi optimistic
   của `myReaction` đổi tức thì còn tổng thì đợi refetch feed (xem mục reaction ở trên).
+
+- **NỢ VERIFY BẰNG MẮT CỘNG DỒN: c-1 + c-1′a.** Extension vẫn "not connected" ở P2.4′c-1′a, nên
+  4 khối body cũng chỉ kiểm được bằng SSR markup — **19/19 khẳng định đúng** (pill ngôn ngữ +
+  fallback nhãn, `<pre>` cuộn ngang, khối code rỗng biến mất, tiêu đề/summary/cover của article,
+  article rỗng biến mất, host bỏ `www.`, `rel="noopener noreferrer"` + `target="_blank"`,
+  `line-clamp-2`, fallback title về host, **URL hỏng không thành `<a>`**, pill QNA hai trạng thái,
+  **`bountyPoints=500` không xuất hiện ở đâu**), không rò key i18n. Chưa kiểm: **diện mạo, dark
+  mode, layout vỡ, và `line-clamp-2` có cắt đúng 2 dòng thật không**. Trả một lần cho cả hai
+  bước khi extension nối lại.
 
 - **NỢ: `PostCard` chưa verify bằng mắt** (P2.4′c-1). Extension Chrome trả "not connected" nên đi
   đường thay thế của `session-constants` §4: curl route preview với cookie `session=true; role=USER`

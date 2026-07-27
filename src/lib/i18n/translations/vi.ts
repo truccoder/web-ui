@@ -405,6 +405,13 @@ export const vi: Messages = {
     hoursAgo: '${hours} giờ trước',
     daysAgo: '${days} ngày trước',
     unknownAuthor: 'Tác giả không xác định',
+    body: {
+      code: 'Mã nguồn',
+      coverAlt: 'Ảnh bìa bài viết',
+      openLink: 'Mở trong tab mới',
+      qnaResolved: 'Đã có đáp án',
+      qnaUnresolved: 'Chưa có đáp án',
+    },
     openInMaps: 'Mở trong Google Maps',
     commentCount: '${count} bình luận',
     commentPlaceholder: 'Viết bình luận...',

@@ -32,3 +32,10 @@ export {
 // Read side (P2.4'c-1). The card is the surface every other cycle-2 interaction attaches to,
 // so it ships before the reaction bar and the comment thread that fill its slots.
 export { PostCard, type PostCardProps, type PostCardAuthor } from './post-card';
+
+// Type-specific bodies for the read side (P2.4'c-1'a). Each fills `PostCard`'s `body` slot;
+// the card never switches on `postType` itself. Poll / book / event follow in c-1'b.
+export { CodeSnippetBody, type CodeSnippetBodyProps } from './code-snippet-body';
+export { ArticleBody, type ArticleBodyProps } from './article-body';
+export { LinkBody, type LinkBodyProps } from './link-body';
+export { QnaBody, type QnaBodyProps } from './qna-body';

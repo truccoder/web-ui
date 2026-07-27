@@ -402,6 +402,13 @@ export const en = {
     hoursAgo: '${hours}h ago',
     daysAgo: '${days}d ago',
     unknownAuthor: 'Unknown author',
+    body: {
+      code: 'Code',
+      coverAlt: 'Article cover',
+      openLink: 'Opens in a new tab',
+      qnaResolved: 'Resolved',
+      qnaUnresolved: 'Unanswered',
+    },
     openInMaps: 'Open in Google Maps',
     commentCount: '${count} comments',
     commentPlaceholder: 'Write a comment...',

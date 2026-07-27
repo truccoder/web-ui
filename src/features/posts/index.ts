@@ -35,6 +35,14 @@ export {
   PostCard,
   type PostCardProps,
   type PostCardAuthor,
+  CodeSnippetBody,
+  type CodeSnippetBodyProps,
+  ArticleBody,
+  type ArticleBodyProps,
+  LinkBody,
+  type LinkBodyProps,
+  QnaBody,
+  type QnaBodyProps,
 } from './components';
 
 export {
