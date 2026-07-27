@@ -1,4 +1,4 @@
-import api from './axios';
+import api from '@/core/api/axios';
 import type { LocationResolutionResponse } from '@/lib/types';
 
 export const locationApi = {
