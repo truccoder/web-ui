@@ -1558,6 +1558,9 @@ export interface components {
             newPassword: string;
         };
         ChatTokenResponse: {
+            apiKey?: string;
+            /** Format: date-time */
+            expiresAt?: string;
             streamToken?: string;
             userId?: string;
         };
