@@ -103,16 +103,39 @@ Quay lại [`fe-migration-ledger.md`](../../fe-migration-ledger.md).
   `count` đến từ payload feed/search của caller, `onChanged` để màn compose tự quyết có refetch
   feed không. **Cấm cộng trừ tại chỗ** — highlight là thật, tổng bịa thì không.
 
-- **NỢ NẶNG HƠN NỢ DIỆN MẠO: hành vi tương tác của `ReactionBar` CHƯA verify** (P2.4′c-2).
-  Extension vẫn không nối, và **project không có test runner** (`package.json` chỉ có
-  dev/build/lint/prepare; không vitest/jest/testing-library/playwright) — thêm một cái là thay
-  đổi phạm vi ngoài checkpoint này, nên đã không tự ý làm. Kết quả: **bấm/toggle/optimistic/
-  rollback chưa từng được chạy thật**, mới chỉ kiểm cấu trúc SSR (6/6: đúng 10 nút,
-  `aria-pressed=false` khi chưa có data, nhãn đúng thứ tự enum, count hiện/ẩn đúng, không nút
-  nào disabled). Ba sự thật BE mà logic này bám vào thì **đã đo ở P2.4′b** (404 khi chưa thả ·
-  upsert đổi emoji · `/me` trả null sau khi xoá) nên phần server không phải đoán; phần chưa
-  chắc là **client gate + optimistic**. Trả nợ: nối lại extension rồi bấm thật, hoặc dựng test
-  runner nếu quyết định thêm — nhưng phải là quyết định riêng, không nhét vào một checkpoint UI.
+- **NỢ VERIFY ĐÃ TRẢ HẾT cho c-1 · c-1′a · c-1′b · c-2** (P2.4′c-v, checkpoint riêng do user
+  yêu cầu trả trước khi làm c-3). Extension Chrome nối lại được, nên **không thêm test runner** —
+  đường trình duyệt rẻ hơn và còn kiểm được diện mạo, thứ test runner không làm.
+  Đã chạy thật, đăng nhập bằng seed user qua đúng form login:
+  - **Hành vi `ReactionBar` (nợ nặng nhất): 4/4 đúng.** Bấm Thích → `aria-pressed` bật **ngay
+    lập tức** trước khi server trả (optimistic có thật), server sau đó trả `LIKE`. Thích → Yêu
+    thích: chỉ Yêu thích pressed, server `LOVE`, **không lỗi** → đúng là upsert chứ không phải
+    xoá-rồi-tạo. Bấm Yêu thích lần hai: server về `null`, **không có 404 nào** → gate hoạt động.
+    Dev DB sạch sau khi đo (`t_post_reactions` = 0).
+  - **Diện mạo + dark mode**: cả 9 card, 7 khối body, chip rep, badge, hàng reaction đều đúng ở
+    light lẫn dark; mọi token lật đúng, không chỗ nào vỡ layout.
+  - **So với specimen DS đã render** (`display.card.html`): thứ tự doctrine avatar → tên → rep →
+    time khớp. Ba khác biệt nhìn thấy đều là deviation **đã ghi từ trước** (#5 màu avatar, #11 chip
+    không có levelName, #17 không có pill expertise). Một khác biệt chưa ghi → thành **#18**.
+
+- **VERIFY BẰNG MẮT BẮT ĐƯỢC 2 LỖI THẬT mà SSR markup không thấy nổi** (P2.4′c-v). Đây chính là
+  lý do nợ diện mạo không phải nợ vặt — cả hai đều nằm trong code đã "pass" 19/19 và 24/24 ở các
+  checkpoint trước:
+  1. **Ngày giờ format sai locale.** `toLocaleString()` không tham số dùng locale của **runtime**,
+     không phải của app → UI tiếng Việt hiện `7/29/2026, 12:49:55 PM`. SSR grep không bắt được vì
+     chuỗi vẫn "có mặt", chỉ sai ngôn ngữ.
+  2. **Hydration mismatch ở `EventBody`** (console báo `Hydration failed`, React **vứt cả cây rồi
+     render lại**). Cùng gốc: cùng một lời gọi chạy một lần ở Node, một lần ở browser, mà hai
+     runtime không bắt buộc phải cùng locale mặc định.
+
+  Sửa chung ở `features/posts/lib/format.ts`: lấy locale từ `useI18n()` rồi **truyền tường minh**
+  vào `toLocaleString`/`toLocaleDateString`/`Intl.NumberFormat`, và **bỏ giây** (giây trên mốc thời
+  gian bài viết là nhiễu, đồng thời là thứ làm mismatch to hơn mức cần). Áp cho cả 4 chỗ:
+  `EventBody` · `PollBody` (ngày đóng) · `PostCard` (fallback quá 7 ngày) · `BookBody` (giá tiền —
+  cùng loại lỗi qua `Intl.NumberFormat(undefined, …)`). Đã verify lại: hiện `12:56 29 thg 7, 2026`
+  và console **sạch hydration**.
+  Để ở `features/posts` vì hiện chỉ posts dùng; **chuyển lên `shared/` khi có domain thứ hai cần**,
+  không phải trước đó.
 
 - **LỖI BE: `coverImageUrl` của sách là presigned URL 24h nhưng bị LƯU VÀO DB** (phát hiện
   P2.4′c-1′b). `BookStorageService.uploadCover` trả `getPresignedUrl(...)` với
@@ -181,25 +204,6 @@ Quay lại [`fe-migration-ledger.md`](../../fe-migration-ledger.md).
 - **`likeCount` cố ý KHÔNG nằm ở footer card.** Nó thuộc về cạnh nút reaction mà c-2 sẽ đặt vào
   slot `actions`. Hiện hai chỗ trên cùng màn hình là mời chúng lệch nhau — nhất là khi optimistic
   của `myReaction` đổi tức thì còn tổng thì đợi refetch feed (xem mục reaction ở trên).
-
-- **NỢ VERIFY BẰNG MẮT CỘNG DỒN: c-1 + c-1′a.** Extension vẫn "not connected" ở P2.4′c-1′a, nên
-  4 khối body của c-1′a chỉ kiểm được bằng SSR markup — **19/19 khẳng định đúng** (pill ngôn ngữ +
-  fallback nhãn, `<pre>` cuộn ngang, khối code rỗng biến mất, tiêu đề/summary/cover của article,
-  article rỗng biến mất, host bỏ `www.`, `rel="noopener noreferrer"` + `target="_blank"`,
-  `line-clamp-2`, fallback title về host, **URL hỏng không thành `<a>`**, pill QNA hai trạng thái,
-  **`bountyPoints=500` không xuất hiện ở đâu**), không rò key i18n. Chưa kiểm: **diện mạo, dark
-  mode, layout vỡ, và `line-clamp-2` có cắt đúng 2 dòng thật không**. Trả một lần cho cả hai
-  bước khi extension nối lại.
-
-- **NỢ: `PostCard` chưa verify bằng mắt** (P2.4′c-1). Extension Chrome trả "not connected" nên đi
-  đường thay thế của `session-constants` §4: curl route preview với cookie `session=true; role=USER`
-  rồi soi markup SSR — 14/14 khẳng định đúng (tên tác giả, chip 8,420, điểm 0 vẫn render, "Tác giả
-  không xác định", 42m/3d, nhãn + link Maps, hashtag, đếm 12 và 0, cả hai slot, `data-post-id`),
-  **không rò key i18n**. Chưa kiểm được: **diện mạo so với specimen DS, dark mode, layout vỡ**.
-  Specimen `display.card.html` mount component bằng React lúc chạy nên curl không ra hình, mà đọc
-  script trong đó là đọc `.jsx` — Constraint #1 cấm. Trả nợ ngay khi extension nối lại được: dựng
-  lại route preview (dưới `(main)`, **tên không bắt đầu bằng `_`** — Next coi thư mục `_*` là
-  private nên route 404, đã mất một nhịp vì chuyện này), chụp light + dark, so với specimen.
 
 - **Cách tách UI chu kỳ 1 (công bố ở P2.4c-1, trần 5 component/checkpoint):**
 

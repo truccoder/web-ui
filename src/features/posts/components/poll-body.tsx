@@ -1,5 +1,8 @@
+'use client';
+
 import { useT } from '@/lib/i18n';
 import { cn } from '@/shared/lib/cn';
+import { formatDateTime, useIntlLocale } from '../lib/format';
 import type { PollDetails } from '../types/post';
 
 /**
@@ -27,6 +30,7 @@ export interface PollBodyProps {
 
 export function PollBody({ details, className }: PollBodyProps) {
   const t = useT();
+  const localeTag = useIntlLocale();
   const { question, options, endDate } = details;
 
   // Blank options are filtered at compose time, but older rows and the update path are not
@@ -63,7 +67,7 @@ export function PollBody({ details, className }: PollBodyProps) {
 
       <p className="text-nx-micro text-nx-text-muted">
         {closed
-          ? t('post.body.pollClosed', { date: closesAt!.toLocaleString() })
+          ? t('post.body.pollClosed', { date: formatDateTime(endDate, localeTag) ?? '' })
           : t('post.body.pollNoVoting')}
       </p>
     </div>

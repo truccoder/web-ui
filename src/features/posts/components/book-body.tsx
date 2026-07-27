@@ -4,6 +4,7 @@ import { useState, type ReactNode } from 'react';
 import { Badge } from '@/shared/components';
 import { useT } from '@/lib/i18n';
 import { cn } from '@/shared/lib/cn';
+import { formatCurrency, useIntlLocale } from '../lib/format';
 
 /**
  * Read side of a `BOOK` post — fills `PostCard`'s `body` slot.
@@ -50,16 +51,6 @@ export interface BookBodyProps {
   className?: string;
 }
 
-/** `price` is a whole-currency amount (`Long`, default currency VND — no minor units). */
-function formatPrice(price: number, currency: string): string {
-  try {
-    return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(price);
-  } catch {
-    // An unknown currency code throws rather than degrading; the number still beats nothing.
-    return `${price.toLocaleString()} ${currency}`;
-  }
-}
-
 function formatSize(bytes: number): string {
   const mb = bytes / (1024 * 1024);
   return mb >= 1 ? `${mb.toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`;
@@ -67,6 +58,7 @@ function formatSize(bytes: number): string {
 
 export function BookBody({ book, actions, className }: BookBodyProps) {
   const t = useT();
+  const localeTag = useIntlLocale();
   const [coverFailed, setCoverFailed] = useState(false);
 
   const { title, description, coverImageUrl, fileFormat, fileSizeBytes, totalPages } = book;
@@ -78,7 +70,9 @@ export function BookBody({ book, actions, className }: BookBodyProps) {
   // `isFree` is authoritative: `buildAndSaveBook` forces `price = 0` when it is set, so a
   // stale non-zero price must never win over the flag.
   const priceLabel =
-    isFree || !price ? t('post.book.free') : formatPrice(price, currency?.trim() || 'VND');
+    isFree || !price
+      ? t('post.book.free')
+      : formatCurrency(price, currency?.trim() || 'VND', localeTag);
 
   return (
     <div className={cn('flex gap-3 rounded-nx-sm border border-nx-border-default p-3', className)}>

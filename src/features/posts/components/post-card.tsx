@@ -5,6 +5,7 @@ import { Card, DeveloperIdentity, DeveloperMeta } from '@/shared/components';
 import { RepScore } from '@/features/reputation';
 import { useT } from '@/lib/i18n';
 import { cn } from '@/shared/lib/cn';
+import { formatDate, useIntlLocale } from '../lib/format';
 import type { LocationResolution } from '../types/location';
 import { LocationBadge } from './location-badge';
 
@@ -81,6 +82,7 @@ export interface PostCardProps {
  */
 function useRelativeTime() {
   const t = useT();
+  const localeTag = useIntlLocale();
 
   return (iso: string): string => {
     const then = new Date(iso).getTime();
@@ -95,7 +97,7 @@ function useRelativeTime() {
     if (minutes < 60) return t('post.minutesAgo', { minutes });
     if (hours < 24) return t('post.hoursAgo', { hours });
     if (days < 7) return t('post.daysAgo', { days });
-    return new Date(then).toLocaleDateString();
+    return formatDate(iso, localeTag) ?? '';
   };
 }
 

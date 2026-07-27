@@ -1,8 +1,11 @@
+'use client';
+
 import type { ReactNode } from 'react';
 import { CalendarDays, MapPin, Users, Video } from 'lucide-react';
 import { Badge } from '@/shared/components';
 import { useT } from '@/lib/i18n';
 import { cn } from '@/shared/lib/cn';
+import { formatDateTime, useIntlLocale } from '../lib/format';
 import type { EventDetails } from '../types/post';
 
 /**
@@ -77,6 +80,7 @@ const statusKey = {
 
 export function EventBody({ details, actions, className }: EventBodyProps) {
   const t = useT();
+  const localeTag = useIntlLocale();
   const { eventTitle, eventDescription, startTime, endTime } = details;
   const { timezone, location, onlineUrl, maxAttendees } = details;
 
@@ -88,7 +92,9 @@ export function EventBody({ details, actions, className }: EventBodyProps) {
   if (!eventTitle?.trim() && !start) return null;
 
   const when = start
-    ? [start.toLocaleString(), end ? end.toLocaleString() : null].filter(Boolean).join(' – ')
+    ? [formatDateTime(startTime, localeTag), formatDateTime(endTime, localeTag)]
+        .filter(Boolean)
+        .join(' – ')
     : null;
 
   return (
