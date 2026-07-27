@@ -402,6 +402,23 @@ export const en = {
     hoursAgo: '${hours}h ago',
     daysAgo: '${days}d ago',
     unknownAuthor: 'Unknown author',
+    qna: {
+      accept: 'Accept answer',
+      acceptedAnswer: 'Accepted answer',
+    },
+    quiz: {
+      title: 'Quiz',
+      submit: 'Submit answers',
+      score: '${score}/${total} correct',
+      resultNotSaved: 'This result is not saved — it disappears when you leave the page.',
+    },
+    edit: {
+      edit: 'Edit',
+      save: 'Save changes',
+      content: 'Content',
+      delete: 'Delete',
+      deleteConfirm: 'Delete this post?',
+    },
     comments: {
       empty: 'No comments yet',
       loadFailed: 'Could not load comments',

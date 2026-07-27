@@ -80,7 +80,7 @@ Quay lại [`fe-migration-ledger.md`](../../fe-migration-ledger.md).
   | c-1′b ✅ | `PollBody` `BookBody` `EventBody`                                  | — (render payload feed)                       |
   | c-2 ✅   | `ReactionBar` (5 toggle inline)                                    | getMyReaction · upsert · remove               |
   | c-3 ✅   | `CommentThread` `CommentItem` `CommentComposer`                    | 4 ep CommentController                        |
-  | c-4      | nợ c-5 chu kỳ 1: `QuizTaker`, sửa/xoá bài, chọn đáp án             | submitQuiz · updatePost · deletePost · accept |
+  | c-4 ✅   | `QuizTaker` `PostEditor` `PostMenu` + accept trong thread          | submitQuiz · updatePost · deletePost · accept |
 
   **Vì sao tách c-1 thành c-1 + c-1′** (phát hiện lúc đọc `FeedPostDataDto`, trước khi viết code):
   payload feed mang **8 khối details** (event/book/quiz/codeSnippet/article/qna/poll/link). Dựng
@@ -117,6 +117,32 @@ Quay lại [`fe-migration-ledger.md`](../../fe-migration-ledger.md).
   - **So với specimen DS đã render** (`display.card.html`): thứ tự doctrine avatar → tên → rep →
     time khớp. Ba khác biệt nhìn thấy đều là deviation **đã ghi từ trước** (#5 màu avatar, #11 chip
     không có levelName, #17 không có pill expertise). Một khác biệt chưa ghi → thành **#18**.
+
+- **`acceptAnswer` KHÔNG BAO GIỜ set `isResolved` — lỗi thật, đã sửa ở FE** (P2.4′c-4).
+  `PostService.acceptAnswer` chỉ `qnaDetails.setAcceptedAnswerId(commentId)`. Đo trên DB ngay
+  sau khi bấm: `{"isResolved": false, "acceptedAnswerId": 61}`. Mà `PostComposer` luôn tạo bài
+  QNA với `isResolved: false` và **không đường nào khác ghi field đó** → `isResolved` vĩnh viễn
+  false. Bản `QnaBody` đầu tiên (c-1′a) đọc đúng field đó, tức **mọi câu hỏi đã có đáp án vẫn bị
+  gắn nhãn "Chưa có đáp án"**. Đã sửa: `resolved = isResolved === true || acceptedAnswerId != null`.
+- **Chọn đáp án là MỘT LẦN, không đổi được** (P2.4′c-4). `acceptAnswer` ném
+  _"An answer has already been accepted for this post"_ khi `acceptedAnswerId` đã có, và **không
+  có endpoint gỡ hay đổi**. Bản đầu chỉ ẩn nút trên đúng comment được chọn → các comment khác vẫn
+  còn nút, bấm là 400. Đã sửa ở `CommentThread`: `acceptedAnswerId != null` thì **thu hồi handler
+  khỏi toàn bộ thread**.
+- **`PostEditorState`: bắt buộc mọi key ở tầng type, vì thiếu key là MẤT DỮ LIỆU** (P2.4′c-4).
+  `updatePost` dùng `BeanUtils.copyProperties` copy cả null, mà `UpdatePostRequest` để mọi field
+  optional nên caller quên `quizDetails` vẫn compile. **Đo thật, không phải lo xa**: lần sửa đầu
+  với `current` thiếu field đã **xoá sạch `quiz_details` và reset `acceptedAnswerId`** của post 121. Sau khi siết type thành `{[K in keyof Required<UpdatePostRequest>]: UpdatePostRequest[K]}`
+  (key bắt buộc, value vẫn cho `undefined`), preview **không compile được** cho tới khi liệt kê
+  đủ 14 field — rồi sửa lại với state đầy đủ thì **quiz và acceptedAnswerId đều sống sót**.
+  Hai field **không cứu được**: `images` và `taggedUserIds` có trong DTO update nhưng
+  `FeedPostDataDto` không echo → mọi lần sửa đều null chúng. Hiện vô hại vì `PostComposer` chưa
+  bao giờ ghi hai field này; sửa đúng là BE echo chúng ra payload feed.
+- **Đáp án quiz lộ TRƯỚC khi nộp, không chỉ sau** (P2.4′c-4 — nặng hơn ghi chú cũ).
+  `QuizQuestion.correctOptionIndex` nằm **trong chính payload feed**, nên đọc devtools là biết
+  đáp án trước khi trả lời; `QuizResultResponseDto.correctAnswers` chỉ là lần lộ thứ hai. FE
+  không bịt được cả hai. `QuizTaker` vì vậy không diễn trò giấu, và có ghi rõ "kết quả không
+  được lưu" vì **không có endpoint đọc lại lần làm trước**.
 
 - **Thread comment: 4 quyết định + 1 lỗi verify bắt được** (P2.4′c-3):
   - **"Trả lời" CHỈ có trên comment gốc.** BE chặn reply-của-reply, nên hoặc là không mời, hoặc

@@ -28,7 +28,14 @@ export interface QnaBodyProps {
 
 export function QnaBody({ details, className }: QnaBodyProps) {
   const t = useT();
-  const resolved = details.isResolved === true;
+
+  // `acceptedAnswerId` is the real signal, and `isResolved` alone would be wrong.
+  // `PostService.acceptAnswer` sets ONLY `acceptedAnswerId` — it never flips `isResolved`
+  // (verified against the stored row: `{"isResolved": false, "acceptedAnswerId": 61}` right
+  // after accepting). Since `PostComposer` always creates QNA posts with `isResolved: false`
+  // and nothing else ever writes it, trusting that field alone would label every answered
+  // question "unanswered" forever.
+  const resolved = details.isResolved === true || details.acceptedAnswerId != null;
 
   return (
     <div className={cn('flex', className)}>

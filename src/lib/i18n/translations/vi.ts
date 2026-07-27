@@ -405,6 +405,23 @@ export const vi: Messages = {
     hoursAgo: '${hours} giờ trước',
     daysAgo: '${days} ngày trước',
     unknownAuthor: 'Tác giả không xác định',
+    qna: {
+      accept: 'Chọn làm đáp án',
+      acceptedAnswer: 'Đáp án được chọn',
+    },
+    quiz: {
+      title: 'Trắc nghiệm',
+      submit: 'Nộp bài',
+      score: 'Đúng ${score}/${total}',
+      resultNotSaved: 'Kết quả này không được lưu — rời trang là mất.',
+    },
+    edit: {
+      edit: 'Sửa',
+      save: 'Lưu thay đổi',
+      content: 'Nội dung',
+      delete: 'Xoá',
+      deleteConfirm: 'Xoá bài này?',
+    },
     comments: {
       empty: 'Chưa có bình luận',
       loadFailed: 'Không tải được bình luận',

@@ -50,3 +50,8 @@ export { ReactionBar, type ReactionBarProps } from './reaction-bar';
 export { CommentThread, type CommentThreadProps } from './comment-thread';
 export { CommentItem, type CommentItemProps } from './comment-item';
 export { CommentComposer, type CommentComposerProps } from './comment-composer';
+
+// Cycle-1 debt paid (P2.4'c-4): the four endpoints that needed a rendered post to attach to.
+export { QuizTaker, type QuizTakerProps } from './quiz-taker';
+export { PostEditor, type PostEditorProps, type PostEditorState } from './post-editor';
+export { PostMenu, type PostMenuProps } from './post-menu';

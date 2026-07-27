@@ -13,6 +13,7 @@ import {
   useDeleteComment,
   useUpdateComment,
 } from '../hooks/use-comment';
+import { useAcceptAnswer } from '../hooks/use-post';
 import { CommentComposer } from './comment-composer';
 import { CommentItem } from './comment-item';
 
@@ -41,10 +42,24 @@ export interface CommentThreadProps {
   postId: number;
   /** Fired after a successful create/edit/delete so the caller can refresh its own payload. */
   onChanged?: () => void;
+  /**
+   * Turns on the accept-answer control. True only when the post is a QNA **and** the signed-in
+   * user wrote it — `PostService.acceptAnswer` throws otherwise, and on a QNA post whose
+   * `qnaDetails` is null it throws even for the author.
+   */
+  canAcceptAnswer?: boolean;
+  /** `QnaDetails.acceptedAnswerId` from the post payload, so the chosen answer is marked. */
+  acceptedAnswerId?: number | null;
   className?: string;
 }
 
-export function CommentThread({ postId, onChanged, className }: CommentThreadProps) {
+export function CommentThread({
+  postId,
+  onChanged,
+  canAcceptAnswer = false,
+  acceptedAnswerId,
+  className,
+}: CommentThreadProps) {
   const t = useT();
   const profile = useMyProfile();
 
@@ -55,6 +70,19 @@ export function CommentThread({ postId, onChanged, className }: CommentThreadPro
   const create = useCreateComment(notify);
   const update = useUpdateComment(notify);
   const remove = useDeleteComment(notify);
+  // `useAcceptAnswer` already invalidates `postKeys.comments(postId)` itself — it was written
+  // that way in cycle 1, before this query existed. `onChanged` is still needed on top,
+  // because the post's own `qnaDetails.isResolved` lives in the feed payload, not here.
+  const accept = useAcceptAnswer(notify);
+
+  // ACCEPTING IS ONCE-ONLY. `acceptAnswer` throws "An answer has already been accepted for
+  // this post" when `acceptedAnswerId` is set, and there is no endpoint to un-accept or
+  // re-assign. So the control disappears from EVERY comment the moment one is chosen —
+  // leaving it on the others would be a button whose only outcome is a 400.
+  const acceptHandler =
+    canAcceptAnswer && acceptedAnswerId == null
+      ? (commentId: number) => accept.mutate({ postId, commentId })
+      : undefined;
 
   const thread = groupComments(comments.data ?? []);
   const mutationError = create.error ?? update.error ?? remove.error;
@@ -99,6 +127,8 @@ export function CommentThread({ postId, onChanged, className }: CommentThreadPro
                 replies={root.replies}
                 currentUserId={profile.data?.id}
                 onReply={(parentId) => setReplyingTo(parentId)}
+                onAcceptAnswer={acceptHandler}
+                isAcceptedAnswer={acceptedAnswerId === root.id}
                 onEdit={(commentId, content) =>
                   update.mutate({ postId, commentId, payload: { content } })
                 }
@@ -116,6 +146,8 @@ export function CommentThread({ postId, onChanged, className }: CommentThreadPro
                       <CommentItem
                         comment={reply}
                         currentUserId={profile.data?.id}
+                        onAcceptAnswer={acceptHandler}
+                        isAcceptedAnswer={acceptedAnswerId === reply.id}
                         onEdit={(commentId, content) =>
                           update.mutate({ postId, commentId, payload: { content } })
                         }
