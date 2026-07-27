@@ -667,5 +667,18 @@ export const vi: Messages = {
     addFriendsFirst: 'Thêm bạn bè trước để bắt đầu nhắn tin.',
     creating: 'Đang mở...',
     you: 'Bạn',
+    back: 'Quay lại',
+    noResults: 'Không có kết quả',
+    filterLabel: 'Lọc cuộc trò chuyện',
+    unknownPerson: 'Người dùng',
+    messagePlaceholder: 'Nhắn tin...',
+    send: 'Gửi',
+    loadError: 'Không mở được cuộc trò chuyện',
+    connecting: 'Đang kết nối...',
+    connectionError: 'Không kết nối được tới dịch vụ chat. Tải lại trang để thử lại.',
+    unconfigured: 'Chat chưa được cấu hình trên máy chủ.',
+    startFailed: 'Không mở được cuộc trò chuyện. Vui lòng thử lại.',
+    peerNotReady:
+      'Người này chưa dùng chat bao giờ nên chưa nhắn được. Nhờ họ mở mục Chats một lần.',
   },
 };

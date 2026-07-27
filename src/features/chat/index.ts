@@ -28,4 +28,19 @@ export {
   useConversation,
 } from './hooks';
 
+export {
+  ConversationSidebar,
+  type ConversationSidebarProps,
+  ConversationView,
+  ConversationEmpty,
+  type ConversationViewProps,
+  type ConversationHeaderData,
+  ConversationRow,
+  type ConversationRowProps,
+  MessageBubble,
+  type MessageBubbleProps,
+  MessageComposer,
+  type MessageComposerProps,
+} from './components';
+
 export type { ChatToken, ChatConversation, ChatMessage, ChatConnectionStatus } from './types';

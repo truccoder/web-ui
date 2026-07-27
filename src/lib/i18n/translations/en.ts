@@ -668,6 +668,19 @@ export const en = {
     addFriendsFirst: 'Add some friends first to start chatting.',
     creating: 'Opening...',
     you: 'You',
+    back: 'Back',
+    noResults: 'No results',
+    filterLabel: 'Filter conversations',
+    unknownPerson: 'User',
+    messagePlaceholder: 'Write a message...',
+    send: 'Send',
+    loadError: 'Could not open this conversation',
+    connecting: 'Connecting...',
+    connectionError: 'Could not reach the chat service. Reload the page to try again.',
+    unconfigured: 'Chat is not configured on the server.',
+    startFailed: 'Could not open the conversation. Please try again.',
+    peerNotReady:
+      'This person has never used chat, so they cannot be messaged yet. Ask them to open Chats once.',
   },
 };
 

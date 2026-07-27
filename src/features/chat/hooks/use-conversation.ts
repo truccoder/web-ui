@@ -129,10 +129,26 @@ export function useConversation(conversationId: string | null) {
 
     open();
 
+    /**
+     * A message arriving while the conversation is open is read the moment it lands.
+     *
+     * FOUND BY LOOKING AT THE SCREEN, not by reading the code: marking read only on open leaves
+     * the sidebar showing "1 unread" for a conversation the reader is staring at, because the
+     * message arrived after the `markRead` on open had already run.
+     *
+     * Skipped for one's own messages — the echo of a send is not something to acknowledge, and
+     * doing so would double the write traffic of every message sent.
+     */
+    const markIncomingRead = (event: { user?: { id?: string } }) => {
+      if (cancelled || event.user?.id === userId) return;
+      channel.markRead().catch(() => {});
+    };
+
     // `message.updated`/`message.deleted` matter as much as `message.new`: without them an edited
     // message keeps its old text on screen until the conversation is reopened.
     const subscriptions = [
       channel.on('message.new', sync),
+      channel.on('message.new', markIncomingRead),
       channel.on('message.updated', sync),
       channel.on('message.deleted', sync),
     ];

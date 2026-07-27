@@ -216,11 +216,48 @@ Ba cách sửa, **cần bạn chọn trước P2.7c-1** vì nó quyết định 
 - **(iii) BE tạo channel hộ** (chính là R6 phương án (c)): tạo channel + upsert cả hai người trong
   một lần, và tiện thể gác theo quan hệ bạn bè. Chặt nhất, tốn 1 endpoint mới.
 
-**Đề xuất (i)** cho phạm vi đồ án: không đổi số endpoint, không đổi kiến trúc, và đúng ngữ cảnh
-"chỉ chat với bạn bè". Nếu bạn muốn đúng sản phẩm thật thì (iii).
+**ĐÃ CHỐT: (i)** — không đổi số endpoint, không đổi kiến trúc, đúng ngữ cảnh "chỉ chat với bạn
+bè". Prompt gửi BE đã soạn 2026-07-27; điểm mấu chốt trong đó: lấy id bạn bè bằng
+`FriendshipRepository.findFriendIds` (một truy vấn Cypher) **qua một method public mới trên
+`FriendshipService`** chứ không để package `chat` với thẳng vào repository của `friendships`;
+`upsertUser` mở rộng thành `upsertUsers(Collection)` gửi **một** lần (body của Stream vốn đã là
+map keyed by id, giới hạn 100/lần → chia lô); giữ nguyên tinh thần best-effort; **đồng bộ, không
+`@Async`** (async thì có đua, FE tạo channel trước khi upsert xong là dính lại đúng lỗi cũ).
+Không đổi DTO, không thêm endpoint → **`/v3/api-docs` phải không đổi**, drift check bên FE phải
+ra diff rỗng.
 
-**Cho tới khi chọn**: `startConversation` ném lỗi của Stream nguyên văn; P2.7c-1 sẽ hiện thông báo
-"người này chưa dùng chat bao giờ" thay vì để lộ chuỗi lỗi SDK.
+**(i) KHÔNG PHẢI LÀ GÁC QUYỀN**, đừng nhầm. Sau khi sửa, người dùng vẫn nhắn được cho người lạ
+_nếu_ người đó tình cờ đã tồn tại trên Stream (vì từng mở chat). (i) chỉ làm cho **bạn bè nhắn
+được nhau** — "ai được nhắn ai" vẫn là quy ước của UI, không phải luật server, đúng như R6 (a) đã
+chốt. Muốn gác thật thì phải là R6 (c).
+
+### R8 — BE đã sửa, verify 2026-07-27
+
+BE làm đúng đặc tả: `StreamChatClient.upsertUsers(Collection)` chia lô `MAX_USERS_PER_UPSERT = 100`,
+`FriendshipService.getFriendIds` (method public mới, đúng ranh giới package — `chat` không với
+thẳng vào repository của `friendships`), `userRepository.findAllById` một truy vấn, bọc
+try/catch giữ nguyên tinh thần best-effort, và loại trùng chính mình khỏi danh sách.
+
+**Drift check ra RỖNG** — đúng như yêu cầu: không đổi DTO, không thêm endpoint, tổng vẫn 101.
+
+Đo trên trình duyệt qua route probe tạm (đã xoá), hai phép thử đối xứng:
+
+| thử                                  | kết quả                                                                         |
+| ------------------------------------ | ------------------------------------------------------------------------------- |
+| 9002 — **bạn bè**, chưa từng mở chat | **OK** → `!members-hJ3Du-...` (trước khi sửa: chính là lỗi "users don't exist") |
+| 9003 — **không phải bạn bè**         | **vẫn lỗi** `don't exist: [9003]` — đúng mong đợi                               |
+
+Phép thử thứ hai quan trọng ngang phép thử thứ nhất: nó chứng minh upsert **đúng phạm vi bạn bè**
+chứ không phải BE lỡ tay đẩy cả bảng user lên Stream, và xác nhận lại rằng **(i) không phải là gác
+quyền**.
+
+**Chưa tự kiểm được**: nhánh "Stream lỗi thì token vẫn 200" (mục 4 trong prompt gửi BE) — muốn thử
+phải đổi `api-key` sai tạm thời ở phía BE. Code có try/catch đúng chỗ, nhưng tôi không chạy qua
+nhánh đó.
+
+**Giữ nhánh lỗi trong UI kể cả sau khi BE sửa**: P2.7c-1 vẫn phải dịch lỗi "don't exist" thành câu
+người đọc hiểu được, vì nó **vẫn xảy ra** với người không phải bạn bè (và với bạn bè vừa kết bạn
+xong trong cùng một phiên, trước khi token được cấp lại).
 
 ## Quyết định kiến trúc đã chốt ở P2.7a
 
@@ -264,3 +301,95 @@ Ba cách sửa, **cần bạn chọn trước P2.7c-1** vì nó quyết định 
 2 tin nhắn. Giữ làm fixture cho P2.7c-1 (không có nó thì màn hội thoại chỉ dựng được empty state).
 FE **không xoá được** channel — xoá là quyền phía server; dọn thì vào dashboard Stream.
 `email_verified` của 9004 đã trả về `false`.
+
+---
+
+## Sự cố dữ liệu dev, phát hiện lúc verify R8 (2026-07-27)
+
+**Dev DB đã bị reset trong lúc sửa BE.** Không phải do lệnh SQL của phiên này (lệnh duy nhất đã
+chạy trước đó có scope `where id = 9004`). Đo được:
+
+- `t_users.email_verified` của **9001 về `false`** → seed user không đăng nhập được nữa. Đã trả về
+  `true` — đó là trạng thái seed mà `prompts/session-constants.md` mô tả, không phải chế thêm.
+- **Neo4j rỗng hoàn toàn**: 0 node `User`, 0 quan hệ `FRIENDS_WITH`. Trước đó là 32 node + 13 bạn
+  cho 9001 (dựng lại ở P2.2, ghi trong `findings/friendships.md`). **Đây là lần thứ hai** đồ thị
+  biến mất — lần đầu cũng phát hiện tình cờ khi làm friendships.
+
+Vì phép thử R8 bắt buộc phải có **một người bạn chưa từng mở chat**, đã dựng lại **đúng một** tình
+bạn 9001↔9002 qua **đúng luồng API** (gửi lời mời → chấp nhận), không insert thẳng Neo4j: bật tạm
+`email_verified` của 9002, chấp nhận lời mời, rồi **tắt lại** — và **cố ý không** gọi `/chat/token`
+bằng 9002, nếu không 9002 sẽ tồn tại sẵn trên Stream và phép thử mất hết ý nghĩa.
+
+**Chưa dựng lại 12 tình bạn còn lại** — đó là việc khôi phục dữ liệu dev, không thuộc phạm vi
+checkpoint này, và cần bạn quyết có muốn làm không. Ảnh hưởng tới P2.7c-1: panel "chat mới" liệt kê
+bạn bè sẽ chỉ có **một** người. Đủ để dựng và verify UI, nhưng không dựng được cảnh danh sách dài.
+
+**Trạng thái Stream sau verify**: 2 channel của 9001 — với 9004 (2 tin nhắn, fixture từ P2.7a) và
+với 9002 (rỗng). Cả hai giữ lại làm fixture cho P2.7c-1. FE không xoá được channel; dọn thì vào
+dashboard Stream.
+
+---
+
+## P2.7c-1 — UI màn `/chats` (2026-07-28)
+
+**5 component mới, đúng trần** (`ConversationRow`, `ConversationSidebar`, `MessageBubble`,
+`MessageComposer`, `ConversationView` + `ConversationEmpty` cùng file). `NewChatPanel` và
+`ConnectionNote` là component cục bộ trong `conversation-sidebar.tsx`, không export — chúng là
+phần của sidebar, chưa có caller thứ hai để định hình props.
+
+### Ranh giới đã chốt: `features/chat` import `features/friendships` qua barrel
+
+Mở hội thoại mới = chọn một người bạn, nên chat **thật sự** phụ thuộc đồ thị quan hệ. CLAUDE.md §4
+cho phép import `index.ts` của feature khác. Hai lý do chọn đường này thay vì luồn `friends` qua prop:
+
+1. **BE vẽ đúng ranh giới đó**: `com.socialapp.chat` giờ gọi `FriendshipService.getFriendIds` (R8).
+   FE mirror lại thì hai đồ thị phụ thuộc trùng nhau.
+2. Luồn qua prop sẽ phải nối ở **hai** điểm mount (`/chats` và cửa sổ nổi trong app shell) và
+   **giấu một phụ thuộc có thật sau một cái prop** — thứ §4 cảnh báo mạnh hơn cả việc import.
+
+### Lỗi thật bắt được khi nhìn màn hình
+
+**Badge chưa đọc không tự tắt khi tin nhắn tới lúc hội thoại ĐANG mở.** `markRead()` chỉ chạy một
+lần lúc mở, nên tin đến sau đó vẫn tính là chưa đọc — sidebar hiện "1 chưa đọc" cho đúng cuộc trò
+chuyện người dùng đang nhìn. Sửa: thêm listener `message.new` thứ hai gọi `markRead()`, **bỏ qua
+tin của chính mình** (echo của lệnh gửi không cần xác nhận, và làm vậy sẽ nhân đôi lưu lượng ghi).
+
+Đo lại cả hai chiều sau khi sửa: tin tới **khi đang mở** → không badge (`countUnread=0`); tin tới
+**khi đang ở trang khác** → badge `1`, mở ra → tự tắt.
+
+### Chi tiết đáng giữ
+
+- **`isComposing` trong `MessageComposer`**: gõ tiếng Việt kiểu telex/VNI bắn Enter để chốt từ.
+  Không chặn thì Enter đó **gửi mất một từ dở**. Đây là app tiếng Việt nên bẫy này chắc chắn gặp.
+- **Ô nhập chỉ xoá khi gửi THÀNH CÔNG**, và xoá trong handler chứ không trong effect: gửi lỗi mà
+  mất nội dung vừa gõ là thứ một ô chat tuyệt đối không được làm. (Cùng bài học P2.4′c-3, khác chỗ:
+  ở đó dùng `key`, ở đây là event nên set state thẳng là đúng.)
+- **Tự cuộn đáy phụ thuộc `messages.length`, không phải `messages`**: mảng đổi identity mỗi lần
+  sync (một read receipt cũng làm đổi), phụ thuộc vào nó sẽ giật viewport của người đang đọc ngược
+  lịch sử. `behavior: 'auto'` chứ không `smooth` — cuộn mượt qua cả lịch sử dài trông như lỗi.
+- **Cột avatar luôn được giữ chỗ** (`w-7`) kể cả khi không vẽ avatar, nếu không cả run tin nhắn sẽ
+  nhảy ngang khi avatar biến mất.
+- **Tiêu đề hội thoại có 3 tầng fallback** và cả ba đều với tới được: `name` (null với channel
+  member-based) → tên đối phương (null nếu người đó chưa từng mở chat) → id.
+- Lỗi "users don't exist" được **dịch** thành `chat.peerNotReady` chứ không phơi chuỗi SDK. Giữ
+  nhánh này vĩnh viễn: nó vẫn xảy ra với người không phải bạn bè, và với bạn vừa kết bạn xong
+  trong cùng phiên (trước khi token được cấp lại).
+
+### Cách verify (đường dùng lại được cho c-2)
+
+Không có client thứ hai để đóng vai người kia, nên **bơm tin nhắn đến bằng chính user token của
+9004**: đăng nhập 9004 (bật tạm `email_verified`) → `GET /chat/token` → `POST` thẳng vào
+`https://chat.stream-io-api.com/channels/messaging/{id}/message` với header
+`Authorization: <streamToken>` + `Stream-Auth-Type: jwt`. Đây là đường duy nhất kiểm được bong
+bóng "người khác", cập nhật realtime và badge chưa đọc mà không cần hai trình duyệt.
+
+**Bẫy encoding**: chuỗi tiếng Việt đưa thẳng vào `curl -d` trên Git Bash bị hỏng → Stream trả
+`400 message.text is not valid utf8 text`. Ghi body ra file bằng node (`utf8`) rồi
+`--data-binary @file`.
+
+### Còn lại cho c-2 / d
+
+- Bố cục mobile một-pane (`onBack` đã có sẵn trên `ConversationView`, chưa có màn nào dùng).
+- Cửa sổ chat nổi của app shell (c-2) — sẽ dùng lại `MessageBubble` + `MessageComposer` +
+  `ConversationView`, đó là lý do 3 component này nhận props thay vì tự gọi hook.
+- Trang `/chats` thật vẫn đang chạy bản Twilio; rewire + xoá legacy là **d**.
