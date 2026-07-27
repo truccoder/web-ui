@@ -466,6 +466,20 @@ export const en = {
       },
       joinOnline: 'Join online',
       maxAttendees: 'Up to ${count} attendees',
+      rsvp: {
+        going: 'Going',
+        interested: 'Interested',
+        notGoing: 'Not going',
+        // GOING only — the same figure the backend checks against the organiser's cap.
+        goingCount: '${count} going',
+        full: 'This event is full.',
+      },
+      calendar: {
+        download: 'Download .ics',
+        add: 'Add to Google Calendar',
+        added: 'Added to your calendar',
+        connect: 'Connect Google Calendar',
+      },
     },
     book: {
       free: 'Free',

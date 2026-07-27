@@ -112,6 +112,27 @@ export function useAddToGoogleCalendar(options?: PostMutationOptions<number>) {
 }
 
 /**
+ * GET /v1/api/events/{postId}/export.ics — fetch the iCalendar body.
+ *
+ * A MUTATION, THOUGH IT IS A GET, for two reasons that both point the same way: it runs on
+ * demand (nobody wants an event's file body fetched because a card scrolled into view), and
+ * its result is not state — it is a file the user is about to be handed, so caching it under
+ * a query key would keep a document alive in memory that nothing ever reads again. Compare
+ * `useResolveLocation`, which is a query despite being a POST: that one *is* cacheable state.
+ *
+ * Added during P2.4″c rather than with the rest of this layer at ″b: the shape only became
+ * obvious once the download button existed to call it.
+ *
+ * Returns the text; turning it into a saved file needs the DOM and belongs to the component.
+ */
+export function useExportIcs(options?: PostMutationOptions<number, string>) {
+  return useMutation({
+    mutationFn: (postId: number) => eventsApi.exportIcs(postId),
+    ...options,
+  });
+}
+
+/**
  * GET /v1/api/events/google/status — does this user have a stored Google token.
  *
  * No `enabled` parameter and no post id: the key is per-user and constant, so every event

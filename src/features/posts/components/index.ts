@@ -55,3 +55,9 @@ export { CommentComposer, type CommentComposerProps } from './comment-composer';
 export { QuizTaker, type QuizTakerProps } from './quiz-taker';
 export { PostEditor, type PostEditorProps, type PostEditorState } from './post-editor';
 export { PostMenu, type PostMenuProps } from './post-menu';
+
+// Event controls (P2.4″c) — both fill `EventBody`'s `actions` slot. Split in two because
+// they are separate concerns with separate failure modes: RSVP writes participation state
+// the backend owns, while the calendar pair hands the user a file or talks to Google.
+export { EventRsvpBar, type EventRsvpBarProps } from './event-rsvp-bar';
+export { EventCalendarActions, type EventCalendarActionsProps } from './event-calendar-actions';

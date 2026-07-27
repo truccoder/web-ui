@@ -466,6 +466,19 @@ export const vi: Messages = {
       },
       joinOnline: 'Tham gia trực tuyến',
       maxAttendees: 'Tối đa ${count} người tham gia',
+      rsvp: {
+        going: 'Sẽ tham gia',
+        interested: 'Quan tâm',
+        notGoing: 'Không tham gia',
+        goingCount: '${count} người tham gia',
+        full: 'Sự kiện đã đủ người.',
+      },
+      calendar: {
+        download: 'Tải file .ics',
+        add: 'Thêm vào Google Calendar',
+        added: 'Đã thêm vào lịch',
+        connect: 'Kết nối Google Calendar',
+      },
     },
     book: {
       free: 'Miễn phí',

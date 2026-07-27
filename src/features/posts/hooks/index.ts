@@ -46,3 +46,4 @@ export {
   findMyRsvp,
   type RsvpVariables,
 } from './use-event';
+export { useExportIcs } from './use-event';
