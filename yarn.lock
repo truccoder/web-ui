@@ -217,7 +217,7 @@
     "@babel/plugin-transform-modules-commonjs" "^7.27.1"
     "@babel/plugin-transform-typescript" "^7.28.5"
 
-"@babel/runtime@^7.17.0", "@babel/runtime@^7.29.2":
+"@babel/runtime@^7.29.2":
   version "7.29.2"
   resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.29.2.tgz#9a6e2d05f4b6692e1801cd4fb176ad823930ed5e"
   integrity sha512-JiDShH45zKHWyGe4ZNVRrCjBz8Nh9TMmZG1kh4QTK8hCBTWBi8Da+i7s1fJw7/lYpM4ccepSNfqzZ/QvABBi5g==
@@ -1083,86 +1083,6 @@
     minimatch "^10.0.1"
     path-browserify "^1.0.1"
 
-"@twilio/conversations@^3.0.0":
-  version "3.0.0"
-  resolved "https://registry.yarnpkg.com/@twilio/conversations/-/conversations-3.0.0.tgz#ef39bd8e244aab01afe33e2cb1fec1b2a1a7e1fa"
-  integrity sha512-8UXOLdQ1e0tuVRdCzSF9Cpzo+PIFNaZhb82Sffd6XuDPYmQYhDtph99RE8iplCZBC/+AZStBzDn+gwFGeC+8yA==
-  dependencies:
-    "@babel/runtime" "^7.17.0"
-    "@twilio/declarative-type-validator" "^1.0.0"
-    "@twilio/deprecation-decorator" "^1.0.0"
-    "@twilio/mcs-client" "^1.0.0"
-    "@twilio/notifications" "^3.0.0"
-    "@twilio/operation-retrier" "^5.0.0"
-    "@twilio/replay-event-emitter" "^1.0.0"
-    core-js "^3.17.3"
-    iso8601-duration "=1.2.0"
-    loglevel "^1.8.0"
-    platform "^1.3.6"
-    quick-lru "^5.1.1"
-    twilio-sync "^4.0.0"
-    twilsock "^1.0.0"
-    uuid "^9.0.0"
-    xmlhttprequest "^1.8.0"
-
-"@twilio/declarative-type-validator@^1.0.0":
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/@twilio/declarative-type-validator/-/declarative-type-validator-1.0.0.tgz#d2313abd813ca2685ad1ae56b1209c0f58a140dd"
-  integrity sha512-fb/ovMBM8T1dpcSgbf5y6qhfE+x2CwMvtjcJVm+e+lpLvL1c+QjSdpG9mp1jfsH/1+xO73ElFkwzasjuqFIHag==
-  dependencies:
-    "@babel/runtime" "^7.17.0"
-    core-js "^3.17.3"
-
-"@twilio/deprecation-decorator@^1.0.0":
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/@twilio/deprecation-decorator/-/deprecation-decorator-1.0.0.tgz#4133ca1d9997c512e5d2a4777340bb273606bf45"
-  integrity sha512-1ZzFRe4dJf64gLM/9bTqRK6xcLXbNtSpX18Q98SpWZnNRBn4jqY7/Qnko6Kk1ZWGyxYjz8zpEekND/f+j0cFEQ==
-  dependencies:
-    "@babel/runtime" "^7.17.0"
-    core-js "^3.17.3"
-    loglevel "^1.8.0"
-
-"@twilio/mcs-client@^1.0.0":
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/@twilio/mcs-client/-/mcs-client-1.0.0.tgz#d2bb24f47916c450817b65a906efa623b88ba10f"
-  integrity sha512-VulrD3KK7PzKAW5YZ3/IjJZDEOYG+k/MqIFUmvGg58ajG8x8goCa2fe+6e/W9kKi85UBlF31HAda6YO8yo+Seg==
-  dependencies:
-    "@babel/runtime" "^7.17.0"
-    "@twilio/declarative-type-validator" "^1.0.0"
-    "@twilio/operation-retrier" "^5.0.0"
-    core-js "^3.17.3"
-    loglevel "^1.8.0"
-    xmlhttprequest "^1.8.0"
-
-"@twilio/notifications@^3.0.0":
-  version "3.0.1"
-  resolved "https://registry.yarnpkg.com/@twilio/notifications/-/notifications-3.0.1.tgz#ad0559f224c95ddb86a9c71b2fca77b98417127d"
-  integrity sha512-ml+qlx0+THl3v9lop4pl4GLTdxfj+7Gbbm5qdvOLANXPrGcp4FXslISiaJOHZ6yJj0Cz/lisMPhM9nEayaVlsg==
-  dependencies:
-    "@babel/runtime" "^7.17.0"
-    "@twilio/declarative-type-validator" "^1.0.0"
-    "@twilio/operation-retrier" "^5.0.0"
-    core-js "^3.17.3"
-    loglevel "^1.8.0"
-    twilsock "^1.0.1"
-    uuid "^9.0.0"
-
-"@twilio/operation-retrier@^5.0.0":
-  version "5.0.0"
-  resolved "https://registry.yarnpkg.com/@twilio/operation-retrier/-/operation-retrier-5.0.0.tgz#fba1ea823124db9a86c7cfa0f852b72a553e3f33"
-  integrity sha512-24b0hJ09rvUhK6/ft+QyjyY0qqL7MJHiwyo3Io64sCXVgfpR/1XOQchYVgNx6hR5d59yT5/hwdYojMdLbNBFtA==
-  dependencies:
-    "@babel/runtime" "^7.17.0"
-    core-js "^3.17.3"
-
-"@twilio/replay-event-emitter@^1.0.0":
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/@twilio/replay-event-emitter/-/replay-event-emitter-1.0.0.tgz#b860f54246a376bdb7e4716175f655f6eeb1ccbc"
-  integrity sha512-KmQL8UWqpIjQA9euY4FnKjy6v1obKjAWD/n2aHXDfUR4j+dLBC9xVuCFaZBF3gyVbcew3BeuO+l9wW1dQrHj1w==
-  dependencies:
-    "@babel/runtime" "^7.17.0"
-    core-js "^3.17.3"
-
 "@tybys/wasm-util@^0.10.1":
   version "0.10.2"
   resolved "https://registry.yarnpkg.com/@tybys/wasm-util/-/wasm-util-0.10.2.tgz#12b3a1b33db1f9cad4ddff1f604ab7dd00bf464e"
@@ -1786,7 +1706,7 @@ axe-core@^4.10.0:
   resolved "https://registry.yarnpkg.com/axe-core/-/axe-core-4.11.4.tgz#5b535e381ff1e61ffdd615e5483d16186d3b46a5"
   integrity sha512-KunSNx+TVpkAw/6ULfhnx+HWRecjqZGTOyquAoWHYLRSdK1tB5Ihce1ZW+UY3fj33bYAFWPu7W/GRSmmrCGuxA==
 
-axios@^1.13.5, axios@^1.16.1:
+axios@^1.16.1:
   version "1.16.1"
   resolved "https://registry.yarnpkg.com/axios/-/axios-1.16.1.tgz#517e29291d19d6e8cf919ff264f4fe157261ba12"
   integrity sha512-caYkukvroVPO8KrzuJEb50Hm07KwfBZPEC3VeFHTsqWHvKTsy54hjJz9BS/cdaypROE2rH6xvm9mHX4fgWkr3A==
@@ -2095,11 +2015,6 @@ cookie@^1.1.1:
   resolved "https://registry.yarnpkg.com/cookie/-/cookie-1.1.1.tgz#3bb9bdfc82369db9c2f69c93c9c3ceb310c88b3c"
   integrity sha512-ei8Aos7ja0weRpFzJnEA9UHJ/7XQmqglbRwnf2ATjcB9Wq874VKH9kfjjirM6UhU2/E5fFYadylyhFldcqSidQ==
 
-core-js@^3.17.3:
-  version "3.49.0"
-  resolved "https://registry.yarnpkg.com/core-js/-/core-js-3.49.0.tgz#8b4d520ac034311fa21aa616f017ada0e0dbbddd"
-  integrity sha512-es1U2+YTtzpwkxVLwAFdSpaIMyQaq0PBgm3YD1W3Qpsn1NAmO3KSgZfu+oGSWVu6NvLHoHCV/aYcsE5wiB7ALg==
-
 cors@^2.8.5:
   version "2.8.6"
   resolved "https://registry.yarnpkg.com/cors/-/cors-2.8.6.tgz#ff5dd69bd95e547503820d29aba4f8faf8dfec96"
@@ -2178,11 +2093,6 @@ date-fns-tz@^3.2.0:
   version "3.2.0"
   resolved "https://registry.yarnpkg.com/date-fns-tz/-/date-fns-tz-3.2.0.tgz#647dc56d38ac33a3e37b65e9d5c4cda5af5e58e6"
   integrity sha512-sg8HqoTEulcbbbVXeg84u5UnlsQa8GS5QXMqjjYIhS4abEVVKIUwe0/l/UhrZdKaL/W5eWZNlbTeEIiOXTcsBQ==
-
-dayjs@^1.11.9:
-  version "1.11.20"
-  resolved "https://registry.yarnpkg.com/dayjs/-/dayjs-1.11.20.tgz#88d919fd639dc991415da5f4cb6f1b6650811938"
-  integrity sha512-YbwwqR/uYpeoP4pu043q+LTDLFBLApUP6VxRihdfNTqu4ubqMlGDLd6ErXhEgsyvY0K6nCs7nggYumAN+9uEuQ==
 
 debug@2.6.9:
   version "2.6.9"
@@ -3324,7 +3234,7 @@ http-errors@^2.0.0, http-errors@^2.0.1, http-errors@~2.0.0, http-errors@~2.0.1:
     statuses "~2.0.2"
     toidentifier "~1.0.1"
 
-https-proxy-agent@^5.0.0, https-proxy-agent@^5.0.1:
+https-proxy-agent@^5.0.1:
   version "5.0.1"
   resolved "https://registry.yarnpkg.com/https-proxy-agent/-/https-proxy-agent-5.0.1.tgz#c59ef224a04fe8b754f3db0063a25ea30d0005d6"
   integrity sha512-dFcAjpTQFgoLMzC2VwU+C/CbS7uRL0lWmxDITmqm7C+7F0Odmj6s9l6alZc6AELXhrnggM2CeWSXHGOdX2YtwA==
@@ -3717,11 +3627,6 @@ isexe@^3.1.1:
   resolved "https://registry.yarnpkg.com/isexe/-/isexe-3.1.5.tgz#42e368f68d5e10dadfee4fda7b550bc2d8892dc9"
   integrity sha512-6B3tLtFqtQS4ekarvLVMZ+X+VlvQekbe4taUkf/rhVO3d/h0M2rfARm/pXLcPEsjjMsFgrFgSrhQIxcSVrBz8w==
 
-iso8601-duration@=1.2.0:
-  version "1.2.0"
-  resolved "https://registry.yarnpkg.com/iso8601-duration/-/iso8601-duration-1.2.0.tgz#5fa6fc180a8fe95ad6a6721c9bdd9069cb59e80e"
-  integrity sha512-ErTBd++b17E8nmWII1K1uZtBgD1E8RjyvwmxlCjPHNqHMD7gmcMHOw0E8Ro/6+QT4PhHRSnnMo7bxa1vFPkwhg==
-
 isomorphic-ws@^5.0.0:
   version "5.0.0"
   resolved "https://registry.yarnpkg.com/isomorphic-ws/-/isomorphic-ws-5.0.0.tgz#e5529148912ecb9b451b46ed44d53dae1ce04bbf"
@@ -3738,11 +3643,6 @@ iterator.prototype@^1.1.5:
     get-proto "^1.0.0"
     has-symbols "^1.1.0"
     set-function-name "^2.0.2"
-
-javascript-state-machine@^3.1.0:
-  version "3.1.0"
-  resolved "https://registry.yarnpkg.com/javascript-state-machine/-/javascript-state-machine-3.1.0.tgz#06eeb2136a6a19ae1b56105c25caec283dd5cd14"
-  integrity sha512-BwhYxQ1OPenBPXC735RgfB+ZUG8H3kjsx8hrYTgWnoy6TPipEy4fiicyhT2lxRKAXq9pG7CfFT8a2HLr6Hmwxg==
 
 jiti@^2.6.1:
   version "2.7.0"
@@ -4075,11 +3975,6 @@ log-update@^6.1.0:
     slice-ansi "^7.1.0"
     strip-ansi "^7.1.0"
     wrap-ansi "^9.0.0"
-
-loglevel@^1.8.0:
-  version "1.9.2"
-  resolved "https://registry.yarnpkg.com/loglevel/-/loglevel-1.9.2.tgz#c2e028d6c757720107df4e64508530db6621ba08"
-  integrity sha512-HgMmCqIJSAKqo68l0rS2AanEWfkxaZ5wNiEFb5ggm08lDs9Xl2KxBlX3PTcaD2chBM1gXAYf491/M2Rv8Jwayg==
 
 loose-envify@^1.0.0, loose-envify@^1.4.0:
   version "1.4.0"
@@ -4651,11 +4546,6 @@ pkce-challenge@^5.0.0:
   resolved "https://registry.yarnpkg.com/pkce-challenge/-/pkce-challenge-5.0.1.tgz#3b4446865b17b1745e9ace2016a31f48ddf6230d"
   integrity sha512-wQ0b/W4Fr01qtpHlqSqspcj3EhBvimsdh0KlHhH8HRZnMsEa0ea2fTULOXOS9ccQr3om+GcGRk4e+isrZWV8qQ==
 
-platform@^1.3.6:
-  version "1.3.6"
-  resolved "https://registry.yarnpkg.com/platform/-/platform-1.3.6.tgz#48b4ce983164b209c2d45a107adb31f473a6e7a7"
-  integrity sha512-fnWVljUchTro6RiCFvCXBbNhJc2NijN7oIQxbwsyL0buWJPG85v81ehlHI9fXrJsMNgTofEoWIQeClKpgxFLrg==
-
 possible-typed-array-names@^1.0.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/possible-typed-array-names/-/possible-typed-array-names-1.1.0.tgz#93e3582bc0e5426586d9d07b79ee40fc841de4ae"
@@ -4760,11 +4650,6 @@ queue-microtask@^1.2.2:
   version "1.2.3"
   resolved "https://registry.yarnpkg.com/queue-microtask/-/queue-microtask-1.2.3.tgz#4929228bbc724dfac43e0efb058caf7b6cfb6243"
   integrity sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==
-
-quick-lru@^5.1.1:
-  version "5.1.1"
-  resolved "https://registry.yarnpkg.com/quick-lru/-/quick-lru-5.1.1.tgz#366493e6b3e42a3a6885e2e99d18f80fb7a8c932"
-  integrity sha512-WuyALRjWPDGtt/wzJiadO5AXY+8hZ80hVpe6MyivgraREW751X3SbhRvG3eLKOYN+8VEvqLcf3wdnt44Z4S4SA==
 
 range-parser@^1.2.1, range-parser@~1.2.1:
   version "1.2.1"
@@ -5007,11 +4892,6 @@ scheduler@^0.27.0:
   version "0.27.0"
   resolved "https://registry.yarnpkg.com/scheduler/-/scheduler-0.27.0.tgz#0c4ef82d67d1e5c1e359e8fc76d3a87f045fe5bd"
   integrity sha512-eNv+WrVbKu1f3vbYJT/xtiF5syA5HPIMtf9IgY/nKg0sWqzAUEvqY/xm7OcZc/qafLx/iO9FgOmeSAp4v5ti/Q==
-
-scmp@^2.1.0:
-  version "2.1.0"
-  resolved "https://registry.yarnpkg.com/scmp/-/scmp-2.1.0.tgz#37b8e197c425bdeb570ab91cc356b311a11f9c9a"
-  integrity sha512-o/mRQGk9Rcer/jEEw/yw4mwo3EU/NvYvp577/Btqrym9Qy5/MdWGBqipbALgd2lrdWTJ5/gqDusxfnQBxOxT2Q==
 
 sdp@^3.2.0:
   version "3.2.2"
@@ -5612,51 +5492,6 @@ tw-animate-css@^1.4.0:
   resolved "https://registry.yarnpkg.com/tw-animate-css/-/tw-animate-css-1.4.0.tgz#b4a06f68244cba39428aa47e65e6e4c0babc21ee"
   integrity sha512-7bziOlRqH0hJx80h/3mbicLW7o8qLsH5+RaLR2t+OHM3D0JlWGODQKQ4cxbK7WlvmUxpcj6Kgu6EKqjrGFe3QQ==
 
-twilio-sync@^4.0.0:
-  version "4.0.0"
-  resolved "https://registry.yarnpkg.com/twilio-sync/-/twilio-sync-4.0.0.tgz#d12cf9dcc4cc1d4d2c693f09c5ec3dda030be6c1"
-  integrity sha512-WOGIxvNnChmxi2Muhz5ssPJ55bC/I9LFTUJqsJazMmE3RCveQ60MDdgHSp2bDPYKAZcrkf1DxZhRCYKnnH/LOA==
-  dependencies:
-    "@babel/runtime" "^7.17.0"
-    "@twilio/declarative-type-validator" "^1.0.0"
-    "@twilio/operation-retrier" "^5.0.0"
-    "@twilio/replay-event-emitter" "^1.0.0"
-    core-js "^3.17.3"
-    iso8601-duration "=1.2.0"
-    loglevel "^1.8.0"
-    platform "^1.3.6"
-    twilsock "^1.0.0"
-    uuid "^9.0.0"
-
-twilio@^6.0.2:
-  version "6.0.2"
-  resolved "https://registry.yarnpkg.com/twilio/-/twilio-6.0.2.tgz#f1ca5617131696ef532c7f9b8cba9d6894b675e9"
-  integrity sha512-RN3TZxUtxLz2HBZVt62+LdZxQbrMVgYKtuzLgwmO7nqKvR+gQS5mCackD9hf4Y7MmoK/bX7tCm7kaJC8kC8zFA==
-  dependencies:
-    axios "^1.13.5"
-    dayjs "^1.11.9"
-    https-proxy-agent "^5.0.0"
-    jsonwebtoken "^9.0.3"
-    qs "^6.14.1"
-    scmp "^2.1.0"
-    xmlbuilder "^13.0.2"
-
-twilsock@^1.0.0, twilsock@^1.0.1:
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/twilsock/-/twilsock-1.0.1.tgz#63cee5b810004d834c90752ad2de5c7f46e32c63"
-  integrity sha512-xToFlHdB5B8/ivf7AReFz7vJ6obW4fIU5O4gf/iCKZwvAseZmZgUVkkpdLbbQOMsKXA+qEA/HMPi+7dLx1Rp+Q==
-  dependencies:
-    "@babel/runtime" "^7.17.0"
-    "@twilio/declarative-type-validator" "^1.0.0"
-    "@twilio/operation-retrier" "^5.0.0"
-    core-js "^3.17.3"
-    iso8601-duration "=1.2.0"
-    javascript-state-machine "^3.1.0"
-    loglevel "^1.8.0"
-    platform "^1.3.6"
-    uuid "^9.0.0"
-    ws "^8.18.1"
-
 type-check@^0.4.0, type-check@~0.4.0:
   version "0.4.0"
   resolved "https://registry.yarnpkg.com/type-check/-/type-check-0.4.0.tgz#07b8203bfa7056c0657050e3ccd2c37730bab8f1"
@@ -5848,11 +5683,6 @@ utils-merge@1.0.1:
   resolved "https://registry.yarnpkg.com/utils-merge/-/utils-merge-1.0.1.tgz#9f95710f50a267947b2ccc124741c1028427e713"
   integrity sha512-pMZTvIkT1d+TFGvDOqodOclx0QWkkgi6Tdoa8gC8ffGAAqz9pzPTZWAybbsHHoED/ztMtkv/VoYTYyShUn81hA==
 
-uuid@^9.0.0:
-  version "9.0.1"
-  resolved "https://registry.yarnpkg.com/uuid/-/uuid-9.0.1.tgz#e188d4c8853cc722220392c424cd637f32293f30"
-  integrity sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==
-
 validate-npm-package-name@^7.0.1:
   version "7.0.2"
   resolved "https://registry.yarnpkg.com/validate-npm-package-name/-/validate-npm-package-name-7.0.2.tgz#e57c3d721a4c8bbff454a246e7f7da811559ea0d"
@@ -5977,7 +5807,7 @@ wrappy@1:
   resolved "https://registry.yarnpkg.com/wrappy/-/wrappy-1.0.2.tgz#b5243d8f3ec1aa35f1364605bc0d1036e30ab69f"
   integrity sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ==
 
-"ws@^7.2.3 || ^8.0.0", ws@^8.18.1:
+"ws@^7.2.3 || ^8.0.0":
   version "8.21.0"
   resolved "https://registry.yarnpkg.com/ws/-/ws-8.21.0.tgz#012e413fc07429945121b0c153158c4343086951"
   integrity sha512-Vsp28b7DRcimFQvrqu2Wek3z1iYxDCWqHYB8Qsnk/S4RfaCQzPGPyBNuVjJV3cd6UiKtUtp6sNM77gWvzcCH+g==
@@ -5994,16 +5824,6 @@ wsl-utils@^0.3.0:
   dependencies:
     is-wsl "^3.1.0"
     powershell-utils "^0.1.0"
-
-xmlbuilder@^13.0.2:
-  version "13.0.2"
-  resolved "https://registry.yarnpkg.com/xmlbuilder/-/xmlbuilder-13.0.2.tgz#02ae33614b6a047d1c32b5389c1fdacb2bce47a7"
-  integrity sha512-Eux0i2QdDYKbdbA6AM6xE4m6ZTZr4G4xF9kahI2ukSEMCzwce2eX9WlTI5J3s+NU7hpasFsr8hWIONae7LluAQ==
-
-xmlhttprequest@^1.8.0:
-  version "1.8.0"
-  resolved "https://registry.yarnpkg.com/xmlhttprequest/-/xmlhttprequest-1.8.0.tgz#67fe075c5c24fef39f9d65f5f7b7fe75171968fc"
-  integrity sha512-58Im/U0mlVBLM38NdZjHyhuMtCqa61469k2YP/AaPbvCoV9aQGUpbJBj1QRm2ytRiVQBD/fsw7L2bJGDVQswBA==
 
 y18n@^5.0.5:
   version "5.0.8"

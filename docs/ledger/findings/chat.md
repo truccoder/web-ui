@@ -295,11 +295,8 @@ xong trong cùng một phiên, trước khi token được cấp lại).
 
 ## Trạng thái
 
-**P2.7a + c-1 + c-2 xong.** Tiếp: **P2.7d** — mount `ChatClientProvider` trong
-`app/(main)/layout.tsx`, thay `ChatBox` bằng `ChatDock`, rewire `/chats` sang
-`ConversationSidebar`/`ConversationView`, rồi xoá legacy Twilio (`lib/twilio/` 4 file,
-`components/chat/` 6 file, `app/api/twilio/token`, 2 dep trong `package.json`, key i18n
-`chat.activeNow`).
+**DOMAIN `chat` ĐÓNG ở P2.7d** — 1/1 endpoint, cả 4 cột của sổ cái. Twilio không còn dòng nào
+trong repo.
 
 **Dữ liệu test còn lại trên Stream, cố ý giữ**: 1 channel `!members-yM_q3...` giữa 9001 và 9004,
 2 tin nhắn. Giữ làm fixture cho P2.7c-1 (không có nó thì màn hội thoại chỉ dựng được empty state).
@@ -487,3 +484,102 @@ lại đồ thị bạn bè trước.
 góc phải dưới, và legacy ở `z-50` còn bản mới ở `z-40` → click theo toạ độ **luôn** trúng nút
 Twilio. Không phải lỗi bản mới, và nó biến mất ở **d**; lúc đo thì ẩn tạm nút legacy bằng JS rồi
 click bản mới theo `aria-label`.
+
+---
+
+## P2.7d — wiring + xoá legacy Twilio (2026-07-28) — DOMAIN ĐÓNG
+
+**1 màn (`/chats`) + 1 component mới (`ChatMessenger`)**, dưới trần. Twilio chết hẳn: 10 file +
+1 route handler + 2 dependency + 2 key i18n. Chi tiết cái gì xoá vì sao ở
+[`legacy-inventory.md`](../legacy-inventory.md) mục "Đã xoá ở P2.7d".
+
+### `ChatClientProvider` đã mount — một lần, ở `app/(main)/layout.tsx`
+
+Đúng như công bố ở c-2. `enabled={Boolean(profile) && profile?.role !== 'ADMIN'}`: chờ hồ sơ để
+request token không đua với việc dựng phiên, và admin — vốn bị effect ngay trên đó đá sang
+`/admin/moderation` — không mở socket nào cả.
+
+Đo được sau khi mount: **1 websocket, 1 request `/chat/token` cho mỗi lần tải trang thật**, và
+**0** thêm khi điều hướng client-side (provider nằm trên layout nên không remount).
+
+### Lỗi thật bắt được **nhờ** việc mount toàn cục: token bị xin hai lần
+
+Trước khi sửa, mỗi lần tải trang gọi `/chat/token` **2 lần** cho **một** connection. Nguyên nhân
+nằm ngay trong quyết định số 5 của P2.7a ("`connectUser` nhận HÀM, không phải chuỗi"): SDK gọi hàm
+đó **ngay lập tức** trong `connectUser`, nên request thứ nhất chỉ để đọc `apiKey`/`userId`, request
+thứ hai là của SDK — hai token được cấp cách nhau vài mili giây.
+
+Lúc provider còn nằm trong route preview thì đó là chuyện của một trang; mount vào shell thì nó
+thành **mỗi trang một lần thừa**. Sửa: lần gọi đầu tiên của provider trả lại chính credential vừa
+lấy (`credentialSpent`), mọi lần sau vẫn đi mạng — giữ nguyên lý do phải truyền hàm (hết 24h SDK tự
+xin lại). Đo lại: **2 → 1**, hội thoại vẫn nạp đủ, không lỗi console.
+
+`TokenProvider` của SDK bắt buộc trả `Promise<string>` chứ không nhận union `string | Promise` →
+hàm phải `async`. `yarn build` bắt được, `tsc` trong IDE không (build chạy type-check của Next trên
+cả `.next/types`).
+
+### Bố cục: bỏ hai con số phỏng đoán bằng flex
+
+Bản Twilio tự tính chiều cao: `h-[calc(100vh-48px)]` mobile, `h-screen` desktop. **Cả hai đều sai**
+— thanh tìm kiếm cao **65px** và header mobile **57px** — nên trang luôn có thanh cuộn thừa. Đo ra
+lúc verify (`scrollHeight 790 > innerHeight 782`).
+
+Sửa bằng cách chia không gian thay vì đo nó: với route full-bleed, shell là flex column
+`h-[100dvh]`, chrome `shrink-0`, vùng nội dung `flex-1 min-h-0`, và `ChatMessenger` chỉ cần
+`h-full`. Không còn hằng số nào để sai. Các route khác giữ nguyên `min-h-screen` và cuộn bình
+thường — bảng tin bắt buộc phải cuộn. Đo lại: `scrollHeight === innerHeight`, cả 1536px lẫn 417px.
+
+Đây **không phải** dựng lại shell (P3.4 vẫn làm việc đó) — chỉ là 4 class gắn với đúng route
+full-bleed, và nó **xoá** hằng số chứ không thêm.
+
+### `?sid=` → `?c=`
+
+Id hội thoại vẫn nằm trên URL (deep-link + nút back của trình duyệt vẫn chạy — hành vi legacy,
+Guardrail C), nhưng đổi tên tham số: id của Stream không phải SID của Twilio nên link cũ chết sạch
+dù có giữ tên hay không, và giữ tên là để thanh địa chỉ nói tên một nhà cung cấp app không còn gọi.
+
+Nút back **xoá tham số** chứ không `router.back()`: mở thẳng link hội thoại thì phía sau lịch sử
+không có `/chats` nào để quay về.
+
+### Một-pane mobile: suy từ URL, không giữ state riêng
+
+Màn Twilio giữ `mobileView: 'list' | 'chat'` **song song** với URL, nên hai nguồn có thể lệch —
+mở link hội thoại trên điện thoại vẫn hiện danh sách. Bản mới chỉ hỏi "URL có hội thoại không",
+nên không có gì để lệch.
+
+Nút back của `ConversationView` phải ẩn ở desktop (2 pane thì mũi tên quay lại là vô nghĩa) nhưng
+"ở breakpoint nào" là câu hỏi của CSS, JS không trả lời được lúc render. Giải: `data-slot="back"`
+trên nút, khung tự ẩn bằng `md:[&_[data-slot=back]]:hidden`. Không thêm prop nào cho một câu hỏi
+thuộc về layout.
+
+### Verify (BE + Stream thật, không có route tạm — chạy trên chính `/chats` và shell)
+
+| phép thử                            | kết quả                                                                         |
+| ----------------------------------- | ------------------------------------------------------------------------------- |
+| `/newsfeed` — dock trong shell thật | đúng **một** nút mở (nút Twilio biến mất), panel mở, 2 hội thoại thật           |
+| console mọi trang                   | **sạch** — `[Twilio] Initialization failed` đã hết sau 3 tháng sống ở mọi trang |
+| `/chats` list                       | 2 hội thoại, tên + preview + thời gian                                          |
+| chọn hội thoại                      | URL `?c=!members-…`, header đúng, lịch sử đủ                                    |
+| **reload thẳng link `?c=`**         | mở đúng hội thoại, hàng active sáng                                             |
+| gửi tin tiếng Việt có dấu           | bong bóng phải, ô nhập tự xoá, sidebar preview đổi sang "Vừa xong"              |
+| dock trên `/chats`                  | **không render** (`aria-label="Mở chat"` không tồn tại)                         |
+| chiều cao                           | `scrollHeight === innerHeight` — không còn thanh cuộn thừa                      |
+| **417px** (iframe cùng origin)      | mở hội thoại → danh sách `display:none`, hội thoại rộng 417, mũi tên back hiện  |
+| bấm back ở 417px                    | URL sạch tham số, danh sách hiện lại full width, pane hội thoại ẩn              |
+| request cấp token / lần tải trang   | **1** (trước khi sửa: 2)                                                        |
+| light + dark                        | đúng token cả hai                                                               |
+
+**Cách đo responsive khi không resize được cửa sổ**: `resize_window` báo thành công nhưng
+`window.innerWidth` vẫn 1536 (cửa sổ đang maximize). Đường vòng đo được thật: **nhét một `<iframe>`
+cùng origin rộng 420px trỏ vào chính `/chats`** rồi đọc `getComputedStyle` bên trong nó — media
+query trong iframe theo viewport của iframe. Rẻ hơn và chắc hơn là đọc class bằng mắt.
+
+### Còn nợ sau khi đóng domain
+
+- **Presence thật chưa bật.** Bản Twilio vẽ chấm xanh cứng (bịa); bản mới không vẽ gì. Stream có
+  `user.presence_changed` + `watch({presence:true})` — nếu muốn có, đó là một checkpoint riêng.
+- **Trần 3 cửa sổ nổi vẫn chưa chạy qua ở biên** (chỉ có 2 hội thoại vì Neo4j còn 1 tình bạn).
+- **Không có phân trang hội thoại**: `queryChannels` giới hạn 30 (`CHANNEL_LIMIT`), chưa có UI nạp
+  thêm. Với đồ thị bạn bè hiện tại thì không chạm trần.
+- `app/(main)/layout.tsx` vẫn là shell legacy shadcn cho mọi thứ **ngoài** chat (`useProfile`,
+  `usePendingRequests`, `SearchBar`) → P3.4.

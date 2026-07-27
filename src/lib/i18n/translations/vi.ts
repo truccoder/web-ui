@@ -648,7 +648,6 @@ export const vi: Messages = {
   },
 
   chat: {
-    activeNow: 'Đang hoạt động',
     sayHi: 'Hãy chào để bắt đầu cuộc trò chuyện!',
     minimize: 'Thu nhỏ',
     close: 'Đóng',
@@ -666,7 +665,6 @@ export const vi: Messages = {
     noFriendsToMessage: 'Không có bạn bè để nhắn tin',
     addFriendsFirst: 'Thêm bạn bè trước để bắt đầu nhắn tin.',
     creating: 'Đang mở...',
-    you: 'Bạn',
     back: 'Quay lại',
     noResults: 'Không có kết quả',
     filterLabel: 'Lọc cuộc trò chuyện',

@@ -96,6 +96,14 @@ export function ConversationView({
           <button
             type="button"
             onClick={onBack}
+            /**
+             * A stable hook for callers that need to hide the arrow at some breakpoints — the
+             * two-pane messenger shows it only on mobile, where the list is a separate screen.
+             * Whether a back arrow makes sense is a property of the frame, not of this component,
+             * and a `data-` attribute lets the frame say so in CSS instead of adding a prop per
+             * layout that ever wants it.
+             */
+            data-slot="back"
             aria-label={t('chat.back')}
             className={cn(
               'grid size-8 shrink-0 place-items-center rounded-nx-md text-nx-text-secondary',

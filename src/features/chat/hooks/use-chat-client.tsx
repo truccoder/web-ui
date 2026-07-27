@@ -86,10 +86,25 @@ export function ChatClientProvider({ children, enabled = true }: ChatClientProvi
          * expires (24h, per `expiresAt`) and then drop the socket with no way back short of a
          * reload. Given a function, the SDK calls it again whenever it needs a fresh credential,
          * and our endpoint mints one on demand.
+         *
+         * THE FIRST CALL REUSES THE CREDENTIAL WE ALREADY HAVE. The SDK invokes the provider
+         * immediately during `connectUser`, so the naive version asks the backend for a second
+         * token milliseconds after the first — one to read `apiKey` from, one to connect with.
+         * Measured after this provider moved into the app shell at P2.7d: two `/chat/token`
+         * requests on every full page load, for one connection. Every later call still goes to
+         * the network, which is the whole point of passing a function.
          */
-        await streamClient.connectUser({ id: credential.userId }, () =>
-          chatApi.getToken().then((fresh) => fresh.streamToken)
-        );
+        let credentialSpent = false;
+        // `async` rather than returning the string directly: the SDK's `TokenProvider` is typed to
+        // return a promise, not a union with one.
+        await streamClient.connectUser({ id: credential.userId }, async () => {
+          if (!credentialSpent) {
+            credentialSpent = true;
+            return credential.streamToken;
+          }
+          const fresh = await chatApi.getToken();
+          return fresh.streamToken;
+        });
 
         if (cancelled) {
           await streamClient.disconnectUser();

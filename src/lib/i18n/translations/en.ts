@@ -650,7 +650,6 @@ export const en = {
   },
 
   chat: {
-    activeNow: 'Active now',
     sayHi: 'Say hi to start the conversation!',
     minimize: 'Minimize',
     close: 'Close',
@@ -667,7 +666,6 @@ export const en = {
     noFriendsToMessage: 'No friends to message',
     addFriendsFirst: 'Add some friends first to start chatting.',
     creating: 'Opening...',
-    you: 'You',
     back: 'Back',
     noResults: 'No results',
     filterLabel: 'Filter conversations',

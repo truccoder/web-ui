@@ -31,6 +31,8 @@ export {
 export {
   ChatDock,
   type ChatDockProps,
+  ChatMessenger,
+  type ChatMessengerProps,
   FloatingChatWindow,
   type FloatingChatWindowProps,
   ConversationSidebar,
