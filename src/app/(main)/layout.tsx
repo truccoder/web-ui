@@ -11,6 +11,7 @@ import {
   Users,
   Newspaper,
   TrendingUp,
+  Bell,
   MessageCircle,
   ChevronDown,
   UserPlus,
@@ -83,6 +84,27 @@ function NavLinks({ onClick }: { onClick?: () => void }) {
       >
         <TrendingUp className="h-4 w-4" />
         {t('nav.trending')}
+      </Link>
+
+      {/* Notifications. Added at P2.6cd so `/notifications` is reachable — a route nothing
+          links to is not a surface. Styled with the same legacy classes as its siblings on
+          purpose: this shell is rebuilt wholesale at P3.4, and matching it now costs less than
+          a single row of new design that gets thrown away. P3.4 replaces this link with the
+          topbar bell (which is where the unread badge belongs; deliberately not added here,
+          since mounting `useUnreadNotificationCount` in the shell would start the 30s poll on
+          every page and that is a shell-level decision). */}
+      <Link
+        href="/notifications"
+        onClick={onClick}
+        className={cn(
+          'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+          pathname === '/notifications'
+            ? 'bg-primary text-primary-foreground'
+            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+        )}
+      >
+        <Bell className="h-4 w-4" />
+        {t('nav.notifications')}
       </Link>
 
       {/* Friends collapsible */}

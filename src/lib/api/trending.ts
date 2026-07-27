@@ -1,4 +1,4 @@
-import api from './axios';
+import api from '@/core/api/axios';
 import type { TrendingCategory, TrendingTimeRange, TrendingPageResponse } from '@/lib/types';
 
 export interface TrendingParams {
