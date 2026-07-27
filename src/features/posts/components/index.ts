@@ -45,3 +45,8 @@ export { EventBody, type EventBodyProps } from './event-body';
 
 // Reaction row (P2.4'c-2) — fills `PostCard`'s `actions` slot.
 export { ReactionBar, type ReactionBarProps } from './reaction-bar';
+
+// Comment thread (P2.4'c-3) — also fills `PostCard`'s `actions` slot.
+export { CommentThread, type CommentThreadProps } from './comment-thread';
+export { CommentItem, type CommentItemProps } from './comment-item';
+export { CommentComposer, type CommentComposerProps } from './comment-composer';

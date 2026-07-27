@@ -79,7 +79,7 @@ Quay lại [`fe-migration-ledger.md`](../../fe-migration-ledger.md).
   | c-1′a ✅ | `CodeSnippetBody` `ArticleBody` `LinkBody` `QnaBody`               | — (render payload feed)                       |
   | c-1′b ✅ | `PollBody` `BookBody` `EventBody`                                  | — (render payload feed)                       |
   | c-2 ✅   | `ReactionBar` (5 toggle inline)                                    | getMyReaction · upsert · remove               |
-  | c-3      | thread comment                                                     | 4 ep CommentController                        |
+  | c-3 ✅   | `CommentThread` `CommentItem` `CommentComposer`                    | 4 ep CommentController                        |
   | c-4      | nợ c-5 chu kỳ 1: `QuizTaker`, sửa/xoá bài, chọn đáp án             | submitQuiz · updatePost · deletePost · accept |
 
   **Vì sao tách c-1 thành c-1 + c-1′** (phát hiện lúc đọc `FeedPostDataDto`, trước khi viết code):
@@ -117,6 +117,37 @@ Quay lại [`fe-migration-ledger.md`](../../fe-migration-ledger.md).
   - **So với specimen DS đã render** (`display.card.html`): thứ tự doctrine avatar → tên → rep →
     time khớp. Ba khác biệt nhìn thấy đều là deviation **đã ghi từ trước** (#5 màu avatar, #11 chip
     không có levelName, #17 không có pill expertise). Một khác biệt chưa ghi → thành **#18**.
+
+- **Thread comment: 4 quyết định + 1 lỗi verify bắt được** (P2.4′c-3):
+  - **"Trả lời" CHỈ có trên comment gốc.** BE chặn reply-của-reply, nên hoặc là không mời, hoặc
+    là mời rồi âm thầm trỏ parent về gốc — cách sau đặt câu trả lời **không nằm dưới cái nó trả
+    lời**, tệ hơn là không có nút. Đã đo trên UI: thread 1 gốc + 1 reply → **đúng 1 nút "Trả lời"**.
+  - **Xoá xác nhận 2 bước tại chỗ, không dialog.** Lý do chính không phải thiếu component Dialog
+    mà là **phạm vi phá huỷ lớn hơn dòng người dùng bấm**: cascade Postgres kéo theo reply. Nên
+    câu xác nhận **nói thẳng số lượng** — đo được đúng chữ "Xoá bình luận này và 1 câu trả lời
+    của nó." Bấm xác nhận → DB còn **0 dòng**, UI về empty state. Đây là bằng chứng trực tiếp cho
+    quyết định "refetch chứ không splice": splice sẽ để reply nằm lại trên màn hình.
+  - **Badge "đã sửa" suy từ `updatedAt !== createdAt`** (không có `isEdited`). Đo: comment mới →
+    **không** có badge.
+  - **`updatePost` với nội dung y hệt là no-op ở tầng DB.** Đã đo: `PUT` trả **200**, hook
+    invalidate và `GET` thread chạy đúng, nhưng `updated_at` **không đổi** — Hibernate thấy entity
+    không dirty nên bỏ luôn câu UPDATE. Hệ quả: sửa mà không đổi gì thì badge "đã sửa" vẫn không
+    hiện. Đúng hành vi, không phải lỗi — ghi lại để lần sau không ai đi truy "sao badge không lên".
+  - **LỖI tự tìm ra khi bấm thật: ô nhập KHÔNG tự xoá sau khi gửi thành công** → người dùng dễ
+    đăng trùng. Cách sửa cũng đáng ghi: **không** xoá lúc submit (bài bị BE từ chối sẽ mất nháp —
+    cùng luật với composer bài viết), mà để `CommentThread` đổi **`key`** của composer sau khi
+    write **thành công**, React remount hộp rỗng. Bản sửa đầu dùng `useEffect` + `setValue` và bị
+    `react-hooks/set-state-in-effect` chặn — rule đúng, `key` mới là cơ chế React sẵn có.
+
+- **`CommentThread` không có prop `collapsed`.** Mount là fetch. Việc thread có mở hay không là
+  state của **feed**, không phải của component này; 20 card cùng mount thread sẽ là 20 request lúc
+  tải trang. Bên gọi chỉ render khi người dùng mở. (`useComments` vẫn nhận `undefined` nếu sau này
+  có caller cần giữ instance mounted mà idle.)
+
+- **Đổi tên `CommentThread` (type) → `CommentWithReplies`** (P2.4′c-3). Type gom nhóm ở tầng state
+  trùng tên với component mới. Tên mới đúng nghĩa hơn: nó là **một gốc + reply của nó**, không
+  phải cả thread. Cùng lý do, nhóm i18n mới đặt là `post.comments.*` chứ không phải `post.comment`
+  — key `post.comment` (chuỗi "Bình luận") vẫn đang được **card legacy** dùng tới P2.4′d.
 
 - **VERIFY BẰNG MẮT BẮT ĐƯỢC 2 LỖI THẬT mà SSR markup không thấy nổi** (P2.4′c-v). Đây chính là
   lý do nợ diện mạo không phải nợ vặt — cả hai đều nằm trong code đã "pass" 19/19 và 24/24 ở các

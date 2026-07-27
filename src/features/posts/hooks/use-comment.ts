@@ -116,7 +116,7 @@ export function useDeleteComment(options?: PostMutationOptions<DeleteCommentVari
 }
 
 /** A top-level comment with its (at most one level of) replies attached. */
-export type CommentThread = PostComment & { replies: PostComment[] };
+export type CommentWithReplies = PostComment & { replies: PostComment[] };
 
 /**
  * Group a flat thread into top-level comments each carrying their replies.
@@ -130,9 +130,9 @@ export type CommentThread = PostComment & { replies: PostComment[] };
  * dropped. The cascade above means an orphan should not normally exist, so a silent drop
  * would hide a comment instead of showing a bug.
  */
-export function groupComments(comments: PostComment[]): CommentThread[] {
-  const roots = new Map<number, CommentThread>();
-  const orphans: CommentThread[] = [];
+export function groupComments(comments: PostComment[]): CommentWithReplies[] {
+  const roots = new Map<number, CommentWithReplies>();
+  const orphans: CommentWithReplies[] = [];
 
   // `== null` rather than `=== null`: the field is null on the wire today, but the loose
   // check also survives the backend switching Jackson to NON_NULL inclusion, which would

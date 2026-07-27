@@ -52,6 +52,12 @@ export {
   type EventBodyProps,
   ReactionBar,
   type ReactionBarProps,
+  CommentThread,
+  type CommentThreadProps,
+  CommentItem,
+  type CommentItemProps,
+  CommentComposer,
+  type CommentComposerProps,
 } from './components';
 
 export {
@@ -76,7 +82,7 @@ export {
   type UpdatePostVariables,
   type AcceptAnswerVariables,
   type SubmitQuizVariables,
-  type CommentThread,
+  type CommentWithReplies,
   type CreateCommentVariables,
   type UpdateCommentVariables,
   type DeleteCommentVariables,

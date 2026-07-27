@@ -22,7 +22,7 @@ export {
   useUpdateComment,
   useDeleteComment,
   groupComments,
-  type CommentThread,
+  type CommentWithReplies,
   type CreateCommentVariables,
   type UpdateCommentVariables,
   type DeleteCommentVariables,
