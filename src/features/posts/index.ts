@@ -43,6 +43,13 @@ export {
   type LinkBodyProps,
   QnaBody,
   type QnaBodyProps,
+  PollBody,
+  type PollBodyProps,
+  BookBody,
+  type BookBodyProps,
+  type BookBodySummary,
+  EventBody,
+  type EventBodyProps,
 } from './components';
 
 export {

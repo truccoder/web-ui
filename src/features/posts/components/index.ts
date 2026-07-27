@@ -39,3 +39,6 @@ export { CodeSnippetBody, type CodeSnippetBodyProps } from './code-snippet-body'
 export { ArticleBody, type ArticleBodyProps } from './article-body';
 export { LinkBody, type LinkBodyProps } from './link-body';
 export { QnaBody, type QnaBodyProps } from './qna-body';
+export { PollBody, type PollBodyProps } from './poll-body';
+export { BookBody, type BookBodyProps, type BookBodySummary } from './book-body';
+export { EventBody, type EventBodyProps } from './event-body';

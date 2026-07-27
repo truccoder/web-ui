@@ -77,7 +77,7 @@ Quay lại [`fe-migration-ledger.md`](../../fe-migration-ledger.md).
   | -------- | ------------------------------------------------------------------ | --------------------------------------------- |
   | c-1 ✅   | shared `DeveloperIdentity`+`DeveloperMeta`; `PostCard` (vỏ + slot) | — (render payload feed)                       |
   | c-1′a ✅ | `CodeSnippetBody` `ArticleBody` `LinkBody` `QnaBody`               | — (render payload feed)                       |
-  | c-1′b    | `PollBody` `BookBody` `EventBody`                                  | — (render payload feed)                       |
+  | c-1′b ✅ | `PollBody` `BookBody` `EventBody`                                  | — (render payload feed)                       |
   | c-2      | hàng reaction                                                      | getMyReaction · upsert · remove               |
   | c-3      | thread comment                                                     | 4 ep CommentController                        |
   | c-4      | nợ c-5 chu kỳ 1: `QuizTaker`, sửa/xoá bài, chọn đáp án             | submitQuiz · updatePost · deletePost · accept |
@@ -86,6 +86,35 @@ Quay lại [`fe-migration-ledger.md`](../../fe-migration-ledger.md).
   payload feed mang **8 khối details** (event/book/quiz/codeSnippet/article/qna/poll/link). Dựng
   hết trong một checkpoint là vượt xa trần 5 component. Nên c-1 chỉ ship **vỏ card + hàng danh
   tính**, thân bài vào **slot `body`**.
+
+- **LỖI BE: `coverImageUrl` của sách là presigned URL 24h nhưng bị LƯU VÀO DB** (phát hiện
+  P2.4′c-1′b). `BookStorageService.uploadCover` trả `getPresignedUrl(...)` với
+  `URL_EXPIRY_HOURS = 24`, và chuỗi đó được `buildAndSaveBook` **ghi thẳng vào `t_books`** rồi
+  `FeedPostDataDto` echo lại mãi mãi → **mọi ảnh bìa sách chết sau 1 ngày**. Trớ trêu là javadoc
+  của `FeedBookSummaryDto` giải thích rất kỹ vì sao **cố ý loại** `downloadUrl`/`previewUrl`
+  (presign 24h < cache feed 7 ngày, lại phụ thuộc người xem đã mua chưa) — nhưng chính
+  `coverImageUrl` mắc đúng lỗi ấy mà bị bỏ sót. FE không sửa được; `onError` chỉ hạ xuống một ô
+  placeholder sạch thay vì glyph ảnh vỡ. Sửa đúng là **lưu object key, presign lúc đọc**, y như
+  đường download đang làm.
+
+- **3 khối body của c-1′b — hai lý do "không có nút" khác hẳn nhau** (P2.4′c-1′b):
+  - **`PollBody`: lựa chọn TRƠ vì không có endpoint bỏ phiếu.** Không controller nào chạm
+    `PollOption.votesCount`. Hàng bấm được sẽ **không làm gì cả** — đúng loại lỗi với nút "Bỏ
+    qua" không handler (#9). Nên: hàng trơ + caption "chưa bình chọn được". `votesCount` **không
+    render** (vĩnh viễn 0, thanh kết quả 0% ngụ ý có kiểm phiếu), `allowMultipleVotes` cũng không
+    (mô tả luật của một cuộc bỏ phiếu không bỏ được — trở lại cùng lúc với UI vote).
+  - **`EventBody`: không có nút RSVP vì LỊCH TRÌNH, không phải thiếu endpoint.**
+    `EventController` **có thật** `POST /events/{postId}/rsvp`, attendees, count, ICS, Google
+    Calendar — 8 endpoint, nhưng thuộc **chu kỳ 3**. Vào qua slot `actions` khi tới lúc.
+    `maxAttendees` là **trần tổ chức viên đặt**, KHÔNG phải số người đã đăng ký (số đó ở
+    `/attendees/count`, chu kỳ 3) → chữ ghi "tối đa N" để hai thứ không lẫn.
+  - **`BookBody`: không có nút mua/đọc vì RANH GIỚI DOMAIN.** `preview`/`download` thuộc
+    `BookController` (package **bookstore**, P2.10 chưa làm). `features/posts` gọi sang là phạm
+    §4. Slot `actions` để bookstore đưa control vào sau mà file này không phải sửa.
+  - `EventBody` và `LinkBody` dùng chung một guard: URL không parse được (kể cả
+    `javascript:alert(1)`) **không bao giờ** thành `href`. Đã đo: chuỗi javascript: bị chặn sạch.
+  - Rating chỉ hiện khi `reviewCount` > 0 — `avgRating` của sách chưa ai chấm là 0, mà "0.0 ★"
+    đọc thành sách dở chứ không phải sách chưa có đánh giá.
 
 - **4 khối body của c-1′a: quyết định "không dựng" quan trọng hơn thứ dựng ra** (P2.4′c-1′a):
   - **`CodeSnippetBody` không highlight cú pháp.** `CodeSnippetDetails.language` là String tự
@@ -127,7 +156,7 @@ Quay lại [`fe-migration-ledger.md`](../../fe-migration-ledger.md).
   của `myReaction` đổi tức thì còn tổng thì đợi refetch feed (xem mục reaction ở trên).
 
 - **NỢ VERIFY BẰNG MẮT CỘNG DỒN: c-1 + c-1′a.** Extension vẫn "not connected" ở P2.4′c-1′a, nên
-  4 khối body cũng chỉ kiểm được bằng SSR markup — **19/19 khẳng định đúng** (pill ngôn ngữ +
+  4 khối body của c-1′a chỉ kiểm được bằng SSR markup — **19/19 khẳng định đúng** (pill ngôn ngữ +
   fallback nhãn, `<pre>` cuộn ngang, khối code rỗng biến mất, tiêu đề/summary/cover của article,
   article rỗng biến mất, host bỏ `www.`, `rel="noopener noreferrer"` + `target="_blank"`,
   `line-clamp-2`, fallback title về host, **URL hỏng không thành `<a>`**, pill QNA hai trạng thái,
