@@ -89,6 +89,13 @@ export {
   useMyReaction,
   useUpsertReaction,
   useRemoveReaction,
+  useAttendees,
+  useAttendeeCount,
+  useRsvp,
+  useAddToGoogleCalendar,
+  useCalendarStatus,
+  useGoogleAuthUrl,
+  findMyRsvp,
   type PostMutationOptions,
   type CreateBookPostVariables,
   type UpdatePostVariables,
@@ -100,6 +107,7 @@ export {
   type DeleteCommentVariables,
   type ReactionMutationOptions,
   type UpsertReactionVariables,
+  type RsvpVariables,
 } from './hooks';
 
 export type {

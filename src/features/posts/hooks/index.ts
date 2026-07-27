@@ -35,3 +35,14 @@ export {
   type ReactionMutationOptions,
   type UpsertReactionVariables,
 } from './use-reaction';
+
+export {
+  useAttendees,
+  useAttendeeCount,
+  useRsvp,
+  useAddToGoogleCalendar,
+  useCalendarStatus,
+  useGoogleAuthUrl,
+  findMyRsvp,
+  type RsvpVariables,
+} from './use-event';

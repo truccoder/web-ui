@@ -23,4 +23,30 @@ export const postKeys = {
    */
   myReaction: (postId: number) => ['posts', postId, 'reaction', 'me'] as const,
   locationSearch: (request: LocationResolutionRequest) => ['posts', 'locations', request] as const,
+
+  /**
+   * EventController's reads, cycle 3. Under the same `posts` namespace and — for the two
+   * per-event ones — under `post(postId)`, because an event *is* a post: every event
+   * endpoint loads the post first and rejects it unless its type is EVENT. Keying them
+   * anywhere else would let a post-level invalidation miss the event state hanging off the
+   * same id.
+   */
+
+  /** Every RSVP row for one event, whatever the status. */
+  attendees: (postId: number) => ['posts', postId, 'attendees'] as const,
+  /**
+   * The GOING count. A key of its own rather than something derived from `attendees`,
+   * because it is a separate endpoint answering a narrower question — and it is the number
+   * the backend itself checks against `maxAttendees`, so it must be able to be refetched on
+   * its own.
+   */
+  attendeeCount: (postId: number) => ['posts', postId, 'attendees', 'count'] as const,
+
+  /**
+   * Google Calendar link state. Per-user, not per-post, so these sit beside the posts rather
+   * than under an id — several event cards on one screen share one cache entry and therefore
+   * one request.
+   */
+  calendarStatus: () => ['posts', 'google-calendar', 'status'] as const,
+  googleAuthUrl: () => ['posts', 'google-calendar', 'auth-url'] as const,
 };
