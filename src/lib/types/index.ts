@@ -313,44 +313,16 @@ export interface PaymentSyncResponse {
  * modelling absent values as `| null`, which is what the wire actually carries.
  */
 
-// ─── Search ──────────────────────────────────────────────────────────────────
-
-export interface SearchUser {
-  id: number;
-  fullName: string;
-  username: string;
-  profilePictureUrl: string;
-}
-
-export interface SearchBook {
-  id: number;
-  title: string;
-  description?: string;
-  coverImageUrl?: string;
-  authorId: number;
-  price: number;
-  isFree: boolean;
-  avgRating: number;
-}
-
-// A book match doesn't get its own result list — it surfaces as its linked post, with
-// `book` attached inline, per SearchController's searchPostsWithBookInfo.
-export interface SearchPost {
-  id: number;
-  content: string;
-  eventName?: string;
-  authorId: number;
-  authorFullName: string;
-  authorProfilePictureUrl: string;
-  visibility: string;
-  createdAt: string;
-  book?: SearchBook;
-}
-
-export interface SearchResponse {
-  users: SearchUser[];
-  posts: SearchPost[];
-}
+/*
+ * REMOVED AT P2.8: `SearchUser`, `SearchBook`, `SearchPost` and `SearchResponse`, together with
+ * `lib/api/search.ts` and `lib/hooks/use-search.ts`. `features/search/types/search.ts` owns them
+ * now, derived from `schema.gen.ts`. Three things the hand-written copies got wrong, all of which
+ * the derived types fix: `SearchUser` had no `eliteScore` at all (the payload has carried it since
+ * reputation shipped); every field was non-nullable, though `avgRating` and `price` are null on an
+ * unrated or free book — the legacy page called `.toFixed(1)` on them unguarded; and `SearchPost`
+ * omitted the six details blocks, which the DTO does declare (they are simply never populated —
+ * see `findings/search.md`).
+ */
 
 // ─── Trending ────────────────────────────────────────────────────────────────
 

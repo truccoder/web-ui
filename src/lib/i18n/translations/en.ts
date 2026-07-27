@@ -226,6 +226,15 @@ export const en = {
     title: 'Search',
     resultsFor: 'Results for "${query}"',
     prompt: 'Type something and press Enter to search',
+    promptTitle: 'Search for something',
+    emptyTitle: 'No results',
+    errorTitle: 'Search failed',
+    clear: 'Clear search',
+    unknownPerson: 'Unknown user',
+    untitledBook: 'Untitled book',
+    free: 'Free',
+    price: '${price} ₫',
+    priceUnknown: 'Price unavailable',
   },
 
   trending: {

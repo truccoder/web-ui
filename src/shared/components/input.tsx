@@ -36,6 +36,14 @@ export interface InputProps extends Omit<
   suffix?: React.ReactNode;
   /** Render the value in Geist Mono (tokens, handles, URLs). @default false */
   mono?: boolean;
+  /**
+   * Forwarded to the `<input>`, not to the wrapper.
+   *
+   * A plain prop rather than `forwardRef`, which React 19 made unnecessary. Added when the shell's
+   * search field needed it: Escape blurs the field and clearing it returns focus, and neither is
+   * expressible without a handle on the element.
+   */
+  ref?: React.Ref<HTMLInputElement>;
 }
 
 const sizeStyles: Record<NonNullable<InputProps['size']>, string> = {
@@ -55,6 +63,7 @@ export function Input({
   className,
   id,
   disabled,
+  ref,
   ...props
 }: InputProps) {
   const generatedId = React.useId();
@@ -96,6 +105,7 @@ export function Input({
         )}
 
         <input
+          ref={ref}
           id={inputId}
           disabled={disabled}
           aria-invalid={error ? true : undefined}

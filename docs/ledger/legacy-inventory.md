@@ -12,7 +12,7 @@ Chi tiết từng endpoint: [`p03-endpoint-reconciliation.md`](../p03-endpoint-r
 | friendships    | 8/8             | 9/9             | lớp data đủ và đúng                                                                                               |
 | moderation     | 4/4             | 4/4             | lớp data đủ và đúng                                                                                               |
 | newsfeed       | 1/1             | —               | feed gọi trong `use-posts.ts`, không phải file riêng                                                              |
-| search         | 1/1             | 1/3             | 2 hook còn lại là tiện ích debounce                                                                               |
+| search         | 1/1             | **P2.8**        | ~~2 hook còn lại là tiện ích debounce~~ — cả hai **0 caller**, xoá hẳn ở P2.8 chứ không migrate                   |
 | trending       | 1/1             | 1/1             |                                                                                                                   |
 | bookstore      | 10/10 (+1 N/A)  | 7/10            | thiếu UI: `useBooksByAuthor`, `useDeleteBook`, `useRatingBreakdown`                                               |
 | posts          | 19/21 (+1 N/A)  | 6/12            | **comment chỉ ghi được, không đọc** — xem dưới                                                                    |
@@ -217,3 +217,28 @@ microservices-ready (CLAUDE.md §4) cấm. Ghi từ P2.7 R7; nay đóng.
 
 **`src/lib/api/` còn 11 file, `src/lib/hooks/` còn 11 file** (chat chưa từng có file trong hai
 bucket đó — nó sống ở `lib/twilio/`, nên hai con số này không đổi).
+
+---
+
+### Đã xoá ở P2.8 (domain search)
+
+`/search` render `SearchResults` và app shell render `SearchBar` của `features/search`.
+
+| file / symbol                                                        | vì sao xoá được                                                                                       |
+| -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `components/search/search-bar.tsx` — **cả thư mục**                  | thay bằng `features/search/components/search-bar.tsx`, giữ nguyên hành vi Enter-để-tìm                |
+| `lib/api/search.ts` — **cả file**                                    | thay bằng `features/search/api/search.ts`                                                             |
+| `lib/hooks/use-search.ts` — **cả file**                              | `useSearch` thay bằng `features/search/hooks`; **`useDebouncedValue` + `useDebouncedSearch` xoá hẳn** |
+| `lib/types`: `SearchUser` `SearchBook` `SearchPost` `SearchResponse` | `features/search/types/search.ts` sở hữu, derive từ `schema.gen.ts` — bản cũ sai 3 chỗ (xem bia mộ)   |
+| 2 dòng barrel (`lib/api/index.ts`, `lib/hooks/index.ts`)             | không còn file để re-export                                                                           |
+
+**Hai hook debounce xoá chứ không migrate**: grep ra **0 caller** — `useDebouncedSearch` chưa bao
+giờ được dùng, và ô tìm kiếm submit bằng Enter chứ không search-as-you-type. Code chết thì xoá
+outright chứ không dọn sang nhà mới (Constraint #2). Ngày dựng command palette (P3.4) thì viết
+debounce theo đúng caller lúc đó.
+
+**Bản cũ trong `lib/types` sai 3 chỗ**, ghi trong bia mộ tại chỗ: thiếu hẳn `eliteScore`; khai mọi
+field non-nullable trong khi `avgRating`/`price` là null với sách chưa đánh giá (**trang legacy gọi
+`.toFixed(1)` không guard — vỡ cả danh sách**); và bỏ 6 khối details mà DTO có khai.
+
+**`src/lib/api/` còn 10 file, `src/lib/hooks/` còn 10 file.**

@@ -229,6 +229,15 @@ export const vi: Messages = {
     title: 'Tìm kiếm',
     resultsFor: 'Kết quả cho "${query}"',
     prompt: 'Nhập nội dung và nhấn Enter để tìm kiếm',
+    promptTitle: 'Tìm gì đó',
+    emptyTitle: 'Không có kết quả',
+    errorTitle: 'Tìm kiếm thất bại',
+    clear: 'Xoá nội dung tìm kiếm',
+    unknownPerson: 'Người dùng',
+    untitledBook: 'Sách chưa có tiêu đề',
+    free: 'Miễn phí',
+    price: '${price} ₫',
+    priceUnknown: 'Chưa có giá',
   },
 
   trending: {

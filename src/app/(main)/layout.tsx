@@ -35,7 +35,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { SearchBar } from '@/components/search/search-bar';
+import { SearchBar } from '@/features/search';
 
 function NavLinks({ onClick }: { onClick?: () => void }) {
   const pathname = usePathname();
