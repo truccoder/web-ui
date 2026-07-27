@@ -264,6 +264,7 @@ export const vi: Messages = {
       POLL: 'Bình chọn',
       LINK: 'Liên kết',
       BOOK: 'Sách',
+      EVENT: 'Sự kiện',
     },
     contentPlaceholder: {
       REGULAR: '${fullname} đang nghĩ gì vậy?',
@@ -273,6 +274,7 @@ export const vi: Messages = {
       POLL: 'Thêm bối cảnh cho cuộc bình chọn (không bắt buộc)...',
       LINK: 'Nói vì sao nên mở liên kết này (không bắt buộc)...',
       BOOK: 'Nói cuốn sách này viết về gì và hợp với ai (không bắt buộc)...',
+      EVENT: 'Nói thêm về sự kiện này (không bắt buộc)...',
     },
     quiz: {
       label: 'Câu đố',
@@ -360,20 +362,10 @@ export const vi: Messages = {
       description: 'Mô tả sự kiện',
       startTime: 'Thời gian bắt đầu',
       endTime: 'Thời gian kết thúc',
-      endTimeAuto: 'Sẽ tự động tính',
-      endMode: {
-        DEFAULT: '+1 giờ',
-        PLUS_2H: '+2 giờ',
-        PLUS_3H: '+3 giờ',
-        CUSTOM: 'Tuỳ chỉnh',
-      },
-      location: 'Địa điểm',
-      locationError: 'Không thể xác định địa điểm này',
+      endShortcut: '+${hours} giờ',
+      location: 'Địa điểm tổ chức',
       onlineUrl: 'Link trực tuyến (tuỳ chọn)',
       maxAttendees: 'Số người tham gia tối đa (tuỳ chọn)',
-      cancel: 'Huỷ sự kiện',
-      contentPlaceholder: 'Nói thêm về sự kiện này (không bắt buộc)...',
-      bridgeNote: 'Sự kiện tạm thời tách riêng — sẽ gộp vào ô soạn bài ở trên.',
     },
     book: {
       button: 'Sách',

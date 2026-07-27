@@ -37,6 +37,8 @@ export {
   LinkFields,
   isValidLinkUrl,
   type LinkFieldsProps,
+  EventFields,
+  type EventFieldsProps,
   PostCard,
   type PostCardProps,
   type PostCardAuthor,

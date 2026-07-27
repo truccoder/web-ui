@@ -261,6 +261,7 @@ export const en = {
       POLL: 'Poll',
       LINK: 'Link',
       BOOK: 'Book',
+      EVENT: 'Event',
     },
     contentPlaceholder: {
       REGULAR: "What's on your mind, ${fullname}?",
@@ -270,6 +271,7 @@ export const en = {
       POLL: 'Add context for your poll (optional)...',
       LINK: 'Say why this link is worth opening (optional)...',
       BOOK: 'Say what this book covers and who it is for (optional)...',
+      EVENT: 'Say more about this event (optional)...',
     },
     quiz: {
       label: 'Quiz',
@@ -357,20 +359,11 @@ export const en = {
       description: 'Event description',
       startTime: 'Start time',
       endTime: 'End time',
-      endTimeAuto: 'Computed automatically',
-      endMode: {
-        DEFAULT: '+1 hour',
-        PLUS_2H: '+2 hours',
-        PLUS_3H: '+3 hours',
-        CUSTOM: 'Custom',
-      },
-      location: 'Location',
-      locationError: 'Could not resolve this location',
+      // Sets the end time relative to the start; ${hours} is 1, 2 or 3.
+      endShortcut: '+${hours}h',
+      location: 'Venue',
       onlineUrl: 'Online link (optional)',
       maxAttendees: 'Max attendees (optional)',
-      cancel: 'Cancel event',
-      contentPlaceholder: 'Say more about this event (optional)...',
-      bridgeNote: 'Events are temporarily separate — they will move into the composer above.',
     },
     book: {
       button: 'Book',

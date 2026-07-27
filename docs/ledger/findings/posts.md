@@ -3,6 +3,17 @@
 Một file cho mỗi domain: phiên làm việc chỉ đọc file của domain đang làm.
 Quay lại [`fe-migration-ledger.md`](../../fe-migration-ledger.md).
 
+- **BẪY null-vs-undefined LẶP LẠI Ở PHÍA CONSUMER** (P2.4″d). Ghi chú của P2.4′a cảnh báo cho tầng
+  _type_; lần này nó quay lại ở tầng _component_: `EventRsvpBar` kiểm `maxAttendees !== undefined`
+  để quyết định sự kiện đã đầy chỗ chưa. Payload feed trả **`"maxAttendees": null`** (Jackson
+  `ALWAYS`), mà **`0 >= null` là `true`** trong JS → **mọi sự kiện không giới hạn chỗ đều hiện
+  "đã đủ người" và khoá nút tham gia**. Đã sửa thành `!= null` và nới type prop thành
+  `number | null`.
+  Luật rút ra: với payload của BE này **luôn dùng `== null` / `!= null` (lỏng)**, đừng so
+  `=== undefined`; và mọi phép so sánh số với field có thể null phải chặn null **trước**, vì toán
+  tử quan hệ ép null thành 0 chứ không trả false. Bắt được bằng cách bấm thật trên card feed —
+  `tsc` không thấy gì vì cả hai nhánh đều hợp kiểu.
+
 - **Chu kỳ 3 — hợp đồng `EventController` ĐÃ ĐO THẬT trên API, 8/8** (P2.4″a, event post id 141,
   seed user 9001, đã xoá sau khi đo). Không suy từ đọc Java:
 

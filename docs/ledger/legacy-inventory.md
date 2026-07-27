@@ -7,24 +7,24 @@ mình đang xoá cái gì.
 Chi tiết từng endpoint: [`p03-endpoint-reconciliation.md`](../p03-endpoint-reconciliation.md)
 (sinh lại bằng `node scripts/p03-reconcile.mjs`).
 
-| domain         | endpoint đã gọi | hook có UI dùng | ghi chú                                                                                 |
-| -------------- | --------------- | --------------- | --------------------------------------------------------------------------------------- |
-| friendships    | 8/8             | 9/9             | lớp data đủ và đúng                                                                     |
-| moderation     | 4/4             | 4/4             | lớp data đủ và đúng                                                                     |
-| newsfeed       | 1/1             | —               | feed gọi trong `use-posts.ts`, không phải file riêng                                    |
-| search         | 1/1             | 1/3             | 2 hook còn lại là tiện ích debounce                                                     |
-| trending       | 1/1             | 1/1             |                                                                                         |
-| bookstore      | 10/10 (+1 N/A)  | 7/10            | thiếu UI: `useBooksByAuthor`, `useDeleteBook`, `useRatingBreakdown`                     |
-| posts          | 19/21 (+1 N/A)  | 6/12            | **comment chỉ ghi được, không đọc** — xem dưới                                          |
-| posts (events) | 7/7 (+1 N/A)    | **0/6**         | **toàn bộ Events không có UI**                                                          |
-| security       | 13/17           | 13/18           | thiếu 4 endpoint OAuth (google/github url + callback)                                   |
-| notifications  | 6/6             | **0/6**         | **cả domain có data layer, không có UI nào**                                            |
-| knowledge      | 0/10            | —               | chưa động tới                                                                           |
-| roadmap        | 0/8             | —               | chưa động tới                                                                           |
-| github         | 0/5             | —               | chưa động tới                                                                           |
-| matchmaking    | 0/5             | —               | chưa động tới                                                                           |
-| chat           | 0/1             | —               | FE tự phát token qua `app/api/twilio/token`, không dùng `GET /v1/api/chat/token` của BE |
-| reputation     | 0/1             | —               | chưa từng có code legacy → P2.3 dựng thẳng trong `features/`, không có gì để xoá        |
+| domain         | endpoint đã gọi | hook có UI dùng | ghi chú                                                                                   |
+| -------------- | --------------- | --------------- | ----------------------------------------------------------------------------------------- |
+| friendships    | 8/8             | 9/9             | lớp data đủ và đúng                                                                       |
+| moderation     | 4/4             | 4/4             | lớp data đủ và đúng                                                                       |
+| newsfeed       | 1/1             | —               | feed gọi trong `use-posts.ts`, không phải file riêng                                      |
+| search         | 1/1             | 1/3             | 2 hook còn lại là tiện ích debounce                                                       |
+| trending       | 1/1             | 1/1             |                                                                                           |
+| bookstore      | 10/10 (+1 N/A)  | 7/10            | thiếu UI: `useBooksByAuthor`, `useDeleteBook`, `useRatingBreakdown`                       |
+| posts          | 19/21 (+1 N/A)  | 6/12            | **comment chỉ ghi được, không đọc** — xem dưới                                            |
+| posts (events) | 7/7 (+1 N/A)    | ~~0/6~~ → done  | ~~toàn bộ Events không có UI~~ — **đã đóng ở P2.4″d**: RSVP + đếm + ICS + Google Calendar |
+| security       | 13/17           | 13/18           | thiếu 4 endpoint OAuth (google/github url + callback)                                     |
+| notifications  | 6/6             | **0/6**         | **cả domain có data layer, không có UI nào**                                              |
+| knowledge      | 0/10            | —               | chưa động tới                                                                             |
+| roadmap        | 0/8             | —               | chưa động tới                                                                             |
+| github         | 0/5             | —               | chưa động tới                                                                             |
+| matchmaking    | 0/5             | —               | chưa động tới                                                                             |
+| chat           | 0/1             | —               | FE tự phát token qua `app/api/twilio/token`, không dùng `GET /v1/api/chat/token` của BE   |
+| reputation     | 0/1             | —               | chưa từng có code legacy → P2.3 dựng thẳng trong `features/`, không có gì để xoá          |
 
 Cột "hook có UI dùng" đếm hook được import từ `app/` hoặc `components/`. 5 symbol của
 `security` bị đếm là không-có-UI (`syncRoleFromProfile`, `clearRoleCookie`,
@@ -35,9 +35,10 @@ Cột "hook có UI dùng" đếm hook được import từ `app/` hoặc `compon
 
 1. **`notifications` — 6/6 endpoint, 0 UI.** `src/lib/hooks/use-notifications.ts` không
    được file nào trong `app/` hay `components/` import. Chuông thông báo chưa tồn tại.
-2. **Events — 7 endpoint, 0 UI.** Cả 6 hook trong `use-events.ts` không có consumer.
-   `event-post-details.tsx` chỉ render `EventDetails` có sẵn trong payload post; không có
-   RSVP, không có danh sách attendee, không có Google Calendar.
+2. ~~**Events — 7 endpoint, 0 UI.**~~ — **ĐÃ ĐÓNG ở P2.4″d.** `EventRsvpBar` +
+   `EventCalendarActions` phủ RSVP, số người tham gia, ICS và Google Calendar.
+   **Giới hạn còn lại, không phải nợ FE**: danh sách attendee chỉ có `userId` (BE trả JPA
+   entity, không có endpoint tra người theo id) nên hiện được **số** chứ không hiện được **ai**.
 3. ~~**Comment chỉ ghi, không đọc.**~~ — **ĐÃ ĐÓNG ở P2.4′d.** `CommentThread` đọc thật
    `GET /posts/{postId}/comments`; `SessionComment` (comment chỉ sống trong state, mất khi
    reload) đã bị xoá cùng card legacy.
@@ -99,6 +100,30 @@ Cột "hook có UI dùng" đếm hook được import từ `app/` hoặc `compon
 - `components/posts/create-event-form.tsx` + `event-datetime-picker.tsx` + `event-location-input.tsx` +
   `event-datepicker.css` — cầu tạm EVENT, **P2.4″d** (không đổi từ P2.4d).
 - `components/posts/book-reader-dialog.tsx` — bookstore, P2.10.
+
+### Đã xoá ở P2.4″d (events — posts đóng domain)
+
+`PostComposer` làm đủ **8/8 loại**, feed render RSVP + lịch. Xoá theo đó:
+
+| file / symbol                                                                                                                                                                | vì sao xoá được                                                                                                                                       |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `components/posts/create-event-form.tsx`                                                                                                                                     | cầu tạm EVENT hết lý do tồn tại — composer nhận loại EVENT                                                                                            |
+| `components/posts/event-datetime-picker.tsx` + `event-datepicker.css`                                                                                                        | thay bằng `datetime-local` native trong `EventFields`; **gỡ luôn `react-datepicker`** khỏi `package.json` (0 consumer còn lại)                        |
+| `components/posts/event-location-input.tsx`                                                                                                                                  | `EventDetails.location` là nhãn tự do → ô text thường; địa điểm có cấu trúc đã có `LocationPicker`                                                    |
+| `lib/api/events.ts` + `lib/hooks/use-events.ts` — **cả hai file**                                                                                                            | thay bằng `features/posts/api/event.ts` + `hooks/use-event.ts`                                                                                        |
+| `lib/api/location.ts` + `lib/hooks/use-location.ts` — **cả hai file**                                                                                                        | consumer cuối là `event-location-input`; `features/posts` đã có `useResolveLocation`                                                                  |
+| `lib/types`: `RsvpStatus` `EventRsvp` `AttendeeCountResponse` `AuthUrlResponse` `CalendarStatusResponse`                                                                     | `features/posts/types/event.ts` sở hữu, derive từ `schema.gen.ts`                                                                                     |
+| `lib/types`: `CreatePostRequest` `UpdatePostRequest` `Post` `PostAuthor` `CreatePostPayload` `CreatePostResponse` `PostLocation` `LocationResolutionResponse` `EventDetails` | mặt ghi của posts, mồ côi từ khi cầu tạm EVENT chết. `EventDetails` giờ **import từ `features/posts`** cho `FeedPostData`, một định nghĩa thay vì hai |
+| i18n `createPost.event.endMode.*` `endTimeAuto` `cancel` `bridgeNote` `contentPlaceholder` `locationError`                                                                   | thuộc riêng cầu tạm / picker cũ                                                                                                                       |
+
+**`src/lib/api/` còn 13 file, `src/lib/hooks/` còn 13 file — không còn file nào của posts.**
+
+**GIỮ LẠI có chủ đích:**
+
+- `components/posts/newsfeed.tsx` + `feed-post.tsx` + `lib/api/newsfeed.ts` + `use-posts.ts` (chỉ còn
+  `useNewsfeed` + `NEWSFEED_QUERY_KEY`) + `FeedPostData`/`FeedResponse`/`FeedBookSummary` trong
+  `lib/types` — **domain newsfeed, P2.5**.
+- `components/posts/book-post-actions.tsx` + `book-reader-dialog.tsx` — **bookstore, P2.10**.
 
 ### Code phải xoá, không phải migrate
 

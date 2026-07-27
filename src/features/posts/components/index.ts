@@ -61,3 +61,4 @@ export { PostMenu, type PostMenuProps } from './post-menu';
 // the backend owns, while the calendar pair hands the user a file or talks to Google.
 export { EventRsvpBar, type EventRsvpBarProps } from './event-rsvp-bar';
 export { EventCalendarActions, type EventCalendarActionsProps } from './event-calendar-actions';
+export { EventFields, type EventFieldsProps } from './event-fields';

@@ -33,8 +33,12 @@ export interface EventRsvpBarProps {
   /**
    * `EventDetails.maxAttendees`, the organiser's cap. Supplied so a GOING that the server is
    * certain to refuse can be disabled before it is sent; see the note in the component.
+   *
+   * `null` is the normal "no cap" value, not an oversight: Jackson runs at its default
+   * `ALWAYS` inclusion, so the feed payload carries the key with a null value rather than
+   * omitting it. The prop accepts it so callers can pass the payload through untouched.
    */
-  maxAttendees?: number;
+  maxAttendees?: number | null;
   /** Fired after a successful RSVP, so the caller can refresh its own payload. */
   onChanged?: () => void;
   className?: string;
@@ -78,8 +82,12 @@ export function EventRsvpBar({ postId, maxAttendees, onChanged, className }: Eve
    * branch below is still live — another person's RSVP can fill the event between this
    * render and the click, and then the server, not this check, is what says no.
    */
+  // `!= null` (loose) on purpose, and this is where the first version was wrong: written as
+  // `!== undefined` it treated the payload's `"maxAttendees": null` as a real cap, and since
+  // `0 >= null` is true in JavaScript, EVERY uncapped event rendered as full with its GOING
+  // button disabled. Measured on a real post before the fix.
   const isFull =
-    maxAttendees !== undefined &&
+    maxAttendees != null &&
     goingCount !== undefined &&
     goingCount >= maxAttendees &&
     current !== 'GOING';

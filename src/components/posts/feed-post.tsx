@@ -7,6 +7,8 @@ import {
   CodeSnippetBody,
   CommentThread,
   EventBody,
+  EventCalendarActions,
+  EventRsvpBar,
   LinkBody,
   PollBody,
   PostCard,
@@ -113,7 +115,7 @@ function toEditorState(post: FeedPostData): PostEditorState {
  * posts cycle 3 (P2.4"), and buy/preview/reviews belongs to `bookstore` (P2.10), bridged for
  * now by `BookPostActions`.
  */
-function PostBody({ post }: { post: FeedPostData }) {
+function PostBody({ post, onChanged }: { post: FeedPostData; onChanged: () => void }) {
   switch (post.postType) {
     case 'CODE_SNIPPET':
       return post.codeSnippetDetails ? <CodeSnippetBody details={post.codeSnippetDetails} /> : null;
@@ -126,7 +128,21 @@ function PostBody({ post }: { post: FeedPostData }) {
     case 'LINK':
       return post.linkDetails ? <LinkBody details={post.linkDetails} /> : null;
     case 'EVENT':
-      return post.eventDetails ? <EventBody details={post.eventDetails} /> : null;
+      return post.eventDetails ? (
+        <EventBody
+          details={post.eventDetails}
+          actions={
+            <>
+              <EventRsvpBar
+                postId={post.postId}
+                maxAttendees={post.eventDetails.maxAttendees}
+                onChanged={onChanged}
+              />
+              <EventCalendarActions postId={post.postId} title={post.eventDetails.eventTitle} />
+            </>
+          }
+        />
+      ) : null;
     case 'BOOK':
       return post.book ? (
         <BookBody book={post.book} actions={<BookPostActions book={post.book} />} />
@@ -212,7 +228,7 @@ export function FeedPost({ post, onChanged }: FeedPostProps) {
               onSaved={onChanged}
             />
           ) : (
-            <PostBody post={post} />
+            <PostBody post={post} onChanged={onChanged} />
           )}
 
           {/* A quiz is an attachment, not a post type — `buildAndSavePost` accepts

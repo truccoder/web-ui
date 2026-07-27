@@ -5,6 +5,7 @@
 import type {
   ArticleDetails,
   CodeSnippetDetails,
+  EventDetails,
   LinkDetails,
   PollDetails,
   QnaDetails,
@@ -211,33 +212,14 @@ export interface LocationDetails {
   country?: string;
 }
 
-export interface PostLocation {
-  googlePlaceId?: string;
-  locationType: LocationType;
-  locationDetails?: LocationDetails;
-  displayName?: string;
-  latitude?: number;
-  longitude?: number;
-  city?: string;
-  country?: string;
-}
-
-export interface LocationResolutionResponse {
-  googlePlaceId: string;
-  locationType: LocationType;
-  locationDetails: LocationDetails;
-}
-
-export interface EventDetails {
-  eventTitle: string;
-  eventDescription?: string;
-  startTime: string;
-  endTime: string;
-  timezone?: string;
-  location?: string;
-  onlineUrl?: string;
-  maxAttendees?: number;
-}
+/*
+ * REMOVED AT P2.4″d: `PostLocation`, `LocationResolutionResponse` and the hand-written
+ * `EventDetails`. The first two lost their last consumer when `lib/api/location.ts` and
+ * `lib/hooks/use-location.ts` went (superseded by `features/posts`' `LocationPicker` and
+ * `useResolveLocation`); the third is now imported from `features/posts` above, like the six
+ * other detail blocks the feed echoes, so there is one schema-derived definition rather than
+ * two that agree by luck.
+ */
 
 export interface CreateBookRequest {
   title: string;
@@ -309,28 +291,12 @@ export interface PaymentSyncResponse {
   paid: boolean;
 }
 
-export interface CreatePostRequest {
-  content?: string;
-  googlePlaceId?: string;
-  locationType?: LocationType;
-  locationDetails?: LocationDetails;
-  visibility?: PostVisibility;
-  images?: string[];
-  taggedUserIds?: number[];
-  postType?: PostType;
-  eventDetails?: EventDetails;
-  bookDetails?: CreateBookRequest;
-}
-
-export interface UpdatePostRequest {
-  content?: string;
-  googlePlaceId?: string;
-  locationType?: LocationType;
-  locationDetails?: LocationDetails;
-  visibility?: PostVisibility;
-  images?: string[];
-  taggedUserIds?: number[];
-}
+/*
+ * REMOVED AT P2.4″d: `CreatePostRequest`, `UpdatePostRequest`, `PostAuthor`, `Post`,
+ * `CreatePostPayload`, `CreatePostResponse`. All six described the write side of posts, which
+ * `features/posts/types/post.ts` has owned since P2.4a; they outlived their last consumer when
+ * the event bridge went.
+ */
 
 /*
  * REMOVED AT P2.4'd, with the legacy card and `lib/api/posts.ts` that were their only
@@ -345,55 +311,13 @@ export interface UpdatePostRequest {
  * has nothing left to describe.
  */
 
-export interface PostAuthor {
-  fullname: string;
-  profilePictureUrl?: string;
-}
-
-export interface Post {
-  id: string;
-  content: string;
-  location?: PostLocation;
-  author: PostAuthor;
-  createdAt: string;
-}
-
-/** @deprecated Use CreatePostRequest instead */
-export interface CreatePostPayload {
-  content: string;
-  location?: PostLocation;
-}
-
-/** @deprecated Use the new response shape from backend */
-export interface CreatePostResponse {
-  success: boolean;
-  message: string;
-  data: Post;
-}
-
-// ─── Events ──────────────────────────────────────────────────────────────────
-
-export type RsvpStatus = 'GOING' | 'INTERESTED' | 'NOT_GOING';
-
-export interface EventRsvp {
-  id: number;
-  postId: number;
-  userId: number;
-  status: RsvpStatus;
-  createdAt: string;
-}
-
-export interface AttendeeCountResponse {
-  count: number;
-}
-
-export interface AuthUrlResponse {
-  authUrl: string;
-}
-
-export interface CalendarStatusResponse {
-  connected: boolean;
-}
+/*
+ * REMOVED AT P2.4″d: `RsvpStatus`, `EventRsvp`, `AttendeeCountResponse`, `AuthUrlResponse`,
+ * `CalendarStatusResponse` — the whole Events block, together with `lib/api/events.ts` and
+ * `lib/hooks/use-events.ts`. `features/posts/types/event.ts` owns them now, derived from
+ * `schema.gen.ts`; the hand-written copies never had a UI consumer at all (the legacy
+ * inventory counted Events as 7 endpoints and 0 screens).
+ */
 
 // ─── Newsfeed ────────────────────────────────────────────────────────────────
 

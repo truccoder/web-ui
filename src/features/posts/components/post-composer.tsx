@@ -4,6 +4,7 @@ import { useState, type ReactNode } from 'react';
 import {
   BarChart3,
   BookOpen,
+  Calendar,
   Code2,
   FileText,
   HelpCircle,
@@ -22,6 +23,7 @@ import type {
   CodeSnippetDetails,
   CreateBookRequest,
   CreatePostRequest,
+  EventDetails,
   LinkDetails,
   PollDetails,
   PostType,
@@ -36,6 +38,7 @@ import {
   bookFileExtension,
 } from './book-post-fields';
 import { CodeSnippetFields } from './code-snippet-fields';
+import { EventFields } from './event-fields';
 import { LinkFields, isValidLinkUrl } from './link-fields';
 import { LocationPicker } from './location-picker';
 import { PollFields, POLL_MIN_OPTIONS } from './poll-fields';
@@ -43,9 +46,9 @@ import { QnaFields } from './qna-fields';
 import { QuizComposer, emptyQuiz, isQuizReady, normalizeQuiz } from './quiz-composer';
 
 /**
- * The post composer. Cycle 1 covers seven of the eight kinds: `REGULAR` (P2.4c-1),
- * `CODE_SNIPPET`, `ARTICLE`, `QNA`, `POLL`, `LINK` (P2.4c-3) and `BOOK` (P2.4c-4), plus the
- * quiz attachment.
+ * The post composer. It covers all eight kinds: `REGULAR` (P2.4c-1), `CODE_SNIPPET`,
+ * `ARTICLE`, `QNA`, `POLL`, `LINK` (P2.4c-3), `BOOK` (P2.4c-4) and finally `EVENT` (P2.4″d),
+ * plus the quiz attachment.
  *
  * TWO ENDPOINTS, NOT ONE. Six kinds go to `POST /v1/api/posts` as JSON. `BOOK` cannot:
  * `PostService.createPost` throws a 400 the moment it sees `postType: 'BOOK'`, because a book
@@ -53,8 +56,11 @@ import { QuizComposer, emptyQuiz, isQuizReady, normalizeQuiz } from './quiz-comp
  * `submit` makes is therefore decided by the selected kind, not by whether a file happens to be
  * attached.
  *
- * `EVENT` IS STILL ABSENT ON PURPOSE — it belongs to cycle 3 (`EventController`), and a
- * switcher entry that cannot produce a post is worse than no entry.
+ * `EVENT` ARRIVED LAST, in cycle 3, and its arrival is what deleted the temporary
+ * `create-event-form.tsx` bridge that had been sitting under this composer since P2.4d. Until
+ * then the switcher deliberately had no `EVENT` entry: an entry that cannot produce a post is
+ * worse than no entry. Its panel is the only one whose values are not payload-shaped — see
+ * `detailsFor`.
  *
  * THE QUIZ IS AN ATTACHMENT, NOT A KIND, because the backend models it that way: there is no
  * `QUIZ` in `PostType`, and `validateQuizDetails` runs for any post carrying `quizDetails`. It
@@ -98,7 +104,15 @@ export interface PostComposerProps {
 const VISIBILITIES: PostVisibility[] = ['PUBLIC', 'FRIENDS', 'PRIVATE'];
 
 /** Kinds this composer can actually produce, in switcher order. `REGULAR` is the default state. */
-const SWITCHABLE_TYPES = ['CODE_SNIPPET', 'ARTICLE', 'QNA', 'POLL', 'LINK', 'BOOK'] as const;
+const SWITCHABLE_TYPES = [
+  'CODE_SNIPPET',
+  'ARTICLE',
+  'QNA',
+  'POLL',
+  'LINK',
+  'BOOK',
+  'EVENT',
+] as const;
 type SwitchableType = (typeof SWITCHABLE_TYPES)[number];
 
 const TYPE_ICONS: Record<SwitchableType, ReactNode> = {
@@ -108,6 +122,7 @@ const TYPE_ICONS: Record<SwitchableType, ReactNode> = {
   POLL: <BarChart3 />,
   LINK: <Link2 />,
   BOOK: <BookOpen />,
+  EVENT: <Calendar />,
 };
 
 const EMPTY_POLL: PollDetails = {
@@ -133,6 +148,7 @@ export function PostComposer({ onPosted }: PostComposerProps) {
   const [poll, setPoll] = useState<PollDetails>(EMPTY_POLL);
   const [link, setLink] = useState<LinkDetails>({});
   const [book, setBook] = useState<CreateBookRequest>({ title: '' });
+  const [event, setEvent] = useState<EventDetails>({});
   const [bookFile, setBookFile] = useState<File | undefined>();
   const [coverFile, setCoverFile] = useState<File | undefined>();
   const [bookFileError, setBookFileError] = useState<string | undefined>();
@@ -151,6 +167,7 @@ export function PostComposer({ onPosted }: PostComposerProps) {
     setPoll(EMPTY_POLL);
     setLink({});
     setBook({ title: '' });
+    setEvent({});
     setBookFile(undefined);
     setCoverFile(undefined);
     setBookFileError(undefined);
@@ -214,6 +231,15 @@ export function PostComposer({ onPosted }: PostComposerProps) {
         );
       case 'LINK':
         return isValidLinkUrl(link.url);
+      // Real server rules too: `validateEventDetails` demands a title, both timestamps, and an
+      // end that is not before the start.
+      case 'EVENT':
+        return (
+          (event.eventTitle ?? '').trim().length > 0 &&
+          Boolean(event.startTime) &&
+          Boolean(event.endTime) &&
+          new Date(event.endTime!).getTime() >= new Date(event.startTime!).getTime()
+        );
       // The only branch whose conditions are real server rules rather than frontend manners:
       // `validateBookDetails` demands a non-blank title, `validateFile` demands the file, and
       // `buildAndSaveBook` demands `previewPages > 0` once a price is set.
@@ -254,6 +280,19 @@ export function PostComposer({ onPosted }: PostComposerProps) {
         };
       case 'LINK':
         return { linkDetails: link };
+      // The only kind whose panel keeps its values in a different format from the payload:
+      // `datetime-local` speaks local `YYYY-MM-DDTHH:mm` and the backend parses ISO-8601, so
+      // the conversion happens here, once, rather than in the field (which would have to parse
+      // back on every render to fill the input).
+      case 'EVENT':
+        return {
+          eventDetails: {
+            ...event,
+            eventTitle: event.eventTitle?.trim(),
+            startTime: new Date(event.startTime!).toISOString(),
+            endTime: new Date(event.endTime!).toISOString(),
+          },
+        };
       default:
         return {};
     }
@@ -333,6 +372,7 @@ export function PostComposer({ onPosted }: PostComposerProps) {
               {postType === 'QNA' && <QnaFields />}
               {postType === 'POLL' && <PollFields value={poll} onChange={setPoll} />}
               {postType === 'LINK' && <LinkFields value={link} onChange={setLink} />}
+              {postType === 'EVENT' && <EventFields value={event} onChange={setEvent} />}
               {postType === 'BOOK' && (
                 <BookPostFields
                   value={book}

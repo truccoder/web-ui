@@ -2,7 +2,6 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { PostComposer } from '@/features/posts';
-import { CreateEventForm } from '@/components/posts/create-event-form';
 import { Newsfeed } from '@/components/posts/newsfeed';
 import { NEWSFEED_QUERY_KEY } from '@/lib/hooks/use-posts';
 import { useT } from '@/lib/i18n';
@@ -26,7 +25,8 @@ import { useT } from '@/lib/i18n';
  * string that silently stops matching. AT P2.5: replace `NEWSFEED_QUERY_KEY` with
  * `newsfeedKeys.feed()`, and this comment goes with it.
  *
- * The event composer below `PostComposer` is likewise temporary — see `create-event-form.tsx`.
+ * The temporary event composer that sat below `PostComposer` is GONE as of P2.4″d:
+ * `PostComposer` now covers all eight kinds, so the bridge had nothing left to bridge.
  */
 export default function NewsfeedPage() {
   const t = useT();
@@ -45,8 +45,6 @@ export default function NewsfeedPage() {
         </div>
 
         <PostComposer onPosted={refreshFeed} />
-
-        <CreateEventForm onPosted={refreshFeed} />
 
         <Newsfeed />
       </div>
