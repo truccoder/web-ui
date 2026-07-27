@@ -13,7 +13,7 @@ Chi tiết từng endpoint: [`p03-endpoint-reconciliation.md`](../p03-endpoint-r
 | moderation     | 4/4             | 4/4             | lớp data đủ và đúng                                                                                               |
 | newsfeed       | 1/1             | —               | feed gọi trong `use-posts.ts`, không phải file riêng                                                              |
 | search         | 1/1             | **P2.8**        | ~~2 hook còn lại là tiện ích debounce~~ — cả hai **0 caller**, xoá hẳn ở P2.8 chứ không migrate                   |
-| trending       | 1/1             | 1/1             |                                                                                                                   |
+| trending       | 1/1             | **P2.9**        | domain duy nhất có sẵn dữ liệu thật (110 hàng crawler) — không phải dựng fixture để verify                        |
 | bookstore      | 10/10 (+1 N/A)  | 7/10            | thiếu UI: `useBooksByAuthor`, `useDeleteBook`, `useRatingBreakdown`                                               |
 | posts          | 19/21 (+1 N/A)  | 6/12            | **comment chỉ ghi được, không đọc** — xem dưới                                                                    |
 | posts (events) | 7/7 (+1 N/A)    | ~~0/6~~ → done  | ~~toàn bộ Events không có UI~~ — **đã đóng ở P2.4″d**: RSVP + đếm + ICS + Google Calendar                         |
@@ -242,3 +242,30 @@ field non-nullable trong khi `avgRating`/`price` là null với sách chưa đá
 `.toFixed(1)` không guard — vỡ cả danh sách**); và bỏ 6 khối details mà DTO có khai.
 
 **`src/lib/api/` còn 10 file, `src/lib/hooks/` còn 10 file.**
+
+---
+
+### Đã xoá ở P2.9 (domain trending)
+
+`/trending` render `TrendingList` của `features/trending`.
+
+| file / symbol                                                                                              | vì sao xoá được                                                                           |
+| ---------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `components/trending/` — **cả thư mục** (`trending-card.tsx`, `trending-list.tsx`)                         | thay bằng `TrendingCard` + `TrendingFilters` + `TrendingList` dựng từ `shared/components` |
+| `lib/api/trending.ts` — **cả file**                                                                        | thay bằng `features/trending/api/trending.ts`                                             |
+| `lib/hooks/use-trending.ts` — **cả file**                                                                  | thay bằng `features/trending/hooks/use-trending.ts` (thêm `trendingKeys`)                 |
+| `lib/types`: `TrendingSource` `TrendingCategory` `TrendingTimeRange` `TrendingItem` `TrendingPageResponse` | `features/trending/types/trending.ts` sở hữu, derive từ `schema.gen.ts`                   |
+| 2 dòng barrel (`lib/api/index.ts`, `lib/hooks/index.ts`)                                                   | không còn file để re-export                                                               |
+
+**Đóng nốt dòng nợ của P2.6cd**: `components/trending/trending-card.tsx` là file legacy thứ hai
+phải sửa theo khi i18n `post.justNow/*Ago` dời sang `time.*`. Nó chết ở đây, và bản mới dùng thẳng
+`useRelativeTime` của `shared/lib/format.ts` thay vì tự viết lại hàm format tương đối (card cũ có
+bản sao riêng dài 18 dòng).
+
+**Bản cũ chép tay cả hai enum** (`TrendingSource`, `TrendingCategory`) — 14 giá trị phải nhớ mà
+đồng bộ với Java bằng tay. Bản derive hết chuyện đó. Type mới cũng **bỏ `tags`**, field mà DTO khai
+nhưng không gì từng ghi (110/110 hàng rỗng — `findings/trending.md` T1).
+
+**`src/lib/api/` còn 9 file, `src/lib/hooks/` còn 9 file.**
+**`src/components/` chỉ còn `moderation/`, `posts/` (cầu tạm bookstore), `ui/` (shadcn) và
+`service-worker-register.tsx`.**

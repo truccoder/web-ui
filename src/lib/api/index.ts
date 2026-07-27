@@ -6,4 +6,3 @@ export * from './moderation';
 export * from './payments';
 export * from './profile';
 export * from './social';
-export * from './trending';

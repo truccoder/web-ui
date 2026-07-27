@@ -251,6 +251,10 @@ export const vi: Messages = {
     },
     allLoaded: 'Bạn đã xem hết nội dung xu hướng rồi 🎉',
     allCategories: 'Tất cả',
+    errorTitle: 'Không tải được xu hướng',
+    untitled: 'Không có tiêu đề',
+    timeRangeLabel: 'Khoảng thời gian',
+    categoryLabel: 'Chủ đề',
     timeRange: {
       today: 'Hôm nay',
       week: 'Tuần này',

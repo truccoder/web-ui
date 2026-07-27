@@ -248,6 +248,10 @@ export const en = {
     },
     allLoaded: "You've seen all trending items 🎉",
     allCategories: 'All',
+    errorTitle: 'Could not load trending',
+    untitled: 'Untitled',
+    timeRangeLabel: 'Time range',
+    categoryLabel: 'Topic',
     timeRange: {
       today: 'Today',
       week: 'This Week',

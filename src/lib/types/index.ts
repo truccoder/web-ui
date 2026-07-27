@@ -324,43 +324,14 @@ export interface PaymentSyncResponse {
  * see `findings/search.md`).
  */
 
-// ─── Trending ────────────────────────────────────────────────────────────────
-
-export type TrendingSource = 'HACKER_NEWS' | 'DEV_TO' | 'GITHUB' | 'REDDIT' | 'MEDIUM' | 'HBR';
-
-export type TrendingCategory =
-  | 'OPENSOURCE'
-  | 'EVENT'
-  | 'NEW_TECH'
-  | 'REGULATION'
-  | 'MINDSET'
-  | 'TOOL'
-  | 'CAREER'
-  | 'OTHER';
-
-export type TrendingTimeRange = 'today' | 'week' | 'month';
-
-export interface TrendingItem {
-  id: number;
-  title: string;
-  summary: string;
-  url: string;
-  source: TrendingSource;
-  category: TrendingCategory;
-  tags: string[] | null;
-  score: number;
-  author: string;
-  publishedAt: string;
-}
-
-export interface TrendingPageResponse {
-  items: TrendingItem[];
-  page: number;
-  size: number;
-  totalElements: number;
-  totalPages: number;
-  hasNext: boolean;
-}
+/*
+ * REMOVED AT P2.9: `TrendingSource`, `TrendingCategory`, `TrendingTimeRange`, `TrendingItem` and
+ * `TrendingPageResponse`, together with `lib/api/trending.ts` and `lib/hooks/use-trending.ts`.
+ * `features/trending/types/trending.ts` owns them now, derived from `schema.gen.ts` — the two
+ * enums in particular were transcribed by hand here and had to be kept in step with the Java ones
+ * by memory. The derived version also drops `tags`, which the DTO declares but nothing ever
+ * writes (110 of 110 rows empty — see `findings/trending.md`).
+ */
 
 // ─── Moderation (admin) ──────────────────────────────────────────────────────
 
