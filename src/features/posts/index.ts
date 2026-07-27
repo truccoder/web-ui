@@ -58,6 +58,13 @@ export {
   type CommentItemProps,
   CommentComposer,
   type CommentComposerProps,
+  QuizTaker,
+  type QuizTakerProps,
+  PostEditor,
+  type PostEditorProps,
+  type PostEditorState,
+  PostMenu,
+  type PostMenuProps,
 } from './components';
 
 export {

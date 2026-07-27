@@ -38,9 +38,9 @@ Cột "hook có UI dùng" đếm hook được import từ `app/` hoặc `compon
 2. **Events — 7 endpoint, 0 UI.** Cả 6 hook trong `use-events.ts` không có consumer.
    `event-post-details.tsx` chỉ render `EventDetails` có sẵn trong payload post; không có
    RSVP, không có danh sách attendee, không có Google Calendar.
-3. **Comment chỉ ghi, không đọc.** `post-card.tsx:66` dùng `useCreateComment` nhưng
-   **không** dùng `useComments`; comment vừa gõ chỉ nằm trong state `sessionComments`.
-   Reload là mất. `GET /posts/{postId}/comments` có hàm API, có hook, không ai gọi.
+3. ~~**Comment chỉ ghi, không đọc.**~~ — **ĐÃ ĐÓNG ở P2.4′d.** `CommentThread` đọc thật
+   `GET /posts/{postId}/comments`; `SessionComment` (comment chỉ sống trong state, mất khi
+   reload) đã bị xoá cùng card legacy.
 
 ### Đã xoá ở P2.4d (composer của posts, chu kỳ 1)
 
@@ -63,11 +63,42 @@ Cột "hook có UI dùng" đếm hook được import từ `app/` hoặc `compon
   **hook và LocationPicker của `features/posts`** (đó là thứ cho phép xoá bản legacy cùng lúc);
   chỉ các ô nhập còn là legacy. **P2.4″d xoá file này** cùng `event-datetime-picker.tsx`,
   `event-location-input.tsx`, `event-datepicker.css`.
-- `lib/hooks/use-posts.ts` phần còn lại: `useNewsfeed` (domain `newsfeed`, P2.5), reaction +
-  comment (posts chu kỳ 2, P2.4′). Chưa có bản thay thế → Guardrail B cấm xoá.
+- ~~`lib/hooks/use-posts.ts` phần reaction + comment~~ — **đã xoá ở P2.4′d** (xem mục dưới).
+  `useNewsfeed` vẫn ở lại: domain `newsfeed`, P2.5.
 - `lib/types`: `PostLocation` nay không còn consumer ngoài `lib/types` nhưng vẫn bị `Post` và
   `CreatePostPayload` (legacy, deprecated) tham chiếu. Dọn cùng đợt tháo `lib/types` khi posts
   chu kỳ 2 xong, không tách lẻ ở đây.
+
+### Đã xoá ở P2.4′d (comment + reaction của posts, chu kỳ 2)
+
+`/newsfeed` render `FeedPost` (adapter mới) thay card legacy. Xoá theo đó:
+
+| file / symbol                                                                                                                                             | vì sao xoá được                                                                                            |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `components/posts/post-card.tsx`                                                                                                                          | thay bằng `PostCard` + 7 khối body + `ReactionBar` + `CommentThread` + `PostMenu`/`PostEditor`/`QuizTaker` |
+| `components/posts/event-post-details.tsx`                                                                                                                 | thay bằng `EventBody`                                                                                      |
+| `components/posts/book-post-summary.tsx`                                                                                                                  | nửa trình bày thay bằng `BookBody`; nửa tương tác **rút ra `book-post-actions.tsx`** (xem dưới)            |
+| `lib/api/posts.ts` — **cả file**                                                                                                                          | 7 hàm còn lại đều là comment/reaction → `features/posts/api/comment.ts` + `api/reaction.ts`                |
+| `lib/hooks/use-posts.ts`: `useMyReaction` `useUpsertReaction` `useRemoveReaction` `useComments` `useCreateComment` `useUpdateComment` `useDeleteComment`  | thay bằng hook cùng tên ở `features/posts`                                                                 |
+| `lib/types`: `ReactionType` `UpsertReactionRequest` `MyReactionResponse` `CreateCommentRequest` `UpdateCommentRequest` `CommentResponse` `SessionComment` | `features/posts/types` sở hữu, derive từ `schema.gen.ts`                                                   |
+| i18n `post.like` `post.comment` `post.share` `post.olderCommentsHidden`                                                                                   | card legacy là consumer duy nhất                                                                           |
+
+**GIỮ LẠI có chủ đích:**
+
+- `components/posts/newsfeed.tsx` + `lib/api/newsfeed.ts` + `useNewsfeed`/`NEWSFEED_QUERY_KEY` — domain
+  **newsfeed**, P2.5. `use-posts.ts` giờ chỉ còn đúng hai thứ này.
+- `components/posts/feed-post.tsx` — **file mới, cầu tạm**: đoạn map `FeedPostDataDto` → props của
+  `PostCard`. Card cố ý không nhận DTO của feed (§4), nên chỗ map phải nằm ở bên giữ payload. Bên đó
+  _lẽ ra_ là `features/newsfeed`, chưa tồn tại. **P2.5 chuyển file này vào `features/newsfeed/components`**
+  gần như nguyên vẹn.
+- `components/posts/book-post-actions.tsx` — **file mới, cầu tạm**, cùng loại với `create-event-form.tsx`.
+  `BookBody` cố ý không có nút mua/đọc (thuộc package `bookstore`, §4) mà mở slot `actions`. Xoá trọn
+  `book-post-summary.tsx` sẽ **mất đường mua / tải / xem trước / đánh giá sách duy nhất của app** — hồi
+  quy, không phải dọn dẹp (Guardrail C). Nên nửa tương tác được rút ra đặt vào đúng slot đó.
+  **P2.10 xoá file này**, `features/bookstore` cấp slot.
+- `components/posts/create-event-form.tsx` + `event-datetime-picker.tsx` + `event-location-input.tsx` +
+  `event-datepicker.css` — cầu tạm EVENT, **P2.4″d** (không đổi từ P2.4d).
+- `components/posts/book-reader-dialog.tsx` — bookstore, P2.10.
 
 ### Code phải xoá, không phải migrate
 

@@ -1,3 +1,16 @@
+// The eight `*Details` blocks the feed echoes are re-used from `features/posts` rather than
+// re-typed here: those are derived from `schema.gen.ts`, and a second hand-written copy is
+// exactly the drift this migration is removing. Direction is legacy -> feature barrel, which
+// is the one that survives (P2.5 moves the feed types into `features/newsfeed` entirely).
+import type {
+  ArticleDetails,
+  CodeSnippetDetails,
+  LinkDetails,
+  PollDetails,
+  QnaDetails,
+  QuizDetails,
+} from '@/features/posts';
+
 // ─── Auth ────────────────────────────────────────────────────────────────────
 
 export interface LoginRequest {
@@ -174,7 +187,18 @@ export type LocationType = 'COORDINATE' | 'PLACE' | 'REGION';
 
 export type PostVisibility = 'PUBLIC' | 'FRIENDS' | 'PRIVATE';
 
-export type PostType = 'REGULAR' | 'EVENT' | 'BOOK';
+// All eight backend values. This said `'REGULAR' | 'EVENT' | 'BOOK'` until P2.4'd — the legacy
+// composer only wrote those three, but the feed has always been able to hand back the other
+// five, so posts created by the new composer were typed as impossible while rendering fine.
+export type PostType =
+  | 'REGULAR'
+  | 'EVENT'
+  | 'BOOK'
+  | 'CODE_SNIPPET'
+  | 'ARTICLE'
+  | 'QNA'
+  | 'POLL'
+  | 'LINK';
 
 // Field name matches the backend's @JsonProperty("display_name") on LocationDetails exactly —
 // this type is meant to be passed straight through unchanged from the resolve response into
@@ -308,49 +332,18 @@ export interface UpdatePostRequest {
   taggedUserIds?: number[];
 }
 
-export type ReactionType = 'LIKE' | 'LOVE' | 'HAHA' | 'CRY' | 'ANGRY';
-
-export interface UpsertReactionRequest {
-  reactionType: ReactionType;
-}
-
-// Wire shape of GET /v1/api/posts/{postId}/reactions/me — reactionType is null
-// when the current user hasn't reacted to the post.
-export interface MyReactionResponse {
-  reactionType: ReactionType | null;
-}
-
-export interface CreateCommentRequest {
-  content: string;
-  parentId?: number;
-}
-
-export interface UpdateCommentRequest {
-  content: string;
-}
-
-/** @deprecated Backend now exposes GET /posts/{postId}/comments — use CommentResponse via useComments instead. */
-export interface SessionComment {
-  id: string;
-  content: string;
-  authorFullName: string;
-  authorProfilePictureUrl: string;
-  createdAt: string;
-}
-
-// Wire shape of GET /v1/api/posts/{postId}/comments (CommentResponseDto). Flat list ordered
-// by createdAt asc — thread replies client-side via parentId (replies are one level deep only).
-export interface CommentResponse {
-  id: number;
-  postId: number;
-  authorId: number;
-  authorFullName: string | null;
-  authorProfilePictureUrl: string | null;
-  content: string;
-  parentId: number | null;
-  createdAt: string;
-  updatedAt: string;
-}
+/*
+ * REMOVED AT P2.4'd, with the legacy card and `lib/api/posts.ts` that were their only
+ * consumers: `ReactionType`, `UpsertReactionRequest`, `MyReactionResponse`,
+ * `CreateCommentRequest`, `UpdateCommentRequest`, `CommentResponse` and `SessionComment`.
+ * `features/posts/types` owns all of them now, derived from `schema.gen.ts` instead of
+ * hand-written here.
+ *
+ * `SessionComment` was the odd one out and is worth a sentence: it existed because the old
+ * card could write comments but never read them, so a comment you had just posted lived only
+ * in component state and vanished on reload. `CommentThread` reads the real list, so the type
+ * has nothing left to describe.
+ */
 
 export interface PostAuthor {
   fullname: string;
@@ -420,6 +413,22 @@ export interface FeedBookSummary {
   reviewCount: number;
 }
 
+/**
+ * The feed entry, mirroring `FeedPostDataDto` (backend package `com.socialapp.newsfeed`).
+ *
+ * EIGHT FIELDS WERE ADDED AT P2.4'd, and their absence was a silent data loss rather than a
+ * cosmetic gap: `authorEliteScore`, `hashtags`, `quizDetails` and the five detail blocks have
+ * been in the payload all along, but nothing here declared them, so TypeScript reported them
+ * as non-existent and every consumer read `undefined`. The read side of a post could not have
+ * been built at all without them.
+ *
+ * Nullable rather than optional throughout, for the reason recorded in `findings/posts.md`:
+ * Jackson runs at its default `ALWAYS` inclusion, so the keys are present with `null` values.
+ * Declaring them optional would make `=== undefined` look like a valid check and be wrong on
+ * every request.
+ *
+ * P2.5 replaces this with `features/newsfeed/types`, derived from `schema.gen.ts`.
+ */
 export interface FeedPostData {
   postId: number;
   authorId: number;
@@ -428,6 +437,8 @@ export interface FeedPostData {
   // NOTE: backend doesn't return this yet (job title is currently only decodable from the
   // viewer's own JWT, not per-author on the feed) — renders nothing until it's added.
   authorJobTitle?: string | null;
+  // Elite Score, embedded here so a card never has to call the reputation endpoint per author.
+  authorEliteScore: number | null;
   content: string;
   visibility: PostVisibility;
   googlePlaceId: string | null;
@@ -437,6 +448,13 @@ export interface FeedPostData {
   postType: PostType;
   eventDetails: EventDetails | null;
   book: FeedBookSummary | null;
+  quizDetails: QuizDetails | null;
+  codeSnippetDetails: CodeSnippetDetails | null;
+  articleDetails: ArticleDetails | null;
+  qnaDetails: QnaDetails | null;
+  pollDetails: PollDetails | null;
+  linkDetails: LinkDetails | null;
+  hashtags: string[] | null;
   createdAt: string;
   likeCount: number;
   commentCount: number;

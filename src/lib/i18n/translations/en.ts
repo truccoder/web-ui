@@ -394,15 +394,35 @@ export const en = {
   },
 
   post: {
-    like: 'Like',
-    comment: 'Comment',
-    share: 'Share',
     justNow: 'Just now',
     minutesAgo: '${minutes}m ago',
     hoursAgo: '${hours}h ago',
     daysAgo: '${days}d ago',
     unknownAuthor: 'Unknown author',
+    qna: {
+      accept: 'Accept answer',
+      acceptedAnswer: 'Accepted answer',
+    },
+    quiz: {
+      title: 'Quiz',
+      submit: 'Submit answers',
+      score: '${score}/${total} correct',
+      resultNotSaved: 'This result is not saved — it disappears when you leave the page.',
+    },
+    edit: {
+      edit: 'Edit',
+      save: 'Save changes',
+      content: 'Content',
+      delete: 'Delete',
+      deleteConfirm: 'Delete this post?',
+      pendingReview:
+        'Saving sends the post back through review — it may briefly disappear from the feed.',
+    },
     comments: {
+      // The feed's toggle, not the thread's: `CommentThread` fetches on mount, so the feed
+      // decides when it exists at all.
+      show: 'Comments',
+      hide: 'Hide comments',
       empty: 'No comments yet',
       loadFailed: 'Could not load comments',
       reply: 'Reply',
@@ -437,7 +457,6 @@ export const en = {
     openInMaps: 'Open in Google Maps',
     commentCount: '${count} comments',
     commentPlaceholder: 'Write a comment...',
-    olderCommentsHidden: 'Earlier comments aren’t available to view yet.',
     send: 'Send',
     event: {
       status: {

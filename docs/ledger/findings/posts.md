@@ -3,6 +3,51 @@
 Một file cho mỗi domain: phiên làm việc chỉ đọc file của domain đang làm.
 Quay lại [`fe-migration-ledger.md`](../../fe-migration-ledger.md).
 
+- **LỖI BE NẶNG NHẤT CỦA CHU KỲ 2: feed KHÔNG BAO GIỜ echo 6 khối details** (đo ở P2.4′d, đây là
+  phát hiện chi phối cả checkpoint). `NewsfeedService.fanOutPost(Integer postId)` dựng
+  `FeedPostDataDto` bằng builder và **chỉ set `eventDetails` + `book`** —
+  `codeSnippetDetails` `articleDetails` `qnaDetails` `pollDetails` `linkDetails` `quizDetails`
+  không có dòng nào. Mà **mọi** đường publish đều đi qua đúng hàm này (`PostService.createPost`,
+  `updatePost`, `ModerationEventListener`, `AdminModerationService.reviewPost`), nên **không tồn tại
+  bài nào trong feed có 6 field đó khác null**. Đo trực tiếp trong Redis: post QNA có
+  `qna_details` đầy đủ trong Postgres, entry cache là `"qnaDetails":null`.
+
+  Bốn hệ quả, đều đã xử lý ở FE chứ không phải chỉ ghi chú:
+  1. **5/7 khối body không thể render từ feed** (`CodeSnippetBody` `ArticleBody` `QnaBody`
+     `PollBody` `LinkBody`) và **`QuizTaker` không bao giờ xuất hiện**. Code map đã dựng đúng và
+     sẽ sống dậy nguyên vẹn khi BE sửa — không có gì phải sửa lại ở FE.
+  2. **Sửa bài của 5 loại đó sẽ XOÁ khối định nghĩa chúng.** `updatePost` ghi cả object và copy
+     null, mà bên gọi chỉ gửi lại được thứ payload đưa cho nó. Đây là **cùng một lỗi** với
+     `images`/`taggedUserIds` đã biết, chỉ khác là nó ăn vào dữ liệu người dùng thật sự tạo ra.
+     → thêm prop `PostMenu.canEdit`, `FeedPost` tắt nút Sửa cho 5 loại này. Xoá vẫn giữ (không
+     mất gì ngoài thứ được yêu cầu). **Lỗ không bịt được**: quiz gắn được vào _bất kỳ_ loại nào,
+     mà payload luôn nói `null` → không phân biệt được bài có quiz với bài không, nên sửa một bài
+     REGULAR có quiz vẫn mất quiz.
+  3. **`acceptedAnswerId` không đọc lại được** → nút "Chọn làm đáp án" không tự rút sau khi chọn,
+     bấm lần hai là 400 **im lặng**. → `CommentThread` nhớ `acceptedInSession`; prop vẫn được ưu
+     tiên nên khi BE sửa thì code tự chuyển về nguồn bền vững, không có nhánh thứ hai. Reload vẫn
+     hiện lại nút — giới hạn thật, không giấu.
+  4. `PostEditorState` đủ key **vẫn có giá trị**: nó chặn được lỗi của FE. Cái nó không chặn được
+     là BE gửi thiếu — type không biết `null` là "thật sự null" hay "không được gửi".
+
+  **Sửa đúng ở BE**: thêm 6 dòng `.xxxDetails(post.getXxxDetails())` vào builder trong `fanOutPost`.
+
+- **LỖI BE: `likeCount` và `commentCount` trong feed vĩnh viễn 0** (đo ở P2.4′d). Không chỉ là
+  "không cập nhật ngay" như ghi chú cũ ngụ ý — **không ai từng ghi hai field đó**: `fanOutPost`
+  không set (nên nhận giá trị mặc định của `int`), và `updatePostCache` — hàm duy nhất trong BE
+  có thể sửa entry đã cache — **không có caller nào trong toàn bộ codebase**. Đo thật: đăng một
+  bình luận thành công xong, entry Redis vẫn `"commentCount":0`.
+  → FE **không render số nào** (ds-deviation #19). Ghi chú cũ "tổng chỉ nhúc nhích khi refetch
+  feed" là **sai**: refetch bao nhiêu lần cũng vẫn 0.
+
+- **Sửa bài đẩy bài QUA KIỂM DUYỆT LẠI và bài biến khỏi feed một lúc** (đo ở P2.4′d).
+  `PostService.updatePost` khi moderation bật: set `PENDING_MODERATION` → `removePost` (gỡ khỏi
+  feed của tác giả **và mọi bạn bè**) → publish sự kiện review. Bài chỉ trở lại sau khi Gemini
+  duyệt xong (đo được ~1 phút). Tác giả bấm Lưu rồi thấy bài **biến mất** sẽ tưởng mình vừa xoá
+  nhầm → `PostEditor` có dòng `post.edit.pendingReview` nói trước, cùng lý do với banner của
+  composer. Kèm theo: `processHashtags` chạy lại trên nội dung mới, nên **hashtag được suy lại từ
+  content** — sửa nội dung bỏ mất `#tag` là mất hashtag, đúng thiết kế BE.
+
 - **Chu kỳ 2 — 5 phát hiện của tầng data (P2.4′a), tất cả ảnh hưởng tới UI b/c/d:**
   1. **Thread chỉ SÂU 2 TẦNG.** `CommentService.validateParentComment` ném
      _"Replies can only be made to top-level comments"_ khi parent đã có `parentId`. Trả lời
@@ -80,7 +125,7 @@ Quay lại [`fe-migration-ledger.md`](../../fe-migration-ledger.md).
   | c-1′b ✅ | `PollBody` `BookBody` `EventBody`                                  | — (render payload feed)                       |
   | c-2 ✅   | `ReactionBar` (5 toggle inline)                                    | getMyReaction · upsert · remove               |
   | c-3 ✅   | `CommentThread` `CommentItem` `CommentComposer`                    | 4 ep CommentController                        |
-  | c-4      | nợ c-5 chu kỳ 1: `QuizTaker`, sửa/xoá bài, chọn đáp án             | submitQuiz · updatePost · deletePost · accept |
+  | c-4 ✅   | `QuizTaker` `PostEditor` `PostMenu` + accept trong thread          | submitQuiz · updatePost · deletePost · accept |
 
   **Vì sao tách c-1 thành c-1 + c-1′** (phát hiện lúc đọc `FeedPostDataDto`, trước khi viết code):
   payload feed mang **8 khối details** (event/book/quiz/codeSnippet/article/qna/poll/link). Dựng
@@ -117,6 +162,32 @@ Quay lại [`fe-migration-ledger.md`](../../fe-migration-ledger.md).
   - **So với specimen DS đã render** (`display.card.html`): thứ tự doctrine avatar → tên → rep →
     time khớp. Ba khác biệt nhìn thấy đều là deviation **đã ghi từ trước** (#5 màu avatar, #11 chip
     không có levelName, #17 không có pill expertise). Một khác biệt chưa ghi → thành **#18**.
+
+- **`acceptAnswer` KHÔNG BAO GIỜ set `isResolved` — lỗi thật, đã sửa ở FE** (P2.4′c-4).
+  `PostService.acceptAnswer` chỉ `qnaDetails.setAcceptedAnswerId(commentId)`. Đo trên DB ngay
+  sau khi bấm: `{"isResolved": false, "acceptedAnswerId": 61}`. Mà `PostComposer` luôn tạo bài
+  QNA với `isResolved: false` và **không đường nào khác ghi field đó** → `isResolved` vĩnh viễn
+  false. Bản `QnaBody` đầu tiên (c-1′a) đọc đúng field đó, tức **mọi câu hỏi đã có đáp án vẫn bị
+  gắn nhãn "Chưa có đáp án"**. Đã sửa: `resolved = isResolved === true || acceptedAnswerId != null`.
+- **Chọn đáp án là MỘT LẦN, không đổi được** (P2.4′c-4). `acceptAnswer` ném
+  _"An answer has already been accepted for this post"_ khi `acceptedAnswerId` đã có, và **không
+  có endpoint gỡ hay đổi**. Bản đầu chỉ ẩn nút trên đúng comment được chọn → các comment khác vẫn
+  còn nút, bấm là 400. Đã sửa ở `CommentThread`: `acceptedAnswerId != null` thì **thu hồi handler
+  khỏi toàn bộ thread**.
+- **`PostEditorState`: bắt buộc mọi key ở tầng type, vì thiếu key là MẤT DỮ LIỆU** (P2.4′c-4).
+  `updatePost` dùng `BeanUtils.copyProperties` copy cả null, mà `UpdatePostRequest` để mọi field
+  optional nên caller quên `quizDetails` vẫn compile. **Đo thật, không phải lo xa**: lần sửa đầu
+  với `current` thiếu field đã **xoá sạch `quiz_details` và reset `acceptedAnswerId`** của post 121. Sau khi siết type thành `{[K in keyof Required<UpdatePostRequest>]: UpdatePostRequest[K]}`
+  (key bắt buộc, value vẫn cho `undefined`), preview **không compile được** cho tới khi liệt kê
+  đủ 14 field — rồi sửa lại với state đầy đủ thì **quiz và acceptedAnswerId đều sống sót**.
+  Hai field **không cứu được**: `images` và `taggedUserIds` có trong DTO update nhưng
+  `FeedPostDataDto` không echo → mọi lần sửa đều null chúng. Hiện vô hại vì `PostComposer` chưa
+  bao giờ ghi hai field này; sửa đúng là BE echo chúng ra payload feed.
+- **Đáp án quiz lộ TRƯỚC khi nộp, không chỉ sau** (P2.4′c-4 — nặng hơn ghi chú cũ).
+  `QuizQuestion.correctOptionIndex` nằm **trong chính payload feed**, nên đọc devtools là biết
+  đáp án trước khi trả lời; `QuizResultResponseDto.correctAnswers` chỉ là lần lộ thứ hai. FE
+  không bịt được cả hai. `QuizTaker` vì vậy không diễn trò giấu, và có ghi rõ "kết quả không
+  được lưu" vì **không có endpoint đọc lại lần làm trước**.
 
 - **Thread comment: 4 quyết định + 1 lỗi verify bắt được** (P2.4′c-3):
   - **"Trả lời" CHỈ có trên comment gốc.** BE chặn reply-của-reply, nên hoặc là không mời, hoặc
@@ -217,6 +288,16 @@ Quay lại [`fe-migration-ledger.md`](../../fe-migration-ledger.md).
     thread — đánh dấu đáp án là việc của c-4.
   - Cả 4 khối đều **render `null` khi rỗng**. BE không validate 4 loại này (`BeanUtils` copy
     thẳng), nên block rỗng tới được feed thật; để lại khung trống trông như lỗi render.
+
+- **Cách dựng dữ liệu test KHÔNG chạm vào Gemini** (dùng ở P2.4′d, nên dùng lại). Bẫy tự-ban 7 ngày
+  ở `session-constants` là do post đi qua đường tạo bình thường rồi bị Gemini chấm sai. Đường vòng
+  an toàn: `INSERT` thẳng vào `t_posts` với `moderation_status='PENDING_REVIEW'` → tạm cho seed user
+  `role='ADMIN'` → đăng nhập lấy token → `POST /v1/api/admin/moderation/posts/{id}/review` với
+  `{"decision":"VERY_UNLIKELY"}` → **trả role về USER**. Duyệt tay gọi đúng `fanOutPost`, nên payload
+  feed do **chính BE dựng** chứ không phải JSON tự chế; `VERY_UNLIKELY` không ghi violation nào.
+  Lưu ý: **feed đọc 100% từ Redis, không có fallback DB** (`getFeed` trả rỗng khi zset rỗng) — nên
+  insert SQL suông sẽ không bao giờ hiện, và ngược lại xoá post bằng SQL để lại **bài ma** trong
+  cache (dọn bằng `DEL feed:<uid>` + `feedpost:*`).
 
 - **`PostCard` KHÔNG nhận DTO của feed — nhận props đã tách** (chốt P2.4′c-1, user chọn phương án
   này). `FeedPostDataDto` nằm ở package BE `com.socialapp.newsfeed`, nên type FE của nó thuộc

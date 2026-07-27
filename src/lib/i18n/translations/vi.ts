@@ -397,15 +397,32 @@ export const vi: Messages = {
   },
 
   post: {
-    like: 'Thích',
-    comment: 'Bình luận',
-    share: 'Chia sẻ',
     justNow: 'Vừa xong',
     minutesAgo: '${minutes} phút trước',
     hoursAgo: '${hours} giờ trước',
     daysAgo: '${days} ngày trước',
     unknownAuthor: 'Tác giả không xác định',
+    qna: {
+      accept: 'Chọn làm đáp án',
+      acceptedAnswer: 'Đáp án được chọn',
+    },
+    quiz: {
+      title: 'Trắc nghiệm',
+      submit: 'Nộp bài',
+      score: 'Đúng ${score}/${total}',
+      resultNotSaved: 'Kết quả này không được lưu — rời trang là mất.',
+    },
+    edit: {
+      edit: 'Sửa',
+      save: 'Lưu thay đổi',
+      content: 'Nội dung',
+      delete: 'Xoá',
+      deleteConfirm: 'Xoá bài này?',
+      pendingReview: 'Lưu xong bài sẽ qua kiểm duyệt lại — có thể tạm biến khỏi bảng tin một lúc.',
+    },
     comments: {
+      show: 'Bình luận',
+      hide: 'Ẩn bình luận',
       empty: 'Chưa có bình luận',
       loadFailed: 'Không tải được bình luận',
       reply: 'Trả lời',
@@ -440,7 +457,6 @@ export const vi: Messages = {
     openInMaps: 'Mở trong Google Maps',
     commentCount: '${count} bình luận',
     commentPlaceholder: 'Viết bình luận...',
-    olderCommentsHidden: 'Chưa thể xem các bình luận trước đó.',
     send: 'Gửi',
     event: {
       status: {

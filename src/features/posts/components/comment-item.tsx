@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Button, DeveloperIdentity, DeveloperMeta } from '@/shared/components';
+import { Badge, Button, DeveloperIdentity, DeveloperMeta } from '@/shared/components';
 import { useT } from '@/lib/i18n';
 import { cn } from '@/shared/lib/cn';
 import { formatDateTime, useIntlLocale } from '../lib/format';
@@ -37,6 +37,13 @@ export interface CommentItemProps {
   onReply?: (parentId: number) => void;
   onEdit: (commentId: number, content: string) => void;
   onDelete: (commentId: number) => void;
+  /**
+   * Offered only on a QNA post, and only to the post's author — `acceptAnswer` throws for
+   * anyone else and for any other post type. Undefined hides the control entirely.
+   */
+  onAcceptAnswer?: (commentId: number) => void;
+  /** This comment is the post's accepted answer (`QnaDetails.acceptedAnswerId`). */
+  isAcceptedAnswer?: boolean;
   pendingCommentId?: number | null;
   editError?: string | null;
   className?: string;
@@ -49,6 +56,8 @@ export function CommentItem({
   onReply,
   onEdit,
   onDelete,
+  onAcceptAnswer,
+  isAcceptedAnswer = false,
   pendingCommentId,
   editError,
   className,
@@ -92,7 +101,24 @@ export function CommentItem({
           </p>
 
           <div className="flex flex-wrap items-center gap-1">
+            {/* Marked before the buttons: on a resolved question this is the first thing a
+                reader is looking for. */}
+            {isAcceptedAnswer && (
+              <Badge dot variant="success">
+                {t('post.qna.acceptedAnswer')}
+              </Badge>
+            )}
+
             {edited && <DeveloperMeta>{t('post.comments.edited')}</DeveloperMeta>}
+
+            {/* The thread already withholds `onAcceptAnswer` once any answer is accepted
+                (accepting is once-only server-side), so this only guards the rare case of a
+                caller wiring the two props inconsistently. */}
+            {onAcceptAnswer && !isAcceptedAnswer && (
+              <Button size="sm" variant="ghost" onClick={() => onAcceptAnswer(comment.id)}>
+                {t('post.qna.accept')}
+              </Button>
+            )}
 
             {onReply && (
               <Button size="sm" variant="ghost" onClick={() => onReply(comment.id)}>
