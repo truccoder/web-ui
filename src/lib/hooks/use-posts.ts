@@ -5,21 +5,22 @@ import { toast } from 'sonner';
 import { postsApi } from '@/lib/api/posts';
 import { newsfeedApi } from '@/lib/api/newsfeed';
 import { getErrorMessage } from '@/lib/api/error';
-import type {
-  CreatePostRequest,
-  UpdatePostRequest,
-  PostLocation,
-  CreateBookRequest,
-  CreateCommentRequest,
-  UpdateCommentRequest,
-  ReactionType,
-} from '@/lib/types';
+import type { CreateCommentRequest, UpdateCommentRequest, ReactionType } from '@/lib/types';
 
 const PAGE_SIZE = 10;
 
+/**
+ * The feed's cache key, exported so the one cross-domain invalidator that needs it
+ * (`app/(main)/newsfeed/page.tsx`, refreshing after `features/posts` creates a post) imports it
+ * instead of repeating the literal. P2.5 replaces this whole hook with `features/newsfeed`, and
+ * the import breaking is the point: a magic string would have gone on compiling while quietly
+ * matching nothing.
+ */
+export const NEWSFEED_QUERY_KEY = ['newsfeed'] as const;
+
 export function useNewsfeed() {
   return useInfiniteQuery({
-    queryKey: ['newsfeed'],
+    queryKey: NEWSFEED_QUERY_KEY,
     queryFn: ({ pageParam = 1 }) =>
       newsfeedApi.getFeed(pageParam as number, PAGE_SIZE).then((r) => r.data),
     initialPageParam: 1,
@@ -27,122 +28,16 @@ export function useNewsfeed() {
   });
 }
 
-export interface CreatePostInput {
-  content: string;
-  location?: PostLocation;
-  images?: string[];
-  taggedUserIds?: number[];
-  postType?: CreatePostRequest['postType'];
-  eventDetails?: CreatePostRequest['eventDetails'];
-  visibility?: CreatePostRequest['visibility'];
-}
-
-function toCreatePostRequest(input: CreatePostInput): CreatePostRequest {
-  const loc = input.location;
-  return {
-    content: input.content,
-    googlePlaceId: loc?.googlePlaceId,
-    locationType: loc?.locationType,
-    locationDetails:
-      loc?.locationDetails ??
-      (loc
-        ? {
-            display_name: loc.displayName,
-            latitude: loc.latitude,
-            longitude: loc.longitude,
-            city: loc.city,
-            country: loc.country,
-          }
-        : undefined),
-    images: input.images,
-    taggedUserIds: input.taggedUserIds,
-    postType: input.postType,
-    eventDetails: input.eventDetails,
-    visibility: input.visibility,
-  };
-}
-
-export function useCreatePost() {
-  const qc = useQueryClient();
-
-  return useMutation({
-    mutationFn: (input: CreatePostInput) =>
-      postsApi.createPost(toCreatePostRequest(input)).then((r) => r.data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['newsfeed'] });
-      toast.success('Post submitted! It will appear in the feed once it passes review.');
-    },
-    onError: (error) => {
-      toast.error(getErrorMessage(error, 'Failed to create post'));
-    },
-  });
-}
-
-export interface CreateBookPostInput {
-  content: string;
-  location?: PostLocation;
-  taggedUserIds?: number[];
-  visibility?: CreatePostRequest['visibility'];
-  bookDetails: CreateBookRequest;
-  bookFile: File;
-  coverFile?: File;
-}
-
-export function useCreateBookPost() {
-  const qc = useQueryClient();
-
-  return useMutation({
-    mutationFn: (input: CreateBookPostInput) => {
-      const metadata = toCreatePostRequest({
-        content: input.content,
-        location: input.location,
-        taggedUserIds: input.taggedUserIds,
-        visibility: input.visibility,
-        postType: 'BOOK',
-      });
-      metadata.bookDetails = input.bookDetails;
-      return postsApi.createBookPost(metadata, input.bookFile, input.coverFile).then((r) => r.data);
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['newsfeed'] });
-      toast.success('Book submitted! It will appear in the feed once it passes review.');
-    },
-    onError: (error) => {
-      toast.error(getErrorMessage(error, 'Failed to create book post'));
-    },
-  });
-}
-
-export function useUpdatePost() {
-  const qc = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ postId, payload }: { postId: number; payload: UpdatePostRequest }) =>
-      postsApi.updatePost(postId, payload).then((r) => r.data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['newsfeed'] });
-      toast.success('Post updated. It has been pulled from feeds until it passes re-review.');
-    },
-    onError: (error) => {
-      toast.error(getErrorMessage(error, 'Failed to update post'));
-    },
-  });
-}
-
-export function useDeletePost() {
-  const qc = useQueryClient();
-
-  return useMutation({
-    mutationFn: (postId: number) => postsApi.deletePost(postId).then((r) => r.data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['newsfeed'] });
-      toast.success('Post deleted');
-    },
-    onError: (error) => {
-      toast.error(getErrorMessage(error, 'Failed to delete post'));
-    },
-  });
-}
+/*
+ * REMOVED AT P2.4d: `useCreatePost`, `useCreateBookPost`, `useUpdatePost`, `useDeletePost`, and
+ * the `toCreatePostRequest` adapter that sat under them. All four are superseded by the
+ * `features/posts` hooks of the same names, which the new `PostComposer` and the temporary
+ * `CreateEventForm` now call.
+ *
+ * What is left in this file belongs to other domains or other cycles and therefore has no
+ * replacement to be deleted in favour of yet: `useNewsfeed` is the `newsfeed` domain (P2.5),
+ * reactions and comments are posts cycle 2 (P2.4'). Guardrail B — one domain, one checkpoint.
+ */
 
 // The viewer's current reaction on a post (null reactionType when none) — lets the UI
 // render the true prior state on load instead of toggling blind.
