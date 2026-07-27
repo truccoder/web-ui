@@ -33,6 +33,44 @@ Quay lại [`fe-migration-ledger.md`](../../fe-migration-ledger.md).
   `Comment` (DOM node); file quên import bản của ta vẫn compile qua global đó rồi hỏng ở chỗ
   chẳng liên quan. Tiền tố không tốn gì.
 
+- **ĐÍNH CHÍNH type của P2.4′a: field nullable phải là `| null`, KHÔNG phải `?:`** (sửa ngay ở
+  P2.4′b trước khi có consumer). `schema.gen.ts` khai mọi field optional, nhưng payload thật thì
+  khác: BE để Jackson ở mức mặc định `ALWAYS` (không cấu hình `NON_NULL`) nên
+  `authorFullName` / `authorProfilePictureUrl` / `parentId` về dưới dạng **`"parentId": null`,
+  key CÓ mặt**, không phải key thiếu. Khai `?:` sẽ khiến `=== undefined` trông như phép kiểm
+  đúng và sai mọi lần — cụ thể là **mọi comment gốc bị xếp nhầm thành reply**. `groupComments`
+  vì vậy dùng `== null` (lỏng) để sống sót cả nếu BE sau này bật `NON_NULL`.
+
+- **3 luật comment + cascade đã ĐO THẬT trên API** (P2.4′b, post id 1, user 9001), không còn là
+  suy luận từ đọc Java:
+
+  | thao tác                             | kết quả đo được                                                     |
+  | ------------------------------------ | ------------------------------------------------------------------- |
+  | trả lời một reply (`parentId`=reply) | **400** `"Replies can only be made to top-level comments"`          |
+  | `content` toàn khoảng trắng          | **400** `"Comment content must not be blank"`                       |
+  | xoá comment gốc có 1 reply           | 200, `t_comments` còn **0** dòng → **cascade có thật**              |
+  | `DELETE /reactions` khi chưa thả     | **404** `"Reaction not found for this post"`                        |
+  | `PUT /reactions` LIKE → LOVE         | 200 cả hai lần, `/me` trả đúng giá trị mới → upsert, không phải xoá |
+
+  Dev DB đã dọn sạch sau khi đo (`t_comments` = 0, không còn reaction).
+
+- **Reaction: optimistic CÓ, nhưng chỉ trên `myReaction`** (chốt P2.4′b). Bấm emoji là đúng ca
+  UX cần optimistic (nút phải sáng ngay dưới ngón tay), nên `useUpsertReaction` /
+  `useRemoveReaction` ghi thẳng `postKeys.myReaction(postId)` trong `onMutate` kèm snapshot để
+  rollback. **Không đụng con số tổng** — tổng nằm trong payload post của newsfeed/search, domain
+  khác, và endpoint này không bao giờ trả tổng mới. Hệ quả UI phải thiết kế theo: highlight đổi
+  tức thì còn con số chỉ nhúc nhích khi màn hình compose refresh feed; đừng dựng UI ngụ ý hai
+  thứ đó đi cùng nhau.
+  Vì hai hook này sở hữu context rollback nên `ReactionMutationOptions` **cắt `onMutate`** khỏi
+  options của caller (khác `PostMutationOptions` của chu kỳ 1, vốn passthrough tất): caller đưa
+  `onMutate` vào sẽ đè mất snapshot và rollback thành no-op. Cắt ở tầng type để lỗi đó không
+  compile được.
+
+- **`groupComments` nằm ở tầng state, không nằm trong component** (P2.4′b). Thread về dạng phẳng
+  kèm `parentId`, mà mọi surface hiển thị comment đều cần đúng một phép gom 2 tầng. Reply mồ côi
+  (parent không có trong list) được **đẩy lên thành gốc chứ không bị bỏ** — cascade khiến mồ côi
+  đáng lẽ không tồn tại, nên lặng lẽ drop là giấu bug chứ không phải dọn dữ liệu.
+
 - **Cách tách UI chu kỳ 1 (công bố ở P2.4c-1, trần 5 component/checkpoint):**
 
   | ID     | surface                                                      | endpoint                                         |

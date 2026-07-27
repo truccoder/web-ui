@@ -23,17 +23,21 @@ type Schemas = components['schemas'];
  *    one (measured: a freshly created comment came back with `updatedAt === createdAt`).
  *    Both tightened — but that also means `updatedAt !== createdAt` is the ONLY way to
  *    tell an edited comment apart; there is no `isEdited` flag.
- *  - `authorFullName` / `authorProfilePictureUrl` stay optional: `toResponseDto` writes
- *    null when the author row is missing (`authorsById.get` miss), and the picture column
- *    is nullable regardless (measured null on the seed user).
- *  - `parentId` stays optional — null means top-level.
+ *  - `authorFullName` / `authorProfilePictureUrl` / `parentId` are nullable, and they are
+ *    typed `| null` rather than `?:` on purpose. The generator writes every field optional,
+ *    but the wire payload disagrees: Jackson runs at its default `ALWAYS` inclusion (the
+ *    backend configures no `NON_NULL`), so these arrive as explicit
+ *    `"parentId": null`, not as missing keys — measured on a real response. Modelling them
+ *    optional would make `=== undefined` look like the right check and be wrong every time.
+ *    `parentId === null` means top-level; `toResponseDto` writes a null name when the
+ *    author row is missing, and the picture column is nullable regardless.
  */
 export type PostComment = Required<
   Omit<Schemas['CommentResponseDto'], 'authorFullName' | 'authorProfilePictureUrl' | 'parentId'>
 > & {
-  authorFullName?: string;
-  authorProfilePictureUrl?: string;
-  parentId?: number;
+  authorFullName: string | null;
+  authorProfilePictureUrl: string | null;
+  parentId: number | null;
 };
 
 /**
