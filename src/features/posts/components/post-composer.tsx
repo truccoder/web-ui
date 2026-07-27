@@ -1,37 +1,73 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
-import { BarChart3, Code2, FileText, HelpCircle, Link2, X } from 'lucide-react';
+import {
+  BarChart3,
+  BookOpen,
+  Code2,
+  FileText,
+  HelpCircle,
+  Link2,
+  ListChecks,
+  X,
+} from 'lucide-react';
 import { Avatar, Button, Card, Select, Textarea } from '@/shared/components';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { useMyProfile } from '@/features/security';
 import { useT } from '@/lib/i18n';
-import { useCreatePost } from '../hooks/use-post';
+import { useCreateBookPost, useCreatePost } from '../hooks/use-post';
 import type { LocationResolution } from '../types/location';
 import type {
   ArticleDetails,
   CodeSnippetDetails,
+  CreateBookRequest,
   CreatePostRequest,
   LinkDetails,
   PollDetails,
   PostType,
   PostVisibility,
+  QuizDetails,
 } from '../types/post';
 import { ArticleFields } from './article-fields';
+import {
+  BOOK_FILE_EXTENSIONS,
+  BOOK_FILE_MAX_BYTES,
+  BookPostFields,
+  bookFileExtension,
+} from './book-post-fields';
 import { CodeSnippetFields } from './code-snippet-fields';
 import { LinkFields, isValidLinkUrl } from './link-fields';
 import { LocationPicker } from './location-picker';
 import { PollFields, POLL_MIN_OPTIONS } from './poll-fields';
 import { QnaFields } from './qna-fields';
+import { QuizComposer, emptyQuiz, isQuizReady, normalizeQuiz } from './quiz-composer';
 
 /**
- * The post composer — `POST /v1/api/posts`. Cycle 1 covers six of the eight kinds:
- * `REGULAR` (P2.4c-1) plus `CODE_SNIPPET`, `ARTICLE`, `QNA`, `POLL` and `LINK` (P2.4c-3).
+ * The post composer. Cycle 1 covers seven of the eight kinds: `REGULAR` (P2.4c-1),
+ * `CODE_SNIPPET`, `ARTICLE`, `QNA`, `POLL`, `LINK` (P2.4c-3) and `BOOK` (P2.4c-4), plus the
+ * quiz attachment.
  *
- * `EVENT` AND `BOOK` ARE ABSENT ON PURPOSE, not forgotten. `BOOK` is rejected outright by
- * `createPost` ("Use POST /v1/api/posts/books") and arrives with its multipart fields in c-4;
- * `EVENT` belongs to cycle 3 (`EventController`). Offering either now would be a switcher entry
- * that cannot produce a post.
+ * TWO ENDPOINTS, NOT ONE. Six kinds go to `POST /v1/api/posts` as JSON. `BOOK` cannot:
+ * `PostService.createPost` throws a 400 the moment it sees `postType: 'BOOK'`, because a book
+ * post carries file parts and must go to `POST /v1/api/posts/books` as multipart. Which call
+ * `submit` makes is therefore decided by the selected kind, not by whether a file happens to be
+ * attached.
+ *
+ * `EVENT` IS STILL ABSENT ON PURPOSE — it belongs to cycle 3 (`EventController`), and a
+ * switcher entry that cannot produce a post is worse than no entry.
+ *
+ * THE QUIZ IS AN ATTACHMENT, NOT A KIND, because the backend models it that way: there is no
+ * `QUIZ` in `PostType`, and `validateQuizDetails` runs for any post carrying `quizDetails`. It
+ * sits beside the location picker for the same reason.
+ *
+ * THE LEGACY PDF PREVIEW IS NOT PORTED. The old book form rendered page one with `react-pdf`
+ * and counted the pages so the author could choose `previewPages` below the total (a rule
+ * `BookService.generatePreview` does enforce). It is cut for three reasons: it only ever worked
+ * for PDF, so the 400 stays reachable for EPUB and has to be handled well regardless; its
+ * pdf.js worker is fetched from `unpkg.com` at runtime, which puts a third-party CDN in the
+ * critical path of an app that otherwise speaks only to its own backend; and the server's error
+ * names the actual total, so recovery is one edit rather than a guess. Revisit if the backend
+ * ever reports a page count before upload.
  *
  * ONE STATE PER KIND, ONLY THE ACTIVE ONE SENT. `PostService.buildAndSavePost` copies the
  * request onto the entity with `BeanUtils.copyProperties`, which does not care whether a details
@@ -62,7 +98,7 @@ export interface PostComposerProps {
 const VISIBILITIES: PostVisibility[] = ['PUBLIC', 'FRIENDS', 'PRIVATE'];
 
 /** Kinds this composer can actually produce, in switcher order. `REGULAR` is the default state. */
-const SWITCHABLE_TYPES = ['CODE_SNIPPET', 'ARTICLE', 'QNA', 'POLL', 'LINK'] as const;
+const SWITCHABLE_TYPES = ['CODE_SNIPPET', 'ARTICLE', 'QNA', 'POLL', 'LINK', 'BOOK'] as const;
 type SwitchableType = (typeof SWITCHABLE_TYPES)[number];
 
 const TYPE_ICONS: Record<SwitchableType, ReactNode> = {
@@ -71,6 +107,7 @@ const TYPE_ICONS: Record<SwitchableType, ReactNode> = {
   QNA: <HelpCircle />,
   POLL: <BarChart3 />,
   LINK: <Link2 />,
+  BOOK: <BookOpen />,
 };
 
 const EMPTY_POLL: PollDetails = {
@@ -95,20 +132,65 @@ export function PostComposer({ onPosted }: PostComposerProps) {
   const [article, setArticle] = useState<ArticleDetails>({});
   const [poll, setPoll] = useState<PollDetails>(EMPTY_POLL);
   const [link, setLink] = useState<LinkDetails>({});
+  const [book, setBook] = useState<CreateBookRequest>({ title: '' });
+  const [bookFile, setBookFile] = useState<File | undefined>();
+  const [coverFile, setCoverFile] = useState<File | undefined>();
+  const [bookFileError, setBookFileError] = useState<string | undefined>();
 
-  const create = useCreatePost({
-    onSuccess: () => {
-      setContent('');
-      setLocation(undefined);
-      setPostType('REGULAR');
-      setCode({ language: 'plaintext', code: '' });
-      setArticle({});
-      setPoll(EMPTY_POLL);
-      setLink({});
-      setJustPosted(true);
-      onPosted?.();
-    },
-  });
+  // The quiz rides on any kind, so it is switched on separately from `postType`. `undefined`
+  // means no `quizDetails` key in the payload at all — which is what keeps
+  // `validateQuizDetails` from running.
+  const [quiz, setQuiz] = useState<QuizDetails | undefined>();
+
+  const reset = () => {
+    setContent('');
+    setLocation(undefined);
+    setPostType('REGULAR');
+    setCode({ language: 'plaintext', code: '' });
+    setArticle({});
+    setPoll(EMPTY_POLL);
+    setLink({});
+    setBook({ title: '' });
+    setBookFile(undefined);
+    setCoverFile(undefined);
+    setBookFileError(undefined);
+    setQuiz(undefined);
+    setJustPosted(true);
+    onPosted?.();
+  };
+
+  const create = useCreatePost({ onSuccess: reset });
+  const createBook = useCreateBookPost({ onSuccess: reset });
+
+  // One pair of flags for both calls: the form does not care which endpoint served it, only
+  // whether something is in flight and whether the last attempt failed.
+  const pending = create.isPending || createBook.isPending;
+  const error = create.error ?? createBook.error;
+
+  /**
+   * `BookService.validateFile` checks the **filename extension**, not the MIME type, and
+   * Spring's multipart config rejects anything over 20MB before the handler runs. Both are
+   * cheaper to catch here than after uploading.
+   */
+  const selectBookFile = (file?: File) => {
+    if (!file) {
+      setBookFile(undefined);
+      setBookFileError(undefined);
+      return;
+    }
+    if (!BOOK_FILE_EXTENSIONS.includes(bookFileExtension(file.name) as 'pdf' | 'epub')) {
+      setBookFile(undefined);
+      setBookFileError(t('createPost.book.fileInvalidFormat'));
+      return;
+    }
+    if (file.size > BOOK_FILE_MAX_BYTES) {
+      setBookFile(undefined);
+      setBookFileError(t('createPost.book.fileTooLarge'));
+      return;
+    }
+    setBookFile(file);
+    setBookFileError(undefined);
+  };
 
   const trimmed = content.trim();
   const firstName = profile?.fullName?.trim().split(/\s+/).pop() ?? '';
@@ -132,12 +214,23 @@ export function PostComposer({ onPosted }: PostComposerProps) {
         );
       case 'LINK':
         return isValidLinkUrl(link.url);
+      // The only branch whose conditions are real server rules rather than frontend manners:
+      // `validateBookDetails` demands a non-blank title, `validateFile` demands the file, and
+      // `buildAndSaveBook` demands `previewPages > 0` once a price is set.
+      case 'BOOK':
+        return (
+          (book.title ?? '').trim().length > 0 &&
+          bookFile !== undefined &&
+          bookFileError === undefined &&
+          ((book.price ?? 0) <= 0 || (book.previewPages ?? 0) > 0)
+        );
       default:
         return trimmed.length > 0;
     }
   })();
 
-  const canSubmit = isReady && !create.isPending;
+  // An attached quiz gates every kind, because `validateQuizDetails` runs for every kind.
+  const canSubmit = isReady && (quiz === undefined || isQuizReady(quiz)) && !pending;
 
   /** Exactly one details key, chosen by `postType` — see the note on `BeanUtils` above. */
   const detailsFor = (type: PostType): Partial<CreatePostRequest> => {
@@ -169,7 +262,8 @@ export function PostComposer({ onPosted }: PostComposerProps) {
   const submit = () => {
     if (!canSubmit) return;
     setJustPosted(false);
-    create.mutate({
+
+    const base: CreatePostRequest = {
       content: trimmed,
       visibility,
       postType,
@@ -182,8 +276,24 @@ export function PostComposer({ onPosted }: PostComposerProps) {
         locationType: location.locationType,
         locationDetails: location.locationDetails,
       }),
+      // Blank options are stripped and the correct index re-pointed at the same option before
+      // it leaves — see `normalizeQuiz`.
+      ...(quiz && { quizDetails: normalizeQuiz(quiz) }),
       ...detailsFor(postType),
-    });
+    };
+
+    if (postType === 'BOOK') {
+      // `bookFile` is non-null here: `isReady` already refused to let `canSubmit` be true
+      // without it, for the same reason the server refuses the call.
+      createBook.mutate({
+        metadata: { ...base, bookDetails: { ...book, title: (book.title ?? '').trim() } },
+        bookFile: bookFile!,
+        coverFile,
+      });
+      return;
+    }
+
+    create.mutate(base);
   };
 
   return (
@@ -223,11 +333,56 @@ export function PostComposer({ onPosted }: PostComposerProps) {
               {postType === 'QNA' && <QnaFields />}
               {postType === 'POLL' && <PollFields value={poll} onChange={setPoll} />}
               {postType === 'LINK' && <LinkFields value={link} onChange={setLink} />}
+              {postType === 'BOOK' && (
+                <BookPostFields
+                  value={book}
+                  onChange={setBook}
+                  bookFile={bookFile}
+                  coverFile={coverFile}
+                  onBookFileChange={selectBookFile}
+                  onCoverFileChange={setCoverFile}
+                  fileError={bookFileError}
+                />
+              )}
+            </div>
+          )}
+
+          {quiz && (
+            <div className="flex flex-col gap-3 rounded-nx-sm border border-nx-border-default bg-nx-surface-sunken p-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-nx-body-sm font-semibold text-nx-text-primary">
+                  {t('createPost.quiz.label')}
+                </span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  icon={<X />}
+                  onClick={() => setQuiz(undefined)}
+                  aria-label={t('createPost.quiz.remove')}
+                >
+                  {t('createPost.quiz.remove')}
+                </Button>
+              </div>
+
+              <QuizComposer value={quiz} onChange={setQuiz} />
             </div>
           )}
 
           <div className="flex flex-wrap items-center gap-2">
             <LocationPicker value={location} onChange={setLocation} />
+
+            {/* Beside the location picker rather than in the kind switcher: a quiz attaches to
+                any kind, so it is never an alternative to one. */}
+            {!quiz && (
+              <Button
+                size="sm"
+                variant="ghost"
+                icon={<ListChecks />}
+                onClick={() => setQuiz(emptyQuiz())}
+              >
+                {t('createPost.quiz.label')}
+              </Button>
+            )}
 
             {SWITCHABLE_TYPES.filter((type) => type !== postType).map((type) => (
               <Button
@@ -242,16 +397,16 @@ export function PostComposer({ onPosted }: PostComposerProps) {
             ))}
           </div>
 
-          {create.isError && (
+          {error && (
             <p
               role="alert"
               className="rounded-nx-sm bg-nx-status-danger-bg px-3 py-2 text-nx-body-sm text-nx-status-danger-fg"
             >
-              {getErrorMessage(create.error)}
+              {getErrorMessage(error)}
             </p>
           )}
 
-          {justPosted && !create.isPending && (
+          {justPosted && !pending && (
             <p className="rounded-nx-sm bg-nx-status-info-bg px-3 py-2 text-nx-body-sm text-nx-status-info-fg">
               {t('createPost.submittedPendingReview')}
             </p>
@@ -270,8 +425,10 @@ export function PostComposer({ onPosted }: PostComposerProps) {
               }))}
             />
 
-            <Button onClick={submit} disabled={!canSubmit} loading={create.isPending}>
-              {create.isPending ? t('createPost.posting') : t('createPost.post')}
+            <Button onClick={submit} disabled={!canSubmit} loading={pending}>
+              {/* A book post uploads a file, so it can be slow enough that "Posting..." is not
+                  enough of a signal on its own — the button also stays disabled throughout. */}
+              {pending ? t('createPost.posting') : t('createPost.post')}
             </Button>
           </div>
         </div>

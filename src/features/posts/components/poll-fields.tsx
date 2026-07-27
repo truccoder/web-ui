@@ -114,10 +114,12 @@ export function PollFields({ value, onChange }: PollFieldsProps) {
         )}
       </div>
 
-      <div className="flex flex-wrap items-end gap-3">
+      {/* Two columns from the parent, not from `w-auto` on the children: `Input`/`Select` are
+          `w-full` at their root and their `className` lands on the inner wrapper, so `w-auto`
+          never reaches the element that sets the width. Same fix as `book-post-fields`. */}
+      <div className="grid items-start gap-3 sm:grid-cols-2">
         <Select
           size="sm"
-          className="w-auto"
           label={t('createPost.poll.mode')}
           value={value.allowMultipleVotes ? 'multiple' : 'single'}
           onChange={(event) =>
@@ -132,7 +134,6 @@ export function PollFields({ value, onChange }: PollFieldsProps) {
         <Input
           size="sm"
           type="datetime-local"
-          className="w-auto"
           label={t('createPost.poll.endDate')}
           hint={t('createPost.poll.endDateHint')}
           value={value.endDate ? toLocalInput(value.endDate) : ''}

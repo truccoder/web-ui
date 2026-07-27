@@ -8,3 +8,4 @@ export { EmptyState, type EmptyStateProps } from './empty-state';
 export { Tabs, type TabsProps, type TabItem } from './tabs';
 export { Textarea, type TextareaProps } from './textarea';
 export { Select, type SelectProps, type SelectOption } from './select';
+export { Radio, type RadioProps } from './radio';

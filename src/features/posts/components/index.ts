@@ -9,3 +9,22 @@ export { ArticleFields, type ArticleFieldsProps } from './article-fields';
 export { QnaFields } from './qna-fields';
 export { PollFields, POLL_MIN_OPTIONS, type PollFieldsProps } from './poll-fields';
 export { LinkFields, isValidLinkUrl, type LinkFieldsProps } from './link-fields';
+
+// Book + quiz (P2.4c-4). The book fields feed `POST /posts/books`; the quiz is an attachment
+// that any kind may carry, which is why it is exported on its own rather than as a kind.
+export {
+  BookPostFields,
+  BOOK_FILE_EXTENSIONS,
+  BOOK_FILE_MAX_BYTES,
+  bookFileExtension,
+  type BookPostFieldsProps,
+} from './book-post-fields';
+export {
+  QuizComposer,
+  QUIZ_MIN_OPTIONS,
+  emptyQuiz,
+  emptyQuizQuestion,
+  isQuizReady,
+  normalizeQuiz,
+  type QuizComposerProps,
+} from './quiz-composer';
