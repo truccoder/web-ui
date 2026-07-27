@@ -3,6 +3,57 @@
 Một file cho mỗi domain: phiên làm việc chỉ đọc file của domain đang làm.
 Quay lại [`fe-migration-ledger.md`](../../fe-migration-ledger.md).
 
+- **Chu kỳ 3 — hợp đồng `EventController` ĐÃ ĐO THẬT trên API, 8/8** (P2.4″a, event post id 141,
+  seed user 9001, đã xoá sau khi đo). Không suy từ đọc Java:
+
+  | thao tác                                 | đo được                                                              |
+  | ---------------------------------------- | -------------------------------------------------------------------- |
+  | `GET /google/status` (chưa nối)          | `{"connected":false}`                                                |
+  | `GET /google/auth-url`                   | `{"authUrl":"…"}` — **`client_id=` RỖNG**, xem dưới                  |
+  | `POST /add-to-calendar` khi chưa nối     | **404** `"Google Calendar not connected. Please authorize first."`   |
+  | `POST /rsvp?status=GOING`                | 200, `attendees` 1 dòng, `count` 0 → 1                               |
+  | đổi `GOING` → `INTERESTED`               | 200, **vẫn 1 dòng** (upsert), `count` về **0** (count chỉ đếm GOING) |
+  | `rsvp` trên post không phải EVENT (id 1) | **400** `"Post is not an event"`                                     |
+  | `rsvp` thiếu `status`                    | **400** `"Missing required parameter 'status'"`                      |
+  | `rsvp?status=MAYBE`                      | **400** `"Invalid value 'MAYBE' for parameter 'status'"`             |
+  | `GOING` khi `maxAttendees=0`             | **400** `"Event is full"`; `INTERESTED`/`NOT_GOING` vẫn **200**      |
+  | `GET /export.ics` có Bearer              | 200 `text/calendar`, `Content-Disposition: attachment`               |
+  | `GET /export.ics` **không** Bearer       | **401**                                                              |
+
+- **`status` của RSVP là QUERY PARAM, không phải body** (`@RequestParam RsvpStatus status`). Gửi
+  JSON body sẽ ăn 400 `"Missing required parameter 'status'"` trước khi vào service.
+
+- **Không có endpoint "tôi RSVP gì" và không có đường HUỶ RSVP.** Khác reaction (có
+  `/reactions/me`), trạng thái của chính người xem chỉ suy được bằng cách lấy `/attendees` rồi tìm
+  `userId` của mình — việc của tầng state (P2.4″b). Và không có DELETE: gần nhất là `NOT_GOING`,
+  vẫn để lại một dòng trong danh sách. UI đừng vẽ nút "huỷ tham gia" kiểu toggle về trống.
+
+- **`/attendees` trả THẲNG JPA entity, chỉ có `userId` — không tên, không avatar.**
+  `List<EventRsvpEntity>`, không DTO. Mà BE **không có endpoint tra người theo id** (chỉ
+  `/profile/me`) → danh sách người tham gia **không hiển thị được danh tính**. Cùng họ giới hạn với
+  "không deep-link được profile người khác". Thêm nữa `findByPostId` **không lọc**: NOT_GOING và
+  INTERESTED nằm chung danh sách, chỉ `/attendees/count` mới thu về GOING.
+
+- **LỖI LEGACY: `getExportIcsUrl` dựng URL trần cho thẻ `<a>` → luôn 401.** Endpoint cần Bearer
+  (đã đo: có header 200, không header **401**) mà app để JWT trong localStorage, nên link/`window.open`
+  đi tay không. Không ai phát hiện vì Events có **0 UI** (legacy-inventory). Bản mới tải qua axios rồi
+  mới dựng Blob ở tầng component.
+
+- **Google Calendar KHÔNG cấu hình được ở môi trường local**: `client_id` rỗng trong authUrl đo được
+  → bấm "kết nối" sẽ tới trang lỗi của Google. Luồng nối lịch vì vậy **không verify end-to-end được**
+  ở P2.4″c/d; chỉ verify được nhánh chưa-nối (`connected:false` + 404 của add-to-calendar). Ghi nợ
+  trước để bước d không hứa thứ không đo được.
+
+- **LỖI BẢO MẬT BE (không phải FE sửa được): OAuth `state` là USER ID trần.**
+  `getAuthorizationUrl` đặt `state = String.valueOf(userId)`, còn `/events/google/callback` là
+  **`permitAll`** trong `SecurityConfig` và tin `state` là tài khoản để gắn token vào
+  (`Integer.parseInt(state)`). Nghĩa là bất kỳ ai cũng gọi được callback với `state=<id nạn nhân>` và
+  `code` của mình → gắn lịch của mình vào tài khoản người khác. `state` phải là nonce không đoán được,
+  gắn với phiên. FE **không được** tự sinh state để "vá" — BE bỏ qua giá trị đó.
+
+- **ICS BE dựng tay, thiếu `UID` và `DTSTAMP`** (RFC 5545 bắt buộc cả hai). Đo được thân file: chỉ có
+  VERSION/PRODID/DTSTART/DTEND/SUMMARY/DESCRIPTION/LOCATION. Importer chặt có thể từ chối.
+
 - **LỖI BE NẶNG NHẤT CỦA CHU KỲ 2: feed KHÔNG BAO GIỜ echo 6 khối details** (đo ở P2.4′d, đây là
   phát hiện chi phối cả checkpoint). `NewsfeedService.fanOutPost(Integer postId)` dựng
   `FeedPostDataDto` bằng builder và **chỉ set `eventDetails` + `book`** —

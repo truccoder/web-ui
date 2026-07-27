@@ -7,11 +7,16 @@
  * Cycle 1 (P2.4a) — core: post CRUD + accept-answer, location resolution, quiz submit.
  * Cycle 2 (P2.4′) — comments + reactions. Cycle 3 (P2.4″) — events.
  *
+ * `EventController` answers on `/v1/api/events`, which looks like it should be its own
+ * feature and must not become one: the path is the exception, the package is the rule
+ * (CLAUDE.md §4). An event is a post of type EVENT, and every event endpoint refuses a
+ * postId that is not one.
+ *
  * NOTE: this domain is **write-only**. There is no `GET /posts` and no `GET /posts/{id}` —
  * posts are read through `newsfeed` and `search`, which embed the post payload.
  */
 
-export { postsApi, locationApi, quizApi, commentsApi, reactionsApi } from './api';
+export { postsApi, locationApi, quizApi, commentsApi, reactionsApi, eventsApi } from './api';
 
 export {
   PostComposer,
@@ -123,4 +128,9 @@ export type {
   ReactionType,
   MyReaction,
   UpsertReactionRequest,
+  RsvpStatus,
+  EventRsvp,
+  AttendeeCount,
+  GoogleAuthUrl,
+  CalendarStatus,
 } from './types';
