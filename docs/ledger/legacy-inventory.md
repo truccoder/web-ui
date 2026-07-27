@@ -42,6 +42,33 @@ Cột "hook có UI dùng" đếm hook được import từ `app/` hoặc `compon
    **không** dùng `useComments`; comment vừa gõ chỉ nằm trong state `sessionComments`.
    Reload là mất. `GET /posts/{postId}/comments` có hàm API, có hook, không ai gọi.
 
+### Đã xoá ở P2.4d (composer của posts, chu kỳ 1)
+
+`/newsfeed` render `PostComposer` của `features/posts`. Xoá theo đó:
+
+| file / symbol                                                                                                                                                   | vì sao xoá được                                                                    |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `components/posts/create-post-form.tsx`                                                                                                                         | thay bằng `PostComposer`; nhánh EVENT được giữ lại (xem dưới), phần còn lại chết   |
+| `components/posts/pdf-preview.tsx`                                                                                                                              | đã quyết CẮT ở P2.4c-4 (react-pdf + worker CDN unpkg), 0 consumer sau khi xoá form |
+| `components/posts/location-picker.tsx`                                                                                                                          | thay bằng `LocationPicker` của `features/posts`                                    |
+| `components/posts/location-badge.tsx`                                                                                                                           | code chết từ trước (0 consumer), tự dựng lại URL Maps ở client                     |
+| `lib/hooks/use-posts.ts`: `useCreatePost` `useCreateBookPost` `useUpdatePost` `useDeletePost` + `toCreatePostRequest` + `CreatePostInput`/`CreateBookPostInput` | thay bằng hook cùng tên ở `features/posts`                                         |
+| `lib/api/posts.ts`: `createPost` `createBookPost` `updatePost` `deletePost`                                                                                     | thay bằng `features/posts/api/post.ts`                                             |
+
+**GIỮ LẠI có chủ đích, không phải sót:**
+
+- `components/posts/create-event-form.tsx` — **file mới, là cầu tạm**. `PostComposer` mới làm
+  7/8 loại; `EVENT` thuộc chu kỳ 3 (`P2.4″`). Xoá trọn form cũ sẽ **mất đường tạo post EVENT**
+  trong toàn app, nên nhánh EVENT được rút ra thành card riêng nằm dưới composer. Nó gọi
+  **hook và LocationPicker của `features/posts`** (đó là thứ cho phép xoá bản legacy cùng lúc);
+  chỉ các ô nhập còn là legacy. **P2.4″d xoá file này** cùng `event-datetime-picker.tsx`,
+  `event-location-input.tsx`, `event-datepicker.css`.
+- `lib/hooks/use-posts.ts` phần còn lại: `useNewsfeed` (domain `newsfeed`, P2.5), reaction +
+  comment (posts chu kỳ 2, P2.4′). Chưa có bản thay thế → Guardrail B cấm xoá.
+- `lib/types`: `PostLocation` nay không còn consumer ngoài `lib/types` nhưng vẫn bị `Post` và
+  `CreatePostPayload` (legacy, deprecated) tham chiếu. Dọn cùng đợt tháo `lib/types` khi posts
+  chu kỳ 2 xong, không tách lẻ ở đây.
+
 ### Code phải xoá, không phải migrate
 
 - `src/lib/api/social.ts` (7 hàm) + `src/lib/hooks/use-social.ts` (6 hook) — gọi

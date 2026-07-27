@@ -372,6 +372,8 @@ export const vi: Messages = {
       onlineUrl: 'Link trực tuyến (tuỳ chọn)',
       maxAttendees: 'Số người tham gia tối đa (tuỳ chọn)',
       cancel: 'Huỷ sự kiện',
+      contentPlaceholder: 'Nói thêm về sự kiện này (không bắt buộc)...',
+      bridgeNote: 'Sự kiện tạm thời tách riêng — sẽ gộp vào ô soạn bài ở trên.',
     },
     book: {
       button: 'Sách',

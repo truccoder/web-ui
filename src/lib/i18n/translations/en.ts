@@ -369,6 +369,8 @@ export const en = {
       onlineUrl: 'Online link (optional)',
       maxAttendees: 'Max attendees (optional)',
       cancel: 'Cancel event',
+      contentPlaceholder: 'Say more about this event (optional)...',
+      bridgeNote: 'Events are temporarily separate — they will move into the composer above.',
     },
     book: {
       button: 'Book',

@@ -17,6 +17,35 @@ Quay lại [`fe-migration-ledger.md`](../../fe-migration-ledger.md).
   post đã render để bám vào, mà **không có `GET /posts/{id}`** nên chỉ có thể lấy dữ liệu từ
   card trong feed — card thuộc chu kỳ 2. Đây là lý do UI không chia theo controller như data.
 
+- **Nối `onPosted` khi domain `newsfeed` chưa tồn tại — chốt ở P2.4d.** Hook của posts không tự
+  invalidate feed (quyết định cũ, vẫn giữ), nên bên compose phải làm. Bên compose _lẽ ra_ là
+  `features/newsfeed` gọi `newsfeedKeys.feed()`, nhưng P2.5 chưa bắt đầu và query feed vẫn nằm ở
+  `lib/hooks/use-posts.ts` dưới key phẳng `['newsfeed']`.
+  Cách đã chọn: **export `NEWSFEED_QUERY_KEY` từ chính file legacy đó**, page `/newsfeed` import
+  hằng số này rồi `invalidateQueries`. Không viết lại chuỗi `'newsfeed'` ở page — vì khi P2.5 xoá
+  hook legacy, **import gãy tiếng to** thay vì để lại một magic string vẫn compile mà lặng lẽ
+  không khớp key nào nữa. Đã cân nhắc đặt callback rỗng rồi chờ P2.5: như vậy bài vừa đăng không
+  bao giờ làm feed refresh, tức mất đúng thứ checkpoint này phải chứng minh là chạy.
+  **Chỗ sẽ đổi ở P2.5**: `app/(main)/newsfeed/page.tsx` — thay `NEWSFEED_QUERY_KEY` bằng
+  `newsfeedKeys.feed()`, xoá import legacy, xoá đoạn comment giải thích seam.
+
+- **Nhánh EVENT của composer legacy: rút thành `create-event-form.tsx`, KHÔNG xoá** (P2.4d).
+  `PostComposer` làm 7/8 loại; `EVENT` thuộc chu kỳ 3. Xoá trọn `create-post-form.tsx` sẽ xoá
+  luôn đường duy nhất tạo post EVENT trong app — một regression thật, không phải dọn dẹp. Nên
+  nhánh EVENT thành card riêng dưới composer, **cố tình xấu** để nhắc làm nốt chu kỳ 3.
+  Điểm đáng ghi: cầu tạm này dùng **hook + LocationPicker của `features/posts`**, không dùng bản
+  legacy. Nhờ vậy `useCreatePost`/`useCreateBookPost`/`toCreatePostRequest` và
+  `location-picker.tsx` legacy chết được ngay trong cùng checkpoint thay vì phải sống thêm một
+  chu kỳ nữa chỉ để phục vụ EVENT. Các ô nhập (`EventDateTimeFields`, `EventLocationInput`,
+  shadcn `Input`) **cố ý để nguyên legacy** — dựng lại bằng `shared/components` là việc của
+  chu kỳ 3, làm ở đây là nhét trọn một checkpoint UI vào một checkpoint wiring.
+
+- **Feed của BE có cache**: sau khi xoá sạch post test khỏi Postgres (còn đúng 2 bài seed),
+  `GET /v1/api/feed` vẫn trả về các bài đã xoá (id 91/75/73…, "58 phút trước"). Phát hiện ở
+  P2.4d khi đối chiếu SQL với UI. Hệ quả cho mọi lần verify sau: **UI không hiện bài mới ngay
+  không đủ để kết luận "đăng hỏng"**, và ngược lại bài còn hiện không có nghĩa DB còn hàng.
+  Kiểm bằng SQL, không kiểm bằng feed. (Bài mới thì vẫn lên đầu feed bình thường — đã đo.)
+
 - **`BOOK` là loại DUY NHẤT của chu kỳ 1 mà BE validate thật** (đo ở P2.4c-4, ngược hẳn với ghi
   chú "5 loại của c-3 không validate gì" ở dưới). Đã đo bằng API thật, đủ 5 luật:
 
