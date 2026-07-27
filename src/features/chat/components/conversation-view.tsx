@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { Avatar, EmptyState, Skeleton } from '@/shared/components';
 import { useT } from '@/lib/i18n';
@@ -33,6 +33,16 @@ export interface ConversationViewProps {
   onSend: (text: string) => Promise<void>;
   /** Rendered as a back arrow in the header when given — the mobile one-pane layout needs it. */
   onBack?: () => void;
+  /**
+   * Header controls for the caller's own frame, aligned right.
+   *
+   * A SLOT RATHER THAN BOOLEAN PROPS (`onMinimize`, `onClose`, ...): the buttons a conversation
+   * header carries depend entirely on what is framing it. `/chats` needs none — the pane is the
+   * page — while the floating window needs minimise and close. Encoding those two as props would
+   * mean a third prop the day a third frame appears; a slot costs the caller one line and this
+   * component nothing.
+   */
+  actions?: ReactNode;
   className?: string;
 }
 
@@ -57,6 +67,7 @@ export function ConversationView({
   error,
   onSend,
   onBack,
+  actions,
   className,
 }: ConversationViewProps) {
   const t = useT();
@@ -97,9 +108,10 @@ export function ConversationView({
         )}
 
         <Avatar src={header?.otherMemberImage ?? undefined} name={title} size="md" />
-        <span className="min-w-0 truncate text-nx-ui font-semibold text-nx-text-primary">
+        <span className="min-w-0 flex-1 truncate text-nx-ui font-semibold text-nx-text-primary">
           {title}
         </span>
+        {actions && <div className="flex shrink-0 items-center gap-0.5">{actions}</div>}
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-3 py-2">

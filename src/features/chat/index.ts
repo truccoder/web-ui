@@ -29,6 +29,10 @@ export {
 } from './hooks';
 
 export {
+  ChatDock,
+  type ChatDockProps,
+  FloatingChatWindow,
+  type FloatingChatWindowProps,
   ConversationSidebar,
   type ConversationSidebarProps,
   ConversationView,

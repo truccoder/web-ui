@@ -680,5 +680,7 @@ export const vi: Messages = {
     startFailed: 'Không mở được cuộc trò chuyện. Vui lòng thử lại.',
     peerNotReady:
       'Người này chưa dùng chat bao giờ nên chưa nhắn được. Nhờ họ mở mục Chats một lần.',
+    openChat: 'Mở chat',
+    expand: 'Mở lại cửa sổ chat',
   },
 };

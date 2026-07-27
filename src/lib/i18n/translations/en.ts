@@ -681,6 +681,8 @@ export const en = {
     startFailed: 'Could not open the conversation. Please try again.',
     peerNotReady:
       'This person has never used chat, so they cannot be messaged yet. Ask them to open Chats once.',
+    openChat: 'Open chat',
+    expand: 'Reopen chat window',
   },
 };
 

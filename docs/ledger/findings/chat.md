@@ -295,7 +295,11 @@ xong trong cùng một phiên, trước khi token được cấp lại).
 
 ## Trạng thái
 
-**P2.7a xong** (data + state, 1/1 endpoint, verify thật). Tiếp: **P2.7c-1** — UI màn `/chats`.
+**P2.7a + c-1 + c-2 xong.** Tiếp: **P2.7d** — mount `ChatClientProvider` trong
+`app/(main)/layout.tsx`, thay `ChatBox` bằng `ChatDock`, rewire `/chats` sang
+`ConversationSidebar`/`ConversationView`, rồi xoá legacy Twilio (`lib/twilio/` 4 file,
+`components/chat/` 6 file, `app/api/twilio/token`, 2 dep trong `package.json`, key i18n
+`chat.activeNow`).
 
 **Dữ liệu test còn lại trên Stream, cố ý giữ**: 1 channel `!members-yM_q3...` giữa 9001 và 9004,
 2 tin nhắn. Giữ làm fixture cho P2.7c-1 (không có nó thì màn hội thoại chỉ dựng được empty state).
@@ -393,3 +397,93 @@ bóng "người khác", cập nhật realtime và badge chưa đọc mà không 
 - Cửa sổ chat nổi của app shell (c-2) — sẽ dùng lại `MessageBubble` + `MessageComposer` +
   `ConversationView`, đó là lý do 3 component này nhận props thay vì tự gọi hook.
 - Trang `/chats` thật vẫn đang chạy bản Twilio; rewire + xoá legacy là **d**.
+
+---
+
+## P2.7c-2 — cửa sổ chat nổi của app shell (2026-07-28)
+
+**2 component mới, dưới trần**: `ChatDock` (nút mở + panel danh sách + hàng cửa sổ) và
+`FloatingChatWindow`. Không component nào bị chép lại: cửa sổ nổi **dùng thẳng**
+`ConversationView`, `ConversationSidebar`, `MessageBubble`, `MessageComposer` của c-1 — đúng lý do
+c-1 cho chúng nhận props thay vì tự gọi hook.
+
+Thứ duy nhất phải thêm vào component cũ là **một slot** `actions` trên `ConversationView` (header
+bên phải). Chọn slot chứ không phải hai prop `onMinimize`/`onClose`: nút nào có mặt trên header là
+việc của cái khung đang bọc nó — `/chats` không cần nút nào, cửa sổ nổi cần hai — và bộ prop kiểu
+đó sẽ đẻ thêm prop thứ ba vào ngày có khung thứ ba.
+
+### CÔNG BỐ: `ChatClientProvider` mount ở `app/(main)/layout.tsx`, mount **một lần**, ở **P2.7d**
+
+Đây là quyết định kiến trúc phải nói ở đầu bước chứ không quyết giữa chừng, vì hệ quả của nó là
+**mọi trang trong `(main)` đều mở websocket và gọi `/v1/api/chat/token`**.
+
+Vẫn chọn mount toàn cục, vì **không có cách nào khác giữ được hành vi đang có**: dock Twilio hiện
+hiển thị **tổng số tin chưa đọc trên mọi trang**. Badge đó chỉ sống được nếu connection sống trên
+mọi trang. Mount lười (chỉ connect khi bấm nút mở) sẽ giết badge — tức là hồi quy, Guardrail C.
+Đổi lại: một websocket + một request token cho mỗi phiên, không phải cho mỗi trang (React Query
+cache token, provider không remount khi điều hướng trong cùng layout).
+
+**Việc mount nằm ở P2.7d chứ không phải ở đây** vì đó là wiring: layout còn phải giữ
+`CommunicationProvider` cho tới khi `/chats` được rewire (trang đó gọi `useCommunication()`, gỡ
+provider ra là trang trắng). Gỡ Twilio và gắn Stream vào shell là **một** thao tác, thuộc **một**
+commit — tách đôi sẽ để lại một checkpoint trong đó cả hai nhà cung cấp cùng connect trên mọi trang.
+c-2 verify bằng route preview tạm tự bọc provider, y như c-1.
+
+### Hành vi legacy đã đối chiếu (Guardrail C)
+
+Đọc `components/chat/chat-box.tsx` + `communication-provider.tsx`, đây là toàn bộ hành vi đáng giữ:
+
+| hành vi legacy                                | bản Stream                                                   |
+| --------------------------------------------- | ------------------------------------------------------------ |
+| tối đa 3 cửa sổ (`.slice(-3)`)                | **giữ** — `MAX_WINDOWS = 3`, mở cái thứ 4 đẩy cái cũ nhất ra |
+| mở lại hội thoại đang mở → khôi phục          | **giữ** — dedupe theo id, không xếp chồng bản sao            |
+| thu nhỏ thành viên tròn avatar                | **giữ**                                                      |
+| đóng cửa sổ                                   | **giữ**                                                      |
+| ẩn toàn bộ dock khi đang ở `/chats`           | **giữ** — kiểm ngay trong `ChatDock`, xem dưới               |
+| badge tổng tin chưa đọc trên nút mở           | **giữ**                                                      |
+| chấm xanh "Đang hoạt động" + `chat.activeNow` | **BỎ, cố ý** — xem dưới                                      |
+| icon Messenger + gradient `#0099ff→#a033ff`   | **BỎ, cố ý** — xem DS deviation #22                          |
+
+**Chấm presence bị bỏ vì nó là số liệu bịa.** Legacy vẽ chấm xanh và chữ "Đang hoạt động" **cứng
+trong markup**, không đọc từ đâu cả — người đã offline hai tuần vẫn hiện đang hoạt động. Stream
+_có_ presence thật (`user.presence_changed`, `watch({presence:true})`), nhưng bật nó là thêm một
+mặt dữ liệu mới vào checkpoint đã đủ việc; ghi nợ ở đây thay vì bê nguyên lời nói dối sang bản mới.
+Ba key i18n `chat.activeNow` / `minimize` / `close` vẫn còn: hai key sau **được bản mới dùng**,
+`activeNow` chết theo legacy và bị xoá ở **d** cùng lúc với các key Twilio khác.
+
+**Kiểm `/chats` nằm trong `ChatDock`, không nằm ở chỗ mount.** Đó là sự thật về chính component
+(nó nhân đôi trang messenger), không phải sự thật về layout; để mỗi caller tự nhớ thì ngày có
+caller thứ hai sẽ hiện cả hai surface cùng lúc. Đặt **sau** mọi hook — bail sớm sẽ đổi thứ tự hook
+giữa các route.
+
+### Vì sao mỗi cửa sổ tự gọi `useConversation` chứ dock không gọi hộ
+
+Dock giữ danh sách cửa sổ **dài thay đổi được**; gọi hook cho từng phần tử của một mảng như vậy là
+thứ React cấm. Nên `FloatingChatWindow` là component duy nhất trong feature vừa có data vừa có
+markup — có lý do, và lý do đó ghi ngay trong file.
+
+### Verify (trên BE + Stream thật, route preview tạm đã xoá)
+
+| phép thử                       | kết quả                                                                      |
+| ------------------------------ | ---------------------------------------------------------------------------- |
+| mở panel                       | 2 hội thoại thật, tên + preview + thời gian tương đối                        |
+| mở cửa sổ                      | 9 tin lịch sử, tự cuộn đáy, header đúng tên                                  |
+| gửi tin tiếng Việt có dấu      | hiện **một** bong bóng phải, ô nhập tự xoá, dấu nguyên vẹn                   |
+| mở hội thoại thứ hai           | 2 cửa sổ cạnh nhau, cửa sổ rỗng hiện `>_` + "Hãy chào…"                      |
+| mở lại hội thoại **đang mở**   | vẫn **2** cửa sổ — dedupe đúng                                               |
+| thu nhỏ → bấm lại              | thành pill avatar → khôi phục nguyên nội dung                                |
+| tin đến khi cửa sổ **ĐANG MỞ** | hiện realtime, badge **không** lên (markRead của c-1 chạy)                   |
+| tin đến khi cửa sổ **ĐÃ ĐÓNG** | badge nút mở = **1**                                                         |
+| mở hội thoại đó ra             | badge về **rỗng**                                                            |
+| light + dark                   | đúng token cả hai                                                            |
+| console                        | sạch — lỗi duy nhất là `[Twilio] Initialization failed` có sẵn, chết ở **d** |
+
+**Chưa kiểm được trần 3 cửa sổ ở biên**: chỉ có **2** hội thoại vì Neo4j còn đúng 1 tình bạn (xem
+mục sự cố dữ liệu dev ở trên). Logic `.slice(-MAX_WINDOWS)` là bản sao đúng của legacy và dedupe đã
+đo được, nhưng cảnh "mở cái thứ 4 đẩy cái cũ nhất" thì **chưa chạy qua**. Muốn kiểm thì phải dựng
+lại đồ thị bạn bè trước.
+
+**Bẫy môi trường khi đo**: dock Twilio vẫn đang mount nên **hai nút tròn chồng đúng lên nhau** ở
+góc phải dưới, và legacy ở `z-50` còn bản mới ở `z-40` → click theo toạ độ **luôn** trúng nút
+Twilio. Không phải lỗi bản mới, và nó biến mất ở **d**; lúc đo thì ẩn tạm nút legacy bằng JS rồi
+click bản mới theo `aria-label`.
