@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Loader2, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { PostCard } from './post-card';
-import { useNewsfeed } from '@/lib/hooks/use-posts';
+import { FeedPost } from './feed-post';
+import { NEWSFEED_QUERY_KEY, useNewsfeed } from '@/lib/hooks/use-posts';
 import { useT } from '@/lib/i18n';
 
 function PostSkeleton() {
@@ -28,8 +29,25 @@ function PostSkeleton() {
 
 export function Newsfeed() {
   const t = useT();
+  const queryClient = useQueryClient();
   const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useNewsfeed();
+
+  /**
+   * What every card calls after a write that changes what the feed says about a post.
+   *
+   * It has to be an invalidation of the whole feed rather than a patch of one entry: the
+   * counts a card shows (`likeCount`, `commentCount`) live in the feed payload, and neither
+   * `PostReactionController` nor `CommentController` ever returns a new total — the reaction
+   * endpoints only answer "what did I pick". There is no `GET /posts/{id}` to re-read a
+   * single post with either, so the feed page is the smallest thing that can be refreshed.
+   *
+   * `refetch()` would only cover this component's own query; invalidating the key also
+   * catches the page-level composer seam, which points at the same constant.
+   */
+  const refreshFeed = () => {
+    queryClient.invalidateQueries({ queryKey: NEWSFEED_QUERY_KEY });
+  };
 
   const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -89,7 +107,7 @@ export function Newsfeed() {
   return (
     <div className="space-y-4">
       {posts.map((post) => (
-        <PostCard key={post.postId} post={post} />
+        <FeedPost key={post.postId} post={post} onChanged={refreshFeed} />
       ))}
 
       <div ref={sentinelRef} />
@@ -101,9 +119,7 @@ export function Newsfeed() {
       )}
 
       {!hasNextPage && posts.length > 0 && (
-        <p className="text-center text-xs text-muted-foreground py-4">
-          {t('newsfeed.allLoaded')}
-        </p>
+        <p className="text-center text-xs text-muted-foreground py-4">{t('newsfeed.allLoaded')}</p>
       )}
     </div>
   );

@@ -1,25 +1,22 @@
 'use client';
 
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
-import { postsApi } from '@/lib/api/posts';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { newsfeedApi } from '@/lib/api/newsfeed';
-import { getErrorMessage } from '@/lib/api/error';
-import type {
-  CreatePostRequest,
-  UpdatePostRequest,
-  PostLocation,
-  CreateBookRequest,
-  CreateCommentRequest,
-  UpdateCommentRequest,
-  ReactionType,
-} from '@/lib/types';
 
 const PAGE_SIZE = 10;
 
+/**
+ * The feed's cache key, exported so the cross-domain invalidators that need it
+ * (`app/(main)/newsfeed/page.tsx` after `features/posts` creates a post, and `newsfeed.tsx`
+ * after a reaction, comment or edit) import it instead of repeating the literal. P2.5 replaces
+ * this whole hook with `features/newsfeed`, and the import breaking is the point: a magic
+ * string would have gone on compiling while quietly matching nothing.
+ */
+export const NEWSFEED_QUERY_KEY = ['newsfeed'] as const;
+
 export function useNewsfeed() {
   return useInfiniteQuery({
-    queryKey: ['newsfeed'],
+    queryKey: NEWSFEED_QUERY_KEY,
     queryFn: ({ pageParam = 1 }) =>
       newsfeedApi.getFeed(pageParam as number, PAGE_SIZE).then((r) => r.data),
     initialPageParam: 1,
@@ -27,215 +24,18 @@ export function useNewsfeed() {
   });
 }
 
-export interface CreatePostInput {
-  content: string;
-  location?: PostLocation;
-  images?: string[];
-  taggedUserIds?: number[];
-  postType?: CreatePostRequest['postType'];
-  eventDetails?: CreatePostRequest['eventDetails'];
-  visibility?: CreatePostRequest['visibility'];
-}
-
-function toCreatePostRequest(input: CreatePostInput): CreatePostRequest {
-  const loc = input.location;
-  return {
-    content: input.content,
-    googlePlaceId: loc?.googlePlaceId,
-    locationType: loc?.locationType,
-    locationDetails:
-      loc?.locationDetails ??
-      (loc
-        ? {
-            display_name: loc.displayName,
-            latitude: loc.latitude,
-            longitude: loc.longitude,
-            city: loc.city,
-            country: loc.country,
-          }
-        : undefined),
-    images: input.images,
-    taggedUserIds: input.taggedUserIds,
-    postType: input.postType,
-    eventDetails: input.eventDetails,
-    visibility: input.visibility,
-  };
-}
-
-export function useCreatePost() {
-  const qc = useQueryClient();
-
-  return useMutation({
-    mutationFn: (input: CreatePostInput) =>
-      postsApi.createPost(toCreatePostRequest(input)).then((r) => r.data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['newsfeed'] });
-      toast.success('Post submitted! It will appear in the feed once it passes review.');
-    },
-    onError: (error) => {
-      toast.error(getErrorMessage(error, 'Failed to create post'));
-    },
-  });
-}
-
-export interface CreateBookPostInput {
-  content: string;
-  location?: PostLocation;
-  taggedUserIds?: number[];
-  visibility?: CreatePostRequest['visibility'];
-  bookDetails: CreateBookRequest;
-  bookFile: File;
-  coverFile?: File;
-}
-
-export function useCreateBookPost() {
-  const qc = useQueryClient();
-
-  return useMutation({
-    mutationFn: (input: CreateBookPostInput) => {
-      const metadata = toCreatePostRequest({
-        content: input.content,
-        location: input.location,
-        taggedUserIds: input.taggedUserIds,
-        visibility: input.visibility,
-        postType: 'BOOK',
-      });
-      metadata.bookDetails = input.bookDetails;
-      return postsApi.createBookPost(metadata, input.bookFile, input.coverFile).then((r) => r.data);
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['newsfeed'] });
-      toast.success('Book submitted! It will appear in the feed once it passes review.');
-    },
-    onError: (error) => {
-      toast.error(getErrorMessage(error, 'Failed to create book post'));
-    },
-  });
-}
-
-export function useUpdatePost() {
-  const qc = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ postId, payload }: { postId: number; payload: UpdatePostRequest }) =>
-      postsApi.updatePost(postId, payload).then((r) => r.data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['newsfeed'] });
-      toast.success('Post updated. It has been pulled from feeds until it passes re-review.');
-    },
-    onError: (error) => {
-      toast.error(getErrorMessage(error, 'Failed to update post'));
-    },
-  });
-}
-
-export function useDeletePost() {
-  const qc = useQueryClient();
-
-  return useMutation({
-    mutationFn: (postId: number) => postsApi.deletePost(postId).then((r) => r.data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['newsfeed'] });
-      toast.success('Post deleted');
-    },
-    onError: (error) => {
-      toast.error(getErrorMessage(error, 'Failed to delete post'));
-    },
-  });
-}
-
-// The viewer's current reaction on a post (null reactionType when none) — lets the UI
-// render the true prior state on load instead of toggling blind.
-export function useMyReaction(postId: number, enabled = true) {
-  return useQuery({
-    queryKey: ['my-reaction', postId],
-    queryFn: () => postsApi.getMyReaction(postId).then((r) => r.data),
-    enabled,
-  });
-}
-
-export function useUpsertReaction(postId: number) {
-  const qc = useQueryClient();
-
-  return useMutation({
-    mutationFn: (reactionType: ReactionType) =>
-      postsApi.upsertReaction(postId, { reactionType }).then((r) => r.data),
-    onSuccess: (_data, reactionType) => {
-      // Write the known result straight into the cache instead of refetching —
-      // the server state after a successful upsert is exactly the sent reaction.
-      qc.setQueryData(['my-reaction', postId], { reactionType });
-    },
-    onError: (error) => {
-      toast.error(getErrorMessage(error, 'Failed to react to post'));
-    },
-  });
-}
-
-export function useRemoveReaction(postId: number) {
-  const qc = useQueryClient();
-
-  return useMutation({
-    mutationFn: () => postsApi.removeReaction(postId).then((r) => r.data),
-    onSuccess: () => {
-      qc.setQueryData(['my-reaction', postId], { reactionType: null });
-    },
-    onError: (error) => {
-      toast.error(getErrorMessage(error, 'Failed to remove reaction'));
-    },
-  });
-}
-
-// Flat list ordered by createdAt asc; thread replies client-side via parentId
-// (replies are one level deep only, enforced by the backend).
-export function useComments(postId: number, enabled = true) {
-  return useQuery({
-    queryKey: ['comments', postId],
-    queryFn: () => postsApi.getComments(postId).then((r) => r.data),
-    enabled,
-  });
-}
-
-export function useCreateComment(postId: number) {
-  const qc = useQueryClient();
-
-  return useMutation({
-    mutationFn: (payload: CreateCommentRequest) =>
-      postsApi.createComment(postId, payload).then((r) => r.data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['comments', postId] });
-    },
-    onError: (error) => {
-      toast.error(getErrorMessage(error, 'Failed to post comment'));
-    },
-  });
-}
-
-export function useUpdateComment(postId: number) {
-  const qc = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ commentId, payload }: { commentId: number; payload: UpdateCommentRequest }) =>
-      postsApi.updateComment(postId, commentId, payload).then((r) => r.data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['comments', postId] });
-    },
-    onError: (error) => {
-      toast.error(getErrorMessage(error, 'Failed to update comment'));
-    },
-  });
-}
-
-export function useDeleteComment(postId: number) {
-  const qc = useQueryClient();
-
-  return useMutation({
-    mutationFn: (commentId: number) =>
-      postsApi.deleteComment(postId, commentId).then((r) => r.data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['comments', postId] });
-    },
-    onError: (error) => {
-      toast.error(getErrorMessage(error, 'Failed to delete comment'));
-    },
-  });
-}
+/*
+ * REMOVED AT P2.4d: `useCreatePost`, `useCreateBookPost`, `useUpdatePost`, `useDeletePost` and
+ * the `toCreatePostRequest` adapter under them — superseded by the `features/posts` hooks of
+ * the same names that `PostComposer` and the temporary `CreateEventForm` call.
+ *
+ * REMOVED AT P2.4'd: `useMyReaction`, `useUpsertReaction`, `useRemoveReaction`, `useComments`,
+ * `useCreateComment`, `useUpdateComment` and `useDeleteComment` — the entire comment and
+ * reaction surface, superseded now that the feed renders `ReactionBar` and `CommentThread`
+ * from `features/posts`. `src/lib/api/posts.ts` was deleted with them: those seven calls were
+ * all it had left.
+ *
+ * What survives here is not posts at all. `useNewsfeed` and the key above belong to the
+ * `newsfeed` domain and go at P2.5, which is when this file stops existing; it still sits
+ * under a posts-shaped name only because the feed query was never given one of its own.
+ */
