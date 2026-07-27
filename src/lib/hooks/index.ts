@@ -5,7 +5,6 @@ export * from './use-friendship';
 export * from './use-moderation';
 export * from './use-notifications';
 export * from './use-payments';
-export * from './use-posts';
 export * from './use-search';
 export * from './use-social';
 export * from './use-trending';

@@ -125,6 +125,24 @@ Cột "hook có UI dùng" đếm hook được import từ `app/` hoặc `compon
   `lib/types` — **domain newsfeed, P2.5**.
 - `components/posts/book-post-actions.tsx` + `book-reader-dialog.tsx` — **bookstore, P2.10**.
 
+### Đã xoá ở P2.5 (domain newsfeed)
+
+| file / symbol                                                      | vì sao xoá được                                                                      |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| `lib/api/newsfeed.ts`                                              | thay bằng `features/newsfeed/api/feed.ts`                                            |
+| `lib/hooks/use-posts.ts` — **cả file**                             | phần cuối cùng (`useNewsfeed` + `NEWSFEED_QUERY_KEY`) sang `features/newsfeed/hooks` |
+| `components/posts/newsfeed.tsx` → `features/newsfeed/components/`  | dựng lại bằng `shared/components` (skeleton/empty/error), không còn shadcn           |
+| `components/posts/feed-post.tsx` → `features/newsfeed/components/` | chuyển nguyên; bỏ import cầu tạm bookstore, nhận qua render prop                     |
+| `lib/types`: `FeedPostData` `FeedResponse` `FeedBookSummary`       | `features/newsfeed/types/feed.ts` sở hữu, derive từ `schema.gen.ts`                  |
+
+**`src/components/posts/` giờ chỉ còn 2 file, cả hai đều là bookstore** (`book-post-actions.tsx`,
+`book-reader-dialog.tsx`) — xoá ở P2.10.
+
+**Ranh giới đáng ghi**: `features/newsfeed` **không** import cầu tạm bookstore (sẽ là legacy path
+nằm trong feature, hỏng extraction test §4). Page `/newsfeed` — chỗ duy nhất được biết cả hai —
+truyền xuống qua prop `renderBookActions`. P2.10 đổi prop này sang component của
+`features/bookstore` rồi bỏ prop.
+
 ### Code phải xoá, không phải migrate
 
 - `src/lib/api/social.ts` (7 hàm) + `src/lib/hooks/use-social.ts` (6 hook) — gọi

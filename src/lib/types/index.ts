@@ -1,17 +1,3 @@
-// The eight `*Details` blocks the feed echoes are re-used from `features/posts` rather than
-// re-typed here: those are derived from `schema.gen.ts`, and a second hand-written copy is
-// exactly the drift this migration is removing. Direction is legacy -> feature barrel, which
-// is the one that survives (P2.5 moves the feed types into `features/newsfeed` entirely).
-import type {
-  ArticleDetails,
-  CodeSnippetDetails,
-  EventDetails,
-  LinkDetails,
-  PollDetails,
-  QnaDetails,
-  QuizDetails,
-} from '@/features/posts';
-
 // ─── Auth ────────────────────────────────────────────────────────────────────
 
 export interface LoginRequest {
@@ -319,78 +305,13 @@ export interface PaymentSyncResponse {
  * inventory counted Events as 7 endpoints and 0 screens).
  */
 
-// ─── Newsfeed ────────────────────────────────────────────────────────────────
-
-export interface FeedBookSummary {
-  bookId: number;
-  title: string;
-  description?: string;
-  coverImageUrl?: string;
-  fileFormat: BookFileFormat;
-  fileSizeBytes: number;
-  totalPages?: number;
-  previewPages?: number;
-  price: number;
-  currency: string;
-  isFree: boolean;
-  avgRating: number;
-  reviewCount: number;
-}
-
-/**
- * The feed entry, mirroring `FeedPostDataDto` (backend package `com.socialapp.newsfeed`).
- *
- * EIGHT FIELDS WERE ADDED AT P2.4'd, and their absence was a silent data loss rather than a
- * cosmetic gap: `authorEliteScore`, `hashtags`, `quizDetails` and the five detail blocks have
- * been in the payload all along, but nothing here declared them, so TypeScript reported them
- * as non-existent and every consumer read `undefined`. The read side of a post could not have
- * been built at all without them.
- *
- * Nullable rather than optional throughout, for the reason recorded in `findings/posts.md`:
- * Jackson runs at its default `ALWAYS` inclusion, so the keys are present with `null` values.
- * Declaring them optional would make `=== undefined` look like a valid check and be wrong on
- * every request.
- *
- * P2.5 replaces this with `features/newsfeed/types`, derived from `schema.gen.ts`.
+/*
+ * REMOVED AT P2.5: `FeedBookSummary`, `FeedPostData` and `FeedResponse`, together with
+ * `lib/api/newsfeed.ts` and `lib/hooks/use-posts.ts` (the last of that file: `useNewsfeed`
+ * plus the `NEWSFEED_QUERY_KEY` seam constant). `features/newsfeed/types/feed.ts` owns the
+ * feed payload now, derived from `schema.gen.ts` and — unlike this hand-written copy —
+ * modelling absent values as `| null`, which is what the wire actually carries.
  */
-export interface FeedPostData {
-  postId: number;
-  authorId: number;
-  authorFullName: string;
-  authorProfilePictureUrl: string;
-  // NOTE: backend doesn't return this yet (job title is currently only decodable from the
-  // viewer's own JWT, not per-author on the feed) — renders nothing until it's added.
-  authorJobTitle?: string | null;
-  // Elite Score, embedded here so a card never has to call the reputation endpoint per author.
-  authorEliteScore: number | null;
-  content: string;
-  visibility: PostVisibility;
-  googlePlaceId: string | null;
-  locationType: LocationType | null;
-  locationDetails: LocationDetails | null;
-  googleMapsUrl: string | null;
-  postType: PostType;
-  eventDetails: EventDetails | null;
-  book: FeedBookSummary | null;
-  quizDetails: QuizDetails | null;
-  codeSnippetDetails: CodeSnippetDetails | null;
-  articleDetails: ArticleDetails | null;
-  qnaDetails: QnaDetails | null;
-  pollDetails: PollDetails | null;
-  linkDetails: LinkDetails | null;
-  hashtags: string[] | null;
-  createdAt: string;
-  likeCount: number;
-  commentCount: number;
-  shareCount: number;
-}
-
-export interface FeedResponse {
-  posts: FeedPostData[];
-  page: number;
-  size: number;
-  hasMore: boolean;
-}
 
 // ─── Notifications ───────────────────────────────────────────────────────────
 

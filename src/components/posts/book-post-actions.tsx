@@ -15,7 +15,7 @@ import {
 import { useCreatePayment } from '@/lib/hooks/use-payments';
 import { getErrorMessage } from '@/lib/api/error';
 import { getNeutralAvatarColor } from '@/lib/avatar-color';
-import type { FeedBookSummary } from '@/lib/types';
+import type { FeedBookSummary } from '@/features/newsfeed';
 
 /**
  * Buy / preview / review controls for a book attached to a post — a BRIDGE, exactly like
@@ -171,14 +171,14 @@ function ReviewsPanel({ bookId }: { bookId: number }) {
   );
 }
 
-function PurchaseAction({ book }: { book: FeedBookSummary }) {
+function PurchaseAction({ bookId, isFree }: { bookId: number; isFree: boolean }) {
   const t = useT();
-  const { data: bookDetail, isLoading: isLoadingDetail } = useBook(book.bookId, !book.isFree);
+  const { data: bookDetail, isLoading: isLoadingDetail } = useBook(bookId, !isFree);
   const { mutate: createPayment, isPending: isCreatingPayment } = useCreatePayment();
-  const { mutate: downloadBook, isPending: isDownloading } = useDownloadBook(book.bookId);
+  const { mutate: downloadBook, isPending: isDownloading } = useDownloadBook(bookId);
 
   // Free books, and paid books already bought, are the same control: download.
-  if (book.isFree || bookDetail?.purchased) {
+  if (isFree || bookDetail?.purchased) {
     return (
       <Button
         size="sm"
@@ -204,7 +204,7 @@ function PurchaseAction({ book }: { book: FeedBookSummary }) {
       icon={<ShoppingCart className="h-3.5 w-3.5" />}
       loading={isCreatingPayment}
       onClick={() =>
-        createPayment(book.bookId, {
+        createPayment(bookId, {
           onSuccess: (data) => {
             window.location.href = data.paymentUrl;
           },
@@ -222,6 +222,7 @@ export interface BookPostActionsProps {
 
 export function BookPostActions({ book }: BookPostActionsProps) {
   const t = useT();
+  const bookId = book.bookId;
   const isPdf = book.fileFormat === 'PDF';
   const [previewOpen, setPreviewOpen] = useState(false);
   const [reviewsOpen, setReviewsOpen] = useState(false);
@@ -230,7 +231,12 @@ export function BookPostActions({ book }: BookPostActionsProps) {
     isLoading: previewLoading,
     isError: previewFailed,
     error: previewError,
-  } = useBookPreviewUrl(book.bookId, previewOpen && !isPdf);
+  } = useBookPreviewUrl(bookId ?? 0, previewOpen && !isPdf && bookId !== undefined);
+
+  // The feed's book summary types every field as optional, and without an id there is nothing
+  // any of these controls could act on. Guard placed after the hooks so their call order never
+  // changes between renders.
+  if (bookId === undefined) return null;
 
   return (
     <div>
@@ -239,8 +245,8 @@ export function BookPostActions({ book }: BookPostActionsProps) {
           // PDFs render in-app; EPUBs have no in-app reader, so their preview is a link to
           // the presigned URL fetched below.
           <BookReaderDialog
-            bookId={book.bookId}
-            title={book.title}
+            bookId={bookId}
+            title={book.title ?? ''}
             trigger={
               <Button size="sm" variant="secondary" icon={<Eye className="h-3.5 w-3.5" />}>
                 {t('post.book.preview')}
@@ -269,7 +275,7 @@ export function BookPostActions({ book }: BookPostActionsProps) {
           {reviewsOpen ? t('post.book.hideReviews') : t('post.book.reviews')}
         </Button>
 
-        <PurchaseAction book={book} />
+        <PurchaseAction bookId={bookId} isFree={book.isFree === true} />
       </div>
 
       {previewOpen && !isPdf && (
@@ -295,7 +301,7 @@ export function BookPostActions({ book }: BookPostActionsProps) {
         </div>
       )}
 
-      {reviewsOpen && <ReviewsPanel bookId={book.bookId} />}
+      {reviewsOpen && <ReviewsPanel bookId={bookId} />}
     </div>
   );
 }

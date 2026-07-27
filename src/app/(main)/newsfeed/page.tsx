@@ -1,53 +1,51 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
+import { Newsfeed, newsfeedKeys } from '@/features/newsfeed';
 import { PostComposer } from '@/features/posts';
-import { Newsfeed } from '@/components/posts/newsfeed';
-import { NEWSFEED_QUERY_KEY } from '@/lib/hooks/use-posts';
+import { BookPostActions } from '@/components/posts/book-post-actions';
 import { useT } from '@/lib/i18n';
 
 /**
- * `/newsfeed` spans four domains (newsfeed, posts, bookstore, security) and is assembled for
- * real at P3.1. P2.4d only swapped the **composer** over to `features/posts`; the feed itself
- * and everything it renders is still legacy and stays that way until `newsfeed` is built (P2.5).
+ * `/newsfeed` — owned by `newsfeed`, with `posts` and `bookstore` contributing. The full
+ * multi-domain assembly is P3.1; this is the composition P2.5 leaves behind.
  *
- * THE `onPosted` SEAM IS TEMPORARY, AND THIS IS THE ONE PLACE THAT KNOWS IT.
- * `features/posts` is write-only — five of its endpoints return `void`, there is no
- * `GET /posts/{id}`, and the read side of a post lives in the feed. So the posts hooks refuse to
- * invalidate anything outside their own domain (that would hardcode another feature's cache and
- * fail the extraction test, CLAUDE.md §4) and take an `onSuccess` from the caller instead.
+ * WHY THE PAGE STILL HOLDS TWO WIRES, and what closes each:
  *
- * The caller should be `features/newsfeed` calling `newsfeedKeys.feed()`. That module does not
- * exist yet — P2.5 has not started, and the feed query still lives in the legacy
- * `lib/hooks/use-posts.ts` under the flat key `['newsfeed']`. Until then this page holds the
- * seam and invalidates that key by importing the constant rather than repeating the string, so
- * that deleting the legacy hook at P2.5 breaks this import loudly instead of leaving a magic
- * string that silently stops matching. AT P2.5: replace `NEWSFEED_QUERY_KEY` with
- * `newsfeedKeys.feed()`, and this comment goes with it.
+ *  - `onPosted` → `newsfeedKeys.feed()`. `features/posts` is write-only (five of its endpoints
+ *    return `void`, and there is no `GET /posts/{id}`), so its mutations deliberately refuse to
+ *    invalidate another domain's cache — that would hardcode this feature's key inside posts
+ *    and fail the extraction test (CLAUDE.md §4). They take an `onSuccess` from the composing
+ *    screen instead, which is this. Permanent, not a seam: the dependency points
+ *    newsfeed → posts, which is the direction that is allowed.
  *
- * The temporary event composer that sat below `PostComposer` is GONE as of P2.4″d:
- * `PostComposer` now covers all eight kinds, so the bridge had nothing left to bridge.
+ *  - `renderBookActions` → the legacy `BookPostActions`. Buy / preview / reviews belong to
+ *    `bookstore` (P2.10) and its only implementation is still the bridge under
+ *    `src/components/posts/`. `features/newsfeed` must not import that path, so the page — the
+ *    one place allowed to know about both — passes it down. AT P2.10: swap this for
+ *    `features/bookstore`'s component, or let the feed import it through that barrel and drop
+ *    the prop.
  */
 export default function NewsfeedPage() {
   const t = useT();
   const queryClient = useQueryClient();
 
   const refreshFeed = () => {
-    queryClient.invalidateQueries({ queryKey: NEWSFEED_QUERY_KEY });
+    queryClient.invalidateQueries({ queryKey: newsfeedKeys.feed() });
   };
 
   return (
-    <div className="space-y-4">
-      <div className="max-w-2xl mx-auto space-y-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">{t('newsfeed.title')}</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">{t('newsfeed.subtitle')}</p>
-        </div>
-
-        <PostComposer onPosted={refreshFeed} />
-
-        <Newsfeed />
+    <div className="mx-auto flex max-w-2xl flex-col gap-4">
+      <div>
+        <h1 className="text-nx-h2 font-semibold tracking-tight text-nx-text-primary">
+          {t('newsfeed.title')}
+        </h1>
+        <p className="mt-0.5 text-nx-body-sm text-nx-text-secondary">{t('newsfeed.subtitle')}</p>
       </div>
+
+      <PostComposer onPosted={refreshFeed} />
+
+      <Newsfeed renderBookActions={(book) => <BookPostActions book={book} />} />
     </div>
   );
 }

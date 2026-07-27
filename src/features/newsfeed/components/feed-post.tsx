@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import {
   ArticleBody,
   BookBody,
@@ -22,22 +22,17 @@ import {
 import { useMyProfile } from '@/features/security';
 import { Button } from '@/shared/components';
 import { useT } from '@/lib/i18n';
-import type { FeedPostData } from '@/lib/types';
-import { BookPostActions } from './book-post-actions';
+import type { FeedBookSummary, FeedPost as FeedPostData } from '../types/feed';
 
 /**
  * One feed entry: maps `FeedPostDataDto` onto the `features/posts` read-side components.
  *
- * THIS FILE IS THE SEAM, AND IT IS DELIBERATELY ON THIS SIDE OF IT. `PostCard` takes
- * decomposed props rather than the feed DTO (decided at P2.4'c-1): that DTO belongs to the
- * backend package `com.socialapp.newsfeed`, so binding the card to it would point
- * posts -> newsfeed, the wrong way round, and would stop `features/search` reusing the card
- * for the same post shape under a different DTO. The mapping therefore lives with whoever
- * holds the payload — the feed — which today is still this legacy folder.
- *
- * AT P2.5 this file moves into `features/newsfeed/components` largely unchanged; the import
- * of `@/lib/types` becomes the feature's own schema-derived type and `newsfeed.tsx` goes with
- * it. Nothing here is meant to survive in `src/components/`.
+ * THIS FILE IS THE SEAM, AND IT NOW SITS ON THE RIGHT SIDE OF IT. `PostCard` takes decomposed
+ * props rather than the feed DTO (decided at P2.4′c-1): that DTO belongs to the backend package
+ * `com.socialapp.newsfeed`, so binding the card to it would point posts -> newsfeed, the wrong
+ * way round, and would stop `features/search` reusing the card for the same post shape under a
+ * different DTO. The mapping therefore belongs to whoever holds the payload — this feature,
+ * which since P2.5 is where the payload's type lives too.
  *
  * TWO THINGS THE FEED OWNS THAT THE CARD MUST NOT:
  *  - whether the comment thread is mounted. `CommentThread` fetches on mount and has no
@@ -52,6 +47,8 @@ export interface FeedPostProps {
   post: FeedPostData;
   /** Refetch the feed — the payload's counts only move when it is re-fetched. */
   onChanged: () => void;
+  /** Buy / preview / review controls for a `BOOK` post; see `PostBody`. */
+  renderBookActions?: (book: FeedBookSummary) => ReactNode;
 }
 
 /**
@@ -90,7 +87,10 @@ const KINDS_WITH_UNECHOED_DETAILS = new Set(['CODE_SNIPPET', 'ARTICLE', 'QNA', '
  */
 function toEditorState(post: FeedPostData): PostEditorState {
   return {
-    content: post.content,
+    // `?? undefined` because the payload types content as nullable now: a post with no prose
+    // arrives as null, and the update DTO takes a string or nothing. Harmless either way here —
+    // `PostEditor` overwrites this key with the textarea value before sending.
+    content: post.content ?? undefined,
     visibility: post.visibility,
     googlePlaceId: post.googlePlaceId ?? undefined,
     locationType: post.locationType ?? undefined,
@@ -111,11 +111,23 @@ function toEditorState(post: FeedPostData): PostEditorState {
  * renders whatever body it is handed and never inspects `postType` — that is what lets the
  * same card serve search results later.
  *
- * `EVENT` and `BOOK` both take an `actions` slot owned by another domain: RSVP/calendar is
- * posts cycle 3 (P2.4"), and buy/preview/reviews belongs to `bookstore` (P2.10), bridged for
- * now by `BookPostActions`.
+ * `BOOK` IS THE ONE BODY THIS FEATURE CANNOT FINISH. Buy / preview / reviews belong to
+ * `bookstore`, which has not been rebuilt yet (P2.10), and its temporary implementation still
+ * lives in `src/components/posts/book-post-actions.tsx`. Importing that from here would put a
+ * legacy path inside a feature and fail the extraction test (CLAUDE.md §4), so it arrives as a
+ * render prop from the page instead. When `features/bookstore` exists, the page swaps the
+ * bridge for its component — or this file imports it through that feature's barrel — and the
+ * prop can go.
  */
-function PostBody({ post, onChanged }: { post: FeedPostData; onChanged: () => void }) {
+function PostBody({
+  post,
+  onChanged,
+  renderBookActions,
+}: {
+  post: FeedPostData;
+  onChanged: () => void;
+  renderBookActions?: (book: FeedBookSummary) => ReactNode;
+}) {
   switch (post.postType) {
     case 'CODE_SNIPPET':
       return post.codeSnippetDetails ? <CodeSnippetBody details={post.codeSnippetDetails} /> : null;
@@ -145,7 +157,7 @@ function PostBody({ post, onChanged }: { post: FeedPostData; onChanged: () => vo
       ) : null;
     case 'BOOK':
       return post.book ? (
-        <BookBody book={post.book} actions={<BookPostActions book={post.book} />} />
+        <BookBody book={post.book} actions={renderBookActions?.(post.book)} />
       ) : null;
     default:
       // REGULAR carries no details block — its whole body is the card's `content`.
@@ -153,7 +165,7 @@ function PostBody({ post, onChanged }: { post: FeedPostData; onChanged: () => vo
   }
 }
 
-export function FeedPost({ post, onChanged }: FeedPostProps) {
+export function FeedPost({ post, onChanged, renderBookActions }: FeedPostProps) {
   const t = useT();
   const { data: profile } = useMyProfile();
 
@@ -228,7 +240,7 @@ export function FeedPost({ post, onChanged }: FeedPostProps) {
               onSaved={onChanged}
             />
           ) : (
-            <PostBody post={post} onChanged={onChanged} />
+            <PostBody post={post} onChanged={onChanged} renderBookActions={renderBookActions} />
           )}
 
           {/* A quiz is an attachment, not a post type — `buildAndSavePost` accepts
