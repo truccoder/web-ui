@@ -1,4 +1,4 @@
-import api from './axios';
+import api from '@/core/api/axios';
 import type {
   NotificationResponse,
   NotificationPreference,
@@ -13,17 +13,14 @@ export const notificationsApi = {
       params: { page, size },
     }),
 
-  getUnreadCount: () =>
-    api.get<UnreadCountResponse>('/v1/api/notifications/unread-count'),
+  getUnreadCount: () => api.get<UnreadCountResponse>('/v1/api/notifications/unread-count'),
 
   markAsRead: (notificationId: number) =>
     api.post<void>(`/v1/api/notifications/${notificationId}/read`),
 
-  markAllAsRead: () =>
-    api.post<void>('/v1/api/notifications/read-all'),
+  markAllAsRead: () => api.post<void>('/v1/api/notifications/read-all'),
 
-  getPreferences: () =>
-    api.get<NotificationPreference>('/v1/api/notifications/preferences'),
+  getPreferences: () => api.get<NotificationPreference>('/v1/api/notifications/preferences'),
 
   updatePreferences: (data: UpdatePreferenceRequest) =>
     api.put<NotificationPreference>('/v1/api/notifications/preferences', data),
