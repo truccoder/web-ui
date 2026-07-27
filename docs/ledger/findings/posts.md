@@ -71,6 +71,49 @@ Quay lại [`fe-migration-ledger.md`](../../fe-migration-ledger.md).
   (parent không có trong list) được **đẩy lên thành gốc chứ không bị bỏ** — cascade khiến mồ côi
   đáng lẽ không tồn tại, nên lặng lẽ drop là giấu bug chứ không phải dọn dữ liệu.
 
+- **Cách tách UI chu kỳ 2 (công bố ở P2.4′c-1) — 5 bước, không phải 4:**
+
+  | ID     | surface                                                            | endpoint                                      |
+  | ------ | ------------------------------------------------------------------ | --------------------------------------------- |
+  | c-1 ✅ | shared `DeveloperIdentity`+`DeveloperMeta`; `PostCard` (vỏ + slot) | — (render payload feed)                       |
+  | c-1′   | thân bài theo loại: code, article, qna, poll, link, book, event    | — (render payload feed)                       |
+  | c-2    | hàng reaction                                                      | getMyReaction · upsert · remove               |
+  | c-3    | thread comment                                                     | 4 ep CommentController                        |
+  | c-4    | nợ c-5 chu kỳ 1: `QuizTaker`, sửa/xoá bài, chọn đáp án             | submitQuiz · updatePost · deletePost · accept |
+
+  **Vì sao tách c-1 thành c-1 + c-1′** (phát hiện lúc đọc `FeedPostDataDto`, trước khi viết code):
+  payload feed mang **8 khối details** (event/book/quiz/codeSnippet/article/qna/poll/link). Dựng
+  hết trong một checkpoint là vượt xa trần 5 component. Nên c-1 chỉ ship **vỏ card + hàng danh
+  tính**, thân bài vào **slot `body`**.
+
+- **`PostCard` KHÔNG nhận DTO của feed — nhận props đã tách** (chốt P2.4′c-1, user chọn phương án
+  này). `FeedPostDataDto` nằm ở package BE `com.socialapp.newsfeed`, nên type FE của nó thuộc
+  `features/newsfeed` (§4). Cho card nuốt DTO đó sẽ thành **posts → newsfeed**, ngược chiều (chính
+  newsfeed mới là bên render card + composer). Lợi ích thứ hai: `features/search` echo cùng hình
+  dạng post dưới DTO khác, dùng lại được card này không tốn gì. Cái giá: P2.5 phải viết đoạn map
+  payload → props; đó là chỗ đúng để nó nằm.
+  Cùng lý do, card **không** nhận `postType`: nó render `body` được đưa vào chứ không tự switch
+  theo loại. Nhận "để dành" là mời một câu switch quay lại vỏ card.
+
+- **`shareCount` và `images` là dữ liệu chết ở phía đọc** (P2.4′c-1, đã vào `ds-deviations` #14/#15).
+  Không controller nào tăng `shareCount` (không có endpoint share) → số vĩnh viễn 0, cắt.
+  `CreatePostRequestDto` có `images` nhưng **`FeedPostDataDto` không echo lại** → bài đăng kèm ảnh
+  thì phía đọc không có đường lấy. Không phải quyết định thẩm mỹ: dữ liệu không tới FE.
+
+- **`likeCount` cố ý KHÔNG nằm ở footer card.** Nó thuộc về cạnh nút reaction mà c-2 sẽ đặt vào
+  slot `actions`. Hiện hai chỗ trên cùng màn hình là mời chúng lệch nhau — nhất là khi optimistic
+  của `myReaction` đổi tức thì còn tổng thì đợi refetch feed (xem mục reaction ở trên).
+
+- **NỢ: `PostCard` chưa verify bằng mắt** (P2.4′c-1). Extension Chrome trả "not connected" nên đi
+  đường thay thế của `session-constants` §4: curl route preview với cookie `session=true; role=USER`
+  rồi soi markup SSR — 14/14 khẳng định đúng (tên tác giả, chip 8,420, điểm 0 vẫn render, "Tác giả
+  không xác định", 42m/3d, nhãn + link Maps, hashtag, đếm 12 và 0, cả hai slot, `data-post-id`),
+  **không rò key i18n**. Chưa kiểm được: **diện mạo so với specimen DS, dark mode, layout vỡ**.
+  Specimen `display.card.html` mount component bằng React lúc chạy nên curl không ra hình, mà đọc
+  script trong đó là đọc `.jsx` — Constraint #1 cấm. Trả nợ ngay khi extension nối lại được: dựng
+  lại route preview (dưới `(main)`, **tên không bắt đầu bằng `_`** — Next coi thư mục `_*` là
+  private nên route 404, đã mất một nhịp vì chuyện này), chụp light + dark, so với specimen.
+
 - **Cách tách UI chu kỳ 1 (công bố ở P2.4c-1, trần 5 component/checkpoint):**
 
   | ID     | surface                                                      | endpoint                                         |

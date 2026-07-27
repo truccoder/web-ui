@@ -27,3 +27,8 @@ phải BE thiếu dữ liệu — nên báo ngược lại cho chủ Design Syst
 quyết một kiểu.
 
 ---
+
+| 14 | `shareCount` của post | feed trả `shareCount` | **CẮT, không render** | Không controller nào tăng nó: `PostController` chỉ có create/update/delete/acceptAnswer, không có endpoint share. Con số vĩnh viễn 0 — cùng loại với nút "Bỏ qua" không handler (#9). Mở lại khi BE có luồng share. |
+| 15 | ảnh của post | `CreatePostRequestDto` có `images` | **card không render ảnh** | `FeedPostDataDto` **không echo `images`** — bài đăng kèm ảnh thì phía đọc không có đường lấy lại. Không phải quyết định thẩm mỹ: dữ liệu không tới FE. Sửa đúng là BE thêm field vào payload feed. |
+| 16 | `DeveloperIdentity.score` | `.d.ts` nhận `score?: number` rồi tự render RepScore | **đổi thành slot `rep?: ReactNode`** | `RepScore` thuộc `features/reputation`, mà `shared/` không được import feature (CLAUDE.md §4). Caller (đang ở trong feature) truyền chip vào. Diện mạo y hệt, chiều phụ thuộc đúng luật. |
+| 17 | `DeveloperIdentity.expertise` | `.d.ts` + prompt có pill ExpertiseTag | **không dựng prop lẫn component** | Không endpoint nào trả expertise đã verify của user — feed, search, `/profile/me` đều không có. Dựng pill lúc này chỉ có thể điền nhãn bịa. Dựng cùng lúc với nguồn dữ liệu thật. |

@@ -32,6 +32,9 @@ export {
   LinkFields,
   isValidLinkUrl,
   type LinkFieldsProps,
+  PostCard,
+  type PostCardProps,
+  type PostCardAuthor,
 } from './components';
 
 export {

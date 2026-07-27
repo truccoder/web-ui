@@ -28,3 +28,7 @@ export {
   normalizeQuiz,
   type QuizComposerProps,
 } from './quiz-composer';
+
+// Read side (P2.4'c-1). The card is the surface every other cycle-2 interaction attaches to,
+// so it ships before the reaction bar and the comment thread that fill its slots.
+export { PostCard, type PostCardProps, type PostCardAuthor } from './post-card';

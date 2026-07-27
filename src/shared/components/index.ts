@@ -9,3 +9,8 @@ export { Tabs, type TabsProps, type TabItem } from './tabs';
 export { Textarea, type TextareaProps } from './textarea';
 export { Select, type SelectProps, type SelectOption } from './select';
 export { Radio, type RadioProps } from './radio';
+export {
+  DeveloperIdentity,
+  DeveloperMeta,
+  type DeveloperIdentityProps,
+} from './developer-identity';
