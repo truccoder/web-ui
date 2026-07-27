@@ -1,4 +1,4 @@
-import api from './axios';
+import api from '@/core/api/axios';
 import type {
   RsvpStatus,
   EventRsvp,
@@ -13,8 +13,7 @@ export const eventsApi = {
       params: { status },
     }),
 
-  getAttendees: (postId: number) =>
-    api.get<EventRsvp[]>(`/v1/api/events/${postId}/attendees`),
+  getAttendees: (postId: number) => api.get<EventRsvp[]>(`/v1/api/events/${postId}/attendees`),
 
   getAttendeeCount: (postId: number) =>
     api.get<AttendeeCountResponse>(`/v1/api/events/${postId}/attendees/count`),
@@ -25,9 +24,7 @@ export const eventsApi = {
   getExportIcsUrl: (postId: number) =>
     `${process.env.NEXT_PUBLIC_API_URL}/v1/api/events/${postId}/export.ics`,
 
-  getGoogleAuthUrl: () =>
-    api.get<AuthUrlResponse>('/v1/api/events/google/auth-url'),
+  getGoogleAuthUrl: () => api.get<AuthUrlResponse>('/v1/api/events/google/auth-url'),
 
-  getCalendarStatus: () =>
-    api.get<CalendarStatusResponse>('/v1/api/events/google/status'),
+  getCalendarStatus: () => api.get<CalendarStatusResponse>('/v1/api/events/google/status'),
 };
