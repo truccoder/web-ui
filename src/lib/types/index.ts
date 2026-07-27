@@ -123,32 +123,14 @@ export interface PendingFriendRequest {
   createdAt: string;
 }
 
-export interface SentFriendRequest {
-  id: string;
-  addresseeId: string;
-  addresseeFullName: string;
-  addresseeProfilePictureUrl: string;
-  status: FriendRequestStatus;
-  createdAt: string;
-}
-
-// Raw shapes of GET /v1/api/friendships/requests/pending|sent (PendingFriendRequestDto /
-// SentFriendRequestDto) — ids are numeric on the wire; mapped to the string-id
-// PendingFriendRequest/SentFriendRequest types above at the hook boundary.
+// Raw shape of GET /v1/api/friendships/requests/pending (PendingFriendRequestDto) — ids
+// are numeric on the wire; mapped to the string-id PendingFriendRequest type above at the
+// hook boundary.
 export interface PendingFriendRequestWire {
   id: number;
   requesterId: number;
   requesterFullName: string | null;
   requesterProfilePictureUrl: string | null;
-  status: FriendRequestStatus;
-  createdAt: string;
-}
-
-export interface SentFriendRequestWire {
-  id: number;
-  addresseeId: number;
-  addresseeFullName: string | null;
-  addresseeProfilePictureUrl: string | null;
   status: FriendRequestStatus;
   createdAt: string;
 }
@@ -192,7 +174,18 @@ export type LocationType = 'COORDINATE' | 'PLACE' | 'REGION';
 
 export type PostVisibility = 'PUBLIC' | 'FRIENDS' | 'PRIVATE';
 
-export type PostType = 'REGULAR' | 'EVENT' | 'BOOK';
+// All eight backend values. This said `'REGULAR' | 'EVENT' | 'BOOK'` until P2.4'd — the legacy
+// composer only wrote those three, but the feed has always been able to hand back the other
+// five, so posts created by the new composer were typed as impossible while rendering fine.
+export type PostType =
+  | 'REGULAR'
+  | 'EVENT'
+  | 'BOOK'
+  | 'CODE_SNIPPET'
+  | 'ARTICLE'
+  | 'QNA'
+  | 'POLL'
+  | 'LINK';
 
 // Field name matches the backend's @JsonProperty("display_name") on LocationDetails exactly —
 // this type is meant to be passed straight through unchanged from the resolve response into
@@ -205,33 +198,14 @@ export interface LocationDetails {
   country?: string;
 }
 
-export interface PostLocation {
-  googlePlaceId?: string;
-  locationType: LocationType;
-  locationDetails?: LocationDetails;
-  displayName?: string;
-  latitude?: number;
-  longitude?: number;
-  city?: string;
-  country?: string;
-}
-
-export interface LocationResolutionResponse {
-  googlePlaceId: string;
-  locationType: LocationType;
-  locationDetails: LocationDetails;
-}
-
-export interface EventDetails {
-  eventTitle: string;
-  eventDescription?: string;
-  startTime: string;
-  endTime: string;
-  timezone?: string;
-  location?: string;
-  onlineUrl?: string;
-  maxAttendees?: number;
-}
+/*
+ * REMOVED AT P2.4″d: `PostLocation`, `LocationResolutionResponse` and the hand-written
+ * `EventDetails`. The first two lost their last consumer when `lib/api/location.ts` and
+ * `lib/hooks/use-location.ts` went (superseded by `features/posts`' `LocationPicker` and
+ * `useResolveLocation`); the third is now imported from `features/posts` above, like the six
+ * other detail blocks the feed echoes, so there is one schema-derived definition rather than
+ * two that agree by luck.
+ */
 
 export interface CreateBookRequest {
   title: string;
@@ -303,263 +277,52 @@ export interface PaymentSyncResponse {
   paid: boolean;
 }
 
-export interface CreatePostRequest {
-  content?: string;
-  googlePlaceId?: string;
-  locationType?: LocationType;
-  locationDetails?: LocationDetails;
-  visibility?: PostVisibility;
-  images?: string[];
-  taggedUserIds?: number[];
-  postType?: PostType;
-  eventDetails?: EventDetails;
-  bookDetails?: CreateBookRequest;
-}
+/*
+ * REMOVED AT P2.4″d: `CreatePostRequest`, `UpdatePostRequest`, `PostAuthor`, `Post`,
+ * `CreatePostPayload`, `CreatePostResponse`. All six described the write side of posts, which
+ * `features/posts/types/post.ts` has owned since P2.4a; they outlived their last consumer when
+ * the event bridge went.
+ */
 
-export interface UpdatePostRequest {
-  content?: string;
-  googlePlaceId?: string;
-  locationType?: LocationType;
-  locationDetails?: LocationDetails;
-  visibility?: PostVisibility;
-  images?: string[];
-  taggedUserIds?: number[];
-}
+/*
+ * REMOVED AT P2.4'd, with the legacy card and `lib/api/posts.ts` that were their only
+ * consumers: `ReactionType`, `UpsertReactionRequest`, `MyReactionResponse`,
+ * `CreateCommentRequest`, `UpdateCommentRequest`, `CommentResponse` and `SessionComment`.
+ * `features/posts/types` owns all of them now, derived from `schema.gen.ts` instead of
+ * hand-written here.
+ *
+ * `SessionComment` was the odd one out and is worth a sentence: it existed because the old
+ * card could write comments but never read them, so a comment you had just posted lived only
+ * in component state and vanished on reload. `CommentThread` reads the real list, so the type
+ * has nothing left to describe.
+ */
 
-export type ReactionType = 'LIKE' | 'LOVE' | 'HAHA' | 'CRY' | 'ANGRY';
+/*
+ * REMOVED AT P2.4″d: `RsvpStatus`, `EventRsvp`, `AttendeeCountResponse`, `AuthUrlResponse`,
+ * `CalendarStatusResponse` — the whole Events block, together with `lib/api/events.ts` and
+ * `lib/hooks/use-events.ts`. `features/posts/types/event.ts` owns them now, derived from
+ * `schema.gen.ts`; the hand-written copies never had a UI consumer at all (the legacy
+ * inventory counted Events as 7 endpoints and 0 screens).
+ */
 
-export interface UpsertReactionRequest {
-  reactionType: ReactionType;
-}
+/*
+ * REMOVED AT P2.5: `FeedBookSummary`, `FeedPostData` and `FeedResponse`, together with
+ * `lib/api/newsfeed.ts` and `lib/hooks/use-posts.ts` (the last of that file: `useNewsfeed`
+ * plus the `NEWSFEED_QUERY_KEY` seam constant). `features/newsfeed/types/feed.ts` owns the
+ * feed payload now, derived from `schema.gen.ts` and — unlike this hand-written copy —
+ * modelling absent values as `| null`, which is what the wire actually carries.
+ */
 
-// Wire shape of GET /v1/api/posts/{postId}/reactions/me — reactionType is null
-// when the current user hasn't reacted to the post.
-export interface MyReactionResponse {
-  reactionType: ReactionType | null;
-}
-
-export interface CreateCommentRequest {
-  content: string;
-  parentId?: number;
-}
-
-export interface UpdateCommentRequest {
-  content: string;
-}
-
-/** @deprecated Backend now exposes GET /posts/{postId}/comments — use CommentResponse via useComments instead. */
-export interface SessionComment {
-  id: string;
-  content: string;
-  authorFullName: string;
-  authorProfilePictureUrl: string;
-  createdAt: string;
-}
-
-// Wire shape of GET /v1/api/posts/{postId}/comments (CommentResponseDto). Flat list ordered
-// by createdAt asc — thread replies client-side via parentId (replies are one level deep only).
-export interface CommentResponse {
-  id: number;
-  postId: number;
-  authorId: number;
-  authorFullName: string | null;
-  authorProfilePictureUrl: string | null;
-  content: string;
-  parentId: number | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface PostAuthor {
-  fullname: string;
-  profilePictureUrl?: string;
-}
-
-export interface Post {
-  id: string;
-  content: string;
-  location?: PostLocation;
-  author: PostAuthor;
-  createdAt: string;
-}
-
-/** @deprecated Use CreatePostRequest instead */
-export interface CreatePostPayload {
-  content: string;
-  location?: PostLocation;
-}
-
-/** @deprecated Use the new response shape from backend */
-export interface CreatePostResponse {
-  success: boolean;
-  message: string;
-  data: Post;
-}
-
-// ─── Events ──────────────────────────────────────────────────────────────────
-
-export type RsvpStatus = 'GOING' | 'INTERESTED' | 'NOT_GOING';
-
-export interface EventRsvp {
-  id: number;
-  postId: number;
-  userId: number;
-  status: RsvpStatus;
-  createdAt: string;
-}
-
-export interface AttendeeCountResponse {
-  count: number;
-}
-
-export interface AuthUrlResponse {
-  authUrl: string;
-}
-
-export interface CalendarStatusResponse {
-  connected: boolean;
-}
-
-// ─── Newsfeed ────────────────────────────────────────────────────────────────
-
-export interface FeedBookSummary {
-  bookId: number;
-  title: string;
-  description?: string;
-  coverImageUrl?: string;
-  fileFormat: BookFileFormat;
-  fileSizeBytes: number;
-  totalPages?: number;
-  previewPages?: number;
-  price: number;
-  currency: string;
-  isFree: boolean;
-  avgRating: number;
-  reviewCount: number;
-}
-
-export interface FeedPostData {
-  postId: number;
-  authorId: number;
-  authorFullName: string;
-  authorProfilePictureUrl: string;
-  // NOTE: backend doesn't return this yet (job title is currently only decodable from the
-  // viewer's own JWT, not per-author on the feed) — renders nothing until it's added.
-  authorJobTitle?: string | null;
-  content: string;
-  visibility: PostVisibility;
-  googlePlaceId: string | null;
-  locationType: LocationType | null;
-  locationDetails: LocationDetails | null;
-  googleMapsUrl: string | null;
-  postType: PostType;
-  eventDetails: EventDetails | null;
-  book: FeedBookSummary | null;
-  createdAt: string;
-  likeCount: number;
-  commentCount: number;
-  shareCount: number;
-}
-
-export interface FeedResponse {
-  posts: FeedPostData[];
-  page: number;
-  size: number;
-  hasMore: boolean;
-}
-
-// ─── Notifications ───────────────────────────────────────────────────────────
-
-export type NotificationType =
-  | 'POST_LIKED'
-  | 'POST_COMMENTED'
-  | 'POST_SHARED'
-  | 'POST_TAGGED'
-  | 'FRIEND_REQUEST'
-  | 'FRIEND_ACCEPTED'
-  | 'EVENT_RSVP'
-  | 'EVENT_REMINDER'
-  | 'BOOK_REVIEW'
-  | 'BOOK_PURCHASED'
-  | 'SYSTEM';
-
-export type NotificationChannel = 'PUSH' | 'EMAIL' | 'BOTH';
-
-export type EmailFrequency = 'INSTANT' | 'DAILY_DIGEST' | 'WEEKLY_DIGEST' | 'NONE';
-
-export interface NotificationResponse {
-  id: number;
-  actorId: number;
-  type: NotificationType;
-  title: string;
-  body: string;
-  referenceId: number;
-  referenceType: string;
-  channel: NotificationChannel;
-  isRead: boolean;
-  createdAt: string;
-}
-
-export interface UnreadCountResponse {
-  count: number;
-}
-
-export interface NotificationPreference {
-  id: number;
-  userId: number;
-  pushEnabled: boolean;
-  emailEnabled: boolean;
-  onesignalPlayerId?: string;
-  emailFrequency: EmailFrequency;
-  mutedTypes: string[];
-}
-
-export interface UpdatePreferenceRequest {
-  pushEnabled?: boolean;
-  emailEnabled?: boolean;
-  onesignalPlayerId?: string;
-  emailFrequency?: EmailFrequency;
-  mutedTypes?: string[];
-}
-
-// ─── Search ──────────────────────────────────────────────────────────────────
-
-export interface SearchUser {
-  id: number;
-  fullName: string;
-  username: string;
-  profilePictureUrl: string;
-}
-
-export interface SearchBook {
-  id: number;
-  title: string;
-  description?: string;
-  coverImageUrl?: string;
-  authorId: number;
-  price: number;
-  isFree: boolean;
-  avgRating: number;
-}
-
-// A book match doesn't get its own result list — it surfaces as its linked post, with
-// `book` attached inline, per SearchController's searchPostsWithBookInfo.
-export interface SearchPost {
-  id: number;
-  content: string;
-  eventName?: string;
-  authorId: number;
-  authorFullName: string;
-  authorProfilePictureUrl: string;
-  visibility: string;
-  createdAt: string;
-  book?: SearchBook;
-}
-
-export interface SearchResponse {
-  users: SearchUser[];
-  posts: SearchPost[];
-}
+/*
+ * REMOVED AT P2.8: `SearchUser`, `SearchBook`, `SearchPost` and `SearchResponse`, together with
+ * `lib/api/search.ts` and `lib/hooks/use-search.ts`. `features/search/types/search.ts` owns them
+ * now, derived from `schema.gen.ts`. Three things the hand-written copies got wrong, all of which
+ * the derived types fix: `SearchUser` had no `eliteScore` at all (the payload has carried it since
+ * reputation shipped); every field was non-nullable, though `avgRating` and `price` are null on an
+ * unrated or free book — the legacy page called `.toFixed(1)` on them unguarded; and `SearchPost`
+ * omitted the six details blocks, which the DTO does declare (they are simply never populated —
+ * see `findings/search.md`).
+ */
 
 // ─── Trending ────────────────────────────────────────────────────────────────
 

@@ -23,10 +23,10 @@ export function TrendingCard({ item }: TrendingCardProps) {
     const diffHr = Math.floor(diffMin / 60);
     const diffDay = Math.floor(diffHr / 24);
 
-    if (diffSec < 60) return t('post.justNow');
-    if (diffMin < 60) return t('post.minutesAgo', { minutes: diffMin });
-    if (diffHr < 24) return t('post.hoursAgo', { hours: diffHr });
-    if (diffDay < 7) return t('post.daysAgo', { days: diffDay });
+    if (diffSec < 60) return t('time.justNow');
+    if (diffMin < 60) return t('time.minutesAgo', { minutes: diffMin });
+    if (diffHr < 24) return t('time.hoursAgo', { hours: diffHr });
+    if (diffDay < 7) return t('time.daysAgo', { days: diffDay });
 
     return date.toLocaleDateString('vi-VN', {
       day: 'numeric',
