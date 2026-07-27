@@ -1,10 +1,15 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
-import { profileApi, getErrorMessage } from '@/lib/api';
-import { useAppSelector } from '@/lib/store/hooks';
-import type { ChangePasswordRequest, Profile, UserResponse } from '@/lib/types';
+import { useQuery } from '@tanstack/react-query';
+import { profileApi } from '@/lib/api';
+import { useAppSelector } from '@/core/store/hooks';
+import type { Profile, UserResponse } from '@/lib/types';
+
+// The profile-editing hooks (update/upload-picture/change-password) moved to
+// features/security (P2.1"c). What remains is the shared "current user" read used by the
+// app shell (admin/main layouts), the newsfeed/chat/posts surfaces, and the role sync —
+// all still on legacy. It migrates domain-by-domain (posts P2.4, chat P2.7) and finally
+// with the app shell in Phase 3.4.
 
 export const PROFILE_QUERY_KEY = ['profile', 'me'];
 
@@ -30,50 +35,5 @@ export function useProfile() {
     queryFn: () => profileApi.getProfile().then((r) => toProfile(r.data)),
     enabled: isAuthenticated,
     staleTime: 5 * 60 * 1000,
-  });
-}
-
-export function useUpdateProfile() {
-  const qc = useQueryClient();
-
-  return useMutation({
-    mutationFn: (data: { fullname: string }) =>
-      profileApi.updateProfile({ fullName: data.fullname }),
-    onSuccess: ({ data }) => {
-      qc.setQueryData(PROFILE_QUERY_KEY, toProfile(data));
-      toast.success('Profile updated');
-    },
-    onError: (error) => {
-      toast.error(getErrorMessage(error, 'Failed to update profile'));
-    },
-  });
-}
-
-export function useUploadProfilePicture() {
-  const qc = useQueryClient();
-
-  return useMutation({
-    mutationFn: (file: File) => profileApi.uploadProfilePicture(file),
-    onSuccess: ({ data }) => {
-      qc.setQueryData<Profile | undefined>(PROFILE_QUERY_KEY, (old) =>
-        old ? { ...old, profilePictureUrl: data.profilePictureUrl } : old
-      );
-      toast.success('Profile picture updated');
-    },
-    onError: (error) => {
-      toast.error(getErrorMessage(error, 'Failed to upload profile picture'));
-    },
-  });
-}
-
-export function useChangePassword() {
-  return useMutation({
-    mutationFn: (data: ChangePasswordRequest) => profileApi.changePassword(data),
-    onSuccess: () => {
-      toast.success('Password changed successfully');
-    },
-    onError: (error) => {
-      toast.error(getErrorMessage(error, 'Failed to change password'));
-    },
   });
 }
