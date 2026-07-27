@@ -3,6 +3,36 @@
 Một file cho mỗi domain: phiên làm việc chỉ đọc file của domain đang làm.
 Quay lại [`fe-migration-ledger.md`](../../fe-migration-ledger.md).
 
+- **Chu kỳ 2 — 5 phát hiện của tầng data (P2.4′a), tất cả ảnh hưởng tới UI b/c/d:**
+  1. **Thread chỉ SÂU 2 TẦNG.** `CommentService.validateParentComment` ném
+     _"Replies can only be made to top-level comments"_ khi parent đã có `parentId`. Trả lời
+     một reply phải gửi `parentId` của **comment gốc**, không phải của comment đang trả lời.
+     UI đừng dựng cây đệ quy rồi mong BE nhận.
+  2. **Xoá comment gốc là xoá luôn reply, và Java KHÔNG nói điều đó.**
+     `deleteComment` chỉ là `repository.delete(comment)`; cascade nằm ở Postgres
+     (`t_comments_parent_id_fkey ... ON DELETE CASCADE`, đã kiểm trên dev DB). Nên sau khi
+     xoá phải **refetch cả thread**, không splice một dòng khỏi cache.
+  3. **Không có `isEdited`.** `@UpdateTimestamp` được Hibernate sinh **ngay lúc INSERT** (đo
+     thật: comment vừa tạo có `updatedAt === createdAt`), nên cách duy nhất nhận ra bài đã
+     sửa là so `updatedAt !== createdAt`.
+  4. **Không có endpoint đọc tổng reaction lẫn danh sách người thả.**
+     `PostReactionController` chỉ trả lời "**tôi** đã thả gì" (`/reactions/me`, 1 request /
+     post, không có bản batch). Con số tổng nằm trong payload post của **newsfeed/search**
+     → muốn số nhảy sau khi bấm thì phải patch feed entry hoặc refetch feed, controller này
+     không bao giờ trả về tổng mới. Cùng loại phụ thuộc với `invalidate` xuyên domain ở dưới.
+  5. **Bỏ reaction khi chưa từng thả là LỖI, không phải no-op.** `removeReaction` ném
+     `NotFoundException("Reaction not found for this post")`. Toggle phải biết trạng thái
+     hiện tại trước khi bắn, và optimistic update phải rollback được.
+
+  Đo trên API thật (post id 1, seed user 9001): `GET /reactions/me` khi chưa thả trả
+  **`{"reactionType":null}`** — key **có mặt**, giá trị null (Jackson để mặc định `ALWAYS`,
+  BE không cấu hình `NON_NULL`). Nên type là `reactionType: ReactionType | null`, không phải
+  optional. Comment probe đã xoá sạch (`t_comments` = 0 dòng).
+
+- **Type tên `PostComment`, không phải `Comment`** (P2.4′a). `lib.dom` đã khai báo global
+  `Comment` (DOM node); file quên import bản của ta vẫn compile qua global đó rồi hỏng ở chỗ
+  chẳng liên quan. Tiền tố không tốn gì.
+
 - **Cách tách UI chu kỳ 1 (công bố ở P2.4c-1, trần 5 component/checkpoint):**
 
   | ID     | surface                                                      | endpoint                                         |

@@ -19,3 +19,7 @@ export type {
 export type { LocationResolutionRequest, LocationResolution } from './location';
 
 export type { SubmitQuizRequest, QuizResult } from './quiz';
+
+export type { PostComment, CreateCommentRequest, UpdateCommentRequest } from './comment';
+
+export type { ReactionType, MyReaction, UpsertReactionRequest } from './reaction';

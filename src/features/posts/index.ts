@@ -11,7 +11,7 @@
  * posts are read through `newsfeed` and `search`, which embed the post payload.
  */
 
-export { postsApi, locationApi, quizApi } from './api';
+export { postsApi, locationApi, quizApi, commentsApi, reactionsApi } from './api';
 
 export {
   PostComposer,
@@ -70,4 +70,10 @@ export type {
   LocationResolution,
   SubmitQuizRequest,
   QuizResult,
+  PostComment,
+  CreateCommentRequest,
+  UpdateCommentRequest,
+  ReactionType,
+  MyReaction,
+  UpsertReactionRequest,
 } from './types';
