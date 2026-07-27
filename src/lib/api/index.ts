@@ -8,7 +8,6 @@ export * from './moderation';
 export * from './newsfeed';
 export * from './notifications';
 export * from './payments';
-export * from './posts';
 export * from './profile';
 export * from './search';
 export * from './social';
