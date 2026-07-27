@@ -33,15 +33,14 @@ export function ConversationList() {
     if (!date) return '';
     const now = new Date();
     const diff = now.getTime() - date.getTime();
-    if (diff < 60_000) return t('post.justNow');
-    if (diff < 3_600_000) return t('post.minutesAgo', { minutes: Math.floor(diff / 60_000) });
-    if (diff < 86_400_000) return t('post.hoursAgo', { hours: Math.floor(diff / 3_600_000) });
+    if (diff < 60_000) return t('time.justNow');
+    if (diff < 3_600_000) return t('time.minutesAgo', { minutes: Math.floor(diff / 60_000) });
+    if (diff < 86_400_000) return t('time.hoursAgo', { hours: Math.floor(diff / 3_600_000) });
     return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   };
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-[#242526]">
-
       {/* Header */}
       <div className="flex items-center justify-between px-4 pt-4 pb-2 shrink-0">
         <h2 className="text-xl font-bold text-[#050505] dark:text-white">{t('chat.chats')}</h2>
@@ -92,7 +91,9 @@ export function ConversationList() {
                 d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
               />
             </svg>
-            <p className="text-sm text-[#65676b] dark:text-[#b0b3b8]">{t('chat.noConversations')}</p>
+            <p className="text-sm text-[#65676b] dark:text-[#b0b3b8]">
+              {t('chat.noConversations')}
+            </p>
           </div>
         ) : (
           <div className="px-2">
