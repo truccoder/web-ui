@@ -5,7 +5,7 @@ import { Card, DeveloperIdentity, DeveloperMeta } from '@/shared/components';
 import { RepScore } from '@/features/reputation';
 import { useT } from '@/lib/i18n';
 import { cn } from '@/shared/lib/cn';
-import { formatDate, useIntlLocale } from '../lib/format';
+import { useRelativeTime } from '@/shared/lib/format';
 import type { LocationResolution } from '../types/location';
 import { LocationBadge } from './location-badge';
 
@@ -73,33 +73,10 @@ export interface PostCardProps {
   className?: string;
 }
 
-/**
- * Relative time for the identity row, falling back to an absolute date after a week.
- *
- * Kept local rather than lifted to `shared/lib`: it needs the translator, and the only
- * other consumer today is the legacy card this replaces. Promote it when the comment
- * thread (c-3) needs the same labels.
- */
-function useRelativeTime() {
-  const t = useT();
-  const localeTag = useIntlLocale();
-
-  return (iso: string): string => {
-    const then = new Date(iso).getTime();
-    if (Number.isNaN(then)) return '';
-
-    const seconds = Math.floor((Date.now() - then) / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
-
-    if (seconds < 60) return t('post.justNow');
-    if (minutes < 60) return t('post.minutesAgo', { minutes });
-    if (hours < 24) return t('post.hoursAgo', { hours });
-    if (days < 7) return t('post.daysAgo', { days });
-    return formatDate(iso, localeTag) ?? '';
-  };
-}
+/* `useRelativeTime` used to live here. P2.6cd promoted it to `shared/lib/format.ts` — the
+   condition this file set for that ("promote it when something else needs the same labels")
+   came true when `features/notifications` needed the identical "2 giờ trước" label. Its i18n
+   keys moved from `post.*` to `time.*` in the same step. */
 
 export function PostCard({
   postId,

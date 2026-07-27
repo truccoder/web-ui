@@ -164,19 +164,76 @@ preference. Ghi rõ giới hạn này trong report, đừng báo là đã verify
 
 ---
 
-## Quyết định còn treo cho P2.6cd
+## Quyết định đã chốt ở P2.6cd (ba câu hỏi treo từ ab, đều đã trả lời)
 
-1. **Đặt surface ở đâu.** Chuông thông báo thuộc **app shell (P3.4)**; panel preference thuộc một
-   mặt settings chưa tồn tại. **Công bố cách đặt ở ĐẦU bước cd**, trước khi viết component đầu
-   tiên — không quyết giữa chừng.
-2. **`emailFrequency`**: cắt hay render kèm nhãn (mục 6).
-3. **Legacy chưa xoá** (Guardrail B, đúng như dự kiến): `src/lib/api/notifications.ts` +
-   `src/lib/hooks/use-notifications.ts` vẫn còn ở P2.6ab vì domain này **0 UI** → không có
-   consumer nào để rewire, mà xoá trước khi có consumer là mass-delete. **P2.6cd xoá cả hai.**
-   Ngoài chúng, `lib/types/index.ts` còn `NotificationResponse` / `NotificationPreference` /
-   `UpdatePreferenceRequest` / `UnreadCountResponse` — xoá cùng đợt; `Page<T>` thì **không**,
-   `lib/api/moderation.ts` và `lib/api/social.ts` vẫn dùng (chết ở P2.15 / khi chốt số phận
-   `social`).
+1. **Surface: route mới `/notifications`**, domain chủ là `notifications`, không domain nào góp
+   mặt. Không rewire trang nào vì không trang nào giữ chức năng của domain này. **Chuông + badge
+   KHÔNG dựng** — thuộc app shell, P3.4; dựng trước một component chưa có shell để gắn là đúng
+   thứ CLAUDE.md §Phase 1.3 cấm. `unread-count` lấy consumer ở header của chính trang này, nên
+   không endpoint nào phải chờ P3.4.
+2. **`emailFrequency`: CẮT.** DS deviation #20. Nhãn "chưa có hiệu lực" vẫn là mời người dùng
+   chọn rồi lưu một giá trị nói dối. `pushEnabled`/`emailEnabled` thì giữ — cả hai được
+   `shouldSendPush`/`shouldSendEmail` đọc thật.
+3. **Legacy đã xoá** (Guardrail B thoả: có consumer thật rồi mới xoá): `lib/api/notifications.ts`,
+   `lib/hooks/use-notifications.ts`, 2 dòng barrel, và khối `// ─── Notifications ───` trong
+   `lib/types/index.ts` (7 type). **`Page<T>` giữ lại** — `lib/api/moderation.ts` và
+   `lib/api/social.ts` vẫn dùng (chết ở P2.15 / khi chốt số phận `social`).
+
+## 13. Bẫy `isError` không bắt hết trạng thái hỏng — lỗi thật, bắt được khi verify
+
+Nhánh render quen thuộc `isLoading ? skeleton : isError ? error : empty` **có lỗ**. React Query
+có trạng thái `status: 'pending'` + `fetchStatus: 'paused'`, trong đó **`isLoading` false và
+`isError` cũng false** → rơi thẳng vào nhánh empty. Đo được tại chỗ khi verify P2.6cd (gắn
+`data-debug` tạm vào DOM): request list đang hỏng mà UI báo **"Chưa có thông báo nào"** — tức
+app tự bịa ra kết luận "bạn không có thông báo nào" trong khi nó còn chưa hỏi được.
+
+→ `NotificationList` đổi sang: skeleton khi `isPending && fetchStatus === 'fetching'`; error khi
+`status !== 'success'`; empty **chỉ khi** `status === 'success'`. "Không có gì" là khẳng định chỉ
+server mới được phép đưa ra.
+
+→ **`features/newsfeed/components/newsfeed.tsx` có ĐÚNG cùng lỗ này** (`isLoading` → `isError` →
+empty). Chưa sửa ở checkpoint này vì thuộc domain khác; **sửa ở P3.1** khi assemble `/newsfeed`.
+Triệu chứng sẽ là "Chưa có bài viết nào" trong khi feed thực ra không tải được.
+
+## 14. CHƯA GIẢI THÍCH ĐƯỢC: nút "Thử lại" không phát request nào
+
+Đo hai lần, hai kiểu lỗi khác nhau (path 500 và `page=0` → 400 trên đúng endpoint thật): sau khi
+list vào trạng thái lỗi, bấm "Thử lại" → `refetch()` chạy nhưng **0 request rời trình duyệt**
+(đọc network sau khi clear, rỗng hoàn toàn). Dispatch thủ công `new Event('online')` cũng không
+gỡ được.
+
+Khớp với việc React Query đang giữ query ở `fetchStatus: 'paused'` (đo được ở mục 13) —
+`networkMode: 'online'` mặc định thì query paused sẽ không fetch, kể cả khi gọi `refetch()` tay.
+Vì sao RQ cho là offline thì **chưa xác định được**: `navigator.onLine` trả `true`, và CORS trên
+response 500/400 có đủ header (kiểm bằng curl với `Origin`).
+
+**Đã xác nhận app hồi phục**: reload trang (không patch) thì list tải lại đủ 3 dòng. Trạng thái
+parked chỉ sống trong phiên đó.
+
+Chưa kết luận đây là lỗi của FE hay của môi trường automation. **Việc cần làm trước khi tin nút
+này**: bấm "Thử lại" bằng tay trên một lỗi thật (tắt BE rồi bật lại), và nếu tái hiện thì cân
+nhắc `networkMode: 'always'` cho query client ở `core/query/client.ts` — nhưng đó là đổi hạ tầng
+dùng chung cho mọi domain, không phải quyết định của một checkpoint domain.
+
+## 15. Deep-link: chỉ 2 trong 11 loại đi được đâu đó
+
+`referenceType` có 3 giá trị (`POST`, `BOOK`, `FRIEND_REQUEST`) nhưng app **không có route trang
+bài viết đơn lẻ và không có route chi tiết sách** — feed là nơi duy nhất bài viết được render, mà
+feed phân trang từ Redis nên không nhảy tới một mục được. Làm link `/posts/{id}` ở đây là ship
+một link 404, đúng thứ đã bị loại một lần cho profile (CLAUDE.md Phase 3.1).
+
+→ chỉ `FRIEND_REQUEST` → `/friends/requests` và `FRIEND_ACCEPTED` → `/friends/all` là link thật.
+Link theo **`type`** chứ không theo `referenceType`: lời mời đã được chấp nhận thì không còn nằm
+ở màn requests nữa. Dòng không link được vẫn bấm được (để đánh dấu đã đọc) nếu chưa đọc, và là
+`<div>` trơ nếu đã đọc — không phải `<button disabled>`, vì nó không còn là control.
+
+Mở được trang bài viết / trang sách ở P2.10 hay P3.x thì quay lại nới `hrefFor`.
+
+## Trạng thái dev DB sau P2.6cd
+
+Verify bằng trình duyệt đã đổi state rồi **khôi phục hết**: 3 notification về `is_read=false`,
+`muted_types` về `[]` (lúc verify có mute `POST_LIKED` qua UI thật), `push_enabled`/`email_enabled`
+về `true`. Chỉ `updated_at` không hoàn nguyên được (`@UpdateTimestamp`) — vô hại.
 
 ## Trạng thái dev DB sau P2.6ab
 

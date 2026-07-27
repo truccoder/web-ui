@@ -56,6 +56,7 @@ export const en = {
   nav: {
     newsfeed: 'Newsfeed',
     trending: 'Trending',
+    notifications: 'Notifications',
     friends: 'Friends',
     friendsAll: 'All Friends',
     friendsSuggestions: 'Suggestions',
@@ -178,6 +179,42 @@ export const en = {
       desc: 'Be the first to post or add more friends to see updates!',
     },
     allLoaded: "You've seen all posts \uD83C\uDF89",
+  },
+
+  notifications: {
+    title: 'Notifications',
+    subtitle: 'Activity involving you, and how you want to hear about it',
+    unreadCount: '${count} unread',
+    allRead: "You're all caught up",
+    unreadMarker: 'Unread',
+    markAllRead: 'Mark all as read',
+    error: 'Could not load notifications. Please try again.',
+    retry: 'Try again',
+    allLoaded: "You've seen all notifications",
+    empty: {
+      title: 'No notifications yet',
+      desc: 'When someone interacts with you, it will show up here.',
+    },
+    prefs: {
+      channels: 'Delivery channels',
+      push: 'Push notifications',
+      pushDesc: 'Shown by your browser while you are in another app',
+      email: 'Email notifications',
+      emailDesc: 'Sent as soon as something happens',
+      types: 'Notification types',
+      typesDesc: 'Turn one off and you will stop receiving that kind',
+      error: 'Could not load your notification settings',
+      saveError: 'Could not save that change. Please try again.',
+    },
+    types: {
+      POST_LIKED: 'Someone reacts to your post',
+      POST_COMMENTED: 'Someone comments on your post',
+      POST_TAGGED: 'Someone mentions you in a post',
+      FRIEND_REQUEST: 'New friend request',
+      FRIEND_ACCEPTED: 'Friend request accepted',
+      BOOK_REVIEW: 'New review on your book',
+      BOOK_PURCHASED: 'Someone buys your book',
+    },
   },
 
   search: {
@@ -386,11 +423,14 @@ export const en = {
     },
   },
 
-  post: {
+  time: {
     justNow: 'Just now',
     minutesAgo: '${minutes}m ago',
     hoursAgo: '${hours}h ago',
     daysAgo: '${days}d ago',
+  },
+
+  post: {
     unknownAuthor: 'Unknown author',
     qna: {
       accept: 'Accept answer',

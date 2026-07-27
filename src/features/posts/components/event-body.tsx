@@ -5,7 +5,7 @@ import { CalendarDays, MapPin, Users, Video } from 'lucide-react';
 import { Badge } from '@/shared/components';
 import { useT } from '@/lib/i18n';
 import { cn } from '@/shared/lib/cn';
-import { formatDateTime, useIntlLocale } from '../lib/format';
+import { formatDateTime, useIntlLocale } from '@/shared/lib/format';
 import type { EventDetails } from '../types/post';
 
 /**

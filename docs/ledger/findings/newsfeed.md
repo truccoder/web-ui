@@ -38,3 +38,15 @@ Quay lại [`fe-migration-ledger.md`](../../fe-migration-ledger.md).
   observer dựng tay trong console cũng **không hề fire**. Không phải lỗi code. Kiểm `visibilityState`
   trước khi đi truy sentinel/effect; khi tab được hiện lại thì trang 2 nạp ngay (đo được 13 card / 2
   request).
+
+- **`Newsfeed` có lỗ `isError` không bắt hết trạng thái hỏng — chưa sửa, để P3.1.**
+  Phát hiện ở P2.6cd trên component song sinh `NotificationList` (chi tiết + số đo ở
+  `findings/notifications.md` §13). Chuỗi `isLoading ? skeleton : isError ? error : empty` bỏ sót
+  trạng thái React Query `status: 'pending'` + `fetchStatus: 'paused'`, trong đó **cả `isLoading`
+  lẫn `isError` đều false** → rơi vào nhánh empty. Triệu chứng ở đây sẽ là **"Chưa có bài viết
+  nào"** trong khi feed thực ra không tải được — tức app khẳng định một điều chỉ server mới được
+  phép khẳng định.
+  Sửa đúng (đã áp cho notifications): skeleton khi `isPending && fetchStatus === 'fetching'`,
+  error khi `status !== 'success'`, empty **chỉ khi** `status === 'success'`.
+  Không sửa ở P2.6cd vì đây là component của domain khác — đổi nó ở checkpoint notifications là
+  mở rộng phạm vi ngoài Guardrail B. **P3.1 sửa cùng lúc assemble `/newsfeed`.**

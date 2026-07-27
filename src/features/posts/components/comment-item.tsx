@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Badge, Button, DeveloperIdentity, DeveloperMeta } from '@/shared/components';
 import { useT } from '@/lib/i18n';
 import { cn } from '@/shared/lib/cn';
-import { formatDateTime, useIntlLocale } from '../lib/format';
+import { formatDateTime, useIntlLocale } from '@/shared/lib/format';
 import type { PostComment } from '../types/comment';
 import { CommentComposer } from './comment-composer';
 

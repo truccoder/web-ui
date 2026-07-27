@@ -313,60 +313,6 @@ export interface PaymentSyncResponse {
  * modelling absent values as `| null`, which is what the wire actually carries.
  */
 
-// ─── Notifications ───────────────────────────────────────────────────────────
-
-export type NotificationType =
-  | 'POST_LIKED'
-  | 'POST_COMMENTED'
-  | 'POST_SHARED'
-  | 'POST_TAGGED'
-  | 'FRIEND_REQUEST'
-  | 'FRIEND_ACCEPTED'
-  | 'EVENT_RSVP'
-  | 'EVENT_REMINDER'
-  | 'BOOK_REVIEW'
-  | 'BOOK_PURCHASED'
-  | 'SYSTEM';
-
-export type NotificationChannel = 'PUSH' | 'EMAIL' | 'BOTH';
-
-export type EmailFrequency = 'INSTANT' | 'DAILY_DIGEST' | 'WEEKLY_DIGEST' | 'NONE';
-
-export interface NotificationResponse {
-  id: number;
-  actorId: number;
-  type: NotificationType;
-  title: string;
-  body: string;
-  referenceId: number;
-  referenceType: string;
-  channel: NotificationChannel;
-  isRead: boolean;
-  createdAt: string;
-}
-
-export interface UnreadCountResponse {
-  count: number;
-}
-
-export interface NotificationPreference {
-  id: number;
-  userId: number;
-  pushEnabled: boolean;
-  emailEnabled: boolean;
-  onesignalPlayerId?: string;
-  emailFrequency: EmailFrequency;
-  mutedTypes: string[];
-}
-
-export interface UpdatePreferenceRequest {
-  pushEnabled?: boolean;
-  emailEnabled?: boolean;
-  onesignalPlayerId?: string;
-  emailFrequency?: EmailFrequency;
-  mutedTypes?: string[];
-}
-
 // ─── Search ──────────────────────────────────────────────────────────────────
 
 export interface SearchUser {

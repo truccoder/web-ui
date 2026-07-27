@@ -58,6 +58,7 @@ export const vi: Messages = {
   nav: {
     newsfeed: 'Bảng tin',
     trending: 'Xu hướng',
+    notifications: 'Thông báo',
     friends: 'Bạn bè',
     friendsAll: 'Tất cả bạn bè',
     friendsSuggestions: 'Gợi ý',
@@ -181,6 +182,42 @@ export const vi: Messages = {
       desc: 'Hãy là người đầu tiên đăng bài hoặc kết bạn thêm để xem tin tức mới!',
     },
     allLoaded: 'Bạn đã xem hết bài viết rồi 🎉',
+  },
+
+  notifications: {
+    title: 'Thông báo',
+    subtitle: 'Hoạt động liên quan tới bạn và cách bạn muốn được báo',
+    unreadCount: '${count} thông báo chưa đọc',
+    allRead: 'Bạn đã đọc hết thông báo',
+    unreadMarker: 'Chưa đọc',
+    markAllRead: 'Đánh dấu tất cả đã đọc',
+    error: 'Không thể tải thông báo. Vui lòng thử lại.',
+    retry: 'Thử lại',
+    allLoaded: 'Bạn đã xem hết thông báo rồi',
+    empty: {
+      title: 'Chưa có thông báo nào',
+      desc: 'Khi có người tương tác với bạn, thông báo sẽ xuất hiện ở đây.',
+    },
+    prefs: {
+      channels: 'Kênh nhận thông báo',
+      push: 'Thông báo đẩy',
+      pushDesc: 'Hiện trên trình duyệt khi bạn đang mở ứng dụng khác',
+      email: 'Thông báo qua email',
+      emailDesc: 'Gửi ngay khi có hoạt động mới',
+      types: 'Loại thông báo',
+      typesDesc: 'Tắt loại nào thì sẽ không nhận thông báo loại đó nữa',
+      error: 'Không tải được tuỳ chọn thông báo',
+      saveError: 'Không lưu được thay đổi. Vui lòng thử lại.',
+    },
+    types: {
+      POST_LIKED: 'Có người thích bài viết của bạn',
+      POST_COMMENTED: 'Có người bình luận bài viết của bạn',
+      POST_TAGGED: 'Có người nhắc tới bạn trong bài viết',
+      FRIEND_REQUEST: 'Lời mời kết bạn mới',
+      FRIEND_ACCEPTED: 'Lời mời kết bạn được chấp nhận',
+      BOOK_REVIEW: 'Có đánh giá mới cho sách của bạn',
+      BOOK_PURCHASED: 'Có người mua sách của bạn',
+    },
   },
 
   search: {
@@ -388,11 +425,14 @@ export const vi: Messages = {
     },
   },
 
-  post: {
+  time: {
     justNow: 'Vừa xong',
     minutesAgo: '${minutes} phút trước',
     hoursAgo: '${hours} giờ trước',
     daysAgo: '${days} ngày trước',
+  },
+
+  post: {
     unknownAuthor: 'Tác giả không xác định',
     qna: {
       accept: 'Chọn làm đáp án',

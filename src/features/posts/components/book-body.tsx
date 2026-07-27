@@ -4,7 +4,7 @@ import { useState, type ReactNode } from 'react';
 import { Badge } from '@/shared/components';
 import { useT } from '@/lib/i18n';
 import { cn } from '@/shared/lib/cn';
-import { formatCurrency, useIntlLocale } from '../lib/format';
+import { formatCurrency, useIntlLocale } from '@/shared/lib/format';
 
 /**
  * Read side of a `BOOK` post — fills `PostCard`'s `body` slot.

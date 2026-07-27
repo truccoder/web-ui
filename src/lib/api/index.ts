@@ -3,7 +3,6 @@ export * from './books';
 export * from './error';
 export * from './friendship';
 export * from './moderation';
-export * from './notifications';
 export * from './payments';
 export * from './profile';
 export * from './search';

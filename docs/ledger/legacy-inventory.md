@@ -7,24 +7,24 @@ mình đang xoá cái gì.
 Chi tiết từng endpoint: [`p03-endpoint-reconciliation.md`](../p03-endpoint-reconciliation.md)
 (sinh lại bằng `node scripts/p03-reconcile.mjs`).
 
-| domain         | endpoint đã gọi | hook có UI dùng | ghi chú                                                                                   |
-| -------------- | --------------- | --------------- | ----------------------------------------------------------------------------------------- |
-| friendships    | 8/8             | 9/9             | lớp data đủ và đúng                                                                       |
-| moderation     | 4/4             | 4/4             | lớp data đủ và đúng                                                                       |
-| newsfeed       | 1/1             | —               | feed gọi trong `use-posts.ts`, không phải file riêng                                      |
-| search         | 1/1             | 1/3             | 2 hook còn lại là tiện ích debounce                                                       |
-| trending       | 1/1             | 1/1             |                                                                                           |
-| bookstore      | 10/10 (+1 N/A)  | 7/10            | thiếu UI: `useBooksByAuthor`, `useDeleteBook`, `useRatingBreakdown`                       |
-| posts          | 19/21 (+1 N/A)  | 6/12            | **comment chỉ ghi được, không đọc** — xem dưới                                            |
-| posts (events) | 7/7 (+1 N/A)    | ~~0/6~~ → done  | ~~toàn bộ Events không có UI~~ — **đã đóng ở P2.4″d**: RSVP + đếm + ICS + Google Calendar |
-| security       | 13/17           | 13/18           | thiếu 4 endpoint OAuth (google/github url + callback)                                     |
-| notifications  | 6/6             | **0/6**         | **cả domain có data layer, không có UI nào**                                              |
-| knowledge      | 0/10            | —               | chưa động tới                                                                             |
-| roadmap        | 0/8             | —               | chưa động tới                                                                             |
-| github         | 0/5             | —               | chưa động tới                                                                             |
-| matchmaking    | 0/5             | —               | chưa động tới                                                                             |
-| chat           | 0/1             | —               | FE tự phát token qua `app/api/twilio/token`, không dùng `GET /v1/api/chat/token` của BE   |
-| reputation     | 0/1             | —               | chưa từng có code legacy → P2.3 dựng thẳng trong `features/`, không có gì để xoá          |
+| domain         | endpoint đã gọi | hook có UI dùng | ghi chú                                                                                     |
+| -------------- | --------------- | --------------- | ------------------------------------------------------------------------------------------- |
+| friendships    | 8/8             | 9/9             | lớp data đủ và đúng                                                                         |
+| moderation     | 4/4             | 4/4             | lớp data đủ và đúng                                                                         |
+| newsfeed       | 1/1             | —               | feed gọi trong `use-posts.ts`, không phải file riêng                                        |
+| search         | 1/1             | 1/3             | 2 hook còn lại là tiện ích debounce                                                         |
+| trending       | 1/1             | 1/1             |                                                                                             |
+| bookstore      | 10/10 (+1 N/A)  | 7/10            | thiếu UI: `useBooksByAuthor`, `useDeleteBook`, `useRatingBreakdown`                         |
+| posts          | 19/21 (+1 N/A)  | 6/12            | **comment chỉ ghi được, không đọc** — xem dưới                                              |
+| posts (events) | 7/7 (+1 N/A)    | ~~0/6~~ → done  | ~~toàn bộ Events không có UI~~ — **đã đóng ở P2.4″d**: RSVP + đếm + ICS + Google Calendar   |
+| security       | 13/17           | 13/18           | thiếu 4 endpoint OAuth (google/github url + callback)                                       |
+| notifications  | 6/6             | ~~0/6~~ → done  | ~~cả domain có data layer, không có UI nào~~ — **đã đóng ở P2.6cd**: route `/notifications` |
+| knowledge      | 0/10            | —               | chưa động tới                                                                               |
+| roadmap        | 0/8             | —               | chưa động tới                                                                               |
+| github         | 0/5             | —               | chưa động tới                                                                               |
+| matchmaking    | 0/5             | —               | chưa động tới                                                                               |
+| chat           | 0/1             | —               | FE tự phát token qua `app/api/twilio/token`, không dùng `GET /v1/api/chat/token` của BE     |
+| reputation     | 0/1             | —               | chưa từng có code legacy → P2.3 dựng thẳng trong `features/`, không có gì để xoá            |
 
 Cột "hook có UI dùng" đếm hook được import từ `app/` hoặc `components/`. 5 symbol của
 `security` bị đếm là không-có-UI (`syncRoleFromProfile`, `clearRoleCookie`,
@@ -33,8 +33,10 @@ Cột "hook có UI dùng" đếm hook được import từ `app/` hoặc `compon
 
 ### Ba chỗ "đã wire" nhưng chưa thành tính năng
 
-1. **`notifications` — 6/6 endpoint, 0 UI.** `src/lib/hooks/use-notifications.ts` không
-   được file nào trong `app/` hay `components/` import. Chuông thông báo chưa tồn tại.
+1. ~~**`notifications` — 6/6 endpoint, 0 UI.**~~ — **ĐÃ ĐÓNG ở P2.6cd.** `NotificationList` +
+   `NotificationPreferences` trên route mới `/notifications` phủ cả 6 endpoint.
+   **Còn lại, có chủ đích**: chuông + badge trên topbar thuộc **app shell → P3.4**; nó sẽ mount
+   `useUnreadNotificationCount` của riêng nó và link về `/notifications`.
 2. ~~**Events — 7 endpoint, 0 UI.**~~ — **ĐÃ ĐÓNG ở P2.4″d.** `EventRsvpBar` +
    `EventCalendarActions` phủ RSVP, số người tham gia, ICS và Google Calendar.
    **Giới hạn còn lại, không phải nợ FE**: danh sách attendee chỉ có `userId` (BE trả JPA
@@ -162,3 +164,31 @@ truyền xuống qua prop `renderBookActions`. P2.10 đổi prop này sang compo
 | `POST /v1/api/posts/locations/resolve`                          | ~~FE thiếu `googleMapsUrl`~~ — **đã đóng ở P2.4a** (type mới derive từ spec, field có đủ và xác nhận nullable)                                                                                                                                                                                |
 
 ---
+
+### Đã xoá ở P2.6cd (domain notifications)
+
+Route mới `/notifications` render `NotificationList` + `NotificationPreferences` của
+`features/notifications`. Xoá theo đó:
+
+| file / symbol                                                                                                                                                          | vì sao xoá được                                                                            |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `lib/api/notifications.ts` — **cả file**                                                                                                                               | thay bằng `features/notifications/api/notification.ts` + `api/preference.ts`               |
+| `lib/hooks/use-notifications.ts` — **cả file**                                                                                                                         | thay bằng `features/notifications/hooks` (6 hook cùng tên + `notificationKeys`)            |
+| `lib/types`: `NotificationType` `NotificationChannel` `EmailFrequency` `NotificationResponse` `UnreadCountResponse` `NotificationPreference` `UpdatePreferenceRequest` | `features/notifications/types` sở hữu, derive từ `schema.gen.ts`; bản cũ còn khai sai `id` |
+
+**GIỮ LẠI có chủ đích:**
+
+- `lib/types`: `Page<T>` — **không** thuộc riêng notifications. `lib/api/moderation.ts` (3 chỗ) và
+  `lib/api/social.ts` (3 chỗ) vẫn dùng. `features/notifications` không dùng nó nữa: envelope
+  phân trang được derive riêng từ `PageNotificationResponseDto` (lý do ở `findings/notifications.md`
+  §4). Chết ở **P2.15** cùng moderation, hoặc sớm hơn nếu chốt bỏ `social`.
+
+**Không phải xoá mà là DI CHUYỂN, cùng checkpoint:**
+
+| từ                                                   | tới                    | vì sao                                                                                                                                                                             |
+| ---------------------------------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `features/posts/lib/format.ts` (cả file)             | `shared/lib/format.ts` | chính file đó tự hẹn "promote khi domain thứ hai cần"; notifications là domain thứ hai. Thư mục `features/posts/lib/` giờ rỗng                                                     |
+| `useRelativeTime` (hàm cục bộ trong `post-card.tsx`) | `shared/lib/format.ts` | cùng lý do, comment trong `post-card.tsx` cũng đã hẹn sẵn                                                                                                                          |
+| i18n `post.justNow/minutesAgo/hoursAgo/daysAgo`      | `time.*`               | nhãn thời gian không thuộc domain post nữa. **2 file legacy phải sửa theo**: `components/chat/conversation-list.tsx`, `components/trending/trending-card.tsx` (chết ở P2.7 / P2.9) |
+
+**`src/lib/api/` còn 11 file, `src/lib/hooks/` còn 11 file.**

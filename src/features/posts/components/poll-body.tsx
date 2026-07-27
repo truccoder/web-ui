@@ -2,7 +2,7 @@
 
 import { useT } from '@/lib/i18n';
 import { cn } from '@/shared/lib/cn';
-import { formatDateTime, useIntlLocale } from '../lib/format';
+import { formatDateTime, useIntlLocale } from '@/shared/lib/format';
 import type { PollDetails } from '../types/post';
 
 /**
