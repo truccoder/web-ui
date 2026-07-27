@@ -402,6 +402,14 @@ export const en = {
     hoursAgo: '${hours}h ago',
     daysAgo: '${days}d ago',
     unknownAuthor: 'Unknown author',
+    reaction: {
+      LIKE: 'Like',
+      LOVE: 'Love',
+      HAHA: 'Haha',
+      CRY: 'Sad',
+      ANGRY: 'Angry',
+      count: '${count} reactions',
+    },
     body: {
       code: 'Code',
       coverAlt: 'Article cover',

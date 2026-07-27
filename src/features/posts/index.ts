@@ -50,6 +50,8 @@ export {
   type BookBodySummary,
   EventBody,
   type EventBodyProps,
+  ReactionBar,
+  type ReactionBarProps,
 } from './components';
 
 export {

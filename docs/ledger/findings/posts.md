@@ -78,7 +78,7 @@ Quay lại [`fe-migration-ledger.md`](../../fe-migration-ledger.md).
   | c-1 ✅   | shared `DeveloperIdentity`+`DeveloperMeta`; `PostCard` (vỏ + slot) | — (render payload feed)                       |
   | c-1′a ✅ | `CodeSnippetBody` `ArticleBody` `LinkBody` `QnaBody`               | — (render payload feed)                       |
   | c-1′b ✅ | `PollBody` `BookBody` `EventBody`                                  | — (render payload feed)                       |
-  | c-2      | hàng reaction                                                      | getMyReaction · upsert · remove               |
+  | c-2 ✅   | `ReactionBar` (5 toggle inline)                                    | getMyReaction · upsert · remove               |
   | c-3      | thread comment                                                     | 4 ep CommentController                        |
   | c-4      | nợ c-5 chu kỳ 1: `QuizTaker`, sửa/xoá bài, chọn đáp án             | submitQuiz · updatePost · deletePost · accept |
 
@@ -86,6 +86,33 @@ Quay lại [`fe-migration-ledger.md`](../../fe-migration-ledger.md).
   payload feed mang **8 khối details** (event/book/quiz/codeSnippet/article/qna/poll/link). Dựng
   hết trong một checkpoint là vượt xa trần 5 component. Nên c-1 chỉ ship **vỏ card + hàng danh
   tính**, thân bài vào **slot `body`**.
+
+- **`ReactionBar`: 5 toggle inline, icon đơn sắc, KHÔNG phải tray emoji nổi** (P2.4′c-2).
+  Mẫu quen thuộc là một nút + khay emoji bay ra khi hover, nhưng **DS không có spec
+  popover/floating panel nào** (chỉ Dialog/Menu/Tooltip/Toast) — dựng một cái ở đây là bịa
+  primitive mới, đúng lý do đã khiến `LocationPicker` thành panel inline. 5 toggle không cần
+  tầng nổi và cho thấy trạng thái hiện tại mà không phải hover.
+  **Icon lucide đơn sắc thay vì emoji màu**: cả app không chỗ nào render emoji, palette cố ý
+  chỉ ink + một xanh + amber-cho-uy-tín (§1). Trạng thái active mang bởi **viền +
+  `aria-pressed`**, không phải chỉ bằng màu (§12).
+  **Gate 404 nằm ở đây**: `remove` chỉ bắn khi `current === type`; mọi trường hợp khác là
+  upsert, kể cả đổi LIKE → LOVE. Nhờ vậy nhánh
+  `NotFoundException("Reaction not found for this post")` không bao giờ bị chạm trong luồng
+  bình thường — rollback là lưới an toàn, không phải đường đi chính.
+  **Con số tổng KHÔNG nhúc nhích khi bấm**, và đó là sự thật của BE chứ không phải thiếu sót:
+  `count` đến từ payload feed/search của caller, `onChanged` để màn compose tự quyết có refetch
+  feed không. **Cấm cộng trừ tại chỗ** — highlight là thật, tổng bịa thì không.
+
+- **NỢ NẶNG HƠN NỢ DIỆN MẠO: hành vi tương tác của `ReactionBar` CHƯA verify** (P2.4′c-2).
+  Extension vẫn không nối, và **project không có test runner** (`package.json` chỉ có
+  dev/build/lint/prepare; không vitest/jest/testing-library/playwright) — thêm một cái là thay
+  đổi phạm vi ngoài checkpoint này, nên đã không tự ý làm. Kết quả: **bấm/toggle/optimistic/
+  rollback chưa từng được chạy thật**, mới chỉ kiểm cấu trúc SSR (6/6: đúng 10 nút,
+  `aria-pressed=false` khi chưa có data, nhãn đúng thứ tự enum, count hiện/ẩn đúng, không nút
+  nào disabled). Ba sự thật BE mà logic này bám vào thì **đã đo ở P2.4′b** (404 khi chưa thả ·
+  upsert đổi emoji · `/me` trả null sau khi xoá) nên phần server không phải đoán; phần chưa
+  chắc là **client gate + optimistic**. Trả nợ: nối lại extension rồi bấm thật, hoặc dựng test
+  runner nếu quyết định thêm — nhưng phải là quyết định riêng, không nhét vào một checkpoint UI.
 
 - **LỖI BE: `coverImageUrl` của sách là presigned URL 24h nhưng bị LƯU VÀO DB** (phát hiện
   P2.4′c-1′b). `BookStorageService.uploadCover` trả `getPresignedUrl(...)` với

@@ -405,6 +405,14 @@ export const vi: Messages = {
     hoursAgo: '${hours} giờ trước',
     daysAgo: '${days} ngày trước',
     unknownAuthor: 'Tác giả không xác định',
+    reaction: {
+      LIKE: 'Thích',
+      LOVE: 'Yêu thích',
+      HAHA: 'Haha',
+      CRY: 'Buồn',
+      ANGRY: 'Phẫn nộ',
+      count: '${count} cảm xúc',
+    },
     body: {
       code: 'Mã nguồn',
       coverAlt: 'Ảnh bìa bài viết',

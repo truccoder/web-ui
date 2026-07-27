@@ -65,8 +65,10 @@ const statusVariant: Record<EventStatus, 'info' | 'success' | 'neutral'> = {
   past: 'neutral',
 };
 
-/** Spelled out rather than built as `post.event.status.${status}`: the translator's key
- *  type is a closed union, and an interpolated key silently escapes that check. */
+/** Spelled out rather than built as `post.event.status.${status}`. Not for type safety —
+ *  `TranslateFn` takes a plain `string`, so both compile. The reason is greppability: an
+ *  interpolated key cannot be found by searching the translation files, so a later cleanup
+ *  reads these three as unused and deletes them. */
 const statusKey = {
   upcoming: 'post.event.status.upcoming',
   ongoing: 'post.event.status.ongoing',

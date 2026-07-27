@@ -42,3 +42,6 @@ export { QnaBody, type QnaBodyProps } from './qna-body';
 export { PollBody, type PollBodyProps } from './poll-body';
 export { BookBody, type BookBodyProps, type BookBodySummary } from './book-body';
 export { EventBody, type EventBodyProps } from './event-body';
+
+// Reaction row (P2.4'c-2) — fills `PostCard`'s `actions` slot.
+export { ReactionBar, type ReactionBarProps } from './reaction-bar';
