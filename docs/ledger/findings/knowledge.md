@@ -198,6 +198,59 @@ domain này hoạt động đúng trong khi nhánh lỗi của bookstore thì kh
 Hàng `t_user_professional_profiles` của 9001 **đã phục hồi nguyên trạng** (kể cả `known_tech_stack`
 4 phần tử và `created_at` gốc).
 
+## 7c. P2.11c-1 — hồ sơ nghề nghiệp + token (2026-07-28)
+
+Ba component: `ProfessionalProfileForm` · `TokenList` · `CreateTokenDialog`. 3 ≤ trần 5. Dùng lại
+`Dialog` primitive dựng ở P2.10c-1 và `getErrorDetails` dựng ở P2.10c-2 — không đẻ primitive mới.
+
+### Form luôn gửi TRỌN hồ sơ, và không render trước khi tải xong
+
+Hệ quả trực tiếp của §3 (PUT là ghi đè toàn bộ). Form không cho phép trạng thái "chưa biết giá trị
+cũ": nó chờ query xong rồi mới dựng, và submit **đủ mọi key** kể cả những key nó không cho sửa.
+
+**`workHistory` được mang theo NGUYÊN VẸN chứ không sửa.** Dựng sub-form lặp cho nó là component
+thứ 4–5 trong checkpoint trần 5, mà giá trị vẫn **buộc phải** gửi lại nếu không muốn bị ghi đè
+thành null. Mang verbatim giữ được dữ liệu ngay hôm nay và để phần soạn thảo cho checkpoint sau;
+phương án còn lại — bỏ field đi — chính là con bug mà cả file này viết để tránh. **Ghi là gap đã
+biết**, không phải quên.
+
+**Trạng thái form suy từ query, không copy vào state bằng effect**: `edited ?? toDraft(profile)`.
+Không có "copy server state vào local state lúc load" — vừa tránh `react-hooks/set-state-in-effect`,
+vừa tự đúng khi mutation ghi hồ sơ mới vào cache (`onSuccess: setEdited(null)` là các field
+tự dựng lại từ dữ liệu server vừa trả).
+
+**Hai field `string[]` nhập bằng chuỗi ngăn phẩy**, không dựng chip editor: đó sẽ là component thứ
+4–5, mà `knownTechStack`/`interestedDomains` không có luật thứ tự hay validation nào để cần hơn thế.
+
+### Verify trên BE thật (route preview tạm, đã xoá)
+
+**Phép thử quan trọng nhất — sửa MỘT field rồi lưu, các field khác phải sống:**
+
+```
+sửa "Số năm kinh nghiệm" 3 → 7, bấm Lưu
+DB sau đó: job_title "Backend Developer" ✔ · known_tech_stack 4 phần tử ✔ · years 7 ✔
+```
+
+Nếu form gửi thiếu như bản đo ở §3 thì `job_title` và `known_tech_stack` đã null sạch. **Không
+null** — thiết kế đúng.
+
+| việc                   | kết quả                                                                                                                        |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| nạp form               | mọi field dựng từ server: chức danh, cấp độ Middle, mảng Backend, 3 năm, stack 4 mục ✔                                         |
+| lưu 1 field            | các field khác **sống sót** (xem trên); form tự dựng lại từ response ✔                                                         |
+| dialog tạo token       | tiêu đề + mô tả + tên + **nhãn quyền theo hành vi** ("Chỉ đọc từ app" / "Hai chiều"), nút Tạo **disabled** khi chưa nhập tên ✔ |
+| tạo token              | chuyển sang pha bí mật: cảnh báo "lần DUY NHẤT", ô readonly hiện `sk_xeaGIQ1z…`, nút Sao chép ✔                                |
+| đóng rồi mở lại dialog | form **sạch**, `leftoverSecret` rỗng — bí mật thật sự bị bỏ ✔                                                                  |
+| list sau khi tạo       | "Máy làm việc · Chưa từng được dùng · Chỉ đọc từ app · Thu hồi" ✔ (`lastUsedAt` null)                                          |
+| thu hồi                | list về đúng empty state ✔                                                                                                     |
+| dark mode              | form, select, dialog, badge đều đảo theo token ✔                                                                               |
+
+Nhánh **422** của form token không tới được qua UI vì nút Tạo bị disable khi tên trống — đó là
+thiết kế đúng (chặn trước khi tốn một request), nên nhánh hiện `details` ở đây **chưa chạy thật**;
+cùng đoạn code đó **đã verify bằng 422 thật** ở P2.10c-2.
+
+Dev DB trả về nguyên trạng: `years_of_experience` về 3, `updated_at` về mốc seed, 0 token.
+
 ## 8. Cách tách checkpoint (công bố ở P2.11a, trước khi viết code)
 
 10 endpoint **< trần 12** của lớp data/state → `a` và `b` mỗi lớp một checkpoint. Lớp UI trần

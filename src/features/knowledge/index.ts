@@ -21,6 +21,13 @@
 export { explanationApi, professionalProfileApi, tokenApi } from './api';
 
 export {
+  CreateTokenDialog,
+  type CreateTokenDialogProps,
+  ProfessionalProfileForm,
+  TokenList,
+} from './components';
+
+export {
   isProfileMissing,
   knowledgeKeys,
   useCreateToken,
