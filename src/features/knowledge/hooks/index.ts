@@ -2,6 +2,7 @@ export { knowledgeKeys } from './keys';
 
 export {
   isProfileMissing,
+  isProfileRequired,
   useCreateToken,
   useExplainPost,
   useKnowledgeLibrary,

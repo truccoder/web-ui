@@ -23,12 +23,18 @@ export { explanationApi, professionalProfileApi, tokenApi } from './api';
 export {
   CreateTokenDialog,
   type CreateTokenDialogProps,
+  ExplainPostAction,
+  type ExplainPostActionProps,
+  ExplanationCard,
+  type ExplanationCardProps,
+  KnowledgeLibrary,
   ProfessionalProfileForm,
   TokenList,
 } from './components';
 
 export {
   isProfileMissing,
+  isProfileRequired,
   knowledgeKeys,
   useCreateToken,
   useExplainPost,
@@ -46,7 +52,7 @@ export type {
   Explanation,
   ExplanationStyle,
   ExternalLink,
-  KnowledgeLibrary,
+  SavedExplanations,
   PersonalAccessToken,
   PrimaryRole,
   ProfessionalProfile,

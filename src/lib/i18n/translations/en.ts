@@ -599,6 +599,32 @@ export const en = {
       createError: 'Could not create the token',
       revokeError: 'Could not revoke the token',
     },
+    explain: {
+      action: 'Explain with AI',
+      working: 'Asking the AI...',
+      retry: 'Try again',
+      regenerate: 'Regenerate',
+      save: 'Save to library',
+      saved: 'Saved',
+      saveError: 'Could not save the explanation',
+      error: 'Could not generate an explanation',
+      profileRequired:
+        'You need a professional profile before using AI explanations — fill in the form above and try again.',
+      linksNotSaved:
+        'Note: the further-reading links above are NOT kept — the backend has nowhere to store them.',
+      complexity: 'Complexity ${score}/10',
+      version: 'Version ${version}',
+      concepts: 'Concepts',
+      prerequisites: 'Prerequisites',
+      links: 'Further reading',
+    },
+    library: {
+      title: 'My library',
+      count: '${count} saved explanations',
+      emptyTitle: 'Your library is empty',
+      emptyDesc: 'Explain a post and save it, and it will show up here.',
+      loadError: 'Could not load your library',
+    },
     seniority: {
       JUNIOR: 'Junior',
       MID: 'Mid',

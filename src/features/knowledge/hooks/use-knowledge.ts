@@ -50,6 +50,21 @@ export function isProfileMissing(error: unknown): boolean {
 }
 
 /**
+ * Whether an `explainPost` failure is "you have no professional profile yet".
+ *
+ * `explainPost` refuses to run without one — it throws `PRECONDITION_REQUIRED` (**428**) with
+ * "Professional profile required. Please set up your profile first.". That check happens BEFORE
+ * the model call, so this branch costs nothing, and it is the one hard coupling between the two
+ * halves of this domain: the profile is what the prompt is built from.
+ *
+ * Worth distinguishing from a generic failure because the fix is a specific action the user can
+ * take, not a retry — and retrying is exactly the wrong response to an operation that bills.
+ */
+export function isProfileRequired(error: unknown): boolean {
+  return error instanceof AxiosError && error.response?.status === 428;
+}
+
+/**
  * Create or replace the professional profile.
  *
  * THE CALLER MUST PASS THE WHOLE PROFILE. `PUT` is a full replace — measured: omitted fields come

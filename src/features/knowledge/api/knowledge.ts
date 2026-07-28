@@ -1,5 +1,5 @@
 import api from '@/core/api/axios';
-import type { Explanation, KnowledgeLibrary, SaveExplanationInput } from '../types/knowledge';
+import type { Explanation, SavedExplanations, SaveExplanationInput } from '../types/knowledge';
 
 /**
  * `ExplanationController` (`/v1/api/knowledge`) — 3 endpoints, 3 functions.
@@ -48,7 +48,8 @@ export const explanationApi = {
    * Unpaginated, and returns `{ explanations: [], totalCount: 0 }` for an empty library rather than
    * a 404 (measured), so `totalCount === 0` is the empty-state test.
    */
-  getMyLibrary: () => api.get<KnowledgeLibrary>('/v1/api/knowledge/my-library').then((r) => r.data),
+  getMyLibrary: () =>
+    api.get<SavedExplanations>('/v1/api/knowledge/my-library').then((r) => r.data),
 
   /*
    * GET  /v1/api/knowledge/sync/pull  — DELIBERATELY NOT IMPLEMENTED

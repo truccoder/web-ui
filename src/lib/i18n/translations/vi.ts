@@ -596,6 +596,32 @@ export const vi: Messages = {
       createError: 'Không tạo được token',
       revokeError: 'Không thu hồi được token',
     },
+    explain: {
+      action: 'Giải thích bằng AI',
+      working: 'Đang nhờ AI giải thích...',
+      retry: 'Thử lại',
+      regenerate: 'Tạo lại',
+      save: 'Lưu vào thư viện',
+      saved: 'Đã lưu',
+      saveError: 'Không lưu được giải thích',
+      error: 'Không tạo được giải thích',
+      profileRequired:
+        'Cần có hồ sơ nghề nghiệp trước khi dùng AI giải thích — điền hồ sơ ở trên rồi thử lại.',
+      linksNotSaved:
+        'Lưu ý: các liên kết tham khảo bên trên KHÔNG được lưu lại — backend chưa có chỗ chứa chúng.',
+      complexity: 'Độ khó ${score}/10',
+      version: 'Bản ${version}',
+      concepts: 'Khái niệm',
+      prerequisites: 'Cần biết trước',
+      links: 'Đọc thêm',
+    },
+    library: {
+      title: 'Thư viện của tôi',
+      count: '${count} giải thích đã lưu',
+      emptyTitle: 'Thư viện còn trống',
+      emptyDesc: 'Giải thích một bài viết rồi lưu lại, nó sẽ nằm ở đây.',
+      loadError: 'Không tải được thư viện',
+    },
     seniority: {
       JUNIOR: 'Junior',
       MID: 'Middle',

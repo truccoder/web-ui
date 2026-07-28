@@ -142,8 +142,14 @@ export type Explanation = {
     : Required<Schemas['ExplanationResponseDto']>[K] | null;
 };
 
-/** Everything the user has saved. `totalCount` is a plain `int`, always present. */
-export type KnowledgeLibrary = {
+/**
+ * Everything the user has saved.
+ *
+ * NAMED `SavedExplanations` RATHER THAN `KnowledgeLibrary` because the component that renders it
+ * owns that name — same resolution as `CommentThread` → `CommentWithReplies` in `posts`, where a
+ * grouping type and a component collided. `totalCount` is a plain `int`, always present.
+ */
+export type SavedExplanations = {
   explanations: Explanation[];
   totalCount: NonNullable<Schemas['KnowledgeLibraryResponseDto']['totalCount']>;
 };

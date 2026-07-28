@@ -251,6 +251,69 @@ cùng đoạn code đó **đã verify bằng 422 thật** ở P2.10c-2.
 
 Dev DB trả về nguyên trạng: `years_of_experience` về 3, `updated_at` về mốc seed, 0 token.
 
+## 7d. P2.11c-2 — mặt giải thích (2026-07-28)
+
+Ba component: `ExplanationCard` · `ExplainPostAction` · `KnowledgeLibrary`. 3 ≤ trần 5.
+
+### `explainPost` đòi PHẢI CÓ hồ sơ nghề nghiệp — **428**, và miễn phí
+
+Phát hiện mới, đọc code rồi đo lại: trước khi gọi Gemini, service kiểm hồ sơ và ném
+`PRECONDITION_REQUIRED` (**428**) _"Professional profile required. Please set up your profile
+first."_. Đây là **ràng buộc cứng duy nhất giữa hai nửa của domain** — prompt được dựng từ chính
+hồ sơ đó.
+
+→ `isProfileRequired(error)` tách nhánh này ra khỏi lỗi thường, vì cách sửa là **một hành động cụ
+thể** (điền hồ sơ), không phải thử lại. Và thử lại là phản ứng sai nhất với một endpoint tính tiền.
+Nhánh này **không tốn quota** (kiểm trước khi gọi model), nên verify thoải mái.
+
+### LỖI BE: `externalLinks` bị vứt khi lưu → [B18](../be-requests.md#b18)
+
+`explainPost` trả về `externalLinks` (Gemini sinh, đã trả tiền), nhưng `ExplanationEntity` **không
+có field**, `SaveExplanationRequestDto` **không có field**, và `toResponseDto` không set. Nên:
+
+| nguồn                   | có gì                                                               |
+| ----------------------- | ------------------------------------------------------------------- |
+| vừa sinh (`/explain`)   | `externalLinks` ✔ · **không** có `id`/`version`/`createdAt`         |
+| đọc lại (`/my-library`) | `id`/`version`/`createdAt` ✔ · **không bao giờ** có `externalLinks` |
+
+Đo trên UI thật: bản vừa sinh hiện mục "Đọc thêm"; sau khi Lưu, đọc lại thư viện →
+`libHasLinks: false` trong khi `concepts` và `Bản 1` vẫn còn. FE **nói thẳng cho người dùng biết**
+(`knowledge.explain.linksNotSaved`) thay vì để họ mất mà không hay — gỡ dòng đó khi BE sửa.
+
+### Lưu là VERSION MỚI, không phải ghi đè
+
+`saveExplanation` dùng `findMaxVersion(postId, userId) + 1`. Giải thích lại cùng một bài rồi lưu là
+**thêm một hàng**, không thay hàng cũ. Vì vậy card hiện số `version` và thư viện **không gom nhóm
+theo bài** — gom lại sẽ giấu mất chuyện bản mới không phải bản duy nhất.
+
+### Thiết kế quanh việc mỗi cú bấm là tiền thật
+
+- Lúc đang chạy, component **không render nút nào** (chỉ dòng trạng thái + skeleton) → double-click
+  không thể tính tiền hai lần. Mạnh hơn là chỉ `disabled`.
+- Không auto-retry ở bất cứ đâu (`useExplainPost` đã `retry: 0`); nhánh lỗi cho một nút **"Thử
+  lại" do người bấm**.
+- Có kết quả rồi thì hành động chính là **Lưu**, "Tạo lại" bị hạ xuống `ghost` — thứ rẻ mà người ta
+  thường muốn là câu trả lời đang có sẵn trên màn hình.
+
+### Đổi tên type: `KnowledgeLibrary` → `SavedExplanations`
+
+Trùng tên với component. Xử theo đúng tiền lệ P2.4′c-3 (`CommentThread` → `CommentWithReplies`):
+**component giữ tên**, type đổi. Lưu ý cho người sau: `KnowledgeLibraryResponseDto` trong
+`schema.gen.ts` **giữ nguyên** — đó là tên BE đặt, không phải của mình.
+
+### Verify (route preview tạm, đã xoá) — chỉ **một** lần gọi Gemini thật
+
+| nhánh                           | tốn quota?    | kết quả                                                                                |
+| ------------------------------- | ------------- | -------------------------------------------------------------------------------------- |
+| chưa có hồ sơ (xoá tạm hàng DB) | **không**     | "Cần có hồ sơ nghề nghiệp…" + **không có nút Thử lại** ✔                               |
+| post 999999                     | **không**     | "Post not found: 999999" + có nút Thử lại ✔                                            |
+| post 1, hồ sơ đã phục hồi       | **có, 1 lần** | Độ khó 2/10 · nội dung thật · 3 khái niệm · 2 mục cần biết trước · 2 link "Đọc thêm" ✔ |
+| lúc đang chạy                   | —             | "Đang nhờ AI giải thích..." + skeleton, **0 nút** ✔                                    |
+| bấm Lưu                         | không         | nút thành "Đã lưu" + disabled; thư viện **0 → 1** ngay (invalidate đúng) ✔             |
+| thư viện sau khi lưu            | không         | có `Bản 1` + khái niệm, **mất "Đọc thêm"** → đúng như B18 dự đoán ✔                    |
+
+Dev DB trả nguyên trạng: `t_explanations` 0 hàng, hồ sơ 9001 đủ 4 giá trị seed, 0 token.
+
 ## 8. Cách tách checkpoint (công bố ở P2.11a, trước khi viết code)
 
 10 endpoint **< trần 12** của lớp data/state → `a` và `b` mỗi lớp một checkpoint. Lớp UI trần

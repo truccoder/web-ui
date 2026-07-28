@@ -40,6 +40,7 @@ Mọi con số dưới đây **đo lại ngày 2026-07-28** trên dev DB, trừ 
 | [B15](#b15) | Reputation thiếu `currentLevelMin`; feed/search thiếu `levelName`   | **THẤP**       | reputation    |
 | [B16](#b16) | 4/11 `NotificationType` không có nơi phát                           | **THẤP**       | notifications |
 | [B17](#b17) | Không có realtime nào (không WebSocket, không SSE)                  | **THẤP**       | notifications |
+| [B18](#b18) | `externalLinks` do Gemini sinh ra bị vứt khi lưu giải thích         | **CHẶN**       | knowledge     |
 
 ---
 
@@ -167,6 +168,38 @@ giả vờ an toàn.
 bất kỳ đâu trong response.
 
 ---
+
+### B18 — `externalLinks` được Gemini sinh ra rồi bị vứt khi lưu (tốn tiền thật) {#b18}
+
+> gốc: [`findings/knowledge.md`](findings/knowledge.md) §7d
+
+**Cùng đúng một họ lỗi với [B3](#b3)** (tags của trending): hỏi model, trả tiền cho câu trả lời,
+rồi ném đi một phần.
+
+**Bằng chứng.** `ExplanationService.explainPost` parse được `externalLinks` từ Gemini và trả về
+trong `ExplanationResponseDto`. Nhưng:
+
+- `ExplanationEntity` **không có field nào** cho nó (grep `externalLinks` trong entity → rỗng);
+- `SaveExplanationRequestDto` **không có field nào** để client gửi lên;
+- `toResponseDto` (đường đọc `/my-library`) **không set** `externalLinks`.
+
+Đo trên UI thật với một lần gọi Gemini thật: bản vừa sinh có mục "Đọc thêm" kèm link + lý do; bấm
+Lưu rồi đọc `/my-library` thì **mất sạch** — `libHasLinks: false`, trong khi `concepts` và
+`version` vẫn còn.
+
+**Vì sao xếp CHẶN**: quota đã bị tiêu để sinh ra phần đó, và **người dùng nhìn thấy nó** trước khi
+lưu rồi mất — tệ hơn trending (nơi tags chưa bao giờ hiện ra). Hiện FE phải cảnh báo trước mặt
+người dùng rằng bấm Lưu sẽ mất mấy cái link đang hiện.
+
+**Sửa ở đâu.** `knowledge/entity/ExplanationEntity.java` (thêm cột `jsonb`),
+`dto/SaveExplanationRequestDto.java` (nhận lại), `ExplanationService.saveExplanation` +
+`toResponseDto` (ghi và echo). Có đổi DTO → **báo trước để FE chạy drift check cùng nhịp**.
+
+**Xong khi.** Giải thích một bài có link → Lưu → `GET /v1/api/knowledge/my-library` trả
+`externalLinks` khác rỗng.
+
+**FE sẽ gỡ gì.** Dòng cảnh báo `knowledge.explain.linksNotSaved` trong `ExplainPostAction` —
+`ExplanationCard` đã render link sẵn nên phần hiển thị **không phải sửa gì**.
 
 ## CAO
 

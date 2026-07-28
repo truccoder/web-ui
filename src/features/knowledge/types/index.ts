@@ -4,7 +4,7 @@ export type {
   Explanation,
   ExplanationStyle,
   ExternalLink,
-  KnowledgeLibrary,
+  SavedExplanations,
   PersonalAccessToken,
   PrimaryRole,
   ProfessionalProfile,
