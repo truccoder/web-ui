@@ -539,6 +539,7 @@ export const vi: Messages = {
       noReviews: 'Chưa có đánh giá nào',
       feedbackPlaceholder: 'Viết đánh giá (không bắt buộc)',
       submitReview: 'Gửi',
+      ratingLabel: 'Chấm điểm',
       readerLoadError: 'Không thể mở sách để đọc',
       previousPage: 'Trước',
       nextPage: 'Sau',

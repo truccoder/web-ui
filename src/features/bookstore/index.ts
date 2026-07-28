@@ -27,8 +27,16 @@ export {
   type BookActionsProps,
   BookPurchaseButton,
   type BookPurchaseButtonProps,
+  BookRatingSummary,
+  type BookRatingSummaryProps,
   BookReaderDialog,
   type BookReaderDialogProps,
+  BookReviewForm,
+  type BookReviewFormProps,
+  BookReviewList,
+  type BookReviewListProps,
+  StarRating,
+  type StarRatingProps,
 } from './components';
 
 export {

@@ -288,6 +288,71 @@ lần này **tái hiện ổn định** và xác định được cơ chế: ret
 chung → checkpoint riêng, KHÔNG sửa trong P2.10.** Nhánh `isError` của `BookPurchaseButton` viết
 đúng và sẽ sống dậy khi hạ tầng được sửa.
 
+## 7d. P2.10c-2 — mặt đánh giá (2026-07-28)
+
+Bốn component: `StarRating` (hiển thị, fill theo phân số) · `BookRatingSummary` · `BookReviewList`
+· `BookReviewForm`. 4 ≤ trần 5. Bộ chọn sao **không tách thành component riêng** — nó là chi tiết
+bên trong của form, tách ra chỉ để đếm cho đủ là chia nhỏ giả tạo.
+
+Thêm `getErrorDetails` vào `shared/lib/api-error.ts` (xem dưới) — domain-agnostic nên đúng chỗ.
+
+### `getErrorDetails`: vì sao `getErrorMessage` không đủ
+
+Đo ở §2: vi phạm bean-validation trả **422** với `message` là chuỗi chung vô dụng _"Invalid request
+parameters or payload"_, còn phần đáng hiện nằm ở `details`. Dùng `getErrorMessage` cho 422 là in
+đúng chuỗi vô dụng đó ra cạnh ô nhập.
+
+**Verify bằng 422 THẬT**, không giả lập response: patch `XMLHttpRequest.prototype.send` đổi body
+của đúng request POST `/reviews` thành `{"rating":6}` rồi bấm Gửi (patch `window.fetch` **vô
+dụng** — axios đi bằng XHR). Kết quả hiện trên form, nguyên văn:
+
+```
+Property rating: must be less than or equal to 5
+```
+
+`details` rỗng (trường hợp 400 body hỏng) thì rơi về `getErrorMessage` — vì 400 **không bao giờ**
+chỉ được ra field nào.
+
+### Form là MỘT, vì endpoint là upsert
+
+Không có nhánh "đã đánh giá rồi", không có mutation sửa riêng. **Không pre-fill đánh giá cũ**:
+`GET /reviews` chỉ trả `userId`, FE không có đường biết cái nào là của mình (`/profile/me` là lệnh
+gọi của domain security, và đoán sai thì hiện chữ của người khác trong ô của mình). Gửi lại vẫn
+ghi đè đúng; chỉ thiếu pre-fill. Mở lại khi BE có "review của tôi cho sách này".
+
+### `BookRatingSummary` tự tính trung bình từ histogram, KHÔNG đọc `Book.avgRating`
+
+Vì component chỉ nhận `bookId`, kéo cả `GET /books/{id}` về chỉ để lấy một số sẽ **thừa hưởng
+luôn bẫy 503** của §3 — một lỗi ký URL sẽ xoá trắng phần đánh giá của cuốn sách mà đánh giá của
+nó hoàn toàn bình thường. Endpoint breakdown không đụng storage.
+
+### Verify chạy thật trên BE (route preview tạm, đã xoá)
+
+Fixture: sách 11 với 3 review (5 · 4 không feedback · 2), sách 12 không review.
+
+| việc                                       | kết quả đo                                                                                                                                                                     |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------- |
+| trung bình + histogram                     | **3.7** · "3 đánh giá" · 5:1 4:1 3:0 2:1 1:0 ✔                                                                                                                                 |
+| review không có feedback                   | chỉ hiện sao, không hiện dòng trống ✔                                                                                                                                          |
+| 422 thật (rating 6)                        | `Property rating: must be less than or equal to 5` hiện cạnh field ✔                                                                                                           |
+| gửi review thật (3 sao, tiếng Việt có dấu) | **một lần invalidate `book(bookId)` làm mới cả 3**: trung bình 3.7 → **3.5**, "3 đánh giá" → **4 đánh giá**, histogram mọc cột 3 sao, review mới lên đầu list, ô nhập tự xoá ✔ |
+| DB                                         | `select ... where user_id=9001` → `3                                                                                                                                           | Đánh giá thật từ P2.10c-2` — UTF-8 nguyên vẹn ✔ |
+| sách không review                          | summary và list đều nói "Chưa có đánh giá nào" ✔                                                                                                                               |
+| dark mode                                  | sao đầy/rỗng, thanh histogram, textarea đều đảo theo token ✔                                                                                                                   |
+
+**Đây cũng là lần chạy thật đầu tiên chứng minh quyết định gom key ở P2.10b** (`detail` + `reviews`
+
+- `breakdown` chung tiền tố `['bookstore','book',id]`) — thứ mà báo cáo P2.10b đã nói rõ là _chưa_
+  verify runtime.
+
+Dữ liệu probe đã dọn sạch: `t_books` và `t_book_reviews` về 0 hàng.
+
+### Lưu ý cho P2.10d
+
+Đặt `BookRatingSummary` **và** `BookReviewList` cạnh nhau trên một cuốn sách chưa có đánh giá sẽ
+hiện **hai** lần "Chưa có đánh giá nào" (thấy trên route preview). Cả hai đều đúng khi đứng một
+mình; việc của `d` là chỉ dựng một trong hai cho trạng thái rỗng.
+
 ## 8. Cách tách checkpoint (công bố ở P2.10a, trước khi viết code)
 
 11 endpoint **< trần 12** của lớp data/state → `a` và `b` mỗi lớp một checkpoint, không tách thêm.

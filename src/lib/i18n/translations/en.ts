@@ -541,6 +541,7 @@ export const en = {
       noReviews: 'No reviews yet',
       feedbackPlaceholder: 'Write a review (optional)',
       submitReview: 'Submit',
+      ratingLabel: 'Your rating',
       readerLoadError: 'Could not open this book for reading',
       previousPage: 'Previous',
       nextPage: 'Next',
