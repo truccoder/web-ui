@@ -314,6 +314,50 @@ Trùng tên với component. Xử theo đúng tiền lệ P2.4′c-3 (`CommentTh
 
 Dev DB trả nguyên trạng: `t_explanations` 0 hàng, hồ sơ 9001 đủ 4 giá trị seed, 0 token.
 
+## 7e. P2.11d — wiring (2026-07-28) — DOMAIN ĐÓNG
+
+**Không có legacy nào để xoá.** Grep `profile/professional`, `/v1/api/tokens`, `/v1/api/knowledge`
+ngoài `features/knowledge` và `schema.gen.ts` → **rỗng**. Domain này chưa từng có code trong
+`src/lib` hay `src/components`, nên `d` chỉ có wiring — cột "legacy removed" của ledger ghi **n/a**.
+
+### Route mới `/knowledge` + link ở sidebar
+
+Cùng tình huống và cùng cách xử như `/notifications` ở P2.6cd: domain có endpoint nhưng 0 UI nên
+không có trang nào để rewire. Thêm luôn link sidebar theo đúng ghi chú đã có sẵn ở đó — _"a route
+nothing links to is not a surface"_ — và dùng **class legacy giống hệt các mục anh em**, vì shell
+sẽ được dựng lại trọn gói ở **P3.4** và khớp bây giờ rẻ hơn là đẻ một dòng thiết kế mới rồi vứt.
+
+**Ba mục xếp theo phụ thuộc, không theo độ quan trọng**: hồ sơ trước (vì `explainPost` **từ chối
+chạy** nếu chưa có — 428), rồi token, rồi thư viện (rỗng cho tới khi hai cái kia được dùng).
+
+**Hồ sơ nghề nghiệp cố ý KHÔNG đặt ở `/profile`.** Chỗ "tự nhiên" của nó là trang đó, nhưng trang
+đó do `security` sở hữu và phần lắp ghép nhiều domain là **P3.2**. Đặt vào bây giờ = sửa trang của
+domain khác sớm; đặt tạm chỗ khác rồi dời = churn. Gom cả ba ở `/knowledge` tránh cả hai, và
+**không tốn gì cho P3.2**: muốn hiện ở `/profile` thì import lại đúng component qua barrel, không
+dời code.
+
+### Extraction test (§4) — chạy thật
+
+Toàn bộ import ra ngoài feature: `@/core/api/axios` · `@/core/api/schema.gen` ·
+`@/shared/components` · `@/shared/lib/api-error` · `@/lib/i18n` · node_modules
+(`@tanstack/react-query`, `axios`, `lucide-react`, `react`).
+
+**Không import feature nào khác** — sạch hơn cả `bookstore` (feature đó còn `next/link`). `@/lib/i18n`
+là cạnh ngoài biên duy nhất, nợ chung của **mọi** feature từ P2.2c-2.
+
+### Verify trên BE thật
+
+`/knowledge` tải được, link sidebar "Kiến thức" ở trạng thái active, cả 3 mục render đúng: hồ sơ
+đầy dữ liệu thật (Backend Developer / Middle / Backend / 3 / 4 công nghệ), token "Chưa có token
+nào", thư viện "Thư viện còn trống".
+
+### Sự cố hạ tầng gặp giữa chừng (không phải lỗi code)
+
+`yarn build` chết với `ENOSPC: no space left on device`. Nguyên nhân: **`.next` phồng lên 7.1 GB**
+sau một phiên dev dài (cache tăng dần của Turbopack) trên ổ D: chỉ có 11 GB. Gỡ: dừng dev server →
+`rm -rf .next` → build lại → còn 30% dung lượng. Ghi vào đây vì thông báo lỗi trông như lỗi build
+và sẽ làm người sau đi tìm nhầm chỗ.
+
 ## 8. Cách tách checkpoint (công bố ở P2.11a, trước khi viết code)
 
 10 endpoint **< trần 12** của lớp data/state → `a` và `b` mỗi lớp một checkpoint. Lớp UI trần

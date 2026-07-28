@@ -57,6 +57,7 @@ export const en = {
   },
 
   nav: {
+    knowledge: 'Knowledge',
     newsfeed: 'Newsfeed',
     trending: 'Trending',
     notifications: 'Notifications',
@@ -556,6 +557,8 @@ export const en = {
   },
 
   knowledge: {
+    title: 'Knowledge',
+    subtitle: 'Your professional profile, sync tokens and saved explanations.',
     profile: {
       title: 'Professional profile',
       notSetUp:

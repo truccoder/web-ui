@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
+  BookOpen,
   LayoutDashboard,
   User,
   LogOut,
@@ -104,6 +105,24 @@ function NavLinks({ onClick }: { onClick?: () => void }) {
       >
         <Bell className="h-4 w-4" />
         {t('nav.notifications')}
+      </Link>
+
+      {/* Knowledge. Added at P2.11d for the same reason as the notifications link above: the
+          domain had no UI at all, so `d` created `/knowledge` and it needs something pointing at
+          it. Same legacy classes as its siblings — the shell is rebuilt wholesale at P3.4 and
+          matching it now costs less than a row of new design that gets thrown away. */}
+      <Link
+        href="/knowledge"
+        onClick={onClick}
+        className={cn(
+          'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+          pathname === '/knowledge'
+            ? 'bg-primary text-primary-foreground'
+            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+        )}
+      >
+        <BookOpen className="h-4 w-4" />
+        {t('nav.knowledge')}
       </Link>
 
       {/* Friends collapsible */}

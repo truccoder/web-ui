@@ -59,6 +59,7 @@ export const vi: Messages = {
   },
 
   nav: {
+    knowledge: 'Kiến thức',
     newsfeed: 'Bảng tin',
     trending: 'Xu hướng',
     notifications: 'Thông báo',
@@ -554,6 +555,8 @@ export const vi: Messages = {
   },
 
   knowledge: {
+    title: 'Kiến thức',
+    subtitle: 'Hồ sơ nghề nghiệp, token đồng bộ và thư viện giải thích của bạn.',
     profile: {
       title: 'Hồ sơ nghề nghiệp',
       notSetUp: 'Bạn chưa tạo hồ sơ nghề nghiệp. Điền và lưu để tạo mới.',
