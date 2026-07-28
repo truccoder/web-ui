@@ -18,6 +18,7 @@ tách ra chính vì đọc trọn gói tốn context mà phần lớn không dù
 | -------------------------------------------------------------- | ---------------------------------------------------------------------- |
 | **file này** (bảng tiến độ + bản đồ route)                     | **luôn luôn**, đầu phiên                                               |
 | [`ledger/findings/<domain>.md`](ledger/findings/)              | **trước khi làm domain đó** — nợ kỹ thuật, cạm bẫy, quyết định đã chốt |
+| [`ledger/be-requests.md`](ledger/be-requests.md)               | khi gửi/theo dõi yêu cầu sửa cho BE — gom B1–B17 từ mọi findings       |
 | [`ledger/ds-deviations.md`](ledger/ds-deviations.md)           | khi dựng UI từ Design System                                           |
 | [`ledger/legacy-inventory.md`](ledger/legacy-inventory.md)     | ở bước `d` (xoá legacy)                                                |
 | [`ledger/checkpoint-log.md`](ledger/checkpoint-log.md)         | **hiếm khi** — append-only, chỉ để truy lại lịch sử                    |

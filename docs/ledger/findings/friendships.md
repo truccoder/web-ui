@@ -14,6 +14,49 @@ Quay lại [`fe-migration-ledger.md`](../../fe-migration-ledger.md).
   12 quan hệ `FRIENDS_WITH` sinh từ chính các dòng `ACCEPTED`) — không bịa quan hệ mới.
   Cần BE bổ sung bước seed graph, nếu không mọi máy dev mới đều thấy danh sách bạn rỗng.
 
+- **SỰ CỐ DỮ LIỆU DEV — đồ thị Neo4j biến mất LẦN THỨ BA** (2026-07-28, đầu phiên P2.10).
+  Đo được lúc mở phiên: Neo4j còn **2 node `User`, 1 quan hệ `FRIENDS_WITH`** (đúng cặp
+  9001↔9002 dựng lại ở P2.7a qua luồng API) trong khi Postgres vẫn đủ 32 user và 13 dòng
+  `ACCEPTED`. Tức là mỗi lần dev DB bị reset, Postgres được seed lại còn graph thì không.
+  **Đây là lỗi seed của BE, không phải việc FE phải làm lại mỗi phiên** — đã nâng thành yêu
+  cầu chính thức gửi BE, xem [`be-requests.md`](../be-requests.md).
+
+  Cách dựng lại (giữ nguyên công thức P2.2, **không insert tay**): sinh Cypher **từ chính các
+  dòng `ACCEPTED`** bằng `psql`, khử trùng lặp cặp bằng `DISTINCT least/greatest` —
+  9001↔9002 có **13 dòng ACCEPTED nhưng chỉ 12 cặp phân biệt** vì bị lặp (một dòng seed, một
+  dòng do luồng API ở P2.7a tạo thêm):
+
+  ```sql
+  select 'MERGE (:User {userId: '||id||'});' from socialapp.t_users order by id;
+  select 'MATCH (a:User {userId: '||a||'}), (b:User {userId: '||b||'}) MERGE (a)-[:FRIENDS_WITH]-(b);'
+  from (select distinct least(requester_id,addressee_id) a, greatest(requester_id,addressee_id) b
+        from socialapp.t_friend_requests where status='ACCEPTED') x order by a,b;
+  ```
+
+  rồi `docker exec -i neo4j cypher-shell -u neo4j -p neo4j_password < graph.cypher`
+  (**bắt buộc `-i`**, không có nó `docker exec` không đọc stdin và lệnh chạy im lặng).
+
+  **Hướng quan hệ: một quan hệ mỗi cặp, KHÔNG phải hai.** Đã kiểm lại `FriendshipRepository`
+  trước khi gõ Cypher thay vì đoán: cả 5 truy vấn (`areFriends`, `findFriendIds`,
+  `findFriendIdsAfterCursor`, `countFriends`) đều dùng pattern **vô hướng**
+  `-[:FRIENDS_WITH]-`, và chính `createFriendship` cũng là `MERGE (u1)-[:FRIENDS_WITH]-(u2)`.
+  Tạo hai chiều sẽ làm `countFriends` đếm gấp đôi. `MERGE` vô hướng cũng khớp được quan hệ
+  9001↔9002 có sẵn nên chạy lại không sinh bản sao.
+
+  Kết quả đo sau khi dựng: Neo4j **32 node / 12 quan hệ**, `9001` có 12 bạn. Verify bằng
+  **API thật** chứ không chỉ Cypher — đăng nhập 9001 → `GET /v1/api/friendships` trả **200,
+  `totalCount = 12`, 12 bạn có tên thật** (9002 Backend Trần Khôi … 9024 QA Đoàn Giang),
+  khớp đúng tập cặp trong Postgres.
+
+  **`GET /friendships/suggestions` vẫn trả `[]` (count = 0) — đây là hành vi đã biết, không
+  phải lỗi**, xem mục FoF bên dưới: seed chỉ có quan hệ của riêng 9001 nên không ai có bạn
+  chung. 4 tình bạn phụ trợ tạo ở P2.2 (9002↔9008, 9003↔9008, 9002↔9009, 9006↔9010) cũng mất
+  trong lần reset này. **Quyết định 2026-07-28: HOÃN dựng lại** — P2.10 (bookstore) không đụng
+  màn gợi ý, mà dựng lại thì phải bật/tắt `email_verified` tạm và thêm 4 dòng vào
+  `t_friend_requests`. Dựng lại khi nào thật sự cần verify màn suggestions (**P3.3**), và khi đó
+  vẫn phải đi **qua đúng luồng API** (gửi lời mời → chấp nhận) để Postgres và Neo4j khớp nhau,
+  không Cypher tay.
+
 - **Seed user ngoài `nguyen.truc` đều chưa verify email** → không đăng nhập bằng mật
   khẩu được (`admin1@socialapp.com` trong ghi chú vận hành cũng **sai/401**). Muốn tạo
   lời mời đến để test, P2.2c-2 tạm bật `email_verified` cho 9004/9005, gọi API, rồi
