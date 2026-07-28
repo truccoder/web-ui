@@ -353,6 +353,90 @@ Dữ liệu probe đã dọn sạch: `t_books` và `t_book_reviews` về 0 hàng
 hiện **hai** lần "Chưa có đánh giá nào" (thấy trên route preview). Cả hai đều đúng khi đứng một
 mình; việc của `d` là chỉ dựng một trong hai cho trạng thái rỗng.
 
+## 7e. P2.10d — wiring + xoá legacy (2026-07-28) — DOMAIN ĐÓNG
+
+### Chọn phương án (b): feed import barrel, BỎ HẲN prop
+
+Ghi chú ở `feed-post.tsx` và trang `/newsfeed` để ngỏ hai đường: (a) page đổi cầu tạm sang
+component của feature, (b) feed tự import qua barrel rồi bỏ prop. **Chọn (b).** CLAUDE.md §4 cho
+phép một feature import `index.ts` của feature khác, và tiền lệ đã chạy là `features/chat` import
+`features/friendships` (chốt P2.7c-1). Phụ thuộc newsfeed → bookstore là **thật** — feed thật sự
+render bài đăng sách — và §4 nói rõ coupling thật thì phải đi qua barrel chứ không giấu sau một
+lớp gián tiếp. Kết quả: `renderBookActions` biến mất khỏi **3 file** (`newsfeed.tsx`,
+`feed-post.tsx`, `page.tsx`), không còn chỗ nào trong `src/` nhắc tới nó.
+
+### `/payment/success`: sửa một lỗi thật của bản legacy
+
+Bản cũ hỏi `syncPaymentStatus` **đúng một lần** rồi hiện "Thanh toán thất bại" nếu `paid: false`.
+Nhưng webhook MoMo **đua với redirect trình duyệt** — về trước khi webhook tới là **trường hợp
+thường**, không phải ngoại lệ. Nghĩa là người vừa bị trừ tiền được báo là thất bại.
+
+Bản mới: poll có giới hạn **6 lần × 2s**, và **hết lượt KHÔNG phải là thất bại** — nó có trạng
+thái riêng (`payment.pendingTitle`: "Chưa xác nhận được thanh toán"). Báo thất bại khi sự thật chỉ
+là webhook chậm chính là lỗi cũ, lùi lại một bước.
+
+Poll an toàn vì **BE bảo đảm**, không phải vì trông có vẻ vô hại: `applyResult` thoát sớm khi
+purchase đã `COMPLETED`, không ghi lại, không thông báo lại tác giả (có comment trong code BE).
+
+### Verify E2E trên BE + MinIO thật
+
+Dựng dữ liệu **không chạm Gemini**, theo đúng công thức `findings/posts.md`: INSERT `t_posts` với
+`PENDING_REVIEW` → tạm cho 9001 `role='ADMIN'` → `POST /admin/moderation/posts/31/review`
+`{"decision":"VERY_UNLIKELY"}` → **trả role về USER**. Duyệt tay gọi đúng `fanOutPost` nên payload
+feed do chính BE dựng.
+
+| việc                                         | kết quả                                                                                                                                                             |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| feed API                                     | `GET /v1/api/feed` trả bài BOOK với `book.bookId=11`, `fileFormat PDF`, `isFree true` ✔                                                                             |
+| `/newsfeed` thật                             | `BookBody` hiện bìa placeholder (`coverImageUrl` null), badge PDF + Miễn phí, và **`BookActions` mới**: "Xem trước" + "Tải xuống" ✔ — **không qua render prop nào** |
+| trình đọc từ feed                            | bấm "Xem trước" → dialog mở, `Trang 1 / 2`, 1 canvas render ✔                                                                                                       |
+| `/payment/success` không có `orderId`        | "Liên kết thanh toán không hợp lệ" ✔                                                                                                                                |
+| `/payment/success?orderId=khong-ton-tai-123` | "Thanh toán thất bại" sau **đúng 1** request `/sync` ✔ — vòng lặp dừng ngay ở 404 thay vì tiêu 6 lượt                                                               |
+
+**CHƯA VERIFY ĐƯỢC (nói rõ, không báo là đã xong)**: nhánh **poll cho tới khi `paid`**. Nó cần
+MoMo trả `paid:false` rồi `true`, mà local **không cấu hình MoMo** — cùng loại nợ với OneSignal
+(`findings/notifications.md` §12) và Google Calendar. Nhánh 404 và nhánh thiếu `orderId` thì đã đo
+thật.
+
+### LỖI THẬT bắt được bởi `yarn build`, không phải bởi `tsc` hay `yarn dev`
+
+Import `BookReaderDialog` bằng import tĩnh làm **hỏng bản build production**:
+
+```
+ReferenceError: DOMMatrix is not defined
+Error occurred prerendering page "/newsfeed"
+```
+
+`react-pdf` đánh giá `DOMMatrix` **ở module scope**, mà Node không có. Bản legacy có
+`next/dynamic({ ssr: false })` đúng vì lý do này; dựng lại ở P2.10c-1 bằng import thường là **làm
+mất cái chốt đó** — và `tsc` lẫn `yarn dev` đều **không** báo gì. Đây chính là lý do CLAUDE.md bắt
+chạy `yarn build` thật ở cuối mỗi checkpoint thay vì tin `tsc`.
+
+Sửa **hai chỗ**, không phải một:
+
+1. `book-actions.tsx` nạp reader qua `next/dynamic({ ssr: false })`.
+2. **Bỏ `BookReaderDialog` khỏi cả hai barrel** (`components/index.ts` và `index.ts` của feature).
+   Chỉ sửa (1) thì build **vẫn hỏng**: barrel re-export tĩnh kéo đúng đường dẫn đó trở lại vào mọi
+   server bundle có import barrel. Nó là internal của `BookActions`, không ai ngoài feature cần.
+
+Đã ghi comment tại chỗ ở cả hai file để người sau "dọn dẹp cái dynamic import" đọc được lý do
+trước khi làm.
+
+### Extraction test (§4) — chạy thật trên `features/bookstore`
+
+Toàn bộ import ra ngoài feature: `@/core/api/axios` · `@/core/api/schema.gen` ·
+`@/shared/components` · `@/shared/lib/api-error` · `@/lib/i18n` · node_modules
+(`@tanstack/react-query`, `lucide-react`, `next/link`, `react`, `react-pdf`).
+
+**Không import feature nào khác, không còn đường nào chạm `lib/api` hay `lib/hooks`.**
+`@/lib/i18n` là cạnh ngoài biên duy nhất — nợ chung của **mọi** feature từ P2.2c-2, không phải của
+bookstore.
+
+### Dọn dẹp
+
+`t_books` 0 · `t_book_reviews` 0 · `t_posts` về 2 bài seed · `role` của 9001 về `USER` ·
+`feed:9001` ZCARD 0 (`DEL feedpost:31` + `ZREM`) · object MinIO đã xoá. **Hai bucket giữ lại** (§3).
+
 ## 8. Cách tách checkpoint (công bố ở P2.10a, trước khi viết code)
 
 11 endpoint **< trần 12** của lớp data/state → `a` và `b` mỗi lớp một checkpoint, không tách thêm.

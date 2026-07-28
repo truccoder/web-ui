@@ -14,10 +14,10 @@
  * read `downloadUrl != null` (not `purchased`) to decide full text vs sample, and expect a 503 on
  * a valid book whose storage object is missing.
  *
- * Bookstore currently reaches the feed through a temporary bridge at
- * `src/components/posts/book-post-actions.tsx`, which `/newsfeed` passes down as a render prop so
- * that `features/newsfeed` never imports it. That bridge is removed at P2.10d — after this feature
- * is built and build-verified, not before (Guardrail B).
+ * `BookReaderDialog` IS NOT EXPORTED HERE, on purpose. `react-pdf` evaluates `DOMMatrix` at module
+ * scope, so it must stay behind the `next/dynamic({ ssr: false })` boundary inside `BookActions`;
+ * re-exporting it puts that static path into every server bundle that imports this barrel and
+ * breaks the production build. Nothing outside the feature needs it.
  */
 
 export { bookApi, paymentApi } from './api';
@@ -29,12 +29,12 @@ export {
   type BookPurchaseButtonProps,
   BookRatingSummary,
   type BookRatingSummaryProps,
-  BookReaderDialog,
-  type BookReaderDialogProps,
   BookReviewForm,
   type BookReviewFormProps,
   BookReviewList,
   type BookReviewListProps,
+  PaymentResultPanel,
+  type PaymentResultPanelProps,
   StarRating,
   type StarRatingProps,
 } from './components';

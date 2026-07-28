@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import {
   ArticleBody,
   BookBody,
@@ -19,10 +19,11 @@ import {
   ReactionBar,
   type PostEditorState,
 } from '@/features/posts';
+import { BookActions } from '@/features/bookstore';
 import { useMyProfile } from '@/features/security';
 import { Button } from '@/shared/components';
 import { useT } from '@/lib/i18n';
-import type { FeedBookSummary, FeedPost as FeedPostData } from '../types/feed';
+import type { FeedPost as FeedPostData } from '../types/feed';
 
 /**
  * One feed entry: maps `FeedPostDataDto` onto the `features/posts` read-side components.
@@ -47,8 +48,6 @@ export interface FeedPostProps {
   post: FeedPostData;
   /** Refetch the feed — the payload's counts only move when it is re-fetched. */
   onChanged: () => void;
-  /** Buy / preview / review controls for a `BOOK` post; see `PostBody`. */
-  renderBookActions?: (book: FeedBookSummary) => ReactNode;
 }
 
 /**
@@ -111,23 +110,16 @@ function toEditorState(post: FeedPostData): PostEditorState {
  * renders whatever body it is handed and never inspects `postType` — that is what lets the
  * same card serve search results later.
  *
- * `BOOK` IS THE ONE BODY THIS FEATURE CANNOT FINISH. Buy / preview / reviews belong to
- * `bookstore`, which has not been rebuilt yet (P2.10), and its temporary implementation still
- * lives in `src/components/posts/book-post-actions.tsx`. Importing that from here would put a
- * legacy path inside a feature and fail the extraction test (CLAUDE.md §4), so it arrives as a
- * render prop from the page instead. When `features/bookstore` exists, the page swaps the
- * bridge for its component — or this file imports it through that feature's barrel — and the
- * prop can go.
+ * `BOOK`'S ACTIONS COME FROM `features/bookstore`, THROUGH ITS BARREL. Buy / preview / reviews
+ * belong to that domain, and until P2.10 its only implementation was a legacy bridge under
+ * `src/components/posts/`, which a feature must never import — so the actions arrived as a render
+ * prop threaded down from the page. `features/bookstore` now exists, and CLAUDE.md §4 permits one
+ * feature to import another's `index.ts`, so the import is direct and the prop is gone. Same shape
+ * as `features/chat` importing `features/friendships` (settled at P2.7c-1). The dependency
+ * newsfeed → bookstore is real — the feed genuinely renders book posts — and §4 is explicit that a
+ * real coupling should be expressed through the barrel rather than hidden behind an indirection.
  */
-function PostBody({
-  post,
-  onChanged,
-  renderBookActions,
-}: {
-  post: FeedPostData;
-  onChanged: () => void;
-  renderBookActions?: (book: FeedBookSummary) => ReactNode;
-}) {
+function PostBody({ post, onChanged }: { post: FeedPostData; onChanged: () => void }) {
   switch (post.postType) {
     case 'CODE_SNIPPET':
       return post.codeSnippetDetails ? <CodeSnippetBody details={post.codeSnippetDetails} /> : null;
@@ -157,7 +149,22 @@ function PostBody({
       ) : null;
     case 'BOOK':
       return post.book ? (
-        <BookBody book={post.book} actions={renderBookActions?.(post.book)} />
+        <BookBody
+          book={post.book}
+          actions={
+            // `bookId` is the one field these controls cannot work without, and the feed's book
+            // summary types every field as optional. No id means no actions rather than a broken
+            // control.
+            post.book.bookId != null ? (
+              <BookActions
+                bookId={post.book.bookId}
+                title={post.book.title ?? ''}
+                fileFormat={post.book.fileFormat ?? null}
+                isFree={post.book.isFree === true}
+              />
+            ) : null
+          }
+        />
       ) : null;
     default:
       // REGULAR carries no details block — its whole body is the card's `content`.
@@ -165,7 +172,7 @@ function PostBody({
   }
 }
 
-export function FeedPost({ post, onChanged, renderBookActions }: FeedPostProps) {
+export function FeedPost({ post, onChanged }: FeedPostProps) {
   const t = useT();
   const { data: profile } = useMyProfile();
 
@@ -240,7 +247,7 @@ export function FeedPost({ post, onChanged, renderBookActions }: FeedPostProps) 
               onSaved={onChanged}
             />
           ) : (
-            <PostBody post={post} onChanged={onChanged} renderBookActions={renderBookActions} />
+            <PostBody post={post} onChanged={onChanged} />
           )}
 
           {/* A quiz is an attachment, not a post type — `buildAndSavePost` accepts

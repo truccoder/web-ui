@@ -10,6 +10,9 @@ export const en = {
     checkingDesc: 'Please wait while we verify the transaction with MoMo.',
     failedTitle: 'Payment failed',
     failedDesc: 'Your payment could not be completed. Please try again.',
+    pendingTitle: 'Payment not confirmed yet',
+    pendingDesc:
+      'MoMo has not reported back. If you were charged, access opens within a few minutes — reload this page to check.',
     successTitle: 'Payment successful',
     successDesc: 'Thank you! You now have full access to this book.',
     backToNewsfeed: 'Back to newsfeed',

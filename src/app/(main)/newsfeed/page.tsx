@@ -3,7 +3,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { Newsfeed, newsfeedKeys } from '@/features/newsfeed';
 import { PostComposer } from '@/features/posts';
-import { BookPostActions } from '@/components/posts/book-post-actions';
 import { useT } from '@/lib/i18n';
 
 /**
@@ -19,12 +18,11 @@ import { useT } from '@/lib/i18n';
  *    screen instead, which is this. Permanent, not a seam: the dependency points
  *    newsfeed → posts, which is the direction that is allowed.
  *
- *  - `renderBookActions` → the legacy `BookPostActions`. Buy / preview / reviews belong to
- *    `bookstore` (P2.10) and its only implementation is still the bridge under
- *    `src/components/posts/`. `features/newsfeed` must not import that path, so the page — the
- *    one place allowed to know about both — passes it down. AT P2.10: swap this for
- *    `features/bookstore`'s component, or let the feed import it through that barrel and drop
- *    the prop.
+ * `renderBookActions` IS GONE (P2.10d). It existed only because `bookstore` had not been rebuilt
+ *    and its buy/preview/review controls lived in a legacy bridge that no feature was allowed to
+ *    import, so the page threaded them down. `features/bookstore` now exports `BookActions`, and
+ *    §4 lets `features/newsfeed` import another feature's barrel directly — so the feed reaches
+ *    for it itself and the page no longer mediates.
  */
 export default function NewsfeedPage() {
   const t = useT();
@@ -45,7 +43,7 @@ export default function NewsfeedPage() {
 
       <PostComposer onPosted={refreshFeed} />
 
-      <Newsfeed renderBookActions={(book) => <BookPostActions book={book} />} />
+      <Newsfeed />
     </div>
   );
 }

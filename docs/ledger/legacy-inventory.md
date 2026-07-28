@@ -137,13 +137,30 @@ Cột "hook có UI dùng" đếm hook được import từ `app/` hoặc `compon
 | `components/posts/feed-post.tsx` → `features/newsfeed/components/` | chuyển nguyên; bỏ import cầu tạm bookstore, nhận qua render prop                     |
 | `lib/types`: `FeedPostData` `FeedResponse` `FeedBookSummary`       | `features/newsfeed/types/feed.ts` sở hữu, derive từ `schema.gen.ts`                  |
 
-**`src/components/posts/` giờ chỉ còn 2 file, cả hai đều là bookstore** (`book-post-actions.tsx`,
-`book-reader-dialog.tsx`) — xoá ở P2.10.
+~~**`src/components/posts/` giờ chỉ còn 2 file, cả hai đều là bookstore**~~ — **XOÁ HẾT Ở P2.10d.**
+`book-post-actions.tsx` + `book-reader-dialog.tsx` đã đi, và **thư mục `src/components/posts/`
+không còn tồn tại**. `src/components/` giờ chỉ còn `moderation/`, `ui/` (shadcn) và
+`service-worker-register.tsx`.
 
 **Ranh giới đáng ghi**: `features/newsfeed` **không** import cầu tạm bookstore (sẽ là legacy path
 nằm trong feature, hỏng extraction test §4). Page `/newsfeed` — chỗ duy nhất được biết cả hai —
 truyền xuống qua prop `renderBookActions`. P2.10 đổi prop này sang component của
 `features/bookstore` rồi bỏ prop.
+
+### Đã xoá ở P2.10d (domain bookstore) — DOMAIN ĐÓNG
+
+| file / symbol                                                                                                                                                                        | vì sao xoá được                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `components/posts/book-post-actions.tsx`                                                                                                                                             | cầu tạm từ P2.4d hết lý do tồn tại — `features/bookstore` cấp `BookActions`                                                                                                                                                                                                                                                                                                                                                 |
+| `components/posts/book-reader-dialog.tsx`                                                                                                                                            | dựng lại thành `features/bookstore/components/book-reader-dialog.tsx`, **worker pdf.js tự host** thay vì lấy từ `unpkg.com` lúc chạy (phản đối đã ghi ở P2.4c-4)                                                                                                                                                                                                                                                            |
+| `lib/api/books.ts` + `lib/api/payments.ts`                                                                                                                                           | thay bằng `features/bookstore/api/` (10 hàm; webhook MoMo cố ý không có)                                                                                                                                                                                                                                                                                                                                                    |
+| `lib/hooks/use-books.ts` + `lib/hooks/use-payments.ts`                                                                                                                               | thay bằng `features/bookstore/hooks/`                                                                                                                                                                                                                                                                                                                                                                                       |
+| `lib/types`: `CreateBookRequest` `BookFileFormat` `BookResponse` `BookReview` `CreateReviewRequest` `RatingBreakdown` `PresignedUrlResponse` `PaymentResponse` `PaymentSyncResponse` | 9 type viết tay, mất consumer cuối cùng. Read side → `features/bookstore/types/book.ts`, write side (`CreateBookRequest`) → `features/posts/types/post.ts`, **cả hai derive từ `schema.gen.ts`**. Không phải đổi chỗ cho đẹp: bản viết tay khai `downloadUrl?`/`previewUrl?` như hai optional độc lập và `purchased` như boolean thường — chính cách khai đó **giấu mất** hai cái bẫy mà P2.10a phải đo trên BE thật mới ra |
+| prop `renderBookActions` (`Newsfeed`, `FeedPost`, `/newsfeed` page)                                                                                                                  | chỉ tồn tại vì cầu tạm không được feature import. `features/newsfeed` giờ import `BookActions` qua barrel `features/bookstore` — §4 cho phép, cùng dạng với `features/chat` → `features/friendships`                                                                                                                                                                                                                        |
+
+**`react-pdf` GIỮ LẠI** trong `package.json` (ghi chú ở P2.4c-4 nói "gỡ ở domain bookstore" —
+đã cân nhắc và **quyết định giữ**): trình đọc PDF phân trang là tính năng thật, bỏ đi là hồi quy
+theo Guardrail C. Cái bị bỏ là **CDN**, không phải thư viện.
 
 ### Code phải xoá, không phải migrate
 

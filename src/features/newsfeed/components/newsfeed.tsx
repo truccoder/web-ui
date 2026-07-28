@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { RefreshCw } from 'lucide-react';
 import { Button, Card, EmptyState, Skeleton } from '@/shared/components';
@@ -8,7 +8,6 @@ import { useT } from '@/lib/i18n';
 import { cn } from '@/shared/lib/cn';
 import { newsfeedKeys } from '../hooks/keys';
 import { useNewsfeed } from '../hooks/use-feed';
-import type { FeedBookSummary } from '../types/feed';
 import { FeedPost } from './feed-post';
 
 /**
@@ -26,12 +25,6 @@ import { FeedPost } from './feed-post';
  * still works when the viewport is tall enough that no scrolling ever happens.
  */
 export interface NewsfeedProps {
-  /**
-   * Buy / preview / review controls for `BOOK` posts, supplied by the page until
-   * `features/bookstore` exists (P2.10). Threaded straight through to `FeedPost` — see the
-   * note there on why this feature must not reach for the bridge itself.
-   */
-  renderBookActions?: (book: FeedBookSummary) => ReactNode;
   className?: string;
 }
 
@@ -51,7 +44,7 @@ function PostSkeleton() {
   );
 }
 
-export function Newsfeed({ renderBookActions, className }: NewsfeedProps) {
+export function Newsfeed({ className }: NewsfeedProps) {
   const t = useT();
   const queryClient = useQueryClient();
   const feed = useNewsfeed();
@@ -125,12 +118,7 @@ export function Newsfeed({ renderBookActions, className }: NewsfeedProps) {
   return (
     <div className={cn('flex flex-col gap-4', className)}>
       {posts.map((post) => (
-        <FeedPost
-          key={post.postId}
-          post={post}
-          onChanged={refresh}
-          renderBookActions={renderBookActions}
-        />
+        <FeedPost key={post.postId} post={post} onChanged={refresh} />
       ))}
 
       <div ref={sentinelRef} />

@@ -12,6 +12,9 @@ export const vi: Messages = {
     checkingDesc: 'Vui lòng đợi trong khi chúng tôi xác minh giao dịch với MoMo.',
     failedTitle: 'Thanh toán thất bại',
     failedDesc: 'Không thể hoàn tất thanh toán của bạn. Vui lòng thử lại.',
+    pendingTitle: 'Chưa xác nhận được thanh toán',
+    pendingDesc:
+      'MoMo chưa báo về kết quả. Nếu tiền đã bị trừ, quyền truy cập sẽ được mở trong ít phút — tải lại trang này để kiểm tra.',
     successTitle: 'Thanh toán thành công',
     successDesc: 'Cảm ơn bạn! Bạn đã có toàn quyền truy cập cuốn sách này.',
     backToNewsfeed: 'Về trang bảng tin',

@@ -207,75 +207,20 @@ export interface LocationDetails {
  * two that agree by luck.
  */
 
-export interface CreateBookRequest {
-  title: string;
-  description?: string;
-  postId?: number;
-  price?: number;
-  previewPages?: number;
-}
-
-export type BookFileFormat = 'PDF' | 'EPUB';
-
-export interface BookResponse {
-  id: number;
-  authorId: number;
-  postId: number;
-  title: string;
-  description?: string;
-  downloadUrl?: string;
-  previewUrl?: string;
-  coverImageUrl?: string;
-  fileFormat: BookFileFormat;
-  fileSizeBytes: number;
-  totalPages?: number;
-  previewPages?: number;
-  price: number;
-  currency: string;
-  isFree: boolean;
-  downloadCount: number;
-  avgRating: number;
-  reviewCount: number;
-  purchased: boolean;
-  createdAt: string;
-}
-
-export interface BookReview {
-  id: number;
-  userId: number;
-  rating: number;
-  feedback?: string;
-  createdAt: string;
-}
-
-export interface CreateReviewRequest {
-  rating: number;
-  feedback?: string;
-}
-
-export interface RatingBreakdown {
-  oneStarCount: number;
-  twoStarsCount: number;
-  threeStarsCount: number;
-  fourStarsCount: number;
-  fiveStarsCount: number;
-  totalRatings: number;
-}
-
-export interface PresignedUrlResponse {
-  url: string;
-}
-
-export interface PaymentResponse {
-  paymentUrl: string;
-  transactionRef: string;
-  qrCode?: string;
-}
-
-export interface PaymentSyncResponse {
-  transactionRef: string;
-  paid: boolean;
-}
+/*
+ * REMOVED AT P2.10d, together with the bookstore bridge and `lib/api/books.ts` +
+ * `lib/api/payments.ts` that were their only consumers: `CreateBookRequest`, `BookFileFormat`,
+ * `BookResponse`, `BookReview`, `CreateReviewRequest`, `RatingBreakdown`,
+ * `PresignedUrlResponse`, `PaymentResponse`, `PaymentSyncResponse`.
+ *
+ * `features/bookstore/types/book.ts` has owned the read side since P2.10a and
+ * `features/posts/types/post.ts` the write side (`CreateBookRequest`) since P2.4a — both derived
+ * from `schema.gen.ts` rather than hand-typed. That difference is not cosmetic: these
+ * hand-written versions declared `downloadUrl?` and `previewUrl?` as two independent optionals
+ * and `purchased` as a plain boolean, which is precisely what hid the two traps P2.10a had to
+ * measure on the running backend — exactly one of the two URLs is ever filled, and `purchased`
+ * is hardcoded false for free books.
+ */
 
 /*
  * REMOVED AT P2.4″d: `CreatePostRequest`, `UpdatePostRequest`, `PostAuthor`, `Post`,

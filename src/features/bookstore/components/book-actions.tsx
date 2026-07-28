@@ -1,12 +1,27 @@
 'use client';
 
 import * as React from 'react';
+import dynamic from 'next/dynamic';
 import { Eye } from 'lucide-react';
 import { Button, Skeleton } from '@/shared/components';
 import { useT } from '@/lib/i18n';
 import { useBookPreviewUrl } from '../hooks';
 import { BookPurchaseButton } from './book-purchase-button';
-import { BookReaderDialog } from './book-reader-dialog';
+
+/**
+ * LOADED CLIENT-SIDE ONLY, AND NOT AS AN OPTIMISATION. `react-pdf` evaluates `DOMMatrix` at module
+ * scope, which does not exist in Node — a static import here fails the production build outright
+ * with "ReferenceError: DOMMatrix is not defined" while prerendering `/newsfeed` (caught by
+ * `yarn build`; `yarn dev` and `tsc` both pass, so the type checker will not warn you).
+ *
+ * The legacy bridge had the same guard for the same reason. It was lost when this component was
+ * rebuilt with a plain import and had to be put back — leaving the note here so the next person to
+ * "tidy up the dynamic import" learns it from the comment rather than from a broken deploy.
+ */
+const BookReaderDialog = dynamic(
+  () => import('./book-reader-dialog').then((m) => m.BookReaderDialog),
+  { ssr: false }
+);
 
 /**
  * The interactive half of a book attached to a post — what fills the `actions` slot that
@@ -15,12 +30,14 @@ import { BookReaderDialog } from './book-reader-dialog';
  * WHY THE SLOT EXISTS. `BookController` and `PaymentController` live in the backend package
  * `com.socialapp.bookstore`, so `features/posts` calling them would breach the module boundary
  * (CLAUDE.md §4). `BookBody` renders the cover, title, rating, price and format and opens a slot;
- * this component is what the owning domain drops into it. It replaces the temporary bridge at
- * `src/components/posts/book-post-actions.tsx`, which is deleted at P2.10d — not here (Guardrail B).
+ * this component is what the owning domain drops into it. It replaced the temporary bridge at
+ * `src/components/posts/book-post-actions.tsx`, deleted at P2.10d once this was build-verified
+ * (Guardrail B).
  *
- * REVIEWS ARE NOT IN THIS CHECKPOINT. The bridge also carries a reviews toggle; that surface is
- * rebuilt at P2.10c-2 and wired in at P2.10d. Nothing is lost in between, because `/newsfeed` keeps
- * passing the bridge down until d switches the prop over in one move.
+ * REVIEWS ARE NOT WIRED INTO THIS SLOT. `BookRatingSummary` / `BookReviewList` / `BookReviewForm`
+ * exist (P2.10c-2) and are exported, but the feed card shows only read and buy — a review form
+ * inside every book card in the feed is a different design decision from the one the bridge made,
+ * and belongs to the `/newsfeed` assembly at P3.1 rather than being smuggled in here.
  */
 export interface BookActionsProps {
   bookId: number;
