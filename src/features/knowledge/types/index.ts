@@ -1,0 +1,16 @@
+export type {
+  CreatedToken,
+  CreateTokenInput,
+  Explanation,
+  ExplanationStyle,
+  ExternalLink,
+  KnowledgeLibrary,
+  PersonalAccessToken,
+  PrimaryRole,
+  ProfessionalProfile,
+  SaveExplanationInput,
+  SeniorityLevel,
+  UpdateProfessionalProfileInput,
+  VaultPermission,
+  WorkExperience,
+} from './knowledge';
