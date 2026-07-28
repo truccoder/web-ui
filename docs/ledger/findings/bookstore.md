@@ -93,10 +93,14 @@ là "một cuốn sách có object hỏng". UI không được nuốt im lặng.
 `BookService.getFullDownloadUrl` chạy `book.setDownloadCount(count + 1)` + `bookRepository.save`
 **trước khi** trả URL. Đo: gọi 2 lần → đọc lại sách thấy `downloadCount: 0 → 2`.
 
-→ **Bắt buộc là `useMutation`, không bao giờ `useQuery`.** Một `useQuery` sẽ refetch khi focus lại
-cửa sổ / reconnect và **tự tăng số lượt tải**. Cùng họ với `GET /notifications/preferences` có tác
-dụng phụ ghi DB ([`findings/notifications.md`](notifications.md) §8), nhưng nặng hơn vì đây là số
-đếm người dùng nhìn thấy.
+→ **Bắt buộc là `useMutation`, không bao giờ `useQuery`.** Một `useQuery` sẽ **tự tăng số lượt
+tải** qua những đường không ai chủ ý: refetch lúc mount khi đã stale · refetch lúc reconnect ·
+refetch khi có `invalidateQueries` chạm key · và `retry: 1` của query client dùng chung phát lại
+request mà BE có thể đã đếm rồi mới lỗi. (**Đính chính**: refetch-khi-focus-lại-cửa-sổ thì _không_
+— `makeQueryClient` đặt `refetchOnWindowFocus: false` toàn app. Mọi đường còn lại vẫn sống.)
+Cùng họ với `GET /notifications/preferences` có tác dụng phụ ghi DB
+([`findings/notifications.md`](notifications.md) §8), nhưng nặng hơn vì đây là số đếm người dùng
+nhìn thấy.
 
 Hook legacy `useDownloadBook` **tình cờ đã đúng** (là mutation) nhưng comment ghi lý do khác — "hành
 động một lần, không phải panel". Lý do thật là **nó ghi DB**. Bản mới ghi đúng lý do.
@@ -178,6 +182,36 @@ MoMo gọi server-to-server (IPN). FE gọi vào chỉ có thể là giả mạo
 endpoint mà ledger đã ghi "mục tiêu thật là 99, không phải 101" (cùng
 `GET /events/google/callback`). **Cố ý không có hàm tương ứng** — ghi ở đây để P4.7 không đếm nhầm
 thành thiếu sót.
+
+## 7b. Quyết định của tầng state (P2.10b)
+
+- **`useDownloadBook` là mutation, `useBookPreviewUrl` là query.** Lý do ở §4 — `/download` ghi DB,
+  `/preview` thì không. Hook **không** tự `window.open` như bản legacy: điều hướng là việc của màn
+  hình (quy ước chung với `friendships`/`posts`: hook không toast, không navigate), và popup mở từ
+  callback của promise còn phụ thuộc cửa sổ transient-activation của trình duyệt. Hook trả URL,
+  P2.10c-1 quyết cách đưa cho người dùng.
+- **Key gom theo tiền tố `['bookstore','book',id]`** để **một** lần invalidate sau khi đánh giá làm
+  mới cả 3 thứ cùng đổi: danh sách review, breakdown, **và `avgRating`/`reviewCount` nằm trên chính
+  `BookResponseDto`** (đo ở §5: một review đẩy `avgRating` 0 → 5). Tách nhánh riêng sẽ để lại điểm
+  trung bình cũ nằm ngay trên danh sách review mới.
+- **Không optimistic update cho review.** Server tự tính lại trung bình; đoán ở FE là hoặc hiện số
+  sẽ đổi dưới tay người dùng, hoặc chép lại phép tính tổng hợp — cùng lý do đã giữ reaction chỉ
+  optimistic trên `myReaction` ở `posts`.
+- **Không đụng query key của `newsfeed`/`search`** dù book summary nhúng trong payload của chúng.
+  Với quy ước đã chốt ở `posts` ("invalidate xuyên domain: bên compose truyền vào"), reach sang key
+  của feature khác là đúng thứ CLAUDE.md §4 cấm. Hệ quả tạm: rating trong feed cũ tới khi feed tự
+  refetch.
+- **`useDeleteBook` dùng `removeQueries`, không `invalidateQueries`** cho nhánh của cuốn sách:
+  refetch một id vừa bị xoá chỉ ra 404 và một trạng thái lỗi cho thứ người dùng vừa cố ý huỷ.
+- **`useSyncPaymentStatus` là mutation dù nghe như đọc trạng thái.** `MomoService.syncPaymentStatus`
+  gọi MoMo rồi chạy `applyResult` — **hoàn tất giao dịch**, ghi `gatewayTransactionNo`, `paidAt` và
+  **thông báo cho tác giả**. Nó chính là đường kết thúc thanh toán khi webhook server-to-server chưa
+  kịp về (webhook đua với redirect trình duyệt).
+  **Poll được là bảo đảm của BE, không phải giả định của FE**: `applyResult` thoát sớm khi purchase
+  đã `COMPLETED`, không ghi lại, không thông báo lại — có comment nói rõ trong code BE. Vẫn để là
+  mutation chứ không phải `useQuery` + `refetchInterval` vì như thế là giao thời điểm của một lệnh
+  **ghi hoàn tất thanh toán** cho chính sách refetch của React Query (mount / reconnect / retry).
+  Vòng lặp có giới hạn nằm ở **P2.10d**, cạnh UI giải thích nó.
 
 ## 8. Cách tách checkpoint (công bố ở P2.10a, trước khi viết code)
 

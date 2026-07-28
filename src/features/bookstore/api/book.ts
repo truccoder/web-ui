@@ -61,10 +61,14 @@ export const bookApi = {
    * `downloadCount` and saves the row before returning. Measured: two calls moved a book from
    * `downloadCount: 0` to `2`.
    *
-   * CONSEQUENCE FOR THE STATE LAYER — it must be a mutation, never a query. A `useQuery` would
-   * refetch on window focus and on reconnect, silently inflating a counter the user can see. The
-   * legacy hook happened to be a mutation for an unrelated reason ("one-shot action"); the real
-   * reason is this one.
+   * CONSEQUENCE FOR THE STATE LAYER — it must be a mutation, never a query. A `useQuery` inflates
+   * a counter the user can see, on paths nobody writes deliberately: refetch on mount once stale,
+   * refetch on reconnect, refetch on any `invalidateQueries` touching its key, and `retry: 1` from
+   * the shared client re-issuing a request the backend may already have counted before failing.
+   * (Window-focus refetching specifically would NOT do it — `makeQueryClient` sets
+   * `refetchOnWindowFocus: false` app-wide — but every other trigger is live.) The legacy hook
+   * happened to be a mutation for an unrelated reason ("one-shot action"); the real reason is this
+   * one.
    *
    * 403 "You must purchase this book before downloading" when the book is paid and the caller is
    * neither the author nor a completed purchaser. That check is the authoritative one — the
