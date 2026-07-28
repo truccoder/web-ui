@@ -195,7 +195,55 @@ server mới được phép đưa ra.
 empty). Chưa sửa ở checkpoint này vì thuộc domain khác; **sửa ở P3.1** khi assemble `/newsfeed`.
 Triệu chứng sẽ là "Chưa có bài viết nào" trong khi feed thực ra không tải được.
 
-## 14. CHƯA GIẢI THÍCH ĐƯỢC: nút "Thử lại" không phát request nào
+## 14. ~~CHƯA GIẢI THÍCH ĐƯỢC~~ — ĐÃ TÁI HIỆN VÀ XÁC ĐỊNH ĐƯỢC CƠ CHẾ (2026-07-28, P2.10c-1)
+
+**Không còn là bí ẩn.** Tái hiện được **ổn định, trên mọi lần tải trang**, ở một domain khác
+(`bookstore`) bằng một query đơn giản trỏ vào `GET /v1/api/books/999999` (404 thật, xem
+[`findings/bookstore.md`](bookstore.md)). Đo bằng cách render thẳng state của query ra màn hình:
+
+```json
+{
+  "status": "pending",
+  "fetchStatus": "paused",
+  "isPending": true,
+  "isError": false,
+  "failureCount": 1,
+  "error": null
+}
+```
+
+**Cơ chế**: query **thất bại lần đầu** (404 về tới nơi, `failureCount` lên 1), rồi lần **retry**
+bị React Query **park lại** thay vì chạy → query đứng vĩnh viễn ở `pending`/`paused`. Đợi 44 giây
+vẫn y nguyên, và chỉ có **đúng 1** request rời trình duyệt.
+
+**Bằng chứng quyết định** (khác kết quả ghi ở lần đo cũ — lần này gỡ được):
+
+```js
+window.dispatchEvent(new Event('online'));
+// → fetchStatus: 'paused'  →  'fetching'   (sau ~2s)
+// → status: 'error', isError: true, failureCount: 2, error: "Request failed with status code 404"
+```
+
+Tức là **retry bị treo, và một sự kiện `online` thả nó ra**. `navigator.onLine` vẫn trả `true`
+suốt quá trình, nên đây là trạng thái nội bộ của `onlineManager` chứ không phải trạng thái thật
+của máy — cũng là lý do lần đo trước tưởng đã loại trừ giả thuyết này.
+
+**Ba hệ quả, tất cả đều là lỗi thật chứ không phải nhiễu môi trường:**
+
+1. **`isError` KHÔNG BAO GIỜ true** cho một query đã hỏng → đúng cái lỗ đã ghi ở §13 và đang còn
+   nợ ở `features/newsfeed/components/newsfeed.tsx`. Nhánh lỗi không bao giờ chạy tới.
+2. **Nút "Thử lại" không phát request** vì `refetch()` trên query paused cũng bị park.
+3. **UI đứng ở trạng thái loading vĩnh viễn.** Bắt được ở P2.10c-1: `BookPurchaseButton` với một
+   sách 404 giữ nguyên nút spinner disabled mãi mãi.
+
+**Cách sửa vẫn như đề xuất cũ, giờ có cơ sở**: `networkMode: 'always'` ở
+`core/query/client.ts` — query hỏng sẽ đi thẳng tới `error` thay vì bị park, và ba hệ quả trên
+biến mất cùng lúc. **Vẫn là thay đổi hạ tầng dùng chung cho mọi domain → checkpoint riêng, không
+nhét vào một checkpoint domain.** Ghi nợ này lên đầu hàng đợi P3.1.
+
+Ghi chú cũ giữ nguyên bên dưới để đối chiếu (phần "chưa xác định được" nay đã có lời giải):
+
+### Ghi chú gốc (P2.6cd)
 
 Đo hai lần, hai kiểu lỗi khác nhau (path 500 và `page=0` → 400 trên đúng endpoint thật): sau khi
 list vào trạng thái lỗi, bấm "Thử lại" → `refetch()` chạy nhưng **0 request rời trình duyệt**

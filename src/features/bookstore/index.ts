@@ -23,6 +23,15 @@
 export { bookApi, paymentApi } from './api';
 
 export {
+  BookActions,
+  type BookActionsProps,
+  BookPurchaseButton,
+  type BookPurchaseButtonProps,
+  BookReaderDialog,
+  type BookReaderDialogProps,
+} from './components';
+
+export {
   bookstoreKeys,
   useBook,
   useBooksByAuthor,

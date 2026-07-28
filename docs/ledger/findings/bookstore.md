@@ -213,6 +213,81 @@ thành thiếu sót.
   **ghi hoàn tất thanh toán** cho chính sách refetch của React Query (mount / reconnect / retry).
   Vòng lặp có giới hạn nằm ở **P2.10d**, cạnh UI giải thích nó.
 
+## 7c. P2.10c-1 — mặt đọc + mua (2026-07-28)
+
+Ba component: `BookActions` (lấp slot `actions` của `BookBody`), `BookPurchaseButton`,
+`BookReaderDialog`. Cộng **một primitive dùng chung mới**: `shared/components/dialog.tsx` — DS có
+spec `Dialog` nhưng `shared/` chưa từng dựng, và không có primitive overlay nào khác trong dự án.
+4 component ≤ trần 5.
+
+### `react-pdf` GIỮ LẠI, nhưng worker **tự host** — chốt 2026-07-28
+
+P2.4c-4 cắt `pdf-preview.tsx` với 3 lý do, lý do (2) là worker pdf.js lấy từ **`unpkg.com` lúc
+chạy**, đặt CDN bên thứ ba vào đường đi chính của app. Ghi chú đó hoãn quyết định về trình đọc
+sang "domain bookstore" — tức là đây. **User chọn: giữ trình đọc, bỏ CDN.**
+
+```js
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url
+).toString();
+```
+
+Bundler tự resolve khỏi `node_modules` và phát thành asset của app. **Đã verify bằng
+`performance.getEntriesByType('resource')` trên trang thật**:
+
+```
+worker  → http://localhost:3000/_next/static/media/pdf.worker.min.0wghn0~9oxou6.mjs
+unpkg/cdnjs/jsdelivr/cloudflare → []      (rỗng)
+origin bên thứ ba duy nhất → chat.stream-io-api.com  (của app shell, đúng mong đợi)
+```
+
+Không chọn phương án bỏ react-pdf: trình đọc phân trang là **tính năng thật**, bỏ đi là hồi quy
+(Guardrail C), không phải dọn dẹp.
+
+### LỖI THẬT bắt được nhờ verify: nút Mua rơi vào nhánh sai khi tra sách hỏng
+
+Bản đầu của `BookPurchaseButton` là `canRead → Đọc` · `isLoadingBook → spinner` · **còn lại →
+Mua**. Nghĩa là khi `GET /books/{id}` **lỗi**, nó mời mua: với 404 là trả tiền cho thứ không tồn
+tại, với **503** (§3 — object storage hỏng) là trả tiền cho file không ai giao được. Lỗi ≠ "chưa
+mua"; lỗi nghĩa là **không biết**. Đã thêm nhánh `isError` → nút disabled `post.book.unavailable`.
+
+### Verify trên BE + MinIO thật (route preview tạm, đã xoá)
+
+| trạng thái                        | kết quả đo                                                                                                              |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| sách 11 — PDF, **miễn phí**       | "Xem trước" + **"Tải xuống"** ✔ (`isFree` đủ kết luận)                                                                  |
+| sách 12 — EPUB, trả phí, chưa mua | "Xem trước" + **"Mua"** ✔ (`downloadUrl` null)                                                                          |
+| sách 999999 — không tồn tại       | xem mục dưới — query bị park, chưa tới nhánh `isError`                                                                  |
+| trình đọc PDF                     | trang 1 render thật, "Trang 1 / 2", "Trước" disabled; bấm "Sau" → trang 2, "Sau" disabled ✔                             |
+| `Dialog` vs specimen DS           | so bằng mắt với `overlays.card.html`: panel trắng bo 12px, tiêu đề 16px/600, mô tả muted, footer phải + Cancel/Delete ✔ |
+| dark mode                         | panel + footer đổi theo `data-theme="dark"`; trang PDF vẫn trắng (đúng — đó là tài liệu) ✔                              |
+
+Dữ liệu probe (2 sách + 1 PDF thật trong MinIO) **đã dọn sạch**; `t_books` về 0 hàng, object
+`books/probe-free.pdf` đã xoá. **Hai bucket `books` + `book-covers` cố ý giữ** (§3).
+
+### Query bị park ở `paused` — bắt được ở đây, gốc rễ ghi ở notifications §14
+
+Nhánh sách-không-tồn-tại **không hiện được nút disabled** vì query không bao giờ tới `error`:
+
+```json
+{
+  "status": "pending",
+  "fetchStatus": "paused",
+  "isPending": true,
+  "isError": false,
+  "failureCount": 1,
+  "error": null
+}
+```
+
+Đây chính là nợ "chưa giải thích được" ở [`findings/notifications.md`](notifications.md) §14 —
+lần này **tái hiện ổn định** và xác định được cơ chế: retry sau lần hỏng đầu bị park, và
+`dispatchEvent(new Event('online'))` thả nó ra → query đi tiếp tới `status:'error'`. Chi tiết đầy
+đủ ở §14 đã cập nhật. **Cách sửa (`networkMode:'always'` ở `core/query/client.ts`) là hạ tầng dùng
+chung → checkpoint riêng, KHÔNG sửa trong P2.10.** Nhánh `isError` của `BookPurchaseButton` viết
+đúng và sẽ sống dậy khi hạ tầng được sửa.
+
 ## 8. Cách tách checkpoint (công bố ở P2.10a, trước khi viết code)
 
 11 endpoint **< trần 12** của lớp data/state → `a` và `b` mỗi lớp một checkpoint, không tách thêm.
