@@ -1,6 +1,6 @@
 'use client';
 
-import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { friendshipApi } from '@/lib/api/friendship';
 import { getErrorMessage } from '@/lib/api/error';
@@ -9,9 +9,14 @@ import type {
   FriendListResult,
   FriendSuggestion,
   PendingFriendRequest,
-  SentFriendRequest,
   UserSummary,
 } from '@/lib/types';
+
+// LEGACY, shrinking. `features/friendships` owns this domain now (P2.2). What survives
+// here is only what consumers OUTSIDE friendships still call: dashboard (P3.3), chats +
+// messenger sidebar (P2.7) and the app shell's request badge (P3.4). Those pages map the
+// wire DTO onto `UserSummary` for Twilio identity, so repointing them at the feature
+// barrel is their own migration, not friendships'. This file dies with the last of them.
 
 // NOTE: this DTO has no email field, only userId/username/fullName/profilePictureUrl.
 // Chat identity (see communication-provider.tsx) is keyed by email for the current user,
@@ -35,26 +40,6 @@ export function useFriends(limit = 100) {
         hasMore: r.data.hasMore,
         totalCount: r.data.totalCount,
       })),
-  });
-}
-
-const FRIENDS_PAGE_SIZE = 20;
-
-// Cursor-paginated variant of useFriends, for a dedicated "all friends" list rather than
-// the fixed one-shot batch useFriends fetches for previews (dashboard, chat picker, birthdays).
-export function useInfiniteFriends(limit = FRIENDS_PAGE_SIZE) {
-  return useInfiniteQuery({
-    queryKey: ['friends', 'infinite', limit],
-    queryFn: ({ pageParam }: { pageParam: number | undefined }) =>
-      friendshipApi.getFriends(pageParam, limit).then((r) => ({
-        friends: r.data.friends.map(toUserSummary),
-        nextCursor: r.data.nextCursor,
-        hasMore: r.data.hasMore,
-        totalCount: r.data.totalCount,
-      })),
-    initialPageParam: undefined as number | undefined,
-    getNextPageParam: (lastPage) =>
-      lastPage.hasMore ? (lastPage.nextCursor ?? undefined) : undefined,
   });
 }
 
@@ -82,23 +67,6 @@ export function usePendingRequests() {
           requesterId: String(req.requesterId),
           requesterFullName: req.requesterFullName ?? '',
           requesterProfilePictureUrl: req.requesterProfilePictureUrl ?? '',
-          status: req.status,
-          createdAt: req.createdAt,
-        }))
-      ),
-  });
-}
-
-export function useSentRequests() {
-  return useQuery({
-    queryKey: ['sent-requests'],
-    queryFn: (): Promise<SentFriendRequest[]> =>
-      friendshipApi.getSentRequests().then((r) =>
-        r.data.map((req) => ({
-          id: String(req.id),
-          addresseeId: String(req.addresseeId),
-          addresseeFullName: req.addresseeFullName ?? '',
-          addresseeProfilePictureUrl: req.addresseeProfilePictureUrl ?? '',
           status: req.status,
           createdAt: req.createdAt,
         }))
@@ -152,21 +120,6 @@ export function useRejectFriendRequest() {
     },
     onError: (error) => {
       toast.error(getErrorMessage(error, 'Failed to reject friend request'));
-    },
-  });
-}
-
-export function useCancelFriendRequest() {
-  const qc = useQueryClient();
-
-  return useMutation({
-    mutationFn: friendshipApi.cancelRequest,
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['sent-requests'] });
-      toast.success('Friend request cancelled');
-    },
-    onError: (error) => {
-      toast.error(getErrorMessage(error, 'Failed to cancel friend request'));
     },
   });
 }
