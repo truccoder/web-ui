@@ -20,6 +20,19 @@
 
 export { explanationApi, professionalProfileApi, tokenApi } from './api';
 
+export {
+  isProfileMissing,
+  knowledgeKeys,
+  useCreateToken,
+  useExplainPost,
+  useKnowledgeLibrary,
+  usePersonalAccessTokens,
+  useProfessionalProfile,
+  useRevokeToken,
+  useSaveExplanation,
+  useUpdateProfessionalProfile,
+} from './hooks';
+
 export type {
   CreatedToken,
   CreateTokenInput,
