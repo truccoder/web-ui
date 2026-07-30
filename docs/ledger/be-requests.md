@@ -567,3 +567,140 @@ xong thì **không có cách nào biết kết quả**:
 
 **FE sẽ không mô phỏng bằng state client** — đó đúng là sai lầm `acceptedInSession` mà dự án
 vừa mất một checkpoint để gỡ ở F-A.
+
+---
+
+## B22 — từ chối bài viết luôn ghi `HATE_SPEECH`, bất kể bài vi phạm gì
+
+Ưu tiên **trung bình**. Ghi ở P2.15ab (2026-07-30). Chi tiết ở
+[`findings/moderation.md`](findings/moderation.md) §3.
+
+`POST /v1/api/admin/moderation/posts/{postId}/review` **không nhận violation type**.
+`AdminModerationService.reviewPost` hardcode:
+
+```java
+userBanService.recordViolation(post.getAuthorId(), post.getId(),
+    ViolationType.HATE_SPEECH, "Admin manual review: " + feedback);
+```
+
+Đo thật — từ chối một bài **spam** với feedback nói rõ nó không phải hate speech:
+
+```
+t_user_violations → violation_type=HATE_SPEECH, severity=CRITICAL
+```
+
+`ViolationSeverity` suy ra từ violation type, nên bài spam được xếp **CRITICAL**.
+
+**Vì sao đáng sửa:** lịch sử vi phạm chính là thứ quyết định ban tự động (2 vi phạm = 7 ngày, và
+ban chặn cả `/auth/login`). Ghi sai loại vi phạm nghĩa là hồ sơ dùng để khoá tài khoản người dùng
+không phản ánh việc họ thực sự làm — và người bị khoá không có cách nào biết lý do ghi trong hệ
+thống khác với lý do thật.
+
+**Đề nghị:** thêm `violationType` (optional, mặc định giữ nguyên hành vi hiện tại) vào
+`AdminReviewRequestDto` để kiểm duyệt viên chọn đúng loại. `ViolationType` enum đã có sẵn.
+
+**FE làm gì trong lúc chờ:** `feedback` là chỗ duy nhất ghi được lý do thật, nên UI khuyến khích
+điền nó thay vì để trống — nhưng nó là free text, không vào được thống kê hay severity.
+
+---
+
+## B23 — luồng liên kết GitHub không thể hoàn thành, và `linkAccount` có thể trả 200 mà không lưu gì
+
+Ưu tiên **CAO** — chặn toàn bộ mặt UI liên kết GitHub. Ghi ở P2.14ab (2026-07-30).
+Chi tiết + cách đo ở [`findings/github.md`](findings/github.md) §1 và §2.
+
+### B23a — hai luồng OAuth dùng chung một `redirect_uri`
+
+`OAuthAuthService` (đăng nhập) **dùng lại chính `GithubApiClient`** của module `github` (liên
+kết), và chỉ có một khối config `github.oauth`. Đo:
+
+```
+GET /v1/api/github/oauth/url   →  https://github.com/login/oauth/authorize?client_id=<...>
+GET /v1/api/auth/github/url    →  ...&redirect_uri=http://localhost:3000/oauth/github/callback...
+```
+
+**Hai chuỗi giống hệt nhau.** `redirect_uri` trỏ vào callback **đăng nhập**, nơi tiêu mã code —
+mà code OAuth dùng một lần, nên không còn gì gửi sang `/v1/api/github/oauth/callback`.
+
+**Đề nghị:** thêm config riêng cho luồng liên kết, ví dụ
+`github.link.redirect-uri` (mặc định `http://localhost:3000/settings/github/callback`), và cho
+`GithubService.getOAuthUrl()` dùng nó thay vì dùng chung với `OAuthAuthService`. FE sẽ dựng route
+tương ứng. Cần đăng ký thêm callback URL đó trên GitHub OAuth App.
+
+_(Ghi thêm, thuộc môi trường dev chứ không phải thiết kế: `client_id` đang trả về là một client id
+của **Google** — `930430013386-...apps.googleusercontent.com` — nằm trong ô GitHub. Kể cả sau khi
+sửa B23a thì máy dev vẫn cần `GITHUB_OAUTH_CLIENT_ID` đúng.)_
+
+### B23b — `syncGithubData` nuốt mọi exception, nên ghi không báo được kết quả
+
+```java
+} catch (Exception e) { log.error("Error syncing GitHub stats for user {}", ...); }
+```
+
+- `POST /sync` trả **200 kể cả khi sync hỏng hoàn toàn**.
+- **`POST /oauth/callback` lần đầu có thể trả 200 mà không lưu dòng nào**:
+  `linkAccountWithTokenAndProfile` tạo entity mới (chưa managed) rồi gọi `syncGithubData`, mà lệnh
+  `save()` **duy nhất** nằm bên trong khối try. GitHub không với tới được → không save → DB không
+  có gì → caller vẫn thấy 200.
+- Liên kết lại thì an toàn hơn _do tình cờ_: entity cũ đã managed nên setter vẫn flush.
+
+**Đề nghị:** tách phần "lưu liên kết" ra khỏi phần "đồng bộ dữ liệu" — persist entity trước, rồi
+sync; và để `syncNow` ném lỗi (hoặc trả trạng thái) thay vì nuốt, để FE phân biệt được
+"đã đồng bộ" với "đã thử và hỏng".
+
+**FE làm gì trong lúc chờ:** không optimistic ở bất kỳ mutation nào của domain này; mọi lệnh ghi
+invalidate rồi tin bản đọc lại `getStats` + `lastSyncedAt`. Mặt UI liên kết **hoãn** cho tới khi
+B23a được chốt.
+
+---
+
+## B24 — `matchmaking` không dựng được màn nào: không có endpoint đọc, và endpoint đọc duy nhất thì 500
+
+Ưu tiên **CAO** — chặn toàn bộ UI của domain. Ghi ở P2.16ab (2026-07-30).
+Chi tiết + cách đo ở [`findings/matchmaking.md`](findings/matchmaking.md) §1.
+
+### B24a — không có endpoint nào liệt kê project / position / application
+
+`ProjectController` có 5 endpoint và **không cái nào trả danh sách**. Repository cũng **không có
+method nào** để expose (khác `roadmap`/B21, nơi `findByUserId` đã có sẵn):
+
+```java
+public interface ProjectRepository extends JpaRepository<ProjectEntity, Integer> {}   // rỗng
+```
+
+→ **4/5 endpoint cần một id mà FE không có đường nào lấy**: `positionId` cho apply và
+suggested-candidates, `applicationId` cho accept và reject.
+
+**Đề nghị:** thêm các endpoint đọc tối thiểu — `GET /v1/api/projects/mine` (project của tôi, kèm
+positions), `GET /v1/api/projects/positions/{id}/applications` (đơn ứng tuyển của một position,
+cho chủ project), và `GET /v1/api/projects/applications/mine` (đơn tôi đã gửi).
+
+### B24b — `createProject` vứt đi id nó vừa tạo
+
+`ProjectService.createProject` **trả về `ProjectEntity`** đã lưu (có id của project và của từng
+position); `ProjectController` khai `void` và bỏ đi. Đo: `POST /v1/api/projects` → **200, body
+rỗng**; id chỉ đọc được bằng SQL.
+
+**Đề nghị:** đổi kiểu trả về của controller thành một DTO có id (và id các position). Đây là mục
+rẻ nhất trong B24 và tự nó đã mở khoá phần lớn luồng tạo project.
+
+### B24c — `suggested-candidates` trả 500 do native query thiếu schema
+
+```java
+"SELECT * FROM t_user_professional_profiles p WHERE EXISTS (...)"   // thiếu schema
+```
+
+Bảng thật là `socialapp.t_user_professional_profiles`. Đo:
+
+```
+GET /v1/api/projects/positions/1/suggested-candidates
+→ 500  relation "t_user_professional_profiles" does not exist
+```
+
+Đây là **native query duy nhất** trong backend; mọi repository khác dùng JPQL nên không dính.
+
+**Đề nghị:** thêm schema vào tên bảng, hoặc chuyển sang JPQL cho nhất quán với phần còn lại.
+
+**FE làm gì trong lúc chờ:** types + api + hooks đã viết đủ và đúng với hợp đồng hiện tại — khi
+B24 xong thì **không phải sửa gì trong module**, chỉ là lúc đó mới dựng được UI. `matchmaking` ghi
+là hoãn có lý do, theo dõi ở P4.7.

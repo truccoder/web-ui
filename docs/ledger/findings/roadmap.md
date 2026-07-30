@@ -172,3 +172,42 @@ docker exec postgres psql -U postgres -d socialapp \
 
 **Phải đăng nhập lại sau mỗi lần đổi**, và phải trả về `USER` khi xong — để nguyên trạng thái
 nâng quyền sẽ làm mọi phiên sau đo sai chính cái cổng này.
+
+## 10. MIDDLEWARE KHOÁ CỨNG ADMIN RA KHỎI TOÀN BỘ `(main)` — quyết định route của 2d nằm ở đây
+
+Phát hiện ở 2c-2 khi thử phía admin. `src/middleware.ts`:
+
+```ts
+if (hasSession && role === 'ADMIN' && !isAdminArea) {
+  return NextResponse.redirect(new URL('/admin/moderation', request.url));
+}
+```
+
+Một user `ADMIN` **không vào được bất kỳ route nào ngoài `/admin/**`** — thử vào
+`/preview-roadmap`dưới`(main)`thì bị đẩy thẳng sang`/admin/moderation`. Đây là lý do phải
+dựng **hai** route preview ở 2c-2 (một `(main)`, một `(admin)`) mới xem được đủ 5 component.
+
+**Hệ quả bắt buộc cho 2d:**
+
+- `PendingVerificationQueue` và `RoadmapAdminPanel` **phải đặt dưới `(admin)`**. Đặt chúng
+  trong `(main)` là dựng một mặt UI mà đúng nhóm người được dùng nó lại **không thể mở**.
+- `RoadmapList` / `RoadmapNodeTree` / `SkillVerificationForm` thuộc `(main)` — và admin sẽ
+  **không xem được** mặt duyệt lộ trình. Đó là hệ quả của middleware, không phải của domain này;
+  đừng "sửa" bằng cách nhân đôi component sang `(admin)`.
+- `useIsRoadmapAdmin` **vẫn cần thiết** dù đã có middleware: middleware gác theo _route_, hook gác
+  theo _component_. Trang admin có thể chứa cả phần không dành cho admin sau này, và cookie
+  `role` có thể vắng mặt (middleware tự nói là để layout resolve phía client).
+
+Middleware này là code legacy sẽ đụng tới ở P3.4; **không sửa nó ở P2.13** — đổi luật điều hướng
+toàn app trong lúc làm một domain là vượt phạm vi và dễ vỡ những trang khác.
+
+## 11. Đo thêm ở 2c-2
+
+- **Duyệt/từ chối một dòng không còn `PENDING_APPROVAL` → 409 Conflict** kèm
+  `"Cannot approve a verification request that is already VERIFIED"`. Đã đo bằng cách duyệt
+  hai lần cùng một dòng. Đây là đường lỗi **bình thường** của hàng chờ dùng chung, không phải
+  edge case — UI phải hiện lỗi.
+- **Duyệt ghi `verifier_id`** = id người duyệt; `SELF_VERIFIED` thì cột này `null`.
+- **Node tạo qua form không có `orderIndex` → lưu 0**, đúng như §5. Vì **không có endpoint sắp
+  xếp lại**, form admin **cố ý không cho nhập `orderIndex`**: gõ nhầm một số là vĩnh viễn và
+  không sửa được qua UI. Thêm ô đó cùng lúc với endpoint reorder, không sớm hơn.
