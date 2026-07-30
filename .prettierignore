@@ -1,0 +1,14 @@
+# Generated from the backend OpenAPI spec — never formatted, never hand-edited.
+#
+# lint-staged runs `prettier --write` on staged *.ts, which rewrote this file on every
+# commit (12,894 -> 12,964 lines, double->single quotes, 4->2 space indent). That made
+# `git diff` on it useless as the contract-drift alarm CLAUDE.md Phase 4.1 depends on:
+# a regeneration showed ~13k changed lines while the backend had not changed at all.
+# Keeping it byte-identical to the generator's output is the whole point.
+src/core/api/schema.gen.ts
+
+# Build output
+.next/
+out/
+build/
+node_modules/
