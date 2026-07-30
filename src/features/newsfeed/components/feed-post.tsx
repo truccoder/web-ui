@@ -51,26 +51,6 @@ export interface FeedPostProps {
 }
 
 /**
- * Post kinds whose defining block the feed payload does not carry, so an edit made from here
- * would delete it.
- *
- * MEASURED IN THE CACHE, NOT INFERRED: `NewsfeedService.fanOutPost` builds `FeedPostDataDto`
- * with `eventDetails` and `book` only — `codeSnippetDetails`, `articleDetails`, `qnaDetails`,
- * `pollDetails`, `linkDetails` and `quizDetails` are never copied onto it, and every cached
- * entry in Redis has all six as `null`. Since `updatePost` writes the whole object and copies
- * nulls, saving an edit of, say, a POLL from the feed would leave a POLL post with no poll.
- *
- * `EVENT` and `BOOK` are absent from this list deliberately: their blocks are not on
- * `UpdatePostRequestDto` at all, so no request can touch them. `REGULAR` has no block.
- *
- * The quiz attachment is the one hole this cannot close — any kind may carry `quizDetails`,
- * and since the payload always says `null` there is no way to tell a post that has one from a
- * post that does not. Editing a REGULAR post with a quiz still drops the quiz. The fix is in
- * the backend: `fanOutPost` has to copy the six fields it declares.
- */
-const KINDS_WITH_UNECHOED_DETAILS = new Set(['CODE_SNIPPET', 'ARTICLE', 'QNA', 'POLL', 'LINK']);
-
-/**
  * The post's full present state, for `PostEditor`.
  *
  * EVERY KEY IS WRITTEN OUT BECAUSE OMITTING ONE DESTROYS IT. `PostService.updatePost` runs
@@ -215,26 +195,18 @@ export function FeedPost({ post, onChanged }: FeedPostProps) {
       content={editing ? undefined : post.content}
       location={location}
       hashtags={post.hashtags}
-      // `commentCount` and `likeCount` are NOT passed on, and both components hide their
-      // number when it is undefined precisely so a caller can make this call.
+      // `commentCount` and `likeCount` are live again. They were withheld from P2.4'd until
+      // F-A because `fanOutPost` never set either and no comment or reaction path touched the
+      // cached entry, so both were the `int` default of 0 on every post — and "0 comments"
+      // printed directly above a comment the reader can see reads as broken, where a missing
+      // number only reads as not-supplied.
       //
-      // The reason is that the two fields are dead in the payload: `FeedPostDataDto` declares
-      // them, but `fanOutPost` never sets either, `updatePostCache` has no callers anywhere in
-      // the backend, and no comment or reaction path touches the cached entry — so both are
-      // the `int` default of 0 on every post, for ever. Measured, not assumed: posting a real
-      // comment on this post left the cached entry at `"commentCount":0`.
-      //
-      // Rendering them would print "0 comments" directly above a comment the reader can see,
-      // which is worse than printing nothing: a missing number reads as not-supplied, a wrong
-      // one reads as broken. Restore both the moment the backend keeps them current.
+      // The backend now keeps them current. Measured on the live feed at F-A, not taken on
+      // trust: a post carrying one real comment answers `"commentCount":1`.
+      commentCount={post.commentCount}
       menu={
         isAuthor ? (
-          <PostMenu
-            postId={post.postId}
-            onEdit={() => setEditing(true)}
-            canEdit={!KINDS_WITH_UNECHOED_DETAILS.has(post.postType)}
-            onDeleted={onChanged}
-          />
+          <PostMenu postId={post.postId} onEdit={() => setEditing(true)} onDeleted={onChanged} />
         ) : undefined
       }
       body={
@@ -259,8 +231,7 @@ export function FeedPost({ post, onChanged }: FeedPostProps) {
       actions={
         <>
           <div className="flex flex-wrap items-center gap-2">
-            {/* No `count` — see the note on the card's `commentCount` above. */}
-            <ReactionBar postId={post.postId} onChanged={onChanged} />
+            <ReactionBar postId={post.postId} count={post.likeCount} onChanged={onChanged} />
             <Button
               size="sm"
               variant="ghost"

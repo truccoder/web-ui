@@ -44,6 +44,12 @@ export interface CommentItemProps {
   onAcceptAnswer?: (commentId: number) => void;
   /** This comment is the post's accepted answer (`QnaDetails.acceptedAnswerId`). */
   isAcceptedAnswer?: boolean;
+  /**
+   * Takes the acceptance back (`DELETE /qna/accept-answer`). Rendered only on the accepted
+   * comment, so it takes no id — the post has at most one. Undefined hides it, which is the
+   * case for every reader who is not the post's author.
+   */
+  onUnacceptAnswer?: () => void;
   pendingCommentId?: number | null;
   editError?: string | null;
   className?: string;
@@ -58,6 +64,7 @@ export function CommentItem({
   onDelete,
   onAcceptAnswer,
   isAcceptedAnswer = false,
+  onUnacceptAnswer,
   pendingCommentId,
   editError,
   className,
@@ -117,6 +124,15 @@ export function CommentItem({
             {onAcceptAnswer && !isAcceptedAnswer && (
               <Button size="sm" variant="ghost" onClick={() => onAcceptAnswer(comment.id)}>
                 {t('post.qna.accept')}
+              </Button>
+            )}
+
+            {/* The mirror of the above, and mutually exclusive with it by construction: the
+                thread hands `onAcceptAnswer` down only while nothing is accepted and
+                `onUnacceptAnswer` only while something is. */}
+            {onUnacceptAnswer && isAcceptedAnswer && (
+              <Button size="sm" variant="ghost" onClick={onUnacceptAnswer}>
+                {t('post.qna.unaccept')}
               </Button>
             )}
 

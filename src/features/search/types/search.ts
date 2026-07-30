@@ -41,35 +41,24 @@ export type SearchBook = {
 };
 
 /**
- * Details blocks the DTO declares but the service never fills in.
- *
- * `SearchService.toPostDtos` builds every `PostDto` through a builder that sets `id`, `content`,
- * `eventName`, the author fields, `visibility`, `createdAt` and `book` — and nothing else. So
- * these six keys are on the wire as `null` on every result, always. Measured, not assumed:
- * `GET /v1/api/search?q=a` returns all six null on each post.
- *
- * This is the same defect as `NewsfeedService.fanOutPost` (`findings/posts.md`), in a second
- * service. They are excluded from `SearchPost` rather than typed as always-null, because a key
- * that can never carry a value is not data the UI should be invited to branch on — the result
- * card renders what the payload actually has. The backend fix would make them appear here.
- */
-type NeverPopulated =
-  | 'quizDetails'
-  | 'codeSnippetDetails'
-  | 'articleDetails'
-  | 'qnaDetails'
-  | 'pollDetails'
-  | 'linkDetails';
-
-/**
  * A post that matched, by its own content/event name or through its book.
+ *
+ * THE SIX DETAILS BLOCKS ARE BACK. Until F-A this type excluded `quizDetails`,
+ * `codeSnippetDetails`, `articleDetails`, `qnaDetails`, `pollDetails` and `linkDetails` through
+ * a `NeverPopulated` union, because `SearchService.toPostDtos` built every `PostDto` with the
+ * author fields, `visibility`, `createdAt` and `book` and nothing else — all six were null on
+ * every result, and a key that can never carry a value is not data the UI should be invited to
+ * branch on. The backend filled that in on 28–29/07, alongside the same fix in
+ * `NewsfeedService.fanOutPost`. Measured at F-A, not taken on trust: `GET /v1/api/search?q=a`
+ * answers `qnaDetails` non-null on the QNA result.
  *
  * Everything is `| null` rather than `?:` for the reason recorded in `features/newsfeed`: Jackson
  * runs at `ALWAYS`, so the key is on the wire carrying null, and `=== undefined` checks have
- * silently broken this project twice.
+ * silently broken this project twice. That applies to the six as much as to the rest — a post of
+ * another kind genuinely has none.
  */
 export type SearchPost = {
-  [K in Exclude<keyof Required<Schemas['PostDto']>, NeverPopulated>]: K extends 'book'
+  [K in keyof Required<Schemas['PostDto']>]: K extends 'book'
     ? SearchBook | null
     : Required<Schemas['PostDto']>[K] | null;
 };

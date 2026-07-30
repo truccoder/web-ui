@@ -105,3 +105,26 @@ export function useAcceptAnswer(options?: PostMutationOptions<AcceptAnswerVariab
     },
   });
 }
+
+/**
+ * DELETE /v1/api/posts/{postId}/qna/accept-answer — give the pick back.
+ *
+ * Takes the post id alone: a post has at most one accepted answer, so there is nothing to
+ * disambiguate. Invalidates the same comment query as `useAcceptAnswer` — the thread renders
+ * the accepted marker, so it has to be re-read either way.
+ *
+ * The caller still needs its own `onSuccess` on top, because `qnaDetails.acceptedAnswerId`
+ * lives in the *feed* payload, and this domain's hooks never invalidate another domain's
+ * cache (CLAUDE.md §4).
+ */
+export function useUnacceptAnswer(options?: PostMutationOptions<number>) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (postId: number) => postsApi.unacceptAnswer(postId),
+    ...options,
+    onSuccess: (data, postId, ...rest) => {
+      queryClient.invalidateQueries({ queryKey: postKeys.comments(postId) });
+      options?.onSuccess?.(data, postId, ...rest);
+    },
+  });
+}

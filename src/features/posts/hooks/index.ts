@@ -6,6 +6,7 @@ export {
   useUpdatePost,
   useDeletePost,
   useAcceptAnswer,
+  useUnacceptAnswer,
   type PostMutationOptions,
   type CreateBookPostVariables,
   type UpdatePostVariables,

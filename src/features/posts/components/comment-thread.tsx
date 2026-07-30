@@ -13,7 +13,7 @@ import {
   useDeleteComment,
   useUpdateComment,
 } from '../hooks/use-comment';
-import { useAcceptAnswer } from '../hooks/use-post';
+import { useAcceptAnswer, useUnacceptAnswer } from '../hooks/use-post';
 import { CommentComposer } from './comment-composer';
 import { CommentItem } from './comment-item';
 
@@ -65,24 +65,6 @@ export function CommentThread({
 
   const [replyingTo, setReplyingTo] = useState<number | null>(null);
 
-  /**
-   * The comment accepted during this mounting, if any.
-   *
-   * THIS EXISTS BECAUSE THE ANSWER CANNOT BE READ BACK. `acceptedAnswerId` reaches this
-   * component through the post payload, and the newsfeed payload never carries `qnaDetails` —
-   * `NewsfeedService.fanOutPost` does not copy it onto `FeedPostDataDto`. Measured in the feed
-   * at P2.4'd: accepting an answer set `acceptedAnswerId` in the database and the prop still
-   * arrived undefined, so the control stayed on every comment and a second click was a silent
-   * 400 ("An answer has already been accepted for this post").
-   *
-   * This is not the invented read-model that `SessionComment` was — the accept really did
-   * happen and really is stored; the frontend simply has no endpoint that reports it back. So
-   * remembering it here is honest about this session and wrong about nothing, and a reload
-   * still shows the control again until the backend echoes the field. Delete this state, and
-   * keep the prop, once it does.
-   */
-  const [acceptedInSession, setAcceptedInSession] = useState<number | null>(null);
-
   const comments = useComments(postId);
   const notify = { onSuccess: () => onChanged?.() };
   const create = useCreateComment(notify);
@@ -91,26 +73,31 @@ export function CommentThread({
   // `useAcceptAnswer` already invalidates `postKeys.comments(postId)` itself — it was written
   // that way in cycle 1, before this query existed. `onChanged` is still needed on top,
   // because the post's own `qnaDetails.isResolved` lives in the feed payload, not here.
-  const accept = useAcceptAnswer({
-    onSuccess: (_data, variables) => {
-      setAcceptedInSession(variables.commentId);
-      onChanged?.();
-    },
-  });
+  const accept = useAcceptAnswer({ onSuccess: () => onChanged?.() });
+  const unaccept = useUnacceptAnswer({ onSuccess: () => onChanged?.() });
 
-  // ACCEPTING IS ONCE-ONLY. `acceptAnswer` throws "An answer has already been accepted for
-  // this post" when `acceptedAnswerId` is set, and there is no endpoint to un-accept or
-  // re-assign. So the control disappears from EVERY comment the moment one is chosen —
-  // leaving it on the others would be a button whose only outcome is a 400.
-  //
-  // The payload's answer wins over the session's: once the backend does echo `qnaDetails`,
-  // the prop is the durable truth and this falls back to it without a second code path.
-  const acceptedId = acceptedAnswerId ?? acceptedInSession;
+  // THE PAYLOAD IS THE ONLY SOURCE NOW. Until F-A this line read
+  // `acceptedAnswerId ?? acceptedInSession`, backed by a `useState` that remembered the pick
+  // for the lifetime of the mount — necessary while `fanOutPost` did not copy `qnaDetails`
+  // onto `FeedPostDataDto`, so the prop came back undefined after a successful accept and the
+  // control stayed on every comment. The backend copies it now (measured at F-A: the live feed
+  // answers `qnaDetails` non-null on the QNA post), so the remembered copy would only be a
+  // second truth that a re-fetch could contradict.
+  const acceptedId = acceptedAnswerId ?? null;
 
+  // ACCEPTING IS STILL ONCE-ONLY, but no longer permanent. `acceptAnswer` throws "An answer has
+  // already been accepted for this post" while one is set, so the control leaves every comment
+  // the moment one is chosen — offering it would be a button whose only outcome is a 400. The
+  // way back is `unacceptAnswer`, which is offered on the accepted comment itself.
   const acceptHandler =
     canAcceptAnswer && acceptedId == null
       ? (commentId: number) => accept.mutate({ postId, commentId })
       : undefined;
+
+  // Only the author gets to undo, and only while there is something to undo. Reputation
+  // awarded for the pick is revoked by the backend under the same `sourceId`.
+  const unacceptHandler =
+    canAcceptAnswer && acceptedId != null ? () => unaccept.mutate(postId) : undefined;
 
   const thread = groupComments(comments.data ?? []);
   const mutationError = create.error ?? update.error ?? remove.error;
@@ -157,6 +144,7 @@ export function CommentThread({
                 onReply={(parentId) => setReplyingTo(parentId)}
                 onAcceptAnswer={acceptHandler}
                 isAcceptedAnswer={acceptedId === root.id}
+                onUnacceptAnswer={unacceptHandler}
                 onEdit={(commentId, content) =>
                   update.mutate({ postId, commentId, payload: { content } })
                 }
@@ -176,6 +164,7 @@ export function CommentThread({
                         currentUserId={profile.data?.id}
                         onAcceptAnswer={acceptHandler}
                         isAcceptedAnswer={acceptedId === reply.id}
+                        onUnacceptAnswer={unacceptHandler}
                         onEdit={(commentId, content) =>
                           update.mutate({ postId, commentId, payload: { content } })
                         }

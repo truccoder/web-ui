@@ -454,6 +454,7 @@ export const en = {
     qna: {
       accept: 'Accept answer',
       acceptedAnswer: 'Accepted answer',
+      unaccept: 'Undo accept',
     },
     quiz: {
       title: 'Quiz',

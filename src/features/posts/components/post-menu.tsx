@@ -25,18 +25,18 @@ export interface PostMenuProps {
   /** Opens the caller's edit surface; the menu does not own the form. */
   onEdit: () => void;
   /**
-   * Hides the edit button, leaving delete. Added at P2.4'd for one specific and unhappy
-   * reason: an edit sends the post's whole state back (`BeanUtils.copyProperties` copies
-   * nulls), and the caller can only send back what its payload gave it. The newsfeed payload
-   * does not carry `codeSnippetDetails`, `articleDetails`, `qnaDetails`, `pollDetails`,
-   * `linkDetails` or `quizDetails` — `NewsfeedService.fanOutPost` never copies them onto
-   * `FeedPostDataDto`, so they arrive null on every post — which means editing a post of one
-   * of those kinds from the feed would destroy the block that defines it.
+   * Hides the edit button, leaving delete.
    *
-   * So the caller turns the edit button off where it cannot supply the state, rather than
-   * offering a control whose only possible outcome is data loss. Delete stays: it is
-   * unambiguous and loses nothing that was not asked for. This prop should be removed once
-   * the backend echoes those six fields.
+   * WHY IT SURVIVED THE REASON IT WAS BORN FOR. Added at P2.4'd because the newsfeed payload
+   * did not echo the six details blocks, so editing a CODE_SNIPPET/ARTICLE/QNA/POLL/LINK post
+   * from the feed sent nulls back through `BeanUtils.copyProperties` and destroyed the block
+   * that defines it. The backend fixed `fanOutPost` (BE 28–29/07) and the blocks now arrive
+   * populated — measured on the live feed at F-A: CODE_SNIPPET 2/2, QNA 1/1, BOOK 1/1 non-null
+   * — so no caller passes `false` for that reason any more.
+   *
+   * The prop stays because it is not about that defect: it says "this caller cannot supply the
+   * state an edit would need", which is a sentence any future surface may need to say. What was
+   * wrong was the *reason* being passed into it, not the switch itself.
    *
    * @default true
    */

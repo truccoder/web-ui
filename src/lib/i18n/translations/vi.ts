@@ -456,6 +456,7 @@ export const vi: Messages = {
     qna: {
       accept: 'Chọn làm đáp án',
       acceptedAnswer: 'Đáp án được chọn',
+      unaccept: 'Bỏ chọn đáp án',
     },
     quiz: {
       title: 'Trắc nghiệm',

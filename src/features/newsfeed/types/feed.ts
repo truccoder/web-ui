@@ -13,10 +13,13 @@ type Schemas = components['schemas'];
 /**
  * Fields the backend always sends with a real value.
  *
- * `likeCount`/`commentCount`/`shareCount` are Java `int` primitives, so they cannot be null —
- * they are, however, permanently 0, because nothing in the backend ever writes them (see
- * `findings/posts.md`). Present is not the same as meaningful, and the card deliberately does
- * not render them.
+ * `likeCount` and `commentCount` are Java `int` primitives, so they cannot be null. They were
+ * also permanently 0 until the backend started maintaining them (28–29/07); the card renders
+ * both again as of F-A.
+ *
+ * `shareCount` used to be listed here and is gone: `FeedPostDataDto` dropped it when
+ * `POST_SHARED` left `NotificationType` (BE `f0dc820`), because no endpoint could ever produce
+ * a share. Restoring the feature means bringing the field and the enum member back together.
  */
 type AlwaysPresent =
   | 'postId'
@@ -25,8 +28,7 @@ type AlwaysPresent =
   | 'postType'
   | 'createdAt'
   | 'likeCount'
-  | 'commentCount'
-  | 'shareCount';
+  | 'commentCount';
 
 /**
  * One feed entry — `FeedPostDataDto` with nullability corrected.
@@ -42,11 +44,12 @@ type AlwaysPresent =
  * uncapped event render as "full" (because `0 >= null` is true). A type that says `| null` puts
  * that mistake in front of the compiler.
  *
- * WHAT THE PAYLOAD DOES NOT CARRY, though it declares it: `codeSnippetDetails`,
- * `articleDetails`, `qnaDetails`, `pollDetails`, `linkDetails` and `quizDetails` are null on
- * every post, because `NewsfeedService.fanOutPost` never copies them onto the DTO. The types
- * are honest here — they say the value may be null — and the consumer side already handles it;
- * the fix is a backend one.
+ * THE SIX DETAILS BLOCKS ARE CARRIED NOW. `codeSnippetDetails`, `articleDetails`, `qnaDetails`,
+ * `pollDetails`, `linkDetails` and `quizDetails` used to be null on every post because
+ * `NewsfeedService.fanOutPost` never copied them onto the DTO; the backend fixed that on
+ * 28–29/07 and the live feed answers with them populated (measured at F-A: CODE_SNIPPET 2/2,
+ * QNA 1/1, BOOK 1/1 non-null). They stay `| null` here because a post of another kind still
+ * legitimately has none — which is exactly what the type always said.
  */
 export type FeedPost = {
   [K in keyof Required<Schemas['FeedPostDataDto']>]: K extends AlwaysPresent

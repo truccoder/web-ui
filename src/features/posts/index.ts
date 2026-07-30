@@ -85,6 +85,7 @@ export {
   useUpdatePost,
   useDeletePost,
   useAcceptAnswer,
+  useUnacceptAnswer,
   useResolveLocation,
   useSubmitQuiz,
   useComments,
