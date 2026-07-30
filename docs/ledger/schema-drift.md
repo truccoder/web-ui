@@ -57,3 +57,75 @@ chống drift trong `docs/prompts/be-fe-integration.md`.
 convention `[<id>]: [BE] …`, nếu không thì `git checkout` bên đó là thứ tự lại loạn.
 
 ---
+
+# Drift #2 — đợt bugfix BE 28–29/07 (spec đổi thật, ĐÃ XỬ LÝ)
+
+Lần đầu `git diff schema.gen.ts` khác rỗng vì **backend thật sự đổi**, đúng thứ cơ chế này
+sinh ra để bắt. Sinh lại từ spec sống của BE `18efb6c`: **+250 / −171**, `90 path / 101 op`
+→ **`91 path / 102 op / 108 schema`**.
+
+Chiều ngược lại — BE ghi lại những gì họ đổi và FE phải theo — nằm ở
+`DATN-backend/docs/fe-debt.md` (N1–N5) và `DATN-backend/docs/decisions/000{1,2}-*.md`.
+Đọc hai file đó trước khi đọc mục này; đây chỉ ghi phần FE đã làm gì.
+
+## Lỗ hổng của quy trình chống drift — QUAN TRỌNG HƠN BẢN THÂN ĐỢT NÀY
+
+**Đếm operation không phát hiện được đổi method/path.** 5 endpoint đổi verb hoặc chỗ đặt
+id trong đợt này, mà tổng số operation vẫn khớp, nên một script chỉ đếm sẽ báo "không đổi".
+BE đã vá script của họ (so từng cặp `(path, method)`) ở `be-bugfix-session-4.md` §2 — FE
+phải làm tương tự.
+
+Cạm bẫy khi tự viết: **parse JSON spec, đừng parse `schema.gen.ts`.** Thử parse file TS thì
+`options?: string[]` của `PublicQuizQuestionDto` bị đếm thành một operation `OPTIONS` ma
+(khối `components` nằm sau khối `paths`, path cuối cùng vẫn còn "mở" với một parser theo dòng).
+
+## Đổi `(path, method)` — 5 mất / 6 thêm
+
+```
+- PATCH  /v1/api/posts/{postId}/qna/accept-answer/{commentId}   ← FE đang gọi, đã gãy
+- PUT    /v1/api/projects/applications/{id}/accept | /reject
+- POST   /v1/api/skills/approve/{id} | /reject/{id}
++ POST   /v1/api/posts/{postId}/qna/accept-answer/{commentId}
++ DELETE /v1/api/posts/{postId}/qna/accept-answer                ← endpoint mới
++ POST   /v1/api/projects/applications/{id}/accept | /reject
++ POST   /v1/api/skills/{id}/approve | /reject
+```
+
+4 cái giữa thuộc `matchmaking`/`roadmap` — chưa có FE, ghi vào findings trước khi bắt đầu
+domain đó. Chỉ `accept-answer` là đang gãy thật.
+
+## Schema entity bị gỡ (QĐ-0002: entity không ra khỏi tầng API)
+
+`UserEntity` · `RoadmapEntity` · `RoadmapNodeEntity` · `UserRoadmapProgressEntity` ·
+`UserProfessionalProfileEntity` · `NotificationPreferenceEntity` · **`EventRsvpEntity`**
+
+7 cái, không phải 6 — `fe-debt.md` §N3 sót `EventRsvpEntity`. Thay bằng
+`PendingVerificationDto` · `ProfessionalProfileResponseDto` · `SuggestedCandidateDto` ·
+`NotificationPreferenceResponseDto` · `EventAttendeeDto`.
+
+FE tham chiếu 3 trong 7 → `tsc` gãy 9 lỗi / 4 file. **Đây là bằng chứng cơ chế hoạt động**:
+field bị đổi tên thành lỗi compile, không phải 404 lúc chạy.
+
+## `fe-debt.md` ghi chưa chính xác 2 chỗ
+
+- N3 sót `EventRsvpEntity` (ở trên).
+- N4 nói `POST_SHARED` "không vỡ compile" — **vỡ**. `notification-item.tsx` khai
+  `Record<NotificationType, LucideIcon>`, key thừa là `TS2353`. Đúng ra đó là điểm cộng:
+  map exhaustive bắt được cả việc **gỡ** thành viên, không chỉ việc thêm.
+  Ngược lại `shareCount` ở `feed.ts` thì đúng là không vỡ (literal chết trong union).
+
+## Đã đo trực tiếp trên BE đang chạy (không suy từ code)
+
+| kiểm tra                                                  | kết quả                                                                                            |
+| --------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `PATCH …/accept-answer/21`                                | **405** + `Allow: POST` + body `ErrorResponseDto`                                                  |
+| `POST …/accept-answer/21` → đọc lại feed                  | 200 → `{isResolved:true, acceptedAnswerId:21}` (B10)                                               |
+| `DELETE …/accept-answer` → đọc lại feed                   | 200 → `{isResolved:false, acceptedAnswerId:null}`                                                  |
+| `PUT /preferences {"emailFrequency":"WEEKLY_DIGEST"}`     | **400**                                                                                            |
+| `GET /preferences`                                        | không còn `onesignalPlayerId`                                                                      |
+| `GET /feed?page=1`                                        | `shareCount` mất; `likeCount`/`commentCount` thật; `authorLevelName` có; 6 khối details có dữ liệu |
+| `flyway_schema_history`                                   | `V45__constrain_email_frequency.sql` ok=true                                                       |
+| `update … set email_frequency='WEEKLY_DIGEST'` (rollback) | **ERROR: violates check constraint**                                                               |
+
+Dữ liệu dev DB đã trả về trạng thái ban đầu sau khi đo (`emailFrequency` về `INSTANT`,
+post 91 về chưa chọn đáp án).

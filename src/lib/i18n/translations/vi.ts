@@ -219,6 +219,8 @@ export const vi: Messages = {
       POST_TAGGED: 'Có người nhắc tới bạn trong bài viết',
       FRIEND_REQUEST: 'Lời mời kết bạn mới',
       FRIEND_ACCEPTED: 'Lời mời kết bạn được chấp nhận',
+      EVENT_RSVP: 'Có người phản hồi sự kiện của bạn',
+      EVENT_REMINDER: 'Nhắc trước một ngày sự kiện bạn sẽ tham gia',
       BOOK_REVIEW: 'Có đánh giá mới cho sách của bạn',
       BOOK_PURCHASED: 'Có người mua sách của bạn',
     },

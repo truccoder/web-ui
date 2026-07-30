@@ -2,7 +2,7 @@ import api from '@/core/api/axios';
 import type {
   AttendeeCount,
   CalendarStatus,
-  EventRsvp,
+  EventAttendee,
   GoogleAuthUrl,
   RsvpStatus,
 } from '../types/event';
@@ -45,11 +45,17 @@ export const eventsApi = {
       .then((r) => r.data),
 
   /**
-   * GET /v1/api/events/{postId}/attendees — every RSVP row for the event, whatever the
-   * status, with `userId` but no name or picture. See `EventRsvp` for why that shapes the UI.
+   * GET /v1/api/events/{postId}/attendees[?status=…] — RSVP rows for the event, each carrying
+   * the responder's name and picture. See `EventAttendee`.
+   *
+   * `status` narrows server-side; omitting it returns every row, NOT_GOING included. Prefer the
+   * parameter over filtering the full list here — the caller that wants the guest list wants
+   * GOING, and asking for it is one word against transferring rows to discard.
    */
-  getAttendees: (postId: number) =>
-    api.get<EventRsvp[]>(`/v1/api/events/${postId}/attendees`).then((r) => r.data),
+  getAttendees: (postId: number, status?: RsvpStatus) =>
+    api
+      .get<EventAttendee[]>(`/v1/api/events/${postId}/attendees`, { params: { status } })
+      .then((r) => r.data),
 
   /**
    * GET /v1/api/events/{postId}/attendees/count — the GOING count only.

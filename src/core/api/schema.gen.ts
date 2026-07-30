@@ -1044,7 +1044,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/api/posts/{postId}/qna/accept-answer/{commentId}": {
+    "/v1/api/posts/{postId}/qna/accept-answer": {
         parameters: {
             query?: never;
             header?: never;
@@ -1054,10 +1054,26 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
+        delete: operations["unacceptAnswer"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/api/posts/{postId}/qna/accept-answer/{commentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["acceptAnswer"];
         delete?: never;
         options?: never;
         head?: never;
-        patch: operations["acceptAnswer"];
+        patch?: never;
         trace?: never;
     };
     "/v1/api/posts/{postId}/quiz/submit": {
@@ -1212,8 +1228,8 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put: operations["acceptApplication"];
-        post?: never;
+        put?: never;
+        post: operations["acceptApplication"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1228,8 +1244,8 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put: operations["rejectApplication"];
-        post?: never;
+        put?: never;
+        post: operations["rejectApplication"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1316,22 +1332,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/api/skills/approve/{progressId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["approveRequest"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/v1/api/skills/pending": {
         parameters: {
             query?: never;
@@ -1348,22 +1348,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/api/skills/reject/{progressId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["rejectRequest"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/v1/api/skills/verify": {
         parameters: {
             query?: never;
@@ -1374,6 +1358,38 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["submitVerification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/api/skills/{progressId}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["approveRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/api/skills/{progressId}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["rejectRequest"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1594,7 +1610,7 @@ export interface components {
             title: string;
         };
         CreateCommentRequestDto: {
-            content?: string;
+            content: string;
             /** Format: int32 */
             parentId?: number;
         };
@@ -1652,6 +1668,16 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
         };
+        EventAttendeeDto: {
+            fullName?: string;
+            profilePictureUrl?: string;
+            /** Format: date-time */
+            respondedAt?: string;
+            /** @enum {string} */
+            status?: "GOING" | "INTERESTED" | "NOT_GOING";
+            /** Format: int32 */
+            userId?: number;
+        };
         EventDetails: {
             /** Format: date-time */
             endTime?: string;
@@ -1664,18 +1690,6 @@ export interface components {
             /** Format: date-time */
             startTime?: string;
             timezone?: string;
-        };
-        EventRsvpEntity: {
-            /** Format: date-time */
-            createdAt?: string;
-            /** Format: int32 */
-            id?: number;
-            /** Format: int32 */
-            postId?: number;
-            /** @enum {string} */
-            status?: "GOING" | "INTERESTED" | "NOT_GOING";
-            /** Format: int32 */
-            userId?: number;
         };
         ExplainRequestDto: {
             feedbackNote?: string;
@@ -1707,6 +1721,7 @@ export interface components {
             avgRating?: number;
             /** Format: int32 */
             bookId?: number;
+            coverImageKey?: string;
             coverImageUrl?: string;
             currency?: string;
             description?: string;
@@ -1744,6 +1759,7 @@ export interface components {
             authorFullName?: string;
             /** Format: int32 */
             authorId?: number;
+            authorLevelName?: string;
             authorProfilePictureUrl?: string;
             book?: components["schemas"]["FeedBookSummaryDto"];
             codeSnippetDetails?: components["schemas"]["CodeSnippetDetails"];
@@ -1756,6 +1772,7 @@ export interface components {
             googleMapsUrl?: string;
             googlePlaceId?: string;
             hashtags?: string[];
+            images?: string[];
             /** Format: int32 */
             likeCount?: number;
             linkDetails?: components["schemas"]["LinkDetails"];
@@ -1768,9 +1785,8 @@ export interface components {
             /** @enum {string} */
             postType?: "REGULAR" | "EVENT" | "BOOK" | "CODE_SNIPPET" | "ARTICLE" | "QNA" | "POLL" | "LINK";
             qnaDetails?: components["schemas"]["QnaDetails"];
-            quizDetails?: components["schemas"]["QuizDetails"];
-            /** Format: int32 */
-            shareCount?: number;
+            quizDetails?: components["schemas"]["PublicQuizDetailsDto"];
+            taggedUserIds?: number[];
             /** @enum {string} */
             visibility?: "PUBLIC" | "FRIENDS" | "PRIVATE";
         };
@@ -1889,12 +1905,11 @@ export interface components {
             /** @enum {string} */
             reactionType?: "LIKE" | "LOVE" | "HAHA" | "CRY" | "ANGRY";
         };
-        NotificationPreferenceEntity: {
+        NotificationPreferenceResponseDto: {
             emailEnabled?: boolean;
             /** @enum {string} */
-            emailFrequency?: "INSTANT" | "DAILY_DIGEST" | "WEEKLY_DIGEST" | "NONE";
+            emailFrequency?: "INSTANT" | "NONE";
             mutedTypes?: string[];
-            onesignalPlayerId?: string;
             pushEnabled?: boolean;
             /** Format: date-time */
             updatedAt?: string;
@@ -1917,7 +1932,7 @@ export interface components {
             referenceType?: string;
             title?: string;
             /** @enum {string} */
-            type?: "POST_LIKED" | "POST_COMMENTED" | "POST_SHARED" | "POST_TAGGED" | "FRIEND_REQUEST" | "FRIEND_ACCEPTED" | "EVENT_RSVP" | "EVENT_REMINDER" | "BOOK_REVIEW" | "BOOK_PURCHASED" | "SYSTEM";
+            type?: "POST_LIKED" | "POST_COMMENTED" | "POST_TAGGED" | "FRIEND_REQUEST" | "FRIEND_ACCEPTED" | "EVENT_RSVP" | "EVENT_REMINDER" | "BOOK_REVIEW" | "BOOK_PURCHASED";
         };
         OAuthUrlResponseDto: {
             oauthUrl?: string;
@@ -2026,6 +2041,24 @@ export interface components {
             /** @enum {string} */
             status?: "PENDING" | "ACCEPTED" | "REJECTED" | "CANCELLED";
         };
+        PendingVerificationDto: {
+            fullName?: string;
+            /** Format: int32 */
+            nodeId?: number;
+            nodeName?: string;
+            profilePictureUrl?: string;
+            /** Format: int32 */
+            progressId?: number;
+            proofImageKey?: string;
+            proofUrl?: string;
+            /** Format: date-time */
+            requestedAt?: string;
+            /** @enum {string} */
+            tier?: "SELF_VERIFIED" | "MOD_VERIFIED" | "QUIZ_VERIFIED" | "AUTO_CERTIFIED";
+            /** Format: int32 */
+            userId?: number;
+            username?: string;
+        };
         PersonalAccessTokenResponseDto: {
             /** Format: date-time */
             createdAt?: string;
@@ -2060,6 +2093,7 @@ export interface components {
             authorFullName?: string;
             /** Format: int32 */
             authorId?: number;
+            authorLevelName?: string;
             authorProfilePictureUrl?: string;
             book?: components["schemas"]["BookDto"];
             codeSnippetDetails?: components["schemas"]["CodeSnippetDetails"];
@@ -2072,7 +2106,7 @@ export interface components {
             linkDetails?: components["schemas"]["LinkDetails"];
             pollDetails?: components["schemas"]["PollDetails"];
             qnaDetails?: components["schemas"]["QnaDetails"];
-            quizDetails?: components["schemas"]["QuizDetails"];
+            quizDetails?: components["schemas"]["PublicQuizDetailsDto"];
             visibility?: string;
         };
         PostModerationDetailDto: {
@@ -2091,6 +2125,26 @@ export interface components {
             /** Format: date-time */
             updatedAt?: string;
         };
+        ProfessionalProfileResponseDto: {
+            /** Format: date-time */
+            createdAt?: string;
+            /** @enum {string} */
+            explanationStyle?: "CONCISE" | "DETAILED" | "CODE_HEAVY" | "ANALOGY_HEAVY";
+            interestedDomains?: string[];
+            jobTitle?: string;
+            knownTechStack?: string[];
+            /** @enum {string} */
+            primaryRole?: "BACKEND" | "FRONTEND" | "FULLSTACK" | "MOBILE" | "DEVOPS" | "DATA_ML" | "SECURITY" | "QA" | "OTHER";
+            /** @enum {string} */
+            seniorityLevel?: "JUNIOR" | "MID" | "SENIOR" | "LEAD" | "PRINCIPAL";
+            /** Format: date-time */
+            updatedAt?: string;
+            /** Format: int32 */
+            userId?: number;
+            workHistory?: components["schemas"]["WorkExperience"][];
+            /** Format: int32 */
+            yearsOfExperience?: number;
+        };
         ProfilePictureResponseDto: {
             profilePictureUrl?: string;
         };
@@ -2106,6 +2160,14 @@ export interface components {
             description: string;
             positions?: components["schemas"]["ProjectPositionRequestDTO"][];
             title: string;
+        };
+        PublicQuizDetailsDto: {
+            questions?: components["schemas"]["PublicQuizQuestionDto"][];
+            title?: string;
+        };
+        PublicQuizQuestionDto: {
+            options?: string[];
+            question?: string;
         };
         QnaDetails: {
             /** Format: int32 */
@@ -2127,6 +2189,7 @@ export interface components {
         };
         QuizResultResponseDto: {
             correctAnswers?: number[];
+            explanations?: string[];
             /** Format: int32 */
             score?: number;
             /** Format: int32 */
@@ -2156,6 +2219,8 @@ export interface components {
         };
         ReputationResponseDto: {
             /** Format: int32 */
+            currentLevelMin?: number;
+            /** Format: int32 */
             eliteScore?: number;
             /** Format: int32 */
             level?: number;
@@ -2174,17 +2239,6 @@ export interface components {
             id?: number;
             name: string;
         };
-        RoadmapEntity: {
-            /** Format: date-time */
-            createdAt?: string;
-            description?: string;
-            /** Format: int32 */
-            id?: number;
-            name?: string;
-            nodes?: components["schemas"]["RoadmapNodeEntity"][];
-            /** Format: date-time */
-            updatedAt?: string;
-        };
         RoadmapNodeDto: {
             description?: string;
             /** Format: int32 */
@@ -2197,25 +2251,12 @@ export interface components {
             /** Format: int32 */
             roadmapId?: number;
         };
-        RoadmapNodeEntity: {
-            /** Format: date-time */
-            createdAt?: string;
-            description?: string;
-            /** Format: int32 */
-            id?: number;
-            name?: string;
-            /** Format: int32 */
-            orderIndex?: number;
-            parentNode?: components["schemas"]["RoadmapNodeEntity"];
-            roadmap?: components["schemas"]["RoadmapEntity"];
-            /** Format: date-time */
-            updatedAt?: string;
-        };
         SaveExplanationRequestDto: {
             /** Format: int32 */
             complexityScore?: number;
             concepts?: string[];
             explanationContent: string;
+            externalLinks?: components["schemas"]["ExternalLink"][];
             originalContent: string;
             /** Format: int32 */
             postId: number;
@@ -2255,6 +2296,18 @@ export interface components {
         SubmitQuizRequestDto: {
             selectedOptions?: number[];
         };
+        SuggestedCandidateDto: {
+            jobTitle?: string;
+            knownTechStack?: string[];
+            /** @enum {string} */
+            primaryRole?: "BACKEND" | "FRONTEND" | "FULLSTACK" | "MOBILE" | "DEVOPS" | "DATA_ML" | "SECURITY" | "QA" | "OTHER";
+            /** @enum {string} */
+            seniorityLevel?: "JUNIOR" | "MID" | "SENIOR" | "LEAD" | "PRINCIPAL";
+            /** Format: int32 */
+            userId?: number;
+            /** Format: int32 */
+            yearsOfExperience?: number;
+        };
         SyncResponseDto: {
             explanations?: components["schemas"]["ExplanationResponseDto"][];
             /** Format: date-time */
@@ -2271,7 +2324,7 @@ export interface components {
             /** Format: int32 */
             score?: number;
             /** @enum {string} */
-            source?: "HACKER_NEWS" | "DEV_TO" | "GITHUB" | "REDDIT" | "MEDIUM" | "HBR";
+            source?: "HACKER_NEWS" | "DEV_TO" | "GITHUB";
             summary?: string;
             tags?: string[];
             title?: string;
@@ -2294,7 +2347,7 @@ export interface components {
             count?: number;
         };
         UpdateCommentRequestDto: {
-            content?: string;
+            content: string;
         };
         UpdatePostRequestDto: {
             articleDetails?: components["schemas"]["ArticleDetails"];
@@ -2316,7 +2369,7 @@ export interface components {
         UpdatePreferenceRequestDto: {
             emailEnabled?: boolean;
             /** @enum {string} */
-            emailFrequency?: "INSTANT" | "DAILY_DIGEST" | "WEEKLY_DIGEST" | "NONE";
+            emailFrequency?: "INSTANT" | "NONE";
             mutedTypes?: string[];
             onesignalPlayerId?: string;
             pushEnabled?: boolean;
@@ -2351,50 +2404,6 @@ export interface components {
             profilePictureUrl?: string;
             username?: string;
         };
-        UserEntity: {
-            /** @enum {string} */
-            authProvider?: "LOCAL" | "GOOGLE" | "GITHUB";
-            banned?: boolean;
-            /** Format: date-time */
-            bannedUntil?: string;
-            /** Format: date-time */
-            createdAt?: string;
-            /** Format: int32 */
-            eliteScore?: number;
-            email?: string;
-            emailVerified?: boolean;
-            fullName?: string;
-            /** Format: int32 */
-            id?: number;
-            password?: string;
-            profilePictureUrl?: string;
-            providerId?: string;
-            /** @enum {string} */
-            role?: "USER" | "ADMIN";
-            /** Format: date-time */
-            updatedAt?: string;
-            username?: string;
-        };
-        UserProfessionalProfileEntity: {
-            /** Format: date-time */
-            createdAt?: string;
-            /** @enum {string} */
-            explanationStyle?: "CONCISE" | "DETAILED" | "CODE_HEAVY" | "ANALOGY_HEAVY";
-            interestedDomains?: string[];
-            jobTitle?: string;
-            knownTechStack?: string[];
-            /** @enum {string} */
-            primaryRole?: "BACKEND" | "FRONTEND" | "FULLSTACK" | "MOBILE" | "DEVOPS" | "DATA_ML" | "SECURITY" | "QA" | "OTHER";
-            /** @enum {string} */
-            seniorityLevel?: "JUNIOR" | "MID" | "SENIOR" | "LEAD" | "PRINCIPAL";
-            /** Format: date-time */
-            updatedAt?: string;
-            /** Format: int32 */
-            userId?: number;
-            workHistory?: components["schemas"]["WorkExperience"][];
-            /** Format: int32 */
-            yearsOfExperience?: number;
-        };
         UserProfileDto: {
             fullName?: string;
             profilePictureUrl?: string;
@@ -2414,25 +2423,6 @@ export interface components {
             /** @enum {string} */
             role?: "USER" | "ADMIN";
             username?: string;
-        };
-        UserRoadmapProgressEntity: {
-            /** Format: date-time */
-            createdAt?: string;
-            /** Format: int32 */
-            id?: number;
-            node?: components["schemas"]["RoadmapNodeEntity"];
-            proofImageKey?: string;
-            proofUrl?: string;
-            /** @enum {string} */
-            status?: "PENDING_APPROVAL" | "VERIFIED" | "REJECTED";
-            /** @enum {string} */
-            tier?: "SELF_VERIFIED" | "MOD_VERIFIED" | "QUIZ_VERIFIED" | "AUTO_CERTIFIED";
-            /** Format: date-time */
-            updatedAt?: string;
-            user?: components["schemas"]["UserEntity"];
-            /** Format: date-time */
-            verifiedAt?: string;
-            verifier?: components["schemas"]["UserEntity"];
         };
         VaultNoteDto: {
             content?: string;
@@ -5568,7 +5558,9 @@ export interface operations {
     };
     getAttendees: {
         parameters: {
-            query?: never;
+            query?: {
+                status?: "GOING" | "INTERESTED" | "NOT_GOING";
+            };
             header?: never;
             path: {
                 postId: number;
@@ -5583,7 +5575,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["EventRsvpEntity"][];
+                    "*/*": components["schemas"]["EventAttendeeDto"][];
                 };
             };
             /** @description Bad Request */
@@ -8042,7 +8034,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["NotificationPreferenceEntity"];
+                    "*/*": components["schemas"]["NotificationPreferenceResponseDto"];
                 };
             };
             /** @description Bad Request */
@@ -8147,7 +8139,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["NotificationPreferenceEntity"];
+                    "*/*": components["schemas"]["NotificationPreferenceResponseDto"];
                 };
             };
             /** @description Bad Request */
@@ -9784,6 +9776,107 @@ export interface operations {
             };
         };
     };
+    unacceptAnswer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                postId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Payload Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+        };
+    };
     acceptAnswer: {
         parameters: {
             query?: never;
@@ -10734,7 +10827,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["UserProfessionalProfileEntity"];
+                    "*/*": components["schemas"]["ProfessionalProfileResponseDto"];
                 };
             };
             /** @description Bad Request */
@@ -10839,7 +10932,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["UserProfessionalProfileEntity"];
+                    "*/*": components["schemas"]["ProfessionalProfileResponseDto"];
                 };
             };
             /** @description Bad Request */
@@ -10943,9 +11036,7 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "*/*": Record<string, never>;
-                };
+                content?: never;
             };
             /** @description Bad Request */
             400: {
@@ -11046,9 +11137,7 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "*/*": Record<string, never>;
-                };
+                content?: never;
             };
             /** @description Bad Request */
             400: {
@@ -11149,9 +11238,7 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "*/*": Record<string, never>;
-                };
+                content?: never;
             };
             /** @description Bad Request */
             400: {
@@ -11256,9 +11343,7 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "*/*": Record<string, never>;
-                };
+                content?: never;
             };
             /** @description Bad Request */
             400: {
@@ -11360,7 +11445,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": Record<string, never>;
+                    "*/*": components["schemas"]["SuggestedCandidateDto"][];
                 };
             };
             /** @description Bad Request */
@@ -11966,109 +12051,6 @@ export interface operations {
             };
         };
     };
-    approveRequest: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                progressId: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": string;
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponseDto"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponseDto"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponseDto"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponseDto"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponseDto"];
-                };
-            };
-            /** @description Payload Too Large */
-            413: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponseDto"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponseDto"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponseDto"];
-                };
-            };
-            /** @description Service Unavailable */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponseDto"];
-                };
-            };
-        };
-    };
     getPendingRequests: {
         parameters: {
             query?: never;
@@ -12084,110 +12066,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["UserRoadmapProgressEntity"][];
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponseDto"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponseDto"];
-                };
-            };
-            /** @description Forbidden */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponseDto"];
-                };
-            };
-            /** @description Not Found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponseDto"];
-                };
-            };
-            /** @description Conflict */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponseDto"];
-                };
-            };
-            /** @description Payload Too Large */
-            413: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponseDto"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponseDto"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponseDto"];
-                };
-            };
-            /** @description Service Unavailable */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ErrorResponseDto"];
-                };
-            };
-        };
-    };
-    rejectRequest: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                progressId: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": string;
+                    "*/*": components["schemas"]["PendingVerificationDto"][];
                 };
             };
             /** @description Bad Request */
@@ -12291,9 +12170,209 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "*/*": string;
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
                 };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Payload Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+        };
+    };
+    approveRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                progressId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Payload Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+        };
+    };
+    rejectRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                progressId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Bad Request */
             400: {

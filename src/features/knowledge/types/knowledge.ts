@@ -38,10 +38,11 @@ export type WorkExperience = {
 /**
  * The signed-in user's professional profile.
  *
- * THE BACKEND RETURNS A RAW JPA ENTITY HERE, not a DTO — `ProfessionalProfileController` is typed
- * `UserProfessionalProfileEntity`. Same shape of problem as `/attendees` in `posts`: the persistence
- * model is the API contract, so any column rename is a breaking change nobody planned. Recorded
- * rather than worked around; the generated type is still the truth about what arrives.
+ * THE ENTITY LEAK IS FIXED (BE `39b5666`, QĐ-0002 "entity không ra khỏi tầng API"). The controller
+ * returned `UserProfessionalProfileEntity` until then, which made the persistence model the API
+ * contract — a column rename would have been a breaking change nobody planned. It now returns
+ * `ProfessionalProfileResponseDto`, whose field set is identical, so nothing here changes shape;
+ * `toDto` copies the entity straight across, which is why the nullability notes below still hold.
  *
  * `GET` **404s when no profile exists** — it is `findById().orElseThrow`, not a get-or-create. That
  * is the opposite of `GET /notifications/preferences`, which silently inserts a default row. So a
@@ -49,9 +50,9 @@ export type WorkExperience = {
  * empty state. `PUT` is what creates it (`upsertProfile`).
  */
 export type ProfessionalProfile = {
-  [K in keyof Required<Schemas['UserProfessionalProfileEntity']>]: K extends 'workHistory'
+  [K in keyof Required<Schemas['ProfessionalProfileResponseDto']>]: K extends 'workHistory'
     ? WorkExperience[] | null
-    : Required<Schemas['UserProfessionalProfileEntity']>[K] | null;
+    : Required<Schemas['ProfessionalProfileResponseDto']>[K] | null;
 };
 
 /**

@@ -46,12 +46,30 @@ export const postsApi = {
   deletePost: (postId: number) => api.delete<void>(`/v1/api/posts/${postId}`).then((r) => r.data),
 
   /**
-   * PATCH /v1/api/posts/{postId}/qna/accept-answer/{commentId} — mark a comment as the
+   * POST /v1/api/posts/{postId}/qna/accept-answer/{commentId} — mark a comment as the
    * accepted answer on a Q&A post.
    *
    * Lives in `PostController`, not `CommentController`, so it belongs to this cycle's API
    * surface — but its only UI home is the comment thread, which is cycle 2.
+   *
+   * THE VERB CHANGED FROM PATCH TO POST (BE `39b5666`, QĐ-0002: state transitions are
+   * `POST /{resource}/{id}/{action}` project-wide). The path did not move — it stays the sibling
+   * of the DELETE below. Calling it with PATCH now answers 405 with `Allow: POST`, and the
+   * backend will not accept both: "đừng đẻ thêm nợ kỹ thuật ở Backend" is the settled decision.
    */
   acceptAnswer: (postId: number, commentId: number) =>
-    api.patch<void>(`/v1/api/posts/${postId}/qna/accept-answer/${commentId}`).then((r) => r.data),
+    api.post<void>(`/v1/api/posts/${postId}/qna/accept-answer/${commentId}`).then((r) => r.data),
+
+  /**
+   * DELETE /v1/api/posts/{postId}/qna/accept-answer — take back the accepted answer.
+   *
+   * Author-only, and the counterpart of `acceptAnswer`: without it the first pick was permanent,
+   * because `acceptAnswer` refuses to run a second time once `acceptedAnswerId` is set. So a
+   * misclick used to crown the wrong comment forever.
+   *
+   * NO `commentId` IN THE PATH — a post has at most one accepted answer, so there is nothing to
+   * disambiguate. Reputation awarded for the pick is revoked with the same `sourceId`.
+   */
+  unacceptAnswer: (postId: number) =>
+    api.delete<void>(`/v1/api/posts/${postId}/qna/accept-answer`).then((r) => r.data),
 };

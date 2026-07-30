@@ -26,23 +26,34 @@ export type RsvpStatus = operations['rsvp']['parameters']['query']['status'];
 /**
  * One row of `GET /events/{postId}/attendees`.
  *
- * NOTE THIS IS THE JPA ENTITY, NOT A DTO — the controller returns
- * `List<EventRsvpEntity>` straight out of the repository. Two consequences the UI has to be
- * designed around, neither of them fixable here:
+ * THE ATTENDEE LIST IS RENDERABLE NOW (BE `1299a0e`). It used to return `List<EventRsvpEntity>`
+ * straight out of the repository — `userId` and nothing else — and since the backend exposes only
+ * `/profile/me`, there was no second call that could turn an id into a person. The list was
+ * literally undisplayable. `EventAttendeeDto` joins `fullName` and `profilePictureUrl` in, so an
+ * attendee row can show who it is.
  *
- *  - **There is no name or avatar, only `userId`.** An attendee list can therefore show
- *    identities only if some other endpoint can resolve ids to people, and none can: the
- *    backend exposes `/profile/me` and nothing else for a user's profile. Same limitation
- *    that stops search results deep-linking to profiles.
- *  - **The list is every RSVP, not the guest list.** `findByPostId` filters nothing, so
- *    NOT_GOING and INTERESTED rows come back alongside GOING. Only
- *    `/attendees/count` narrows to GOING.
+ * WHAT WENT AWAY WITH THE ENTITY: `id`, `postId` and `createdAt`. The row's own key and its
+ * back-reference were never useful to a caller that asked for one post's attendees, and
+ * `createdAt` came back renamed as `respondedAt`, which is what it always meant.
  *
- * All five fields are tightened: they are entity columns that are always populated
- * (`createdAt` via `@CreationTimestamp`) and Jackson is at its default `ALWAYS` inclusion,
- * so they arrive on every row.
+ * THE LIST IS STILL EVERY RSVP, NOT THE GUEST LIST — NOT_GOING and INTERESTED rows come back
+ * alongside GOING. That is deliberate, and the fix is now available at the source: pass
+ * `status` to narrow server-side (`eventsApi.getAttendees`) instead of filtering client-side.
+ * `/attendees/count` remains GOING-only.
+ *
+ * NULLABILITY, read from `EventService.getAttendees` rather than the spec (which marks
+ * everything optional):
+ *  - `userId`, `status`, `respondedAt` always arrive — RSVP columns, `respondedAt` from
+ *    `@CreationTimestamp`.
+ *  - `fullName` and `profilePictureUrl` are `null` when the user row is gone: the service does a
+ *    batch `findAllById` and maps a miss to null rather than dropping the row, so a deleted
+ *    account still counts as an attendee but has no identity to show.
  */
-export type EventRsvp = Required<Schemas['EventRsvpEntity']>;
+export type EventAttendee = {
+  [K in keyof Required<Schemas['EventAttendeeDto']>]: K extends 'fullName' | 'profilePictureUrl'
+    ? string | null
+    : Required<Schemas['EventAttendeeDto']>[K];
+};
 
 /**
  * `GET /events/{postId}/attendees/count` — **GOING only**, from

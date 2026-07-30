@@ -87,7 +87,7 @@ export interface AcceptAnswerVariables {
 }
 
 /**
- * PATCH /v1/api/posts/{postId}/qna/accept-answer/{commentId}.
+ * POST /v1/api/posts/{postId}/qna/accept-answer/{commentId}.
  *
  * The one cycle-1 write with an in-domain read to refresh: accepting flips the thread's
  * accepted answer, so the post's comment query is invalidated. That query lands in cycle 2;

@@ -16,16 +16,18 @@ import type { NotificationType } from '../types/notification';
  * /preferences` applies each field under `Objects.nonNull`, so one toggle sends one field and
  * leaves the rest of the row alone.
  *
- * `emailFrequency` IS DELIBERATELY ABSENT. It is stored, echoed back, and read by nothing —
- * no scheduler in the backend mentions `EmailFrequency`, and `shouldSendEmail` checks only
- * `emailEnabled`, so even `NONE` still sends mail instantly (`findings/notifications.md` §6).
- * A control for it would be a lie whether or not it carried a "not yet active" label, so it is
- * cut and recorded as a DS deviation. Bring it back when a digest job exists, not before.
+ * `emailFrequency` IS STILL DELIBERATELY ABSENT, FOR A NEW REASON. It used to be a dead setting —
+ * stored, echoed back, read by nothing, so even `NONE` sent mail instantly. `18efb6c` fixed that
+ * and, in the same move, deleted `DAILY_DIGEST`/`WEEKLY_DIGEST` because no scheduler ever batched
+ * anything. What is left is `INSTANT | NONE`, which is the `emailEnabled` switch above wearing a
+ * different name. Two controls for one decision is worse than one, so it stays cut — now as a
+ * redundancy rather than a lie. Bring it back if digests are ever implemented, not before.
  *
  * PUSH CANNOT BE VERIFIED LOCALLY, only stored: `onesignal.app-id` is empty in this
  * environment and `shouldSendPush` additionally requires an `onesignalPlayerId`, which is null
  * for every user until a browser registers a subscription. The toggle is real; the delivery
- * path behind it is untested here.
+ * path behind it is untested here. NOTE the id is no longer echoed back on the response
+ * (`39b5666`) — it is write-only now, so nothing in this panel can compare against a stored one.
  */
 export interface NotificationPreferencesProps {
   className?: string;
@@ -34,11 +36,15 @@ export interface NotificationPreferencesProps {
 /**
  * Which types get a mute control.
  *
- * THE SEVEN THE BACKEND ACTUALLY EMITS. `POST_SHARED`, `EVENT_RSVP`, `EVENT_REMINDER` and
- * `SYSTEM` are in the enum but no service anywhere constructs them
- * (`findings/notifications.md` §9), so a switch for them would mute a notification that cannot
- * arrive — the same kind of dead control as `emailFrequency`. If a producer for one of them
- * ever lands, add it here; muting is stored as free-form strings, so nothing else changes.
+ * ALL NINE — the union and this list finally agree. It used to be seven of eleven: `POST_SHARED`,
+ * `EVENT_RSVP`, `EVENT_REMINDER` and `SYSTEM` had no producer, so a switch for them would have
+ * muted a notification that could not arrive. The backend closed the gap from both ends —
+ * `POST_SHARED`/`SYSTEM` deleted from the enum (`f0dc820`), `EVENT_RSVP` given a producer when a
+ * guest answers (`b0d1539`) and `EVENT_REMINDER` one the day before (`4ff5d5f`) — so the two
+ * survivors are added here.
+ *
+ * Keep the order matching the Java enum: this list is read top to bottom in the panel, and a
+ * reader comparing it against `NotificationType` should not have to sort.
  */
 const MUTABLE_TYPES: NotificationType[] = [
   'POST_LIKED',
@@ -46,6 +52,8 @@ const MUTABLE_TYPES: NotificationType[] = [
   'POST_TAGGED',
   'FRIEND_REQUEST',
   'FRIEND_ACCEPTED',
+  'EVENT_RSVP',
+  'EVENT_REMINDER',
   'BOOK_REVIEW',
   'BOOK_PURCHASED',
 ];

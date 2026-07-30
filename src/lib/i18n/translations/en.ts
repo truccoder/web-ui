@@ -216,6 +216,8 @@ export const en = {
       POST_TAGGED: 'Someone mentions you in a post',
       FRIEND_REQUEST: 'New friend request',
       FRIEND_ACCEPTED: 'Friend request accepted',
+      EVENT_RSVP: 'Someone responds to your event',
+      EVENT_REMINDER: 'A day before an event you are going to',
       BOOK_REVIEW: 'New review on your book',
       BOOK_PURCHASED: 'Someone buys your book',
     },

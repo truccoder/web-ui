@@ -7,9 +7,14 @@ type Schemas = components['schemas'];
  * Types for the preference half of NotificationController
  * (`GET`/`PUT /v1/api/notifications/preferences`), derived from `schema.gen.ts`.
  *
- * THE ENDPOINT RETURNS A JPA ENTITY, NOT A DTO. `getPreferences`/`updatePreferences` are typed
- * `NotificationPreferenceEntity` in the controller, so the wire shape is the table. That is why
- * `updatedAt` is on the response and there is no `id`.
+ * THE ENDPOINT RETURNED A JPA ENTITY UNTIL BE `39b5666` (QĐ-0002). It now returns
+ * `NotificationPreferenceResponseDto`, which is the entity minus `onesignalPlayerId`. `updatedAt`
+ * is still on the response and there is still no `id` — the DTO mirrors the table, which has
+ * `@Id private Integer userId` and no generated key.
+ *
+ * `onesignalPlayerId` was dropped on purpose: the device token is minted by the client and pushed
+ * up, so echoing it back served nothing while putting a push-capable handle in every settings
+ * response. Nothing here read it.
  */
 
 /**
@@ -23,7 +28,9 @@ type Schemas = components['schemas'];
 /**
  * Fields the backend always sends with a real value.
  *
- * Everything except `onesignalPlayerId`, confirmed from `NotificationPreferenceEntity` and
+ * EVERY FIELD ON THE RESPONSE, now that `onesignalPlayerId` is gone — there is no longer a
+ * nullable one to exclude. Confirmed from `NotificationPreferenceEntity`,
+ * `NotificationService.toDto` (a straight field-for-field copy) and
  * `V15__create_notifications_table.sql`:
  *   · `userId` — `@Id`, the primary key.
  *   · `pushEnabled` / `emailEnabled` / `emailFrequency` — `@Builder.Default` on the entity AND
@@ -33,10 +40,10 @@ type Schemas = components['schemas'];
  *     so the wire never carries null here; an empty array is the absence.
  *   · `updatedAt` — `@UpdateTimestamp`, written on insert as well as update.
  *
- * `onesignal_player_id` is a plain nullable column and is null for every user until a browser
- * actually registers a push subscription.
+ * Kept as a named alias rather than inlined: the moment the backend adds a genuinely nullable
+ * field to this response, the fix is to subtract it here, not to rewrite the mapped type below.
  */
-type AlwaysPresent = Exclude<keyof Schemas['NotificationPreferenceEntity'], 'onesignalPlayerId'>;
+type AlwaysPresent = keyof Schemas['NotificationPreferenceResponseDto'];
 
 /**
  * A user's notification preferences.
@@ -52,22 +59,31 @@ type AlwaysPresent = Exclude<keyof Schemas['NotificationPreferenceEntity'], 'one
  * instead (see `UpdatePreferenceInput`), which is the side we control.
  */
 export type NotificationPreference = {
-  [K in keyof Required<Schemas['NotificationPreferenceEntity']>]: K extends AlwaysPresent
-    ? NonNullable<Schemas['NotificationPreferenceEntity'][K]>
-    : Schemas['NotificationPreferenceEntity'][K] | null;
+  [K in keyof Required<Schemas['NotificationPreferenceResponseDto']>]: K extends AlwaysPresent
+    ? NonNullable<Schemas['NotificationPreferenceResponseDto'][K]>
+    : Schemas['NotificationPreferenceResponseDto'][K] | null;
 };
 
 /**
- * How often digest email should go out.
+ * Whether notification email goes out at all — `INSTANT` or `NONE`, nothing in between.
  *
- * DEAD SETTING AS OF TODAY — the value is stored and echoed back and read by nothing. No
- * `@Scheduled` job in the backend mentions `EmailFrequency` (the five schedulers that exist are
- * github sync, post scoring, reputation reconcile, token cleanup and trending crawl), and
- * `NotificationService.shouldSendEmail` checks only `emailEnabled`. So mail is sent instantly
- * whatever this says, `NONE` included. Anything the UI renders for it is a control that does
- * nothing; that has to be a stated deviation at P2.6cd, not a silent one.
+ * NO LONGER A DEAD SETTING (BE `18efb6c`). It used to be stored, echoed back and read by nothing:
+ * `shouldSendEmail` checked only `emailEnabled`, so a user asking for `NONE` still got mail on
+ * every like. It is read now. At the same time `DAILY_DIGEST` and `WEEKLY_DIGEST` were **removed**
+ * rather than implemented — no scheduler ever batched anything, and a setting that changes nothing
+ * is worse than an absent one because the round trip looks like it worked.
+ *
+ * THE NARROWING IS ON THE REQUEST SIDE TOO, so sending a digest value is a runtime 400, not a
+ * compile error somewhere upstream (measured by BE: `PUT {"emailFrequency":"WEEKLY_DIGEST"}` →
+ * 400 "Malformed request body"). `V45__constrain_email_frequency.sql` adds a CHECK so the column
+ * cannot hold one either.
+ *
+ * STILL NO UI CONTROL, and the reason has changed — see `notification-preferences.tsx`. With two
+ * values left it would duplicate the `emailEnabled` switch, not add a choice.
  */
-export type EmailFrequency = NonNullable<Schemas['NotificationPreferenceEntity']['emailFrequency']>;
+export type EmailFrequency = NonNullable<
+  Schemas['NotificationPreferenceResponseDto']['emailFrequency']
+>;
 
 /**
  * Body of `PUT /v1/api/notifications/preferences`.

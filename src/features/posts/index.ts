@@ -144,7 +144,7 @@ export type {
   MyReaction,
   UpsertReactionRequest,
   RsvpStatus,
-  EventRsvp,
+  EventAttendee,
   AttendeeCount,
   GoogleAuthUrl,
   CalendarStatus,

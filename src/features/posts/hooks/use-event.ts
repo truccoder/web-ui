@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { eventsApi } from '../api/event';
-import type { EventRsvp, RsvpStatus } from '../types/event';
+import type { EventAttendee, RsvpStatus } from '../types/event';
 import { postKeys } from './keys';
 import type { PostMutationOptions } from './use-post';
 
@@ -184,7 +184,7 @@ export function useGoogleAuthUrl(enabled: boolean) {
  * answered", and NOT_GOING means "answered no" — two different states that must not be
  * rendered as the same empty button.
  */
-export function findMyRsvp(attendees: EventRsvp[] | undefined, userId: number | undefined) {
+export function findMyRsvp(attendees: EventAttendee[] | undefined, userId: number | undefined) {
   if (!attendees || userId === undefined) return null;
   return attendees.find((rsvp) => rsvp.userId === userId) ?? null;
 }

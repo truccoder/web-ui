@@ -24,4 +24,10 @@ export type { PostComment, CreateCommentRequest, UpdateCommentRequest } from './
 
 export type { ReactionType, MyReaction, UpsertReactionRequest } from './reaction';
 
-export type { RsvpStatus, EventRsvp, AttendeeCount, GoogleAuthUrl, CalendarStatus } from './event';
+export type {
+  RsvpStatus,
+  EventAttendee,
+  AttendeeCount,
+  GoogleAuthUrl,
+  CalendarStatus,
+} from './event';

@@ -55,13 +55,17 @@ export type AppNotification = {
 /**
  * The `NotificationType` enum, as the backend spells it.
  *
- * ONLY 7 OF THE 11 ARE EVER EMITTED. Grepping `NotificationType.` outside the notifications
- * package finds `POST_LIKED` (PostReactionService), `POST_COMMENTED` (CommentService),
- * `POST_TAGGED` (NewsfeedService), `FRIEND_REQUEST`/`FRIEND_ACCEPTED` (FriendshipService),
- * `BOOK_REVIEW` (BookReviewService) and `BOOK_PURCHASED` (MomoService). `POST_SHARED`,
- * `EVENT_RSVP`, `EVENT_REMINDER` and `SYSTEM` have no producer at all. The union stays
- * complete because the wire can carry them, but a UI that maps every member to an icon and a
- * copy string is writing four cases that no fixture will ever exercise.
+ * ALL 9 ARE EMITTED — the enum used to hold 11 with four of them unproducible, and both halves of
+ * that gap are now closed. Grepping `NotificationType.` outside the notifications package finds
+ * `POST_LIKED` (PostReactionService), `POST_COMMENTED` (CommentService), `POST_TAGGED`
+ * (NewsfeedService), `FRIEND_REQUEST`/`FRIEND_ACCEPTED` (FriendshipService), `EVENT_RSVP`
+ * (EventService, `b0d1539`), `EVENT_REMINDER` (EventReminderScheduler, `4ff5d5f`), `BOOK_REVIEW`
+ * (BookReviewService) and `BOOK_PURCHASED` (MomoService). `POST_SHARED` and `SYSTEM` were deleted
+ * from the enum instead of given producers (`f0dc820`).
+ *
+ * `EVENT_REMINDER` CARRIES `actorId: null` — a scheduler raised it, so there is no person who did
+ * it. Anything rendering an avatar from `actorId` must handle that; `AppNotification` already
+ * leaves the field nullable, which is why nothing broke when the producer landed.
  */
 export type NotificationType = NonNullable<Schemas['NotificationResponseDto']['type']>;
 

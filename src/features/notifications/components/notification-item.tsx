@@ -35,15 +35,17 @@ export interface NotificationItemProps {
  *
  * `Record<NotificationType, …>` rather than a lookup with a default, ON PURPOSE: if the backend
  * adds a member to `NotificationType`, this map stops compiling and someone has to choose an
- * icon, instead of the new type silently rendering the generic bell forever. Four of these
- * (`POST_SHARED`, `EVENT_RSVP`, `EVENT_REMINDER`, `SYSTEM`) have no producer in the backend at
- * all today — see `findings/notifications.md` §9 — so they are here for completeness of the
- * union, not because anything will exercise them.
+ * icon, instead of the new type silently rendering the generic bell forever. IT ALSO CAUGHT THE
+ * REMOVALS — `POST_SHARED` and `SYSTEM` were dropped from the enum in BE `f0dc820` (nothing could
+ * produce either: there is no share endpoint, and `SYSTEM` was only reachable through an internal
+ * `send` no controller exposes), and the exhaustive `Record` turned that into a compile error here
+ * rather than a dead key nobody noticed. All nine remaining members now have a real producer.
+ *
+ * Bringing share back means restoring `POST_SHARED` and `FeedPostDataDto.shareCount` together.
  */
 const TYPE_ICON: Record<NotificationType, LucideIcon> = {
   POST_LIKED: Heart,
   POST_COMMENTED: MessageSquare,
-  POST_SHARED: MessageSquare,
   POST_TAGGED: AtSign,
   FRIEND_REQUEST: UserPlus,
   FRIEND_ACCEPTED: UserCheck,
@@ -51,7 +53,6 @@ const TYPE_ICON: Record<NotificationType, LucideIcon> = {
   EVENT_REMINDER: Bell,
   BOOK_REVIEW: Star,
   BOOK_PURCHASED: ShoppingBag,
-  SYSTEM: Bell,
 };
 
 /**
