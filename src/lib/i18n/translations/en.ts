@@ -57,6 +57,7 @@ export const en = {
   },
 
   nav: {
+    roadmap: 'Roadmaps',
     knowledge: 'Knowledge',
     newsfeed: 'Newsfeed',
     trending: 'Trending',
@@ -244,6 +245,8 @@ export const en = {
   },
 
   roadmap: {
+    title: 'Roadmaps',
+    subtitle: 'Learning tracks, and the skills on them.',
     list: {
       loadFailed: 'Could not load the roadmaps',
       empty: 'No roadmaps yet',

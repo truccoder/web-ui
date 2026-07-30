@@ -18,6 +18,7 @@ import {
   UserPlus,
   UserCheck,
   Globe,
+  Route,
 } from 'lucide-react';
 import { setRoleCookie } from '@/lib/hooks/use-admin-role';
 import { getNeutralAvatarColor } from '@/lib/avatar-color';
@@ -123,6 +124,28 @@ function NavLinks({ onClick }: { onClick?: () => void }) {
       >
         <BookOpen className="h-4 w-4" />
         {t('nav.knowledge')}
+      </Link>
+
+      {/* Roadmap. Added at P2.13d for the same reason as the two links above: the domain had no UI,
+          so `d` created `/roadmap` and it needs something pointing at it. Legacy classes on
+          purpose — the shell is rebuilt wholesale at P3.4.
+
+          NOTE FOR P3.4: there is deliberately NO link to `/admin/roadmap` here. This sidebar only
+          ever renders for a non-admin session (middleware redirects `ADMIN` out of `(main)`
+          entirely), so an admin link in this nav could never be clicked by anyone who could use
+          it. The admin surface is reached from the `(admin)` header instead. */}
+      <Link
+        href="/roadmap"
+        onClick={onClick}
+        className={cn(
+          'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+          pathname === '/roadmap'
+            ? 'bg-primary text-primary-foreground'
+            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+        )}
+      >
+        <Route className="h-4 w-4" />
+        {t('nav.roadmap')}
       </Link>
 
       {/* Friends collapsible */}

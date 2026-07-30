@@ -59,6 +59,7 @@ export const vi: Messages = {
   },
 
   nav: {
+    roadmap: 'Lộ trình',
     knowledge: 'Kiến thức',
     newsfeed: 'Bảng tin',
     trending: 'Xu hướng',
@@ -247,6 +248,8 @@ export const vi: Messages = {
   },
 
   roadmap: {
+    title: 'Lộ trình',
+    subtitle: 'Các lộ trình học và những kỹ năng trên đó.',
     list: {
       loadFailed: 'Không tải được lộ trình',
       empty: 'Chưa có lộ trình nào',
