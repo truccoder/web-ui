@@ -187,10 +187,10 @@ export function useSubmitVerification(options?: RoadmapMutationOptions<SkillVeri
  * POST /v1/api/skills/{progressId}/approve — moderator surface (see the file note).
  *
  * THE QUEUE IS SHARED, SO FAILURE IS A NORMAL OUTCOME. Only a `PENDING_APPROVAL` row can be
- * approved; anything else throws "Cannot approve a verification request that is already …". Two
- * moderators working the same list means the second one gets an error rather than a no-op, which
- * is why the queue is invalidated on success — and why the UI must show the error rather than
- * assume it acted on a stale row.
+ * approved; anything else answers **409** ("Cannot approve a verification request that is already
+ * VERIFIED" — measured at 2c-2 by approving one row twice). Two moderators working the same list
+ * means the second gets an error rather than a no-op, which is why the queue is invalidated on
+ * success — and why the UI must show the error rather than assume it acted on a stale row.
  *
  * Awards `ROADMAP_NODE_VERIFIED` reputation to the REQUESTER. Not invalidated here: it is another
  * user's score and another domain's cache.

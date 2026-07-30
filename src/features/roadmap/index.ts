@@ -32,6 +32,10 @@ export {
   type RoadmapNodeTreeProps,
   SkillVerificationForm,
   type SkillVerificationFormProps,
+  PendingVerificationQueue,
+  type PendingVerificationQueueProps,
+  RoadmapAdminPanel,
+  type RoadmapAdminPanelProps,
 } from './components';
 
 export {

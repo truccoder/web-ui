@@ -278,6 +278,27 @@ export const en = {
       // down while still answering 200. See the note in `skill-verification-form.tsx`.
       submitted: 'Submitted. The outcome depends on the option you picked.',
     },
+    queue: {
+      title: 'Awaiting review',
+      loadFailed: 'Could not load the review queue',
+      empty: 'Nothing is waiting for review',
+      approve: 'Approve',
+      reject: 'Reject',
+    },
+    admin: {
+      title: 'Manage roadmaps',
+      newRoadmap: 'New roadmap',
+      roadmapName: 'Name',
+      roadmapDescription: 'Description',
+      createRoadmap: 'Create roadmap',
+      newNode: 'New skill',
+      pickRoadmap: 'Pick a roadmap above to add a skill to it.',
+      nodeName: 'Name',
+      parentNode: 'Sits under',
+      noParent: 'Top level',
+      parentHint: 'Only skills already on this roadmap can be the parent.',
+      createNode: 'Add skill',
+    },
   },
 
   trending: {

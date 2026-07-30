@@ -281,6 +281,27 @@ export const vi: Messages = {
       // AUTO_CERTIFIED bị từ chối vẫn trả 200. Xem ghi chú trong `skill-verification-form.tsx`.
       submitted: 'Đã gửi. Kết quả tuỳ vào cách chứng minh bạn chọn.',
     },
+    queue: {
+      title: 'Chờ duyệt',
+      loadFailed: 'Không tải được hàng chờ duyệt',
+      empty: 'Không có yêu cầu nào chờ duyệt',
+      approve: 'Duyệt',
+      reject: 'Từ chối',
+    },
+    admin: {
+      title: 'Quản lý lộ trình',
+      newRoadmap: 'Lộ trình mới',
+      roadmapName: 'Tên',
+      roadmapDescription: 'Mô tả',
+      createRoadmap: 'Tạo lộ trình',
+      newNode: 'Kỹ năng mới',
+      pickRoadmap: 'Chọn một lộ trình ở trên để thêm kỹ năng vào đó.',
+      nodeName: 'Tên',
+      parentNode: 'Nằm dưới',
+      noParent: 'Cấp cao nhất',
+      parentHint: 'Chỉ những kỹ năng đã có trên lộ trình này mới làm cha được.',
+      createNode: 'Thêm kỹ năng',
+    },
   },
 
   trending: {

@@ -63,11 +63,13 @@ export const skillVerificationApi = {
    * 404 — the backend does not map unknown paths (B19) — so a stale caller looks like a server
    * fault rather than a client mistake.
    *
-   * ONLY A `PENDING_APPROVAL` ROW CAN BE APPROVED. Anything else throws
-   * `IllegalStateException("Cannot approve a verification request that is already …")`, which
-   * matters because the queue is a shared list: two moderators acting on the same row means the
-   * second one gets an error, not a no-op. Approving awards `ROADMAP_NODE_VERIFIED` reputation to
-   * the REQUESTER, not the moderator.
+   * ONLY A `PENDING_APPROVAL` ROW CAN BE APPROVED. Anything else answers **409 Conflict** with
+   * "Cannot approve a verification request that is already VERIFIED" — measured, by approving the
+   * same row twice. That matters because the queue is a shared list: two moderators acting on one
+   * row means the second gets an error rather than a no-op, so the UI has to show it.
+   *
+   * Approving awards `ROADMAP_NODE_VERIFIED` reputation to the REQUESTER, not the moderator, and
+   * stamps the moderator on the row as `verifier_id`.
    */
   approveVerification: (progressId: number) =>
     api.post<void>(`/v1/api/skills/${progressId}/approve`).then((r) => r.data),
