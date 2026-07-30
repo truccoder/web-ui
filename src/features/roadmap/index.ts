@@ -15,10 +15,30 @@
  *    that never runs, because method security is not enabled backend-side (B20). The gate has to
  *    come from this app's own admin role until that is fixed.
  *
- * Populated at 2a with types + api. State (2b), UI (2c) and wiring (2d) follow.
+ * THE ADMIN GATE THIS BARREL EXPORTS IS NOT SECURITY. `useIsRoadmapAdmin` stops the app offering
+ * authoring and moderation controls to everyone; it cannot stop anyone calling the endpoints,
+ * because the backend does not gate them at all (B20). Treat it as honesty about intent, not as
+ * enforcement.
+ *
+ * Populated at 2a with types + api and at 2b with hooks. UI (2c) and wiring (2d) follow.
  */
 
 export { roadmapApi, skillVerificationApi } from './api';
+
+export {
+  roadmapKeys,
+  useIsRoadmapAdmin,
+  useRoadmaps,
+  useRoadmapNodes,
+  useCreateRoadmap,
+  useCreateRoadmapNode,
+  usePendingVerifications,
+  useSubmitVerification,
+  useApproveVerification,
+  useRejectVerification,
+  type RoadmapMutationOptions,
+  type CreateRoadmapNodeVariables,
+} from './hooks';
 
 export type {
   Roadmap,
