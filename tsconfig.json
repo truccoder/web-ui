@@ -19,6 +19,9 @@
       }
     ],
     "paths": {
+      "@/core/*": ["./src/core/*"],
+      "@/shared/*": ["./src/shared/*"],
+      "@/features/*": ["./src/features/*"],
       "@/*": ["./src/*"]
     }
   },
