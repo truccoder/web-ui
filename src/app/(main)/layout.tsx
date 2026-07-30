@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
+  BookOpen,
   LayoutDashboard,
   User,
   LogOut,
@@ -11,6 +12,7 @@ import {
   Users,
   Newspaper,
   TrendingUp,
+  Bell,
   MessageCircle,
   ChevronDown,
   UserPlus,
@@ -19,8 +21,7 @@ import {
 } from 'lucide-react';
 import { setRoleCookie } from '@/lib/hooks/use-admin-role';
 import { getNeutralAvatarColor } from '@/lib/avatar-color';
-import { CommunicationProvider } from '@/components/chat/communication-provider';
-import { ChatBox } from '@/components/chat/chat-box';
+import { ChatClientProvider, ChatDock } from '@/features/chat';
 import { cn } from '@/lib/utils';
 import { useProfile, useLogout } from '@/lib/hooks';
 import { usePendingRequests } from '@/lib/hooks/use-friendship';
@@ -35,7 +36,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { SearchBar } from '@/components/search/search-bar';
+import { SearchBar } from '@/features/search';
 
 function NavLinks({ onClick }: { onClick?: () => void }) {
   const pathname = usePathname();
@@ -83,6 +84,45 @@ function NavLinks({ onClick }: { onClick?: () => void }) {
       >
         <TrendingUp className="h-4 w-4" />
         {t('nav.trending')}
+      </Link>
+
+      {/* Notifications. Added at P2.6cd so `/notifications` is reachable — a route nothing
+          links to is not a surface. Styled with the same legacy classes as its siblings on
+          purpose: this shell is rebuilt wholesale at P3.4, and matching it now costs less than
+          a single row of new design that gets thrown away. P3.4 replaces this link with the
+          topbar bell (which is where the unread badge belongs; deliberately not added here,
+          since mounting `useUnreadNotificationCount` in the shell would start the 30s poll on
+          every page and that is a shell-level decision). */}
+      <Link
+        href="/notifications"
+        onClick={onClick}
+        className={cn(
+          'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+          pathname === '/notifications'
+            ? 'bg-primary text-primary-foreground'
+            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+        )}
+      >
+        <Bell className="h-4 w-4" />
+        {t('nav.notifications')}
+      </Link>
+
+      {/* Knowledge. Added at P2.11d for the same reason as the notifications link above: the
+          domain had no UI at all, so `d` created `/knowledge` and it needs something pointing at
+          it. Same legacy classes as its siblings — the shell is rebuilt wholesale at P3.4 and
+          matching it now costs less than a row of new design that gets thrown away. */}
+      <Link
+        href="/knowledge"
+        onClick={onClick}
+        className={cn(
+          'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+          pathname === '/knowledge'
+            ? 'bg-primary text-primary-foreground'
+            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+        )}
+      >
+        <BookOpen className="h-4 w-4" />
+        {t('nav.knowledge')}
       </Link>
 
       {/* Friends collapsible */}
@@ -284,17 +324,26 @@ function MainContent({ children }: { children: React.ReactNode }) {
   const isFullBleed = pathname.startsWith('/chats');
 
   return (
-    <main className="md:ml-64">
+    /**
+     * A flex column when the route is full-bleed, so its content can claim the height left over
+     * after the chrome above it without anyone having to know how tall that chrome is.
+     *
+     * The Twilio messenger did know: `h-[calc(100vh-48px)]` on mobile, `h-screen` on desktop. The
+     * search bar is actually 65px and the mobile header 57px, so both numbers were wrong and the
+     * page carried a stray scrollbar. Numbers like these cannot stay right — the chrome is rebuilt
+     * at P3.4 — so the replacement measures nothing and simply divides the space.
+     */
+    <main className={cn('md:ml-64', isFullBleed && 'flex min-h-0 flex-1 flex-col')}>
       {/* Spans the full width of this content region (viewport minus the sidebar), not the
           max-w-5xl box below it, so it reaches all the way to the right edge of the screen.
           Only sticky at md+ — below that, the mobile header above is already sticky at top-0,
           and stacking two independent top-0 stickies would overlap them. */}
-      <div className="md:sticky md:top-0 z-30 border-b bg-card px-4 sm:px-6 lg:px-8 py-3">
+      <div className="md:sticky md:top-0 z-30 shrink-0 border-b bg-card px-4 sm:px-6 lg:px-8 py-3">
         <SearchBar />
       </div>
 
       {isFullBleed ? (
-        children
+        <div className="min-h-0 flex-1">{children}</div>
       ) : (
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">{children}</div>
       )}
@@ -305,7 +354,18 @@ function MainContent({ children }: { children: React.ReactNode }) {
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const t = useT();
   const router = useRouter();
+  const pathname = usePathname();
   const { data: profile } = useProfile();
+
+  /**
+   * `/chats` fills the viewport exactly instead of growing the page.
+   *
+   * The shell is a flex column of fixed height only for that route; every other page keeps
+   * `min-h-screen` and scrolls normally, which is what a feed has to do. Duplicated from
+   * `MainContent` rather than lifted into context because it is two lines and this whole shell is
+   * replaced at P3.4.
+   */
+  const isFullBleed = pathname.startsWith('/chats');
 
   useEffect(() => {
     if (!profile) return;
@@ -317,15 +377,32 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   }, [profile, router]);
 
   return (
-    <CommunicationProvider>
-      <div className="min-h-screen bg-background">
+    /**
+     * THE ONE CHAT CONNECTION FOR THE WHOLE APP, mounted here rather than per screen.
+     *
+     * Consequence, stated because it is easy to mount and not notice: every page under `(main)`
+     * now opens a Stream websocket and asks the backend for a chat token. That is deliberate — the
+     * dock's unread badge has to be right on every page, which is only possible if the connection
+     * is live on every page. `/chats` and the dock share this provider; connecting per surface
+     * would open two sockets and double every event.
+     *
+     * `enabled` waits for the profile so the token request cannot race session bootstrap, and so
+     * an admin — redirected out of this shell by the effect above — never opens a socket at all.
+     */
+    <ChatClientProvider enabled={Boolean(profile) && profile?.role !== 'ADMIN'}>
+      <div
+        className={cn(
+          'bg-background',
+          isFullBleed ? 'flex h-[100dvh] flex-col overflow-hidden' : 'min-h-screen'
+        )}
+      >
         {/* Desktop sidebar */}
         <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 border-r bg-card">
           <SidebarContent />
         </aside>
 
         {/* Mobile header */}
-        <div className="md:hidden flex items-center justify-between border-b px-4 py-3 bg-card sticky top-0 z-40">
+        <div className="md:hidden flex shrink-0 items-center justify-between border-b px-4 py-3 bg-card sticky top-0 z-40">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
               <Users className="h-4 w-4 text-white" />
@@ -349,9 +426,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         {/* Main content */}
         <MainContent>{children}</MainContent>
 
-        {/* Chat overlay */}
-        <ChatBox />
+        {/* Floating chat. Hides itself on `/chats`, which is the same conversations full-screen. */}
+        <ChatDock />
       </div>
-    </CommunicationProvider>
+    </ChatClientProvider>
   );
 }
