@@ -243,6 +243,43 @@ export const en = {
     priceUnknown: 'Price unavailable',
   },
 
+  roadmap: {
+    list: {
+      loadFailed: 'Could not load the roadmaps',
+      empty: 'No roadmaps yet',
+    },
+    nodes: {
+      pickRoadmap: 'Pick a roadmap to see its skills',
+      loadFailed: 'Could not load the skills',
+      empty: 'This roadmap has no skills yet',
+    },
+    verify: {
+      claim: 'Claim',
+      claiming: 'Claiming: ${node}',
+      tierLabel: 'How are you backing this up?',
+      tier: {
+        self: 'My own word',
+        mod: 'Review by a moderator',
+        quiz: 'Quiz result, reviewed by a moderator',
+        auto: 'A repository on my linked GitHub',
+      },
+      tierHint: {
+        self: 'Recorded immediately. Earns reputation.',
+        mod: 'Goes into the moderator queue and waits for a decision.',
+        quiz: 'Goes into the moderator queue and waits for a decision.',
+        auto: 'Checked straight away against your linked GitHub account.',
+      },
+      proofUrl: 'Proof link',
+      proofUrlHint: 'Optional. A moderator reads this.',
+      proofUrlAutoHint:
+        'Required, and must be a repository under your own linked GitHub account — anything else is turned down.',
+      submit: 'Submit',
+      // Never "verified": the endpoint returns nothing, and an AUTO_CERTIFIED claim can be turned
+      // down while still answering 200. See the note in `skill-verification-form.tsx`.
+      submitted: 'Submitted. The outcome depends on the option you picked.',
+    },
+  },
+
   trending: {
     title: 'Trending',
     subtitle: 'Popular stories in tech from around the web',

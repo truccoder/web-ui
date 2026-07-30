@@ -246,6 +246,43 @@ export const vi: Messages = {
     priceUnknown: 'Chưa có giá',
   },
 
+  roadmap: {
+    list: {
+      loadFailed: 'Không tải được lộ trình',
+      empty: 'Chưa có lộ trình nào',
+    },
+    nodes: {
+      pickRoadmap: 'Chọn một lộ trình để xem các kỹ năng',
+      loadFailed: 'Không tải được danh sách kỹ năng',
+      empty: 'Lộ trình này chưa có kỹ năng nào',
+    },
+    verify: {
+      claim: 'Ghi nhận',
+      claiming: 'Đang ghi nhận: ${node}',
+      tierLabel: 'Bạn chứng minh bằng cách nào?',
+      tier: {
+        self: 'Tự khai',
+        mod: 'Nhờ kiểm duyệt viên duyệt',
+        quiz: 'Kết quả trắc nghiệm, có kiểm duyệt viên duyệt',
+        auto: 'Repository trên GitHub đã liên kết',
+      },
+      tierHint: {
+        self: 'Ghi nhận ngay. Có cộng điểm uy tín.',
+        mod: 'Vào hàng chờ của kiểm duyệt viên và đợi quyết định.',
+        quiz: 'Vào hàng chờ của kiểm duyệt viên và đợi quyết định.',
+        auto: 'Kiểm ngay lập tức dựa trên tài khoản GitHub bạn đã liên kết.',
+      },
+      proofUrl: 'Link minh chứng',
+      proofUrlHint: 'Không bắt buộc. Kiểm duyệt viên sẽ đọc link này.',
+      proofUrlAutoHint:
+        'Bắt buộc, và phải là repository thuộc chính tài khoản GitHub bạn đã liên kết — khác đi sẽ bị từ chối.',
+      submit: 'Gửi',
+      // Tuyệt đối không dùng chữ "đã xác minh": endpoint không trả gì, và một yêu cầu
+      // AUTO_CERTIFIED bị từ chối vẫn trả 200. Xem ghi chú trong `skill-verification-form.tsx`.
+      submitted: 'Đã gửi. Kết quả tuỳ vào cách chứng minh bạn chọn.',
+    },
+  },
+
   trending: {
     title: 'Xu hướng',
     subtitle: 'Những bài viết công nghệ nổi bật trên khắp mạng',
