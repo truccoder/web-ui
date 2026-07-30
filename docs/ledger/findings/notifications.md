@@ -20,6 +20,22 @@ Không có gì đẩy về client.
 → **Đừng thiết kế socket client** cho domain này ở P2.6cd. "Realtime notification" là việc của BE
 trước, không phải việc FE.
 
+### QĐ-0001 — không có realtime, và sẽ KHÔNG có (chốt 2026-07-29, ghi lại ở F-D)
+
+Mục trên viết ở P2.6ab mô tả **hiện trạng**: BE chưa có realtime. BE đã nâng nó thành **quyết
+định kiến trúc** (`DATN-backend/docs/decisions/0001`): sẽ không làm WebSocket, không làm SSE. Khác
+biệt quan trọng ở chỗ trước đây poll 30s là _giải pháp tạm chờ BE_, giờ nó là **thiết kế cuối**.
+
+Hệ quả, tất cả đều bắt buộc:
+
+- **Giữ `refetchInterval: 30_000`.** Đừng rút ngắn cho "gần realtime hơn" — 9 loại thông báo
+  nhân với mỗi tab đang mở là chi phí thật, mà không đổi lấy được gì đã hứa.
+- **Đừng chờ `/ws` hay `/sse`, đừng để chỗ trống cho chúng.** Không viết abstraction "transport"
+  chỉ có một implementation; nó sẽ không bao giờ có cái thứ hai.
+- **Chat không vướng quyết định này** — Stream Chat tự giữ socket riêng, không đi qua BE.
+- **Push OneSignal có hai chốt chặn** (chưa ai đăng ký `onesignalPlayerId`, app-id rỗng) và bật
+  lên là bật đồng loạt cho cả 9 `NotificationType`, không có nấc trung gian.
+
 ## 2. Phân trang lệch base: request 1-based, response 0-based
 
 ```java

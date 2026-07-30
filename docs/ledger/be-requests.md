@@ -482,3 +482,88 @@ Stream thật**, rồi domain `chat` đóng ở P2.7d.
 2. **Sync hồ sơ không được phép làm hỏng việc cấp token.** `syncProfileBestEffort` nuốt lỗi và vẫn
    trả token — sync hỏng thì chat xuống cấp thành id số, còn token hỏng thì mất chat hoàn toàn.
    Lý do nằm trong javadoc, ngay cạnh code. Đó đúng là thứ tài liệu này muốn nhân rộng.
+
+---
+
+## B19 — đường dẫn không tồn tại trả 500 thay vì 404
+
+Ưu tiên **thấp**. Ghi ở F-D (2026-07-30), đo lại được ngay trong phiên đó:
+
+```
+GET /v1/api/friendships/friends → 500
+{"code":500,"error":"Internal Server Error",
+ "message":"No static resource v1/api/friendships/friends.","path":"..."}
+```
+
+Cùng họ với lỗi sai-method-trả-500 mà `dacb124` đã sửa thành **405 kèm header `Allow`**, nhưng
+nhánh "không map được path" thì chưa được xử lý.
+
+**Hệ quả cho FE:** không phân biệt được "FE gọi nhầm đường dẫn" với "BE hỏng thật", nên một lỗi
+gõ nhầm path sẽ bị truy nhầm hướng; và `message` rò cấu trúc resource handler ra client.
+
+**Vì sao vẫn để ưu tiên thấp:** sau khi cắt tính năng follow ở Phase 3 (`/v1/api/social/*` không
+tồn tại — không có `SocialController` nào), FE không còn đường dẫn sai nào đang gọi. Đây là chi
+phí cho lần gõ nhầm sau, không phải lỗi đang gây hỏng gì.
+
+---
+
+## B20 — `@PreAuthorize` không có hiệu lực: 5 endpoint roadmap/skills mở cho mọi user đăng nhập
+
+Ưu tiên **CAO — đây là lỗ hổng phân quyền, không phải chuyện đặt tên.** Ghi ở P2.13a
+(2026-07-30). Chi tiết + cách đo ở [`findings/roadmap.md`](findings/roadmap.md) §1.
+
+Năm endpoint mang `@PreAuthorize("hasRole('ADMIN')")` / `hasAnyRole('ADMIN','MODERATOR')`:
+`POST /roadmaps` · `POST /roadmaps/{id}/nodes` · `GET /skills/pending` ·
+`POST /skills/{id}/approve` · `POST /skills/{id}/reject`.
+
+**Không cái nào chạy**, vì hai lý do cộng lại:
+
+1. `grep -rn "EnableMethodSecurity\|EnableGlobalMethodSecurity" src/main/java/` → **rỗng**.
+   Không bật method security thì `@PreAuthorize` chỉ là chú thích.
+2. `SecurityConfig` chỉ gác URL cho `/v1/api/admin/**`; hai path này không nằm dưới đó nên rơi
+   vào `.anyRequest().authenticated()`.
+
+Đo bằng seed user thường (id 9001, JWT **không có claim role nào**):
+
+```
+POST /v1/api/roadmaps {"name":"x"} → 200, tạo thật
+GET  /v1/api/skills/pending        → 200
+```
+
+`/admin/moderation` thì **được** bảo vệ — cơ chế URL vẫn tốt, chỉ nhánh method-level là chết.
+
+**Còn một nửa nữa của vấn đề, đo ở P2.13b:** `UserRole` bên BE là `enum { USER, ADMIN }` —
+**không có `MODERATOR`**. Ba endpoint skill-verification gác bằng
+`hasAnyRole('ADMIN','MODERATOR')` đang gọi tên một role không ai mang được, nên kể cả khi bật
+method security thì cũng chỉ ADMIN qua được. `UserResponse.role` trong spec cũng chỉ có
+`"USER" | "ADMIN"`, khớp enum.
+
+**Đề nghị, hai phần:**
+
+1. Thêm `@EnableMethodSecurity` vào cấu hình security, rồi chạy lại toàn bộ test có
+   `@PreAuthorize` — cần kiểm cả các domain khác xem có endpoint nào đang ngầm dựa vào việc
+   annotation không chạy hay không.
+2. Quyết định `MODERATOR` là role thật (thêm vào enum + cơ chế gán) hay chỉ là chữ thừa trong
+   annotation. Bật method security mà không xử lý chỗ này thì 3 endpoint kia lặng lẽ thành
+   ADMIN-only, khác với ý định đọc được từ annotation.
+
+**FE đã làm gì trong lúc chờ:** vẫn thiết kế 5 endpoint như thao tác admin/moderator và gác bằng
+role phía client. FE **không** dựng mặt soạn thảo cho mọi người dù đo được 200. Khi BE bật gate,
+FE không phải sửa gì — nhưng gác phía client không phải là bảo mật, chỉ là không làm cho tệ hơn.
+
+## B21 — không có endpoint đọc tiến độ roadmap của chính mình
+
+Ưu tiên **trung bình**. `UserRoadmapProgressRepository.findByUserId` đã có sẵn và **không
+controller nào gọi**. Cộng với `POST /skills/verify` trả `void`, người dùng gửi yêu cầu xác minh
+xong thì **không có cách nào biết kết quả**:
+
+- không render được node là "đã xác minh / đang chờ / bị từ chối";
+- `AUTO_CERTIFIED` trượt kiểm cũng trả **200** và để lại dòng `REJECTED` không đọc lại được;
+- gửi lại ghi đè im lặng dòng cũ (`findByUserIdAndNodeId` → `save`).
+
+**Đề nghị:** `GET /v1/api/skills/me` (hoặc `/v1/api/roadmaps/{id}/progress`) trả các dòng
+`UserRoadmapProgress` của người đang đăng nhập, kèm `status`, `tier`, `verifiedAt`. Repository
+đã có sẵn method nên chi phí gần như chỉ là một controller + DTO.
+
+**FE sẽ không mô phỏng bằng state client** — đó đúng là sai lầm `acceptedInSession` mà dự án
+vừa mất một checkpoint để gỡ ở F-A.

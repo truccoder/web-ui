@@ -3,6 +3,16 @@
 Một file cho mỗi domain: phiên làm việc chỉ đọc file của domain đang làm.
 Quay lại [`fe-migration-ledger.md`](../../fe-migration-ledger.md).
 
+> **ĐÃ GIẢI QUYẾT (2026-07-30, F-D) — hai mục Neo4j ngay dưới đây là LỊCH SỬ, không phải việc
+> phải làm.** BE đã bổ sung bước seed đồ thị, chạy mỗi `docker compose up`. Đo ở F-D: `9001`
+> có **12 bạn** và `GET /friendships/suggestions` trả **10 gợi ý** — trước đây là `[]` vì 4 tình
+> bạn phụ trợ tạo FoF đã mất theo lần reset thứ ba.
+>
+> **ĐỪNG CHẠY LẠI CÔNG THỨC CYPHER BÊN DƯỚI.** Nó ghi đè lên dữ liệu seed và tái lập đúng tình
+> trạng lệch mà nó từng đi sửa. Giữ lại nguyên văn vì hai lý do: nếu seed BE hỏng lần nữa thì
+> đây là cách chẩn đoán, và đoạn về **hướng quan hệ vô hướng** vẫn là mô tả đúng của
+> `FriendshipRepository` — thứ mà bất kỳ ai đọc `countFriends` cũng cần biết.
+
 - **Neo4j rỗng — danh sách bạn bè và gợi ý luôn trả rỗng dù Postgres có dữ liệu**
   (phát hiện 2026-07-25, P2.2c-2). `FriendshipService.getFriends()` và `getSuggestions()`
   đọc từ **Neo4j** (`FriendshipRepository extends Neo4jRepository`, quan hệ
