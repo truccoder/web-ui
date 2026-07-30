@@ -3,6 +3,7 @@
 import { BookOpen, Star } from 'lucide-react';
 import { DeveloperIdentity } from '@/shared/components';
 import { RepScore } from '@/features/reputation';
+import { ArticleBody, CodeSnippetBody, LinkBody, PollBody, QnaBody } from '@/features/posts';
 import { useT } from '@/lib/i18n';
 import { useRelativeTime } from '@/shared/lib/format';
 import { cn } from '@/shared/lib/cn';
@@ -11,11 +12,11 @@ import type { SearchBook, SearchPost } from '../types/search';
 /**
  * One post in the results.
  *
- * WHAT IT CAN SHOW IS DECIDED BY THE PAYLOAD, NOT BY TASTE. `SearchService.toPostDtos` fills in
- * the author, `content`, `eventName`, `visibility`, `createdAt` and `book` — and never the six
- * details blocks — so a quiz, poll or code post shows its text and nothing more. That is a
- * backend gap (`findings/search.md`), not a design decision, and the card is built to the data
- * that exists rather than to placeholders for data that does not.
+ * WHAT IT CAN SHOW IS DECIDED BY THE PAYLOAD, NOT BY TASTE — and the payload got bigger.
+ * `SearchService.toPostDtos` used to fill in the author, `content`, `eventName`, `visibility`,
+ * `createdAt` and `book` and never the six details blocks, so a poll or code post showed its text
+ * and nothing more. It fills them now (measured at F-C), so the block a post is actually built
+ * around renders here too.
  *
  * ALSO NOT A LINK: there is no post-detail route in this app. Search shows what matched; it
  * cannot take you to it. Recorded so the next reader does not assume it was forgotten.
@@ -82,31 +83,6 @@ function BookLine({ book }: { book: SearchBook }) {
   );
 }
 
-/**
- * Makes this endpoint's timestamp interpretable, by saying what timezone it is in.
- *
- * `search/dto/PostDto` declares `createdAt` as a **`LocalDateTime`** — the only `createdAt` in the
- * entire backend that does; every other DTO uses `OffsetDateTime` and puts a `Z` on the wire.
- * Jackson serialises it as `2026-07-27T18:24:54` with no zone, and `new Date(...)` reads a bare
- * timestamp as **local** time. On a UTC+7 machine that turns a post made seconds ago into "7 hours
- * ago" — measured, not theorised: the row was inserted during this checkpoint and rendered as
- * `7 giờ trước`.
- *
- * ASSUMES THE DATABASE STORES UTC, which it does here (`t_posts.created_at` is
- * `timestamptz`, every row `+00`, and `OffsetDateTime.toLocalDateTime()` therefore yields UTC wall
- * clock). That assumption is exactly why this is a workaround and not a fix: the real repair is
- * one word in the backend DTO, requested in `findings/search.md`. When it lands, this function
- * becomes a no-op — the guard already leaves zoned strings untouched — and should be deleted.
- *
- * Kept inside this feature rather than folded into `shared/lib/format.ts`: one endpoint is wrong,
- * and teaching the shared formatter to guess about zones would spread the defect's blast radius
- * to every domain that formats a date correctly today.
- */
-function withAssumedUtc(timestamp: string): string {
-  const hasZone = /(?:Z|[+-]\d{2}:?\d{2})$/.test(timestamp);
-  return hasZone ? timestamp : `${timestamp}Z`;
-}
-
 export function PostResultCard({ post, className }: PostResultCardProps) {
   const t = useT();
   const relativeTime = useRelativeTime();
@@ -124,7 +100,13 @@ export function PostResultCard({ post, className }: PostResultCardProps) {
             <RepScore score={post.authorEliteScore} size="sm" />
           ) : undefined
         }
-        time={post.createdAt ? relativeTime(withAssumedUtc(post.createdAt)) : undefined}
+        // Formatted with no zone-patching of any kind. A `withAssumedUtc` helper used to sit in
+        // this file because `search/dto/PostDto` was the one `createdAt` in the backend typed as
+        // `LocalDateTime`, so it arrived without a `Z` and `new Date()` read it as local time —
+        // a post made seconds ago rendered as "7 giờ trước" on a UTC+7 machine. The DTO is
+        // `OffsetDateTime` now (measured at F-C: `2026-07-28T13:56:14.776669Z`), so the helper
+        // was a date utility in name and a patch for one endpoint in fact, and is gone.
+        time={post.createdAt ? relativeTime(post.createdAt) : undefined}
       />
 
       {/* An event post's title lives in `eventName`, not `content` — for those, `content` is the
@@ -136,6 +118,21 @@ export function PostResultCard({ post, className }: PostResultCardProps) {
       {post.content && (
         <p className="line-clamp-3 text-nx-body-sm text-nx-text-secondary">{post.content}</p>
       )}
+
+      {/* THE DEFINING BLOCK, WHICHEVER ONE IT IS. `PostDto` carries no `postType`, so this cannot
+          switch on the kind the way the feed's `PostBody` does — it renders whichever block came
+          back non-null, and a post has at most one. Components come from `features/posts` through
+          its barrel, which §4 permits and which is the point of having them: the same code snippet
+          renders identically in the feed and here.
+
+          The quiz is deliberately not among them. `QuizTaker` is an interactive surface that
+          submits an attempt, and a search result is a place to recognise a post, not to sit an
+          exam in a 3-line card. */}
+      {post.codeSnippetDetails && <CodeSnippetBody details={post.codeSnippetDetails} />}
+      {post.articleDetails && <ArticleBody details={post.articleDetails} />}
+      {post.qnaDetails && <QnaBody details={post.qnaDetails} />}
+      {post.pollDetails && <PollBody details={post.pollDetails} />}
+      {post.linkDetails && <LinkBody details={post.linkDetails} />}
 
       {post.book && <BookLine book={post.book} />}
     </div>

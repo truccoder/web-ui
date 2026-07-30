@@ -280,9 +280,6 @@ export const vi: Messages = {
       HACKER_NEWS: 'Hacker News',
       DEV_TO: 'DEV Community',
       GITHUB: 'GitHub',
-      REDDIT: 'Reddit',
-      MEDIUM: 'Medium',
-      HBR: 'HBR',
     },
   },
 
@@ -525,6 +522,15 @@ export const vi: Messages = {
         goingCount: '${count} người tham gia',
         full: 'Sự kiện đã đủ người.',
       },
+      attendees: {
+        title: 'Người tham gia',
+        show: 'Xem người tham gia',
+        hide: 'Ẩn người tham gia',
+        all: 'Tất cả',
+        empty: 'Chưa có ai phản hồi',
+        loadFailed: 'Không tải được danh sách người tham gia',
+        unknownPerson: 'Người dùng đã xoá',
+      },
       calendar: {
         download: 'Tải file .ics',
         add: 'Thêm vào Google Calendar',
@@ -613,8 +619,6 @@ export const vi: Messages = {
       error: 'Không tạo được giải thích',
       profileRequired:
         'Cần có hồ sơ nghề nghiệp trước khi dùng AI giải thích — điền hồ sơ ở trên rồi thử lại.',
-      linksNotSaved:
-        'Lưu ý: các liên kết tham khảo bên trên KHÔNG được lưu lại — backend chưa có chỗ chứa chúng.',
       complexity: 'Độ khó ${score}/10',
       version: 'Bản ${version}',
       concepts: 'Khái niệm',

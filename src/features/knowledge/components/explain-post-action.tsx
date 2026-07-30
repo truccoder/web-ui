@@ -104,6 +104,13 @@ export function ExplainPostAction({ postId, postContent }: ExplainPostActionProp
                   concepts: explanation.concepts ?? undefined,
                   prerequisites: explanation.prerequisites ?? undefined,
                   complexityScore: explanation.complexityScore ?? undefined,
+                  // Nulls are stripped rather than passed through: the feature type widens
+                  // every `ExternalLink` field to `| null` (Jackson sends the key regardless),
+                  // but the request DTO wants the field absent when there is no value.
+                  externalLinks: explanation.externalLinks?.map((link) => ({
+                    title: link.title ?? undefined,
+                    url: link.url ?? undefined,
+                  })),
                 })
               }
             >
@@ -113,13 +120,11 @@ export function ExplainPostAction({ postId, postContent }: ExplainPostActionProp
         }
       />
 
-      {/* Said plainly because the loss is silent otherwise: the save DTO has no field for
-          `externalLinks` and the entity has no column, so the links on screen do not survive.
-          Only shown when there is actually something to lose. */}
-      {(explanation.externalLinks?.length ?? 0) > 0 && !save.isSuccess && (
-        <p className="text-nx-caption text-nx-text-muted">{t('knowledge.explain.linksNotSaved')}</p>
-      )}
-
+      {/* A warning used to sit here saying the further-reading links would be dropped on save,
+          because `SaveExplanationRequestDto` had no field for them. It has one now (verified in
+          the spec at F-B), so the warning would be a lie about a limit that no longer exists —
+          and a stale warning is worse than none: it teaches the reader to distrust a save that
+          actually works. */}
       {save.isError && (
         <p className="text-nx-caption text-nx-status-danger-fg">
           {getErrorMessage(save.error, t('knowledge.explain.saveError'))}

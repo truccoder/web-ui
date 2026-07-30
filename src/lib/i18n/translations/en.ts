@@ -277,9 +277,6 @@ export const en = {
       HACKER_NEWS: 'Hacker News',
       DEV_TO: 'DEV Community',
       GITHUB: 'GitHub',
-      REDDIT: 'Reddit',
-      MEDIUM: 'Medium',
-      HBR: 'HBR',
     },
   },
 
@@ -527,6 +524,15 @@ export const en = {
         goingCount: '${count} going',
         full: 'This event is full.',
       },
+      attendees: {
+        title: 'Attendees',
+        show: 'See who responded',
+        hide: 'Hide attendees',
+        all: 'Everyone',
+        empty: 'Nobody has responded yet',
+        loadFailed: 'Could not load the attendee list',
+        unknownPerson: 'Deleted user',
+      },
       calendar: {
         download: 'Download .ics',
         add: 'Add to Google Calendar',
@@ -616,8 +622,6 @@ export const en = {
       error: 'Could not generate an explanation',
       profileRequired:
         'You need a professional profile before using AI explanations — fill in the form above and try again.',
-      linksNotSaved:
-        'Note: the further-reading links above are NOT kept — the backend has nowhere to store them.',
       complexity: 'Complexity ${score}/10',
       version: 'Version ${version}',
       concepts: 'Concepts',

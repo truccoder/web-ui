@@ -60,10 +60,13 @@ export type FeedPost = {
 /**
  * The book attached to a `BOOK` post, as the feed summarises it.
  *
- * Left exactly as generated — every field genuinely can be absent, and the one that matters
- * most is a known backend defect rather than a modelling choice: `coverImageUrl` holds a
- * presigned URL with a 24-hour expiry that was written into `t_books` and is echoed for ever,
- * so book covers die after a day. See `findings/posts.md`.
+ * Left exactly as generated — every field genuinely can be absent.
+ *
+ * `coverImageUrl` used to carry a warning here: the write path stored a 24-hour presigned URL
+ * into `t_books` and the feed echoed that same string for ever, so covers went dead a day after
+ * upload. The backend presigns at read time now — measured at F-C on a book posted two days
+ * earlier, whose URL came back stamped `X-Amz-Date` with the current day — so the cover is an
+ * ordinary short-lived URL like the download and preview ones.
  */
 export type FeedBookSummary = Schemas['FeedBookSummaryDto'];
 

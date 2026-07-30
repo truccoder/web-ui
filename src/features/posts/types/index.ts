@@ -11,6 +11,7 @@ export type {
   LinkDetails,
   QuizQuestion,
   QuizDetails,
+  PublicQuizDetails,
   CreateBookRequest,
   CreatePostRequest,
   UpdatePostRequest,

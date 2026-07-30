@@ -32,8 +32,26 @@ export const postKeys = {
    * same id.
    */
 
-  /** Every RSVP row for one event, whatever the status. */
-  attendees: (postId: number) => ['posts', postId, 'attendees'] as const,
+  /**
+   * RSVP rows for one event. `status` narrows to one answer; omitted means all of them.
+   *
+   * The status sits IN the key rather than being filtered client-side, because the backend
+   * filters it (`?status=`) and two different filters are two different server responses. A
+   * shared key would make the last filter fetched overwrite the cache for every other one.
+   * `undefined` is a distinct key from any status, which is what makes "all" cacheable too.
+   */
+  attendees: (postId: number, status?: string) => ['posts', postId, 'attendees', status] as const,
+  /**
+   * Prefix covering every attendee query for one event, whatever the filter — what an RSVP has
+   * to invalidate.
+   *
+   * Needed the moment `status` joined the key. React Query matches invalidations by prefix, so
+   * `attendees(postId)` is `[..., 'attendees', undefined]`, which does NOT match
+   * `[..., 'attendees', 'GOING']` — invalidating with it would silently leave every filtered
+   * list stale while appearing to work on the unfiltered one. This also sweeps
+   * `attendeeCount`, which sits under the same prefix and is equally invalid after an RSVP.
+   */
+  attendeesAll: (postId: number) => ['posts', postId, 'attendees'] as const,
   /**
    * The GOING count. A key of its own rather than something derived from `attendees`,
    * because it is a separate endpoint answering a narrower question — and it is the number

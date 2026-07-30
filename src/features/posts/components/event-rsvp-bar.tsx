@@ -1,12 +1,15 @@
 'use client';
 
+import { useState } from 'react';
 import { Check, HelpCircle, X } from 'lucide-react';
+import { Button } from '@/shared/components';
 import { useT } from '@/lib/i18n';
 import { useMyProfile } from '@/features/security';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { cn } from '@/shared/lib/cn';
 import { findMyRsvp, useAttendeeCount, useAttendees, useRsvp } from '../hooks/use-event';
 import type { RsvpStatus } from '../types/event';
+import { EventAttendeeList } from './event-attendee-list';
 
 /**
  * RSVP controls for an event — fills `EventBody`'s `actions` slot.
@@ -18,11 +21,15 @@ import type { RsvpStatus } from '../types/event';
  * rather than a toggle-off, and the three states a user can be in are "not answered yet",
  * "answered", and nothing else.
  *
- * WHO IS COMING CANNOT BE SHOWN, only how many. `GET /events/{postId}/attendees` returns the
- * JPA entity — `userId` and no name or picture — and no endpoint resolves an id to a person
- * (the backend exposes `/profile/me` alone). An avatar row here would have to invent people.
- * The attendee list is still fetched, because it is the only way to learn what *this* user
- * answered: there is no `/rsvp/me` to match reactions' `/reactions/me`.
+ * WHO IS COMING CAN BE SHOWN NOW, BEHIND A TOGGLE. This block used to say the opposite, and
+ * accurately: the endpoint returned the JPA entity, `userId` with no name or picture, so an
+ * avatar row would have had to invent people. `EventAttendeeDto` carries `fullName` and
+ * `profilePictureUrl` today, so the names go in `EventAttendeeList` — opened from here rather
+ * than rendered inline, because each filter is a request and a feed of event cards that all
+ * listed their attendees on mount is the N-requests problem the hook already guards against.
+ *
+ * The unfiltered attendee query is fetched regardless, because it is still the only way to
+ * learn what *this* user answered: there is no `/rsvp/me` to match reactions' `/reactions/me`.
  *
  * THE COUNT IS REAL, unlike the post card's like/comment counts. It comes from
  * `/attendees/count`, which the backend computes on demand from the rows, not from a cached
@@ -66,6 +73,8 @@ export function EventRsvpBar({ postId, maxAttendees, onChanged, className }: Eve
   const attendees = useAttendees(postId);
   const count = useAttendeeCount(postId);
   const rsvp = useRsvp({ onSuccess: () => onChanged?.() });
+
+  const [listOpen, setListOpen] = useState(false);
 
   // Derived, not fetched: there is no endpoint for "what did I answer".
   const mine = findMyRsvp(attendees.data, profile.data?.id);
@@ -146,7 +155,20 @@ export function EventRsvpBar({ postId, maxAttendees, onChanged, className }: Eve
             {t('post.event.rsvp.goingCount', { count: goingCount })}
           </span>
         )}
+
+        <Button
+          size="sm"
+          variant="ghost"
+          aria-expanded={listOpen}
+          onClick={() => setListOpen((open) => !open)}
+        >
+          {listOpen ? t('post.event.attendees.hide') : t('post.event.attendees.show')}
+        </Button>
       </div>
+
+      {/* Mounted only when open, for the same reason `CommentThread` is: the list fetches on
+          mount, and one request per event card on page load is a cost nobody asked for. */}
+      {listOpen && <EventAttendeeList postId={postId} />}
 
       {isFull && <p className="text-nx-micro text-nx-text-muted">{t('post.event.rsvp.full')}</p>}
 

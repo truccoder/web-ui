@@ -29,13 +29,14 @@ export interface QnaBodyProps {
 export function QnaBody({ details, className }: QnaBodyProps) {
   const t = useT();
 
-  // `acceptedAnswerId` is the real signal, and `isResolved` alone would be wrong.
-  // `PostService.acceptAnswer` sets ONLY `acceptedAnswerId` — it never flips `isResolved`
-  // (verified against the stored row: `{"isResolved": false, "acceptedAnswerId": 61}` right
-  // after accepting). Since `PostComposer` always creates QNA posts with `isResolved: false`
-  // and nothing else ever writes it, trusting that field alone would label every answered
-  // question "unanswered" forever.
-  const resolved = details.isResolved === true || details.acceptedAnswerId != null;
+  // `isResolved` is the signal, on its own. It used to be read together with
+  // `acceptedAnswerId != null`, because `PostService.acceptAnswer` set only the id and never
+  // flipped the flag, so a question with an accepted answer still read "unanswered". The
+  // backend maintains the flag now — measured at F-C by round-tripping post 91: accept gives
+  // `{"isResolved":true,"acceptedAnswerId":21}` and the undo puts both back — so the second
+  // clause could no longer change the outcome, and a redundant condition invites the next
+  // reader to wonder which of the two is authoritative.
+  const resolved = details.isResolved === true;
 
   return (
     <div className={cn('flex', className)}>

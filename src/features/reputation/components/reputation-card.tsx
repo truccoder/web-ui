@@ -11,10 +11,15 @@ import { RepScore } from './rep-score';
  * The profile-hero reputation surface: Elite Score chip, progress toward the next level,
  * and the Verified Expert marker.
  *
- * The progress bar runs 0 → `nextLevelMin` rather than "current level floor → next".
- * Drawing it from the floor would need the level table, and CLAUDE.md §1 keeps that in the
- * backend enum + the DS only; the response carries no floor. `nextLevelMin` being absent is
- * the backend's "already at the top level" signal, not a zero.
+ * THE PROGRESS BAR NOW RUNS `currentLevelMin` → `nextLevelMin`, the band the user is actually
+ * in. It used to run 0 → `nextLevelMin`, because the response carried no floor and CLAUDE.md §1
+ * forbids writing the level table a third time on the frontend — so the only honest bar was one
+ * measured from zero, which made a user just past a threshold look nearly finished. The backend
+ * sends `currentLevelMin` now, so the floor comes off the response like everything else and the
+ * three-way sync is untouched.
+ *
+ * `nextLevelMin` being absent is still the backend's "already at the top level" signal, not a
+ * zero.
  *
  * Amber everywhere here is deliberate and in-bounds: this component *is* reputation
  * (constitution §1.3).
@@ -61,10 +66,20 @@ export function ReputationCard({ userId }: ReputationCardProps) {
     );
   }
 
-  const { eliteScore, levelName, nextLevelMin, verifiedExpert } = data;
+  const { eliteScore, levelName, currentLevelMin, nextLevelMin, verifiedExpert } = data;
   const isTopLevel = nextLevelMin === undefined || nextLevelMin === null;
   const remaining = isTopLevel ? 0 : Math.max(0, nextLevelMin - eliteScore);
-  const progress = isTopLevel ? 100 : Math.min(100, (eliteScore / nextLevelMin) * 100);
+
+  // The band, not the distance from zero. `NEWCOMER` has a floor of 0, so the first level is
+  // unchanged; every level above it now fills from its own threshold. The `<= floor` guard is
+  // for the one case arithmetic cannot survive — a malformed pair where the two thresholds meet
+  // would divide by zero — rather than for anything the enum can currently produce.
+  const floor = currentLevelMin ?? 0;
+  const progress = isTopLevel
+    ? 100
+    : nextLevelMin <= floor
+      ? 100
+      : Math.min(100, Math.max(0, ((eliteScore - floor) / (nextLevelMin - floor)) * 100));
 
   return (
     <ReputationCardShell>

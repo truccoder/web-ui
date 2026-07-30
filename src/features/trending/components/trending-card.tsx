@@ -15,9 +15,11 @@ import type { TrendingItem } from '../types/trending';
  * stated plainly — `target="_blank"` with the outward arrow — instead of a card that looks
  * navigable in-app and is not.
  *
- * NO TAGS ROW. The DTO carries `tags`, but nothing ever writes them (see `types/trending.ts`), so
- * the field is not in this feature's type and there is nothing here to render. The legacy card had
- * a conditional tags row that could not appear on any of the 110 rows in the table.
+ * THE TAGS ROW IS CONDITIONAL, AND STAYS CONDITIONAL. `tags` was excluded from this feature's
+ * type until F-B because the crawl scheduler never wrote it; it does now, but only 97 of 310 rows
+ * carry any (census in `types/trending.ts`). So the row renders when there is something in it and
+ * is absent otherwise — an empty tag strip on two cards out of three would read as a loading state
+ * that never resolves.
  */
 export interface TrendingCardProps {
   item: TrendingItem;
@@ -76,6 +78,19 @@ export function TrendingCard({ item, className }: TrendingCardProps) {
         <p className="line-clamp-3 text-nx-body-sm leading-relaxed text-nx-text-secondary">
           {item.summary}
         </p>
+      )}
+
+      {/* Gemini's own words, not a controlled vocabulary — there is no tag filter to link these
+          to, and inventing one would promise a query the backend cannot answer. So they are
+          labels, not controls. */}
+      {item.tags && item.tags.length > 0 && (
+        <ul className="flex flex-wrap gap-1">
+          {item.tags.map((tag) => (
+            <li key={tag}>
+              <Badge variant="neutral">{tag}</Badge>
+            </li>
+          ))}
+        </ul>
       )}
 
       <div className="mt-1 flex items-center gap-1.5 border-t border-nx-border-subtle pt-2.5 text-nx-caption text-nx-text-muted">

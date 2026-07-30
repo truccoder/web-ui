@@ -6,18 +6,21 @@ import { useT } from '@/lib/i18n';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { cn } from '@/shared/lib/cn';
 import { useSubmitQuiz } from '../hooks/use-quiz';
-import type { QuizDetails } from '../types/post';
+import type { PublicQuizDetails } from '../types/post';
 
 /**
  * The reader's side of a quiz attached to a post.
  *
- * THE ANSWER KEY IS ALREADY PUBLIC, so this component does not pretend otherwise. Two
- * separate leaks, both backend design:
- *  1. `QuizQuestion.correctOptionIndex` ships inside the post payload the feed returns —
- *     the answers are readable in devtools **before** anyone answers anything.
- *  2. `QuizResultResponseDto.correctAnswers` returns them again on submit.
- * Nothing the frontend does can close either. What it can avoid is *pretending* to: this
- * renders a plain quiz, and it does not claim scores are meaningful.
+ * THE ANSWER KEY IS NO LONGER LEAKED, and this file used to say the opposite at length. The
+ * old note recorded two leaks: `QuizQuestion.correctOptionIndex` riding along inside the post
+ * payload, so the answers were readable in devtools before anyone answered anything, and
+ * `QuizResultResponseDto.correctAnswers` returning them on submit. The first is closed — the
+ * read side now receives `PublicQuizDetailsDto`, which carries `question` and `options` only
+ * (verified in the spec at F-B). The second is not a leak at all: answers *should* come back
+ * with a grade, which is exactly when they arrive.
+ *
+ * So the grading marks below are the only place answers appear, and they are honest now rather
+ * than a polite fiction over a payload that had already given the game away.
  *
  * THE RESULT ONLY EXISTS IN THIS COMPONENT'S MEMORY. There is no endpoint to read a past
  * attempt back, so navigating away or reloading loses it for good. That is why the result
@@ -25,7 +28,7 @@ import type { QuizDetails } from '../types/post';
  */
 export interface QuizTakerProps {
   postId: number;
-  quiz: QuizDetails;
+  quiz: PublicQuizDetails;
   className?: string;
 }
 
@@ -74,10 +77,9 @@ export function QuizTaker({ postId, quiz, className }: QuizTakerProps) {
               </p>
 
               {(question.options ?? []).map((option, optionIndex) => {
-                // After grading, mark the key and the user's wrong pick. Before grading
-                // nothing is marked — the component knows the answers but does not show
-                // them, because showing them would make the exercise pointless even though
-                // a determined reader could find them in the payload.
+                // After grading, mark the key and the user's wrong pick. Before grading there
+                // is nothing to mark and nothing to withhold: `correctAnswers` arrives with the
+                // grade, and the questions themselves no longer carry it.
                 const isCorrect = result !== undefined && correctIndex === optionIndex;
                 const isWrongPick =
                   result !== undefined && chosen === optionIndex && correctIndex !== optionIndex;
@@ -101,10 +103,15 @@ export function QuizTaker({ postId, quiz, className }: QuizTakerProps) {
                 );
               })}
 
-              {/* `explanation` is optional and the backend never validates it, so most
-                  questions will not have one. Shown only after grading. */}
-              {result && question.explanation?.trim() && (
-                <p className="text-nx-caption text-nx-text-secondary">{question.explanation}</p>
+              {/* The per-question explanation comes back with the GRADE, not with the question:
+                  `PublicQuizQuestionDto` has no `explanation` field at all, so the old read off
+                  `question.explanation` could never fire. `QuizResultResponseDto.explanations`
+                  is positional, like `correctAnswers`. Still optional — the author is not made
+                  to write one. */}
+              {result?.explanations?.[questionIndex]?.trim() && (
+                <p className="text-nx-caption text-nx-text-secondary">
+                  {result.explanations[questionIndex]}
+                </p>
               )}
             </li>
           );

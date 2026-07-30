@@ -162,9 +162,9 @@ export function FeedPost({ post, onChanged }: FeedPostProps) {
   const isAuthor = profile?.id === post.authorId;
 
   // Accept-answer is offered only to the author of a QNA post: `PostService.acceptAnswer`
-  // throws for anyone else, and choosing an answer is one-way — there is no endpoint to
-  // change or clear it, so `CommentThread` withdraws the control from the whole thread once
-  // `acceptedAnswerId` is set.
+  // throws for anyone else. It is no longer one-way — `DELETE /qna/accept-answer` exists — so
+  // this same flag now gates both directions, and `CommentThread` decides which of the two it
+  // is offering from `acceptedAnswerId`.
   const canAcceptAnswer = isAuthor && post.postType === 'QNA';
 
   // `googlePlaceId`/`locationType`/`locationDetails` travel together on the resolve response

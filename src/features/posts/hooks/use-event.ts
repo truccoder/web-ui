@@ -25,21 +25,27 @@ import type { PostMutationOptions } from './use-post';
  */
 
 /**
- * GET /v1/api/events/{postId}/attendees — every RSVP row, whatever the status.
+ * GET /v1/api/events/{postId}/attendees[?status=…] — RSVP rows for one event.
  *
- * `undefined` disables it. Necessary rather than tidy: this is one request per event, with
- * no batch variant, so a feed of event cards that all fetched their attendees on mount would
- * be N requests before the reader has asked for anything.
+ * `undefined` for `postId` disables it. Necessary rather than tidy: this is one request per
+ * event, with no batch variant, so a feed of event cards that all fetched their attendees on
+ * mount would be N requests before the reader has asked for anything.
  *
- * The rows carry `userId` and no name or picture (the endpoint returns the JPA entity), and
- * no endpoint resolves an id to a person. A consumer can therefore count these, and find the
- * viewer among them, but cannot list who is coming.
+ * THE ROWS NAME PEOPLE NOW. They used to be the JPA entity — `userId` and nothing else — so a
+ * consumer could count them and find the viewer among them but could not say who was coming.
+ * `EventAttendeeDto` joins in `fullName` and `profilePictureUrl`, which is what makes
+ * `EventAttendeeList` possible; that limitation, and the note about it that lived here, are
+ * gone. It remains true that no endpoint turns a `userId` into a profile page (`/profile/me`
+ * is the only profile route), so the rows are people, not links.
+ *
+ * `status` is passed to the server rather than applied to the result, so each filter is its own
+ * cache entry — see `postKeys.attendees`.
  */
-export function useAttendees(postId: number | undefined) {
+export function useAttendees(postId: number | undefined, status?: RsvpStatus) {
   return useQuery({
     // Non-null assertion is safe: `enabled` gates the fn and the key is only built with an id.
-    queryKey: postKeys.attendees(postId!),
-    queryFn: () => eventsApi.getAttendees(postId!),
+    queryKey: postKeys.attendees(postId!, status),
+    queryFn: () => eventsApi.getAttendees(postId!, status),
     enabled: postId !== undefined,
   });
 }
@@ -84,8 +90,8 @@ export function useRsvp(options?: PostMutationOptions<RsvpVariables>) {
     mutationFn: ({ postId, status }: RsvpVariables) => eventsApi.rsvp(postId, status),
     ...options,
     onSuccess: (data, variables, ...rest) => {
-      queryClient.invalidateQueries({ queryKey: postKeys.attendees(variables.postId) });
-      queryClient.invalidateQueries({ queryKey: postKeys.attendeeCount(variables.postId) });
+      // One prefix covers every status filter AND the count — see `postKeys.attendeesAll`.
+      queryClient.invalidateQueries({ queryKey: postKeys.attendeesAll(variables.postId) });
       options?.onSuccess?.(data, variables, ...rest);
     },
   });

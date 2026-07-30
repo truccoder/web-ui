@@ -161,6 +161,12 @@ export type SavedExplanations = {
  * `postId`, `originalContent` and `explanationContent` are all `@NotNull`. Saving is a separate
  * call from generating on purpose — an explanation is shown first and kept only if the user asks,
  * so nothing reaches the library by accident.
+ *
+ * `externalLinks` ADDED AT F-B, and it is the field this type existed without for a reason that
+ * has expired: the request DTO had no place for the further-reading links, so the UI carried a
+ * warning that saving would drop them. The DTO has the field now, so the links are sent — the
+ * warning came down and this went up in the same change, because removing the notice without
+ * sending the data would have turned a disclosed limitation into a silent one.
  */
 export type SaveExplanationInput = {
   postId: NonNullable<Schemas['SaveExplanationRequestDto']['postId']>;
@@ -169,4 +175,5 @@ export type SaveExplanationInput = {
   concepts?: string[];
   prerequisites?: string[];
   complexityScore?: number;
+  externalLinks?: Schemas['ExternalLink'][];
 };

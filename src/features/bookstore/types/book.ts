@@ -62,12 +62,14 @@ export type BookFileFormat = NonNullable<Schemas['BookResponseDto']['fileFormat'
  *
  * ---
  *
- * `coverImageUrl` is the odd one out: unlike the other two URLs it is echoed RAW from the
- * `t_books.cover_image_url` column rather than presigned at read time. The backend's write path
- * stores a 24-hour presigned URL into that column, so covers die after a day
- * (`be-requests.md` B4). A probe row containing a bare object key came back as that same bare key,
- * which means this side genuinely cannot tell a key from a URL. Consumers must carry an image
- * `onError` fallback; do not try to repair it by prefixing a base URL here.
+ * `coverImageUrl` is presigned at read time like the other two, as of the backend fix for B4.
+ * It used to be echoed RAW from `t_books.cover_image_url`, a column the write path filled with a
+ * 24-hour presigned URL, so covers died after a day. Verified at F-C: a book posted two days
+ * before came back with an `X-Amz-Date` of the current day.
+ *
+ * Consumers should still carry an image `onError` fallback — a presigned URL can expire in a
+ * long-lived tab, and an object can go missing from storage — but they are no longer working
+ * around a defect. Do not try to repair a failing URL by prefixing a base URL here.
  */
 export type Book = {
   [K in keyof Required<Schemas['BookResponseDto']>]: Required<Schemas['BookResponseDto']>[K] | null;

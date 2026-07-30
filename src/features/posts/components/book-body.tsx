@@ -21,13 +21,14 @@ import { formatCurrency, useIntlLocale } from '@/shared/lib/format';
  * shorter than the 7-day feed cache, and scoped to the viewer's purchase status. They must
  * be fetched fresh, per viewer, right before use.
  *
- * BACKEND BUG, worked around not fixed: `coverImageUrl` has exactly the same problem and
- * was missed. `BookStorageService.uploadCover` returns a presigned URL with
- * `URL_EXPIRY_HOURS = 24` and that string is **persisted into `t_books` and echoed by the
- * feed forever** — so every book cover stops loading a day after upload. Nothing the
- * frontend can repair; the `onError` fallback below at least degrades to a clean placeholder
- * instead of a broken-image glyph. The real fix is backend-side: store the object key and
- * presign at read time, as the download path already does.
+ * `coverImageUrl` used to be the exception, and this block used to describe it as a live bug:
+ * the upload path persisted its 24-hour presigned URL into `t_books` and the feed echoed that
+ * dead string for ever, so every cover stopped loading a day after upload. The backend presigns
+ * it at read time now (verified at F-C), which is what the download path always did.
+ *
+ * The `onError` fallback below stays. It is no longer covering for that defect — it is covering
+ * for the ordinary cases a short-lived URL still has: a tab left open past the expiry, or an
+ * object missing from storage. Degrading to a clean placeholder beats a broken-image glyph.
  */
 export interface BookBodySummary {
   bookId?: number;

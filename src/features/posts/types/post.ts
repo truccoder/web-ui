@@ -36,6 +36,23 @@ export type LinkDetails = Schemas['LinkDetails'];
 export type QuizQuestion = Schemas['QuizQuestion'];
 export type QuizDetails = Schemas['QuizDetails'];
 
+/**
+ * The quiz as a READER receives it — no answer key.
+ *
+ * TWO DIFFERENT DTOs, AND CONFLATING THEM IS WHAT WENT WRONG. `QuizDetails`/`QuizQuestion` are
+ * the author's shape: they carry `correctOptionIndex` and `explanation`, and travel on
+ * `CreatePostRequestDto`/`UpdatePostRequestDto`. What comes *back* on `FeedPostDataDto` and
+ * `PostDto` is `PublicQuizDetailsDto`, which has `question` and `options` and nothing else —
+ * the backend stopped shipping the answer key with the questions.
+ *
+ * `QuizTaker` was typed against the author's shape and compiled anyway, because every field in
+ * a generated DTO is optional, so the extra keys read as merely-absent rather than as wrong.
+ * That silence is the whole reason this alias exists: the reader side now names the DTO it is
+ * actually handed, and a future edit that reaches for `correctOptionIndex` fails to compile
+ * instead of quietly rendering nothing.
+ */
+export type PublicQuizDetails = Schemas['PublicQuizDetailsDto'];
+
 /** Book metadata for `createBookPost`. `title` is the one field the spec marks required. */
 export type CreateBookRequest = Schemas['CreateBookRequestDto'];
 
