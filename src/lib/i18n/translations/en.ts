@@ -20,39 +20,12 @@ export const en = {
 
   admin: {
     title: 'Moderation Admin',
+    // Only `title` survives here: the rest of this block belonged to the legacy moderation
+    // components, deleted at P2.15cd. The screen's own copy now lives under `moderation.*`,
+    // owned by the feature that renders it. This one key stays because the `(admin)` layout —
+    // shell, not feature — uses it to label the nav link.
     moderation: {
       title: 'Moderation',
-      subtitle: 'Review posts, inspect the moderation history, and manage banned users',
-      tabs: {
-        posts: 'Posts',
-        logs: 'Logs',
-        banned: 'Banned Users',
-      },
-      filterPostId: 'Post ID',
-      filterUserId: 'User ID',
-      filterStatus: 'Status',
-      allStatuses: 'All statuses',
-      pageOf: 'Page ${page} / ${totalPages}',
-      retry: 'Try again',
-      error: 'Failed to load. Please try again.',
-      empty: {
-        title: 'No posts found',
-        desc: 'Try adjusting the filters above.',
-      },
-      noLogs: 'No moderation logs found',
-      noBannedUsers: 'No banned users found',
-      viewHistory: 'History (${count})',
-      noHistory: 'No moderation history yet',
-      toxicity: 'Toxicity',
-      imageSafeScore: 'Image unsafe score',
-      feedbackPlaceholder: 'Optional feedback for the author...',
-      defaultFeedback: 'Gemini free tier out of quota',
-      approve: 'Approve',
-      reject: 'Reject',
-      banned: 'Banned · ${remaining} left',
-      notBanned: 'Not banned',
-      banCount: 'Ban count: ${count}',
-      triggeringPosts: 'Triggering posts',
     },
   },
 
@@ -242,6 +215,73 @@ export const en = {
     free: 'Free',
     price: '${price} ₫',
     priceUnknown: 'Price unavailable',
+  },
+
+  moderation: {
+    title: 'Moderation',
+    subtitle: 'Review reported posts, audit the decision log, and see who has been banned',
+    loadFailed: 'Could not load',
+    pageOf: 'Page ${page} / ${totalPages}',
+    tabs: {
+      posts: 'Queue',
+      logs: 'Decision log',
+      banned: 'Banned users',
+    },
+    filters: {
+      postId: 'Post ID',
+      userId: 'User ID',
+      status: 'Status',
+      anyStatus: 'Any status',
+    },
+    status: {
+      PENDING_MODERATION: 'Awaiting the classifier',
+      APPROVED: 'Approved',
+      PENDING_REVIEW: 'Needs a decision',
+      REJECTED: 'Rejected',
+    },
+    // All nine members of the backend `ViolationType` enum, in its own order. Written out rather
+    // than derived: a union has no runtime value to map over, and a missing key here renders the
+    // raw enum name to a moderator rather than failing at compile time.
+    violation: {
+      HATE_SPEECH: 'Hate speech',
+      NSFW: 'NSFW',
+      SPAM: 'Spam',
+      VIOLENCE: 'Violence',
+      THREAT: 'Threat',
+      INSULT: 'Insult',
+      SEXUALLY_EXPLICIT: 'Sexually explicit',
+      KEYWORD_BLACKLIST: 'Blacklisted keyword',
+      DUPLICATE_CONTENT: 'Duplicate content',
+    },
+    log: {
+      toxicity: 'Text toxicity',
+      imageUnsafe: 'Image unsafe score',
+      empty: 'No log entries match these filters',
+    },
+    post: {
+      empty: 'Nothing to review',
+      emptyDesc: 'Try clearing the filters, or pick a different status.',
+      history: 'History (${count})',
+      noHistory: 'No history for this post yet',
+      feedback: 'Reason',
+      // Says what the field is FOR, because the backend files every rejection as HATE_SPEECH
+      // regardless (B22) — this text is the only record of what actually happened.
+      feedbackHint:
+        'Stored on the author’s violation record. It is the only place the real reason is kept.',
+      approve: 'Approve',
+      reject: 'Reject',
+      rejectConfirm: 'Yes, reject',
+      cancel: 'Cancel',
+      rejectWarning:
+        'Rejecting records a violation against the author. Two violations ban them for 7 days, and a ban blocks sign-in.',
+    },
+    banned: {
+      empty: 'Nobody has been banned',
+      active: 'Banned · ${remaining} left',
+      expired: 'Ban expired',
+      count: 'Banned ${count} time(s)',
+      triggeringPosts: 'Triggered by:',
+    },
   },
 
   roadmap: {

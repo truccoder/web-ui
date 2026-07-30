@@ -24,6 +24,17 @@
 export { moderationApi } from './api';
 
 export {
+  ModerationFilters,
+  type ModerationFiltersProps,
+  ModerationPostsTab,
+  type ModerationPostsTabProps,
+  ModerationLogsTab,
+  type ModerationLogsTabProps,
+  BannedUsersTab,
+  type BannedUsersTabProps,
+} from './components';
+
+export {
   moderationKeys,
   useModerationPosts,
   useModerationLogs,
