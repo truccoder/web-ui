@@ -1,0 +1,47 @@
+import { Badge } from '@/shared/components';
+import { useT } from '@/lib/i18n';
+import { cn } from '@/shared/lib/cn';
+import type { QnaDetails } from '../types/post';
+
+/**
+ * Read side of a `QNA` post — fills `PostCard`'s `body` slot.
+ *
+ * This block is one status pill, and that is the whole honest surface:
+ *
+ *  - `bountyPoints` is NOT rendered (ds-deviations #12). Nothing in the backend reads it —
+ *    `acceptAnswer` awards a FIXED amount through `RepSourceType.ACCEPTED_ANSWER`, does not
+ *    deduct from the asker, and does not scale by bounty. Showing "500 points offered"
+ *    would advertise a payout the system never makes.
+ *  - `acceptedAnswerId` is not rendered here either. It identifies a comment, so the place
+ *    that can act on it is the thread (c-4, which also owns the accept control). Marking
+ *    the answer here would need the comment list this card does not fetch.
+ *
+ * Note for c-4: a QNA post whose `qnaDetails` is null can NEVER accept an answer —
+ * `acceptAnswer` throws when the block is missing — and the only repair path is
+ * `updatePost`, which blanks every field it is not sent. `PostComposer` already always
+ * sends `qnaDetails`, so this is about older rows.
+ */
+export interface QnaBodyProps {
+  details: QnaDetails;
+  className?: string;
+}
+
+export function QnaBody({ details, className }: QnaBodyProps) {
+  const t = useT();
+
+  // `acceptedAnswerId` is the real signal, and `isResolved` alone would be wrong.
+  // `PostService.acceptAnswer` sets ONLY `acceptedAnswerId` — it never flips `isResolved`
+  // (verified against the stored row: `{"isResolved": false, "acceptedAnswerId": 61}` right
+  // after accepting). Since `PostComposer` always creates QNA posts with `isResolved: false`
+  // and nothing else ever writes it, trusting that field alone would label every answered
+  // question "unanswered" forever.
+  const resolved = details.isResolved === true || details.acceptedAnswerId != null;
+
+  return (
+    <div className={cn('flex', className)}>
+      <Badge dot variant={resolved ? 'success' : 'neutral'}>
+        {resolved ? t('post.body.qnaResolved') : t('post.body.qnaUnresolved')}
+      </Badge>
+    </div>
+  );
+}
