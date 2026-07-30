@@ -30,6 +30,7 @@ export const en = {
   },
 
   nav: {
+    github: 'GitHub',
     roadmap: 'Roadmaps',
     knowledge: 'Knowledge',
     newsfeed: 'Newsfeed',
@@ -215,6 +216,33 @@ export const en = {
     free: 'Free',
     price: '${price} ₫',
     priceUnknown: 'Price unavailable',
+  },
+
+  github: {
+    title: 'GitHub',
+    subtitle: 'Your linked GitHub account, as this app last saw it.',
+    loadFailed: 'Could not load GitHub stats',
+    notLinked: {
+      title: 'No GitHub account linked',
+      // States the limitation instead of offering a button that cannot work — see the note in
+      // `github-stats-card.tsx` and B23.
+      desc: 'Linking is not available yet: the sign-in and linking flows currently share one callback, so the authorisation never reaches the linking step.',
+    },
+    sync: 'Sync now',
+    // Never "synced": the endpoint answers 200 whether or not GitHub replied.
+    syncRateLimited: 'Already synced recently. GitHub data can be refreshed once an hour.',
+    unlink: 'Unlink',
+    repos: '${count} public repos',
+    followers: '${count} followers',
+    lastSynced: 'Synced ${when}',
+    neverSynced: 'Never synced',
+    pinned: {
+      title: 'Pinned repositories',
+    },
+    graph: {
+      total: '${count} contributions in the last year',
+      day: '${count} contributions on ${date}',
+    },
   },
 
   moderation: {

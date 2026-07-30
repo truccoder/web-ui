@@ -28,6 +28,7 @@ export const vi: Messages = {
   },
 
   nav: {
+    github: 'GitHub',
     roadmap: 'Lộ trình',
     knowledge: 'Kiến thức',
     newsfeed: 'Bảng tin',
@@ -214,6 +215,30 @@ export const vi: Messages = {
     free: 'Miễn phí',
     price: '${price} ₫',
     priceUnknown: 'Chưa có giá',
+  },
+
+  github: {
+    title: 'GitHub',
+    subtitle: 'Tài khoản GitHub đã liên kết, theo lần app đọc gần nhất.',
+    loadFailed: 'Không tải được dữ liệu GitHub',
+    notLinked: {
+      title: 'Chưa liên kết tài khoản GitHub',
+      desc: 'Chưa liên kết được: luồng đăng nhập và luồng liên kết đang dùng chung một callback, nên mã uỷ quyền không bao giờ tới được bước liên kết.',
+    },
+    sync: 'Đồng bộ ngay',
+    syncRateLimited: 'Vừa đồng bộ xong. Mỗi giờ chỉ làm mới dữ liệu GitHub được một lần.',
+    unlink: 'Huỷ liên kết',
+    repos: '${count} repo công khai',
+    followers: '${count} người theo dõi',
+    lastSynced: 'Đồng bộ ${when}',
+    neverSynced: 'Chưa đồng bộ lần nào',
+    pinned: {
+      title: 'Repository đã ghim',
+    },
+    graph: {
+      total: '${count} đóng góp trong một năm qua',
+      day: '${count} đóng góp ngày ${date}',
+    },
   },
 
   moderation: {

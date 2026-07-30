@@ -22,10 +22,23 @@
  * A 404 FROM `getStats` MEANS "NOT LINKED" and is an ordinary state, not an error — use
  * `isNotLinked` and render an empty state with a link action.
  *
- * Populated at P2.14ab with types + api + hooks. UI and wiring follow at P2.14cd.
+ * THE UI SHIPS THE READ SURFACE ONLY (P2.14cd). Stats, pinned repos, the contribution graph,
+ * sync and unlink are all live; **there is no link button**, because the flow above cannot
+ * complete and a button that starts it would silently re-login the user and link nothing. Four of
+ * the five endpoints have a consuming surface; `linkAccount` is deferred with a reason and is
+ * listed for P4.7.
  */
 
 export { githubApi } from './api';
+
+export {
+  GithubStatsCard,
+  type GithubStatsCardProps,
+  PinnedRepoList,
+  type PinnedRepoListProps,
+  ContributionGraph,
+  type ContributionGraphProps,
+} from './components';
 
 export {
   githubKeys,
