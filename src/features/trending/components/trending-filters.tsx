@@ -29,9 +29,13 @@ export interface TrendingFiltersProps {
  * Listed here rather than derived from the type, because a union has no runtime value to map over.
  *
  * Order is the backend enum's own order, so the two never drift into looking like different sets.
- * Only six of these eight appear in the current data (no `EVENT`, no `MINDSET`) and only three of
- * the six sources have ever produced a row — that is crawler coverage, not a bug, and the filters
- * still offer them because tomorrow's crawl may fill them.
+ * Only six of these eight appear in the current data (no `EVENT`, no `MINDSET`) — that is crawler
+ * coverage, not a bug, and the filters still offer them because tomorrow's crawl may fill them.
+ *
+ * SOURCES ARE A DIFFERENT STORY, and used to be described the same way here. There were six in the
+ * enum and only three ever produced a row; the other three crawlers have since been deleted
+ * backend-side, so the enum is `HACKER_NEWS | DEV_TO | GITHUB` and there is nothing left for
+ * tomorrow's crawl to fill.
  */
 const CATEGORIES: TrendingCategory[] = [
   'OPENSOURCE',

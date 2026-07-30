@@ -3,8 +3,9 @@
  * (TrendingController: 1 endpoint).
  *
  * THE ONLY DOMAIN WHOSE CONTENT NOBODY IN THIS APP WROTE. Items are crawled from Hacker News,
- * dev.to, GitHub, Reddit, Medium and HBR on a schedule, classified by Gemini into one category,
- * and stored. Nothing here creates, edits, reacts to or comments on them — every card is a link
+ * dev.to and GitHub on a schedule, classified by Gemini into one category, and stored. (Reddit,
+ * Medium and HBR were listed here until F-B; those three crawlers were deleted backend-side and
+ * are no longer in the source enum.) Nothing here creates, edits, reacts to or comments on them — every card is a link
  * that leaves the app, and that is the whole interaction model.
  *
  * NO CROSS-FEATURE DEPENDENCIES AT ALL. A crawled item has no author inside this system, so there
