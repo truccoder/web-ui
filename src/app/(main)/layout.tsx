@@ -19,7 +19,6 @@ import {
   UserCheck,
   Globe,
   Route,
-  Code2,
 } from 'lucide-react';
 import { setRoleCookie } from '@/lib/hooks/use-admin-role';
 import { getNeutralAvatarColor } from '@/lib/avatar-color';
@@ -147,23 +146,6 @@ function NavLinks({ onClick }: { onClick?: () => void }) {
       >
         <Route className="h-4 w-4" />
         {t('nav.roadmap')}
-      </Link>
-
-      {/* GitHub. Added at P2.14cd, same reason as the three links above — the domain had no UI, so
-          `cd` created `/github`. Expected to be the shortest-lived of them: P3.2 folds this card
-          into `/profile`, and this link goes with the route. */}
-      <Link
-        href="/github"
-        onClick={onClick}
-        className={cn(
-          'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-          pathname === '/github'
-            ? 'bg-primary text-primary-foreground'
-            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-        )}
-      >
-        <Code2 className="h-4 w-4" />
-        {t('nav.github')}
       </Link>
 
       {/* Friends collapsible */}

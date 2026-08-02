@@ -28,7 +28,6 @@ export const vi: Messages = {
   },
 
   nav: {
-    github: 'GitHub',
     roadmap: 'Lộ trình',
     knowledge: 'Kiến thức',
     newsfeed: 'Bảng tin',
@@ -681,8 +680,11 @@ export const vi: Messages = {
   },
 
   knowledge: {
+    profileMoved:
+      'Hồ sơ nghề nghiệp đã chuyển sang trang cá nhân — thiếu nó thì trình giải thích không chạy.',
+    profileMovedLink: 'Mở trang cá nhân',
     title: 'Kiến thức',
-    subtitle: 'Hồ sơ nghề nghiệp, token đồng bộ và thư viện giải thích của bạn.',
+    subtitle: 'Token đồng bộ và thư viện giải thích của bạn.',
     profile: {
       title: 'Hồ sơ nghề nghiệp',
       notSetUp: 'Bạn chưa tạo hồ sơ nghề nghiệp. Điền và lưu để tạo mới.',
@@ -861,6 +863,8 @@ export const vi: Messages = {
   },
 
   profile: {
+    professionalHint: 'Trình giải thích dùng hồ sơ này để nói vừa tầm bạn.',
+    professionalHintLink: 'Sang mục Kiến thức',
     title: 'Trang cá nhân',
     subtitle: 'Quản lý cài đặt tài khoản của bạn',
     uploadHint: 'Nhấp để tải ảnh mới lên (JPG, PNG, WebP, tối đa 5MB)',

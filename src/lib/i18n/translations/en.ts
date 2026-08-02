@@ -30,7 +30,6 @@ export const en = {
   },
 
   nav: {
-    github: 'GitHub',
     roadmap: 'Roadmaps',
     knowledge: 'Knowledge',
     newsfeed: 'Newsfeed',
@@ -695,8 +694,11 @@ export const en = {
   },
 
   knowledge: {
+    profileMoved:
+      'Your professional profile moved to the profile page — the explainer will not run without it.',
+    profileMovedLink: 'Open profile',
     title: 'Knowledge',
-    subtitle: 'Your professional profile, sync tokens and saved explanations.',
+    subtitle: 'Your sync tokens and saved explanations.',
     profile: {
       title: 'Professional profile',
       notSetUp:
@@ -876,6 +878,8 @@ export const en = {
   },
 
   profile: {
+    professionalHint: 'Your explainer uses this profile to pitch answers at your level.',
+    professionalHintLink: 'Go to Knowledge',
     title: 'Profile',
     subtitle: 'Manage your account settings',
     uploadHint: 'Click to upload new photo (JPG, PNG, WebP, max 5MB)',
