@@ -12,13 +12,16 @@
  * where the payload does. The same reasoning covers writes: posts' mutations refuse to
  * invalidate `newsfeedKeys.feed()` themselves and take an `onSuccess` instead.
  *
- * STILL MISSING A DOMAIN: buy / preview / review controls for `BOOK` posts arrive as a render
- * prop from the page until `features/bookstore` is rebuilt (P2.10).
+ * ALL FIVE CONTRIBUTING DOMAINS ARE WIRED AS OF P3.1. `posts` supplies the card and every body,
+ * `bookstore` the buy/preview/review controls (imported straight through its barrel since P2.10d —
+ * the render prop the page used to thread down is gone), `security` the signed-in identity that
+ * decides authorship, and `reputation` the Elite Score chip, now including the level NAME that
+ * rides along in the payload. The feed's own contribution is the payload and the mapping.
  */
 
 export { newsfeedApi } from './api';
 
-export { newsfeedKeys, useNewsfeed } from './hooks';
+export { newsfeedKeys, useNewsfeed, useRefreshFeed } from './hooks';
 
 export { Newsfeed, type NewsfeedProps, FeedPost, type FeedPostProps } from './components';
 

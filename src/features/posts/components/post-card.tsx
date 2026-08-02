@@ -47,6 +47,15 @@ export interface PostCardAuthor {
    * would render a real-looking score for a user whose score simply was not sent.
    */
   eliteScore?: number | null;
+  /**
+   * The level's name (`authorLevelName`), also embedded in both payloads.
+   *
+   * PASSED THROUGH, NEVER DERIVED. CLAUDE.md §1 keeps the level thresholds in exactly two places
+   * — the backend's `RepLevel` enum and the design system's `REP_LEVELS` — and forbids a third
+   * copy on the frontend. `RepScore` therefore refuses to compute a level from a score, and this
+   * is how the name reaches it. Absent means the suffix is simply omitted; nothing guesses.
+   */
+  levelName?: string | null;
 }
 
 export interface PostCardProps {
@@ -109,7 +118,17 @@ export function PostCard({
           time={relativeTime(createdAt)}
           rep={
             // Null and undefined both mean "not sent"; 0 is a real score and still renders.
-            author.eliteScore != null ? <RepScore score={author.eliteScore} size="sm" /> : undefined
+            author.eliteScore != null ? (
+              <RepScore
+                score={author.eliteScore}
+                size="sm"
+                // `showLevel` is gated on the name actually being there rather than passed
+                // unconditionally: `RepScore` drops the suffix without a `levelName`, so this
+                // only avoids asking for something the payload did not supply.
+                showLevel={Boolean(author.levelName)}
+                levelName={author.levelName ?? undefined}
+              />
+            ) : undefined
           }
         />
         {menu}

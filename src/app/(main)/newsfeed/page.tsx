@@ -1,36 +1,34 @@
 'use client';
 
-import { useQueryClient } from '@tanstack/react-query';
-import { Newsfeed, newsfeedKeys } from '@/features/newsfeed';
+import { Newsfeed, useRefreshFeed } from '@/features/newsfeed';
 import { PostComposer } from '@/features/posts';
 import { useT } from '@/lib/i18n';
 
 /**
- * `/newsfeed` — owned by `newsfeed`, with `posts` and `bookstore` contributing. The full
- * multi-domain assembly is P3.1; this is the composition P2.5 leaves behind.
+ * `/newsfeed` — assembled at P3.1. Owning domain: `newsfeed`.
  *
- * WHY THE PAGE STILL HOLDS TWO WIRES, and what closes each:
+ * FIVE DOMAINS MEET HERE AND THE PAGE MEDIATES NONE OF THEM. `newsfeed` owns the shell and the
+ * payload; `posts` supplies the composer, the card and every body; `bookstore` the book controls;
+ * `security` the signed-in identity that decides authorship; `reputation` the Elite Score chip.
+ * Only the first two are imported by name in this file — the other three reach the screen through
+ * `features/newsfeed` and `features/posts`, each via a barrel, which is exactly what §4 asks for.
+ * A page that had to import all five would mean the features could not talk to each other, not
+ * that the page was doing its job properly.
  *
- *  - `onPosted` → `newsfeedKeys.feed()`. `features/posts` is write-only (five of its endpoints
- *    return `void`, and there is no `GET /posts/{id}`), so its mutations deliberately refuse to
- *    invalidate another domain's cache — that would hardcode this feature's key inside posts
- *    and fail the extraction test (CLAUDE.md §4). They take an `onSuccess` from the composing
- *    screen instead, which is this. Permanent, not a seam: the dependency points
- *    newsfeed → posts, which is the direction that is allowed.
+ * THE ONE WIRE LEFT IS `onPosted`, and it is permanent rather than a seam waiting to close.
+ * `features/posts` is write-only — five of its endpoints return `void` and there is no
+ * `GET /posts/{id}` — so its mutations cannot hand back a post to splice in. They also refuse to
+ * invalidate `newsfeedKeys` themselves: hardcoding another domain's key inside `posts` is exactly
+ * what the extraction test forbids. So the composing screen connects the two, which is the job a
+ * composing screen exists for.
  *
- * `renderBookActions` IS GONE (P2.10d). It existed only because `bookstore` had not been rebuilt
- *    and its buy/preview/review controls lived in a legacy bridge that no feature was allowed to
- *    import, so the page threaded them down. `features/bookstore` now exports `BookActions`, and
- *    §4 lets `features/newsfeed` import another feature's barrel directly — so the feed reaches
- *    for it itself and the page no longer mediates.
+ * WHAT CHANGED AT P3.1: this page used to import `newsfeedKeys` and call `invalidateQueries`
+ * itself. That is cache wiring rather than composition — `useRefreshFeed` now owns the key inside
+ * the feature, and the page only says that something changed.
  */
 export default function NewsfeedPage() {
   const t = useT();
-  const queryClient = useQueryClient();
-
-  const refreshFeed = () => {
-    queryClient.invalidateQueries({ queryKey: newsfeedKeys.feed() });
-  };
+  const refreshFeed = useRefreshFeed();
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-4">

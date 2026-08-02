@@ -1,2 +1,2 @@
 export { newsfeedKeys } from './keys';
-export { useNewsfeed } from './use-feed';
+export { useNewsfeed, useRefreshFeed } from './use-feed';

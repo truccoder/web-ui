@@ -188,6 +188,9 @@ export function FeedPost({ post, onChanged }: FeedPostProps) {
         fullName: post.authorFullName,
         profilePictureUrl: post.authorProfilePictureUrl,
         eliteScore: post.authorEliteScore,
+        // Both are embedded in the feed payload, so the card never calls the reputation
+        // endpoint — and the level name is READ, never derived from the score (CLAUDE.md §1).
+        levelName: post.authorLevelName,
       }}
       createdAt={post.createdAt}
       // While editing, the stored text is inside the editor's textarea; showing it above as

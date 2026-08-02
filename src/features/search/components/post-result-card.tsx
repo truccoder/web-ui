@@ -97,7 +97,15 @@ export function PostResultCard({ post, className }: PostResultCardProps) {
         size="sm"
         rep={
           post.authorEliteScore !== null ? (
-            <RepScore score={post.authorEliteScore} size="sm" />
+            // `authorLevelName` rides along in this payload exactly as it does in the feed's, and
+            // is passed through rather than derived — the level thresholds live in the backend
+            // enum and the DS, never a third time here (CLAUDE.md §1).
+            <RepScore
+              score={post.authorEliteScore}
+              size="sm"
+              showLevel={Boolean(post.authorLevelName)}
+              levelName={post.authorLevelName ?? undefined}
+            />
           ) : undefined
         }
         // Formatted with no zone-patching of any kind. A `withAssumedUtc` helper used to sit in

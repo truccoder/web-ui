@@ -1,6 +1,6 @@
 'use client';
 
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { newsfeedApi } from '../api/feed';
 import { newsfeedKeys } from './keys';
 
@@ -26,4 +26,23 @@ export function useNewsfeed() {
     initialPageParam: 1,
     getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.page + 1 : undefined),
   });
+}
+
+/**
+ * Refetch the feed.
+ *
+ * EXISTS SO A COMPOSING SCREEN DOES NOT HAVE TO KNOW THIS FEATURE'S QUERY KEY. `/newsfeed` used
+ * to import `newsfeedKeys` and call `invalidateQueries` itself, which made the page hold a piece
+ * of cache wiring — the thing Phase 3.3 asks routes to stop doing. The key is this module's
+ * business; the page's business is saying "something changed".
+ *
+ * IT IS NEEDED AT ALL because `features/posts` deliberately refuses to invalidate another
+ * domain's cache (CLAUDE.md §4): its mutations return `void` and take an `onSuccess`, and this is
+ * what the composing screen passes. That indirection is the boundary working, not overhead.
+ */
+export function useRefreshFeed() {
+  const queryClient = useQueryClient();
+  return () => {
+    queryClient.invalidateQueries({ queryKey: newsfeedKeys.feed() });
+  };
 }

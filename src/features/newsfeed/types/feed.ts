@@ -44,6 +44,20 @@ type AlwaysPresent =
  * uncapped event render as "full" (because `0 >= null` is true). A type that says `| null` puts
  * that mistake in front of the compiler.
  *
+ * `authorEliteScore` IS A SNAPSHOT, NOT THE AUTHOR'S CURRENT SCORE, and it is per post.
+ * `fanOutPost` copies the score into the Redis entry when the post is written and nothing ever
+ * updates it, so a reader sees whatever the author's score was at the moment each post was made.
+ * Measured at P3.1 for one author in one instant: the reputation endpoint said **35**, search
+ * said **35**, and three feed posts by that same author said **0**, **25** and **0**. Post 91
+ * showed 0 in the feed and 35 in search — same post, two screens, two numbers.
+ *
+ * The chip is still rendered, deliberately. This is a stale value rather than a fabricated one:
+ * it was true when the post was made, and it is what the backend chose to embed so the feed never
+ * has to call the reputation endpoint per card. That is a different case from `likeCount`, which
+ * was cut at P2.4'd (ds-deviation #19) because it was permanently 0 and had never been true of
+ * anything. Raised as B25; if the backend cannot refresh it, the honest fallback is to drop the
+ * number from the feed and keep it only where it is read live.
+ *
  * THE SIX DETAILS BLOCKS ARE CARRIED NOW. `codeSnippetDetails`, `articleDetails`, `qnaDetails`,
  * `pollDetails`, `linkDetails` and `quizDetails` used to be null on every post because
  * `NewsfeedService.fanOutPost` never copied them onto the DTO; the backend fixed that on
