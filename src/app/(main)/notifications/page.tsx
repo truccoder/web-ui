@@ -12,10 +12,10 @@ import { useT } from '@/core/i18n';
  * route is protected by the same middleware rule as every other `(main)` page — it is simply
  * not in `publicPaths`, so no middleware change was needed.
  *
- * THE BELL IS NOT HERE AND NOT ANYWHERE YET. A topbar bell with an unread badge belongs to the
- * app shell (P3.4); it will link to this page and mount its own `useUnreadNotificationCount`.
- * Building it during this checkpoint would mean designing a component against a shell that is
- * still legacy shadcn markup.
+ * THE BELL SHIPPED AT P3.4b AND LIVES IN THE APP SHELL, not here. It carries the unread badge,
+ * mounts its own `useUnreadNotificationCount`, and its panel is a preview of the first page that
+ * links back to this route — which is why the sidebar has no `/notifications` row any more: two
+ * entry points, one of them without a badge, is the weaker pair.
  *
  * The page composes and does nothing else: both children own their own queries.
  */
