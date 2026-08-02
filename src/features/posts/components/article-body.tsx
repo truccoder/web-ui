@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import { cn } from '@/shared/lib/cn';
 import type { ArticleDetails } from '../types/post';
 

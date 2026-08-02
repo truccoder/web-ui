@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { Button, Card } from '@/shared/components';
 import { getErrorMessage } from '@/shared/lib/api-error';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import type { OAuthProvider } from '../types/auth';
 import { useOAuthCallback } from '../hooks/use-oauth';
 

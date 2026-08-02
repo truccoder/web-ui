@@ -10,7 +10,7 @@ import {
   ProfileInfoForm,
   useMyProfile,
 } from '@/features/security';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 
 /**
  * `/profile` — assembled at P3.2. Owning domain: `security`.

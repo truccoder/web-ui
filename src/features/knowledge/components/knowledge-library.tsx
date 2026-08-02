@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { EmptyState, Skeleton } from '@/shared/components';
 import { getErrorMessage } from '@/shared/lib/api-error';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import { useKnowledgeLibrary } from '../hooks';
 import { ExplanationCard } from './explanation-card';
 

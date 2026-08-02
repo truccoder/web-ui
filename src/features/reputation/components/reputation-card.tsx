@@ -3,7 +3,7 @@
 import { ShieldCheck } from 'lucide-react';
 import { Card, Skeleton } from '@/shared/components';
 import { getErrorMessage } from '@/shared/lib/api-error';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import { useReputation } from '../hooks/use-reputation';
 import { RepScore } from './rep-score';
 

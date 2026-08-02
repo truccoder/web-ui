@@ -15,7 +15,7 @@ import {
 import { Avatar, Button, Card, Select, Textarea } from '@/shared/components';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { useMyProfile } from '@/features/security';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import { useCreateBookPost, useCreatePost } from '../hooks/use-post';
 import type { LocationResolution } from '../types/location';
 import type {

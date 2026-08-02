@@ -4,7 +4,7 @@ import * as React from 'react';
 import { Star } from 'lucide-react';
 import { Button, Textarea } from '@/shared/components';
 import { getErrorDetails, getErrorMessage } from '@/shared/lib/api-error';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import { useCreateReview } from '../hooks';
 
 /**

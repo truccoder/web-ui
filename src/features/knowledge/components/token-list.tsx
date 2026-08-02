@@ -4,7 +4,7 @@ import * as React from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { Badge, Button, EmptyState, Skeleton } from '@/shared/components';
 import { getErrorMessage } from '@/shared/lib/api-error';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import { usePersonalAccessTokens, useRevokeToken } from '../hooks';
 import { CreateTokenDialog } from './create-token-dialog';
 

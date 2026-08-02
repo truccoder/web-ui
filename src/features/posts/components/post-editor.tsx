@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Button, Select, Textarea } from '@/shared/components';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { cn } from '@/shared/lib/cn';
 import { useUpdatePost } from '../hooks/use-post';

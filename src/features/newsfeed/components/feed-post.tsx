@@ -22,7 +22,7 @@ import {
 import { BookActions } from '@/features/bookstore';
 import { useMyProfile } from '@/features/security';
 import { Button } from '@/shared/components';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import type { FeedPost as FeedPostData } from '../types/feed';
 
 /**

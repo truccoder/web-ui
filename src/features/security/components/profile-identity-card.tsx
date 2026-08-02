@@ -3,7 +3,7 @@
 import { useRef, useState } from 'react';
 import { Camera, Loader2 } from 'lucide-react';
 import { Avatar, Card } from '@/shared/components';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import { useChangeProfilePicture, useMyProfile } from '../hooks/use-profile';
 import { ACCEPTED_PICTURE_TYPES, MAX_PROFILE_PICTURE_BYTES } from '../lib/validation';
 

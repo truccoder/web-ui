@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { EmptyState, Skeleton } from '@/shared/components';
 import { useMyProfile } from '@/features/security';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { cn } from '@/shared/lib/cn';
 import {

@@ -3,7 +3,7 @@
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { SearchResults } from '@/features/search';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 
 /**
  * `/search` — results for the term in `?q=`.

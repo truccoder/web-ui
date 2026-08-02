@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Loader2, XCircle } from 'lucide-react';
 import { Button, Card } from '@/shared/components';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import { useMagicLinkLogin } from '../hooks/use-recovery';
 
 export interface MagicLoginCallbackProps {

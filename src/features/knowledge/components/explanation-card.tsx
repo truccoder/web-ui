@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { ExternalLink as ExternalLinkIcon } from 'lucide-react';
 import { Badge, Card } from '@/shared/components';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import type { Explanation } from '../types/knowledge';
 
 /**

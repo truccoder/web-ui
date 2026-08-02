@@ -4,7 +4,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { CheckCircle2, Clock, Loader2, XCircle } from 'lucide-react';
 import { Button } from '@/shared/components';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import { useSyncPaymentStatus } from '../hooks';
 
 /**

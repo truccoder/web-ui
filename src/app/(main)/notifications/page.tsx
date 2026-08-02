@@ -1,7 +1,7 @@
 'use client';
 
 import { NotificationList, NotificationPreferences } from '@/features/notifications';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 
 /**
  * `/notifications` — owned entirely by `notifications`, no contributing domains.

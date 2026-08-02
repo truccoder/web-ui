@@ -4,7 +4,7 @@ import * as React from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button, Dialog, EmptyState, Skeleton } from '@/shared/components';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import { useBookPreviewUrl } from '../hooks';
 
 /**

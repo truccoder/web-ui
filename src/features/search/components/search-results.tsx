@@ -2,7 +2,7 @@
 
 import { FileText, Users } from 'lucide-react';
 import { EmptyState, Skeleton } from '@/shared/components';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import { cn } from '@/shared/lib/cn';
 import { MIN_QUERY_LENGTH, useSearch } from '../hooks';
 import { PostResultCard } from './post-result-card';

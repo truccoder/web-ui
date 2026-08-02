@@ -8,7 +8,7 @@ import { getErrorMessage } from '@/shared/lib/api-error';
 // i18n is app-wide infrastructure still living in lib/. It is the one edge out of this
 // feature; when it moves to core/ (recommended infra checkpoint) this import updates and
 // security passes the extraction test cleanly.
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import { useLogin } from '../hooks/use-auth';
 import { loginSchema, type LoginFormValues } from '../lib/validation';
 import { BrandMark } from './brand-mark';

@@ -2,7 +2,7 @@
 
 import { ChevronDown, X } from 'lucide-react';
 import { Avatar } from '@/shared/components';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import { cn } from '@/shared/lib/cn';
 import { useChatClient } from '../hooks/use-chat-client';
 import { useConversation } from '../hooks/use-conversation';

@@ -4,7 +4,7 @@ import * as React from 'react';
 import { Check, Copy } from 'lucide-react';
 import { Button, Dialog, Input, Select } from '@/shared/components';
 import { getErrorDetails, getErrorMessage } from '@/shared/lib/api-error';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import { useCreateToken } from '../hooks';
 import type { VaultPermission } from '../types/knowledge';
 

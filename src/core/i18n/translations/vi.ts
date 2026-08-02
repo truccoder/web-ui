@@ -41,6 +41,17 @@ export const vi: Messages = {
     profile: 'Trang cá nhân',
     dashboard: 'Dashboard',
     logout: 'Đăng xuất',
+    primary: 'Điều hướng chính',
+    openMenu: 'Mở điều hướng',
+  },
+
+  palette: {
+    label: 'Bảng lệnh',
+    placeholder: 'Nhảy tới một trang, hoặc tìm mọi thứ…',
+    goTo: 'Đi tới',
+    searchEverywhere: 'Tìm mọi nơi với từ bạn vừa gõ',
+    empty: 'Không có gì khớp',
+    shortcutHint: 'Ctrl K',
   },
 
   auth: {
@@ -168,6 +179,12 @@ export const vi: Messages = {
     error: 'Không thể tải thông báo. Vui lòng thử lại.',
     retry: 'Thử lại',
     allLoaded: 'Bạn đã xem hết thông báo rồi',
+    bell: {
+      label: 'Thông báo',
+      labelUnread: 'Thông báo, ${count} chưa đọc',
+      loading: 'Đang tải…',
+      viewAll: 'Xem tất cả thông báo',
+    },
     empty: {
       title: 'Chưa có thông báo nào',
       desc: 'Khi có người tương tác với bạn, thông báo sẽ xuất hiện ở đây.',

@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/shared/components';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import type { OAuthProvider } from '../types/auth';
 import { useOAuthUrl } from '../hooks/use-oauth';
 import { GithubIcon, GoogleIcon } from './provider-icons';

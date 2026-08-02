@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Check, HelpCircle, X } from 'lucide-react';
 import { Button } from '@/shared/components';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import { useMyProfile } from '@/features/security';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { cn } from '@/shared/lib/cn';

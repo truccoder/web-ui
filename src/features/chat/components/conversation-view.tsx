@@ -3,7 +3,7 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { Avatar, EmptyState, Skeleton } from '@/shared/components';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import { cn } from '@/shared/lib/cn';
 import type { ChatConversation, ChatMessage } from '../types/chat';
 import { getMessagePosition } from '../lib/grouping';

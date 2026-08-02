@@ -2,7 +2,7 @@
 
 import { Newsfeed, useRefreshFeed } from '@/features/newsfeed';
 import { PostComposer } from '@/features/posts';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 
 /**
  * `/newsfeed` — assembled at P3.1. Owning domain: `newsfeed`.

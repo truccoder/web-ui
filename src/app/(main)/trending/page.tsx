@@ -1,7 +1,7 @@
 'use client';
 
 import { TrendingList } from '@/features/trending';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 
 /**
  * `/trending` — crawled items from around the web.

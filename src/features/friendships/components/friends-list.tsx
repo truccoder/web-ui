@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { Card, EmptyState, Skeleton } from '@/shared/components';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import { useInfiniteFriends } from '../hooks/use-friendship';
 import { FriendListItem } from './friend-list-item';
 

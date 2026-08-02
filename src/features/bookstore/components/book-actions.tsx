@@ -4,7 +4,7 @@ import * as React from 'react';
 import dynamic from 'next/dynamic';
 import { Eye } from 'lucide-react';
 import { Button, Skeleton } from '@/shared/components';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import { useBookPreviewUrl } from '../hooks';
 import { BookPurchaseButton } from './book-purchase-button';
 

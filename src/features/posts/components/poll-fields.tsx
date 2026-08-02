@@ -2,7 +2,7 @@
 
 import { Plus, X } from 'lucide-react';
 import { Button, Input, Select } from '@/shared/components';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import type { PollDetails } from '../types/post';
 
 /**

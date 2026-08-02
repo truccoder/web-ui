@@ -5,14 +5,18 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
 import { makeQueryClient } from '@/core/query/client';
 import { StoreProvider } from '@/core/store/provider';
-import { Toaster } from '@/components/ui/sonner';
-import { I18nProvider } from '@/lib/i18n';
+import { I18nProvider } from '@/core/i18n';
 
-// TODO(core-boundary): Toaster and I18nProvider still resolve into legacy folders.
-// core/ is meant to be infrastructure with no dependency on lib/ or components/, so
-// these two edges are temporary: Toaster goes once shared/ has a hand-written
-// equivalent (shadcn removal is P4.3), i18n once it moves to shared/. Nothing else
-// under core/ imports outside core/.
+// CORE BOUNDARY IS CLOSED AS OF P3.4d: every import in this file resolves inside `core/`.
+// `I18nProvider` used to come from `lib/i18n`, the last edge out of infrastructure; `src/lib/`
+// no longer exists.
+//
+// THE TOASTER IS GONE AS OF P3.4c, and was NOT replaced. It rendered `sonner`, and after the
+// legacy hooks were deleted the app had exactly zero `toast()` callers — every feature had
+// already moved to inline error banners next to the control that failed, which is the better
+// pattern anyway: a toast about a form field is feedback in the wrong place. The DS does ship a
+// `Toast` spec, so building one is a solved problem the day something needs it; building it now
+// would be the speculative primitive CLAUDE.md Phase 1.3 warns about, with no caller to shape it.
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(makeQueryClient);
@@ -24,10 +28,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <ThemeProvider attribute="data-theme" defaultTheme="light" enableSystem={false}>
       <I18nProvider>
         <StoreProvider>
-          <QueryClientProvider client={queryClient}>
-            {children}
-            <Toaster richColors position="top-right" />
-          </QueryClientProvider>
+          <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
         </StoreProvider>
       </I18nProvider>
     </ThemeProvider>

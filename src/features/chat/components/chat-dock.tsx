@@ -3,7 +3,7 @@
 import { useCallback, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { MessageCircle } from 'lucide-react';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import { cn } from '@/shared/lib/cn';
 import { useChatClient } from '../hooks/use-chat-client';
 import { useConversations } from '../hooks/use-conversations';

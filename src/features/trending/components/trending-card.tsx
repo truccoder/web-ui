@@ -2,7 +2,7 @@
 
 import { ArrowUpRight, Flame } from 'lucide-react';
 import { Badge, Card } from '@/shared/components';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import { useRelativeTime } from '@/shared/lib/format';
 import { cn } from '@/shared/lib/cn';
 import type { TrendingItem } from '../types/trending';

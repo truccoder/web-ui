@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { ArrowLeft, Camera, Mail } from 'lucide-react';
 import { Avatar, Button, Card, Input } from '@/shared/components';
 import { getErrorMessage } from '@/shared/lib/api-error';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import { useRegister } from '../hooks/use-auth';
 import {
   ACCEPTED_PICTURE_TYPES,

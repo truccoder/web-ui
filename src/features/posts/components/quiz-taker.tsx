@@ -2,7 +2,7 @@
 
 import { useId, useState } from 'react';
 import { Badge, Button, Radio } from '@/shared/components';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { cn } from '@/shared/lib/cn';
 import { useSubmitQuiz } from '../hooks/use-quiz';

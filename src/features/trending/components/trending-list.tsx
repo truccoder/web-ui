@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { Button, EmptyState, Skeleton } from '@/shared/components';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import { cn } from '@/shared/lib/cn';
 import { useTrending } from '../hooks';
 import type { TrendingCategory, TrendingTimeRange } from '../types/trending';

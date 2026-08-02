@@ -2,7 +2,7 @@
 
 import { Image as ImageIcon, Link2 } from 'lucide-react';
 import { Input, Textarea } from '@/shared/components';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import type { LinkDetails } from '../types/post';
 
 /**

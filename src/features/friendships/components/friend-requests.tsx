@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button, Card, EmptyState, Skeleton, Tabs } from '@/shared/components';
 import { getErrorMessage } from '@/shared/lib/api-error';
-import { useI18n } from '@/lib/i18n';
+import { useI18n } from '@/core/i18n';
 import {
   useAcceptFriendRequest,
   useCancelFriendRequest,

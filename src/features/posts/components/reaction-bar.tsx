@@ -1,7 +1,7 @@
 'use client';
 
 import { Angry, Frown, Heart, Laugh, ThumbsUp } from 'lucide-react';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { cn } from '@/shared/lib/cn';
 import { useMyReaction, useRemoveReaction, useUpsertReaction } from '../hooks/use-reaction';

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { BannedUsersTab, ModerationLogsTab, ModerationPostsTab } from '@/features/moderation';
 import { Tabs } from '@/shared/components';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 
 /**
  * `/admin/moderation` — rewired to `features/moderation` at P2.15cd.

@@ -2,20 +2,24 @@
 
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
-import { syncRoleFromProfile } from '@/lib/hooks/use-admin-role';
+import { syncRoleFromProfile } from '@/features/security';
 
 /**
- * TEMPORARY LEGACY BRIDGE — remove in security cycle 3 (P2.1″, profile).
+ * Where to send someone the moment they are signed in.
  *
- * The backend has no role claim in the JWT and no dedicated role endpoint, so after
- * sign-in the client probes `GET /profile/me`, caches the verdict in the `role` cookie
- * (middleware reads it on the edge), and routes admins to moderation. That endpoint
- * belongs to the profile cycle; until it is migrated into `features/security`, the auth
- * routes reuse the legacy `syncRoleFromProfile`.
+ * THE LEGACY BRIDGE IS GONE AS OF P3.4c. This file used to open with "TEMPORARY LEGACY BRIDGE —
+ * remove in security cycle 3", because `syncRoleFromProfile` lived in `lib/hooks/use-admin-role.ts`
+ * and the feature only owned the *clearing* half of the `role` cookie. Both halves are now in
+ * `features/security`, and this imports through its barrel like everything else.
  *
- * This lives at the route layer rather than inside the feature on purpose: it keeps the
- * feature's only out-of-boundary import at `@/lib/i18n`. When profile lands in the
- * feature, role routing becomes a feature hook and this file is deleted.
+ * WHY A PROBE RATHER THAN A CLAIM: the backend puts no role in the JWT and exposes no role
+ * endpoint, so the only way to learn it is `GET /profile/me`. `syncRoleFromProfile` does that
+ * through the shared query cache, so the profile this costs is the same one the destination page
+ * is about to read — not an extra request.
+ *
+ * IT STAYS AT THE ROUTE LAYER, not inside the feature, because *where to navigate after auth* is a
+ * fact about this app's routes, not about the security domain. A `features/security` that knew
+ * `/dashboard` and `/admin/moderation` would fail the extraction test for the sake of two strings.
  */
 export function usePostAuthRedirect() {
   const router = useRouter();

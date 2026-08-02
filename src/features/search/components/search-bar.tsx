@@ -4,7 +4,7 @@ import { useRef, useState, type KeyboardEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, X } from 'lucide-react';
 import { Input } from '@/shared/components';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import { cn } from '@/shared/lib/cn';
 import { MIN_QUERY_LENGTH } from '../hooks';
 
@@ -13,8 +13,11 @@ import { MIN_QUERY_LENGTH } from '../hooks';
  *
  * SUBMIT-ON-ENTER, NOT SEARCH-AS-YOU-TYPE. Every keystroke would be a database query — the
  * backend runs `unaccent(...) LIKE` over three tables with no index behind it — and the result
- * would still need somewhere to be shown. A live dropdown is the command palette, which belongs
- * to the shell rebuild at P3.4; this stays the behaviour it replaces (Guardrail C).
+ * would still need somewhere to be shown. This stays the behaviour it replaces (Guardrail C).
+ *
+ * THE COMMAND PALETTE SHIPPED AT P3.4 AND DID NOT CHANGE THAT. It filters a static list of routes
+ * with no request at all, and its one non-navigation action submits into `/search` exactly as this
+ * field does. So the app still issues one search per deliberate submit, not one per keystroke.
  *
  * That is also why the debounce helpers the legacy module carried are gone rather than migrated:
  * `useDebouncedValue` and `useDebouncedSearch` had **zero** callers, and dead code is deleted

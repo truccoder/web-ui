@@ -3,7 +3,7 @@
 import { useState, type KeyboardEvent } from 'react';
 import { SendHorizontal } from 'lucide-react';
 import { Button, Textarea } from '@/shared/components';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import { cn } from '@/shared/lib/cn';
 
 /**

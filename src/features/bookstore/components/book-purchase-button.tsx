@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { Download, ShoppingCart } from 'lucide-react';
 import { Button } from '@/shared/components';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import { useBook, useCreatePayment, useDownloadBook } from '../hooks';
 
 /**

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { ShieldAlert, ShieldCheck } from 'lucide-react';
 import { Badge, Button, Card, EmptyState, Pagination, Skeleton } from '@/shared/components';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { cn } from '@/shared/lib/cn';
 import { useBannedUsers } from '../hooks/use-moderation';

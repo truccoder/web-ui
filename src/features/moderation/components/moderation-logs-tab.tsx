@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Card, EmptyState, Pagination, Skeleton } from '@/shared/components';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { cn } from '@/shared/lib/cn';
 import { useModerationLogs } from '../hooks/use-moderation';

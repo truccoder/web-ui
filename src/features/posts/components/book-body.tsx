@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from 'react';
 import { Badge } from '@/shared/components';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import { cn } from '@/shared/lib/cn';
 import { formatCurrency, useIntlLocale } from '@/shared/lib/format';
 

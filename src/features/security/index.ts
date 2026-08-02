@@ -30,6 +30,8 @@ export {
   useUpdateProfile,
   useChangePassword,
   useChangeProfilePicture,
+  setRoleCookie,
+  syncRoleFromProfile,
 } from './hooks';
 
 export {

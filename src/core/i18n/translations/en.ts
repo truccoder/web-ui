@@ -43,6 +43,19 @@ export const en = {
     profile: 'Profile',
     dashboard: 'Dashboard',
     logout: 'Logout',
+    primary: 'Main navigation',
+    openMenu: 'Open navigation',
+  },
+
+  // The command palette is app chrome, so its strings sit next to `nav` rather than under a
+  // domain. `shortcutHint` is the visible key hint on the topbar button.
+  palette: {
+    label: 'Command palette',
+    placeholder: 'Jump to a page, or search everything…',
+    goTo: 'Go to',
+    searchEverywhere: 'Search everywhere for what you typed',
+    empty: 'Nothing matches that',
+    shortcutHint: 'Ctrl K',
   },
 
   auth: {
@@ -169,6 +182,12 @@ export const en = {
     error: 'Could not load notifications. Please try again.',
     retry: 'Try again',
     allLoaded: "You've seen all notifications",
+    bell: {
+      label: 'Notifications',
+      labelUnread: 'Notifications, ${count} unread',
+      loading: 'Loading…',
+      viewAll: 'See all notifications',
+    },
     empty: {
       title: 'No notifications yet',
       desc: 'When someone interacts with you, it will show up here.',

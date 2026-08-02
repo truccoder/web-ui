@@ -2,7 +2,7 @@
 
 import { RefreshCw } from 'lucide-react';
 import { Button, Card, DeveloperMeta, EmptyState, Skeleton } from '@/shared/components';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { useRelativeTime } from '@/shared/lib/format';
 import { cn } from '@/shared/lib/cn';

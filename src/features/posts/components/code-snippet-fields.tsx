@@ -1,7 +1,7 @@
 'use client';
 
 import { Select, Textarea } from '@/shared/components';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import type { CodeSnippetDetails } from '../types/post';
 
 /**

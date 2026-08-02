@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { KnowledgeLibrary, TokenList } from '@/features/knowledge';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 
 /**
  * `/knowledge` — owned entirely by `knowledge`, created at P2.11d.

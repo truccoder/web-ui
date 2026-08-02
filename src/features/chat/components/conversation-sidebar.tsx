@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { ArrowLeft, PenSquare, Search } from 'lucide-react';
 import { Avatar, Button, EmptyState, Input, Skeleton, Tabs } from '@/shared/components';
 import { useFriends } from '@/features/friendships';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import { cn } from '@/shared/lib/cn';
 import type { ChatConnectionStatus, ChatConversation } from '../types/chat';
 import { ConversationRow } from './conversation-row';

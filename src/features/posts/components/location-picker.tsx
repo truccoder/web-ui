@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Loader2, MapPin, Navigation, Search } from 'lucide-react';
 import { Button, EmptyState, Input } from '@/shared/components';
 import { getErrorMessage } from '@/shared/lib/api-error';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import { useResolveLocation } from '../hooks/use-location';
 import type { LocationResolution, LocationResolutionRequest } from '../types/location';
 import { LocationBadge, locationLabel } from './location-badge';

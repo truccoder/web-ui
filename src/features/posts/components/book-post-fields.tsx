@@ -3,7 +3,7 @@
 import { useRef, type ReactNode } from 'react';
 import { FileText, ImageIcon, X } from 'lucide-react';
 import { Button, Input } from '@/shared/components';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import type { CreateBookRequest } from '../types/post';
 
 /**

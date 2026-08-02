@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { Button, Input, Select, Skeleton } from '@/shared/components';
 import { getErrorDetails, getErrorMessage } from '@/shared/lib/api-error';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import { isProfileMissing, useProfessionalProfile, useUpdateProfessionalProfile } from '../hooks';
 import type {
   ExplanationStyle,

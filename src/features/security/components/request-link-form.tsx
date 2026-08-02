@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { ArrowLeft, KeyRound, Mail, Sparkles } from 'lucide-react';
 import { Button, Card, Input } from '@/shared/components';
 import { getErrorMessage } from '@/shared/lib/api-error';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import { useForgotPassword, useRequestMagicLink } from '../hooks/use-recovery';
 
 /**

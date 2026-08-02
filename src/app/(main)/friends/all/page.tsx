@@ -1,7 +1,7 @@
 'use client';
 
 import { FriendsList } from '@/features/friendships';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 
 export default function AllFriendsPage() {
   const t = useT();

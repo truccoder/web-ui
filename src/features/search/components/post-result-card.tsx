@@ -4,7 +4,7 @@ import { BookOpen, Star } from 'lucide-react';
 import { DeveloperIdentity } from '@/shared/components';
 import { RepScore } from '@/features/reputation';
 import { ArticleBody, CodeSnippetBody, LinkBody, PollBody, QnaBody } from '@/features/posts';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import { useRelativeTime } from '@/shared/lib/format';
 import { cn } from '@/shared/lib/cn';
 import type { SearchBook, SearchPost } from '../types/search';

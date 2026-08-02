@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { CheckCheck, RefreshCw } from 'lucide-react';
 import { Button, Card, EmptyState, Skeleton } from '@/shared/components';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import { cn } from '@/shared/lib/cn';
 import {
   useMarkAllNotificationsAsRead,

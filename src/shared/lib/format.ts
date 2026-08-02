@@ -1,6 +1,6 @@
 'use client';
 
-import { useI18n, useT } from '@/lib/i18n';
+import { useI18n, useT } from '@/core/i18n';
 
 /**
  * Locale-aware formatting, shared.

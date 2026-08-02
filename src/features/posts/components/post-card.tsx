@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 import { Card, DeveloperIdentity, DeveloperMeta } from '@/shared/components';
 import { RepScore } from '@/features/reputation';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import { cn } from '@/shared/lib/cn';
 import { useRelativeTime } from '@/shared/lib/format';
 import type { LocationResolution } from '../types/location';

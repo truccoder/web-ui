@@ -3,7 +3,7 @@
 import { useId } from 'react';
 import { Plus, X } from 'lucide-react';
 import { Button, Input, Radio, Textarea } from '@/shared/components';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import type { QuizDetails, QuizQuestion } from '../types/post';
 
 /**

@@ -3,7 +3,7 @@
 import { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { PendingVerificationQueue, RoadmapAdminPanel, RoadmapList } from '@/features/roadmap';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 
 /**
  * `/admin/roadmap` — the moderation queue and the authoring forms.

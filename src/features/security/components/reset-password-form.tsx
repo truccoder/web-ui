@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { CheckCircle2, ShieldCheck, XCircle } from 'lucide-react';
 import { Button, Card, Input } from '@/shared/components';
 import { getErrorMessage } from '@/shared/lib/api-error';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import { useResetPassword } from '../hooks/use-recovery';
 import { resetPasswordSchema, type ResetPasswordFormValues } from '../lib/validation';
 

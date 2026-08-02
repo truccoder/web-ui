@@ -10,7 +10,7 @@ import {
   usePendingRequests,
 } from '@/features/friendships';
 import { useMyProfile } from '@/features/security';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 
 /**
  * `/dashboard` — assembled at P3.3. Owning domain: `security`.

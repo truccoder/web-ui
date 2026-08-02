@@ -2,7 +2,7 @@
 
 import { RefreshCw } from 'lucide-react';
 import { Button, Card, EmptyState, Skeleton, Switch } from '@/shared/components';
-import { useT } from '@/lib/i18n';
+import { useT } from '@/core/i18n';
 import { cn } from '@/shared/lib/cn';
 import { useNotificationPreferences, useUpdateNotificationPreferences } from '../hooks';
 import type { NotificationType } from '../types/notification';
