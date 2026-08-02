@@ -278,15 +278,14 @@ export interface LocationDetails {
  * writes (110 of 110 rows empty — see `findings/trending.md`).
  */
 
-// ─── Pagination (Spring Boot style) ─────────────────────────────────────────
-
-export interface Page<T> {
-  content: T[];
-  totalElements: number;
-  totalPages: number;
-  size: number;
-  number: number;
-  first: boolean;
-  last: boolean;
-  empty: boolean;
-}
+/*
+ * REMOVED AT P3.3: the generic `Page<T>` Spring envelope, along with `lib/api/social.ts` and
+ * `lib/hooks/use-social.ts` — its last three callers, and themselves removed because the backend
+ * has no `SocialController` at all (`grep -c social src/core/api/schema.gen.ts` → 0).
+ *
+ * IT IS NOT COMING BACK AS A SHARED TYPE. One envelope reused across domains is the cross-domain
+ * bucket CLAUDE.md §4 forbids: it types every paged response identically, so a field renamed in
+ * one DTO compiles fine everywhere. `openapi-typescript` already emits a concrete `PageDto` per
+ * payload, and `features/notifications` and `features/moderation` each derive their own from it —
+ * see the note at the top of `features/moderation/types/moderation.ts`.
+ */

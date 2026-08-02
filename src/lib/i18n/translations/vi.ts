@@ -827,30 +827,22 @@ export const vi: Messages = {
 
   dashboard: {
     welcome: 'Chào mừng trở lại',
-    welcomeName: 'Chào mừng trở lại, ${fullname}',
+    welcomeName: 'Chào mừng trở lại, ${name}',
     subtitle: 'Đây là những gì đang xảy ra trong mạng lưới của bạn',
+    viewAll: 'Xem tất cả',
     stats: {
       friends: 'Bạn bè',
       friendsDesc: 'Tổng kết nối',
-      followers: 'Người theo dõi',
-      followersDesc: 'Người đang theo dõi bạn',
-      following: 'Đang theo dõi',
-      followingDesc: 'Người bạn đang theo dõi',
       pending: 'Đang chờ',
       pendingDesc: 'Lời mời kết bạn',
     },
     requests: {
       title: 'Lời mời kết bạn',
       desc: 'Những người muốn kết nối với bạn',
-      empty: 'Không có lời mời nào',
-      accept: 'Chấp nhận',
-      reject: 'Từ chối',
     },
     suggestions: {
       title: 'Người bạn có thể biết',
       desc: 'Mở rộng mạng lưới của bạn',
-      empty: 'Hiện không có gợi ý nào',
-      add: 'Thêm',
     },
   },
 

@@ -842,30 +842,27 @@ export const en = {
 
   dashboard: {
     welcome: 'Welcome back',
-    welcomeName: 'Welcome back, ${fullname}',
+    // `${name}`, not `${fullname}`: the page passes `name`, and the old placeholder never
+    // matched it, so this line rendered the literal `${fullname}` for every signed-in user.
+    welcomeName: 'Welcome back, ${name}',
     subtitle: "Here's what's happening on your network",
+    viewAll: 'View all',
     stats: {
       friends: 'Friends',
       friendsDesc: 'Total connections',
-      followers: 'Followers',
-      followersDesc: 'People following you',
-      following: 'Following',
-      followingDesc: 'People you follow',
       pending: 'Pending',
       pendingDesc: 'Friend requests',
     },
+    // The row-level strings (empty state, accept/reject, add) live with `features/friendships`;
+    // only the section headings belong to the page. `followers`/`following` were removed at P3.3
+    // with the follow feature — no `SocialController` exists.
     requests: {
       title: 'Friend Requests',
       desc: 'People who want to connect',
-      empty: 'No pending requests',
-      accept: 'Accept',
-      reject: 'Reject',
     },
     suggestions: {
       title: 'People You May Know',
       desc: 'Expand your network',
-      empty: 'No suggestions right now',
-      add: 'Add',
     },
   },
 

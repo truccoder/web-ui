@@ -23,7 +23,16 @@ import { FriendListItem } from './friend-list-item';
  * Row actions are `secondary`, not `primary`: `Button.prompt.md` allows exactly one
  * primary per view, and a repeated row action has no hierarchy to express (unlike
  * accept-vs-reject in `FriendRequests`, where the pair is the point).
+ *
+ * `limit` EXISTS FOR THE DASHBOARD WIDGET (P3.3), which shows a summary next to a link to this
+ * component's own page. It trims the rendered rows only — the query is unchanged, because the
+ * backend endpoint takes no size parameter and both callers share one cache entry.
  */
+
+export interface FriendSuggestionsProps {
+  /** Render at most this many rows. Undefined renders all of them. */
+  limit?: number;
+}
 
 function SuggestionRowSkeleton() {
   return (
@@ -38,7 +47,7 @@ function SuggestionRowSkeleton() {
   );
 }
 
-export function FriendSuggestions() {
+export function FriendSuggestions({ limit }: FriendSuggestionsProps = {}) {
   const t = useT();
   const { data: suggestions, isLoading } = useFriendSuggestions();
   const { data: sent } = useSentRequests();
@@ -77,36 +86,38 @@ export function FriendSuggestions() {
       )}
 
       <Card padding={0} className="divide-y divide-nx-border-subtle overflow-hidden">
-        {suggestions.map(({ profile, mutualFriends }) => {
-          const alreadySent = sentIds.has(profile.userId);
-          return (
-            <div key={profile.userId} className="p-3">
-              <FriendListItem
-                name={profile.fullName}
-                avatarUrl={profile.profilePictureUrl}
-                subtitle={
-                  mutualFriends > 0
-                    ? t('friends.suggestions.mutualFriends', { count: mutualFriends })
-                    : t('friends.suggestions.suggestedForYou')
-                }
-                actions={
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    icon={<UserPlus />}
-                    disabled={alreadySent}
-                    loading={send.isPending && send.variables === profile.userId}
-                    onClick={() => send.mutate(profile.userId)}
-                  >
-                    {alreadySent
-                      ? t('friends.suggestions.requestSent')
-                      : t('friends.suggestions.addFriend')}
-                  </Button>
-                }
-              />
-            </div>
-          );
-        })}
+        {(limit === undefined ? suggestions : suggestions.slice(0, limit)).map(
+          ({ profile, mutualFriends }) => {
+            const alreadySent = sentIds.has(profile.userId);
+            return (
+              <div key={profile.userId} className="p-3">
+                <FriendListItem
+                  name={profile.fullName}
+                  avatarUrl={profile.profilePictureUrl}
+                  subtitle={
+                    mutualFriends > 0
+                      ? t('friends.suggestions.mutualFriends', { count: mutualFriends })
+                      : t('friends.suggestions.suggestedForYou')
+                  }
+                  actions={
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      icon={<UserPlus />}
+                      disabled={alreadySent}
+                      loading={send.isPending && send.variables === profile.userId}
+                      onClick={() => send.mutate(profile.userId)}
+                    >
+                      {alreadySent
+                        ? t('friends.suggestions.requestSent')
+                        : t('friends.suggestions.addFriend')}
+                    </Button>
+                  }
+                />
+              </div>
+            );
+          }
+        )}
       </Card>
     </div>
   );

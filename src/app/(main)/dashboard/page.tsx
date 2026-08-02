@@ -1,186 +1,129 @@
 'use client';
 
-import { Users, UserPlus, UserCheck, Clock } from 'lucide-react';
-import { useProfile } from '@/lib/hooks/use-user';
+import Link from 'next/link';
+import { Clock, Users } from 'lucide-react';
+import { StatTile } from '@/shared/components';
 import {
+  FriendRequests,
+  FriendSuggestions,
   useFriends,
-  useFriendSuggestions,
   usePendingRequests,
-  useSendFriendRequest,
-  useAcceptFriendRequest,
-  useRejectFriendRequest,
-} from '@/lib/hooks/use-friendship';
-import { useFollowers, useFollowing } from '@/lib/hooks/use-social';
+} from '@/features/friendships';
+import { useMyProfile } from '@/features/security';
 import { useT } from '@/lib/i18n';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 
-function StatCard({
-  title,
-  value,
-  icon: Icon,
-  description,
-}: {
-  title: string;
-  value: number | undefined;
-  icon: React.ElementType;
-  description: string;
-}) {
+/**
+ * `/dashboard` — assembled at P3.3. Owning domain: `security`.
+ *
+ * TWO DOMAINS. `security` owns the shell and the greeting (this is the home of the signed-in
+ * account); `friendships` contributes the counts and both lists through its barrel. The page
+ * composes and nothing more — it holds no query keys, no mutations and no list markup, because
+ * `FriendRequests` and `FriendSuggestions` already exist as the `/friends/*` surfaces and a
+ * second implementation of "accept a friend request" is a second thing to keep correct.
+ *
+ * THE FOLLOW FEATURE IS GONE, NOT MOVED. The legacy page carried two more tiles, "Followers" and
+ * "Following", reading `/v1/api/social/*`. No such controller exists — `grep -c social` over
+ * `schema.gen.ts` is 0 — so those tiles rendered an em dash forever and no backend change was
+ * pending that would fill them. Shipping a number the server cannot produce is worse than not
+ * showing it, so the tiles, `lib/api/social.ts`, `lib/hooks/use-social.ts` and their i18n keys
+ * were deleted at this checkpoint rather than carried into `features/`.
+ *
+ * The two tiles that remain both come from data the page already needs for the lists below, so
+ * neither costs an extra request.
+ */
+export default function DashboardPage() {
+  const t = useT();
+  const { data: profile } = useMyProfile();
+  const { data: friends } = useFriends();
+  const { data: pendingRequests } = usePendingRequests();
+
+  // THE WHOLE NAME, NOT A SPLIT-OFF FIRST TOKEN. The legacy page took `split(' ')[0]`, which is
+  // the given name in English and the FAMILY name in Vietnamese — and `vi` is this app's default
+  // locale, so it greeted most users by their surname. There is no locale-independent rule for
+  // which token is the given name, so the greeting uses the name as stored.
+  const name = profile?.fullName;
+
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-        <Icon className="h-4 w-4 text-muted-foreground" />
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value ?? '—'}</div>
-        <p className="text-xs text-muted-foreground mt-1">{description}</p>
-      </CardContent>
-    </Card>
+    <div className="mx-auto flex max-w-2xl flex-col gap-6">
+      <div>
+        <h1 className="text-nx-title font-semibold tracking-tight text-nx-text-primary">
+          {name ? t('dashboard.welcomeName', { name }) : t('dashboard.welcome')}
+        </h1>
+        <p className="mt-1 text-nx-body-sm text-nx-text-muted">{t('dashboard.subtitle')}</p>
+      </div>
+
+      {/* `StatTile` takes the raw value: while the queries are in flight both read "—" rather
+          than a zero that would be indistinguishable from "you have no friends". */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <StatTile
+          label={t('dashboard.stats.friends')}
+          value={friends?.totalCount}
+          description={t('dashboard.stats.friendsDesc')}
+          icon={<Users size={16} />}
+        />
+        <StatTile
+          label={t('dashboard.stats.pending')}
+          value={pendingRequests?.length}
+          description={t('dashboard.stats.pendingDesc')}
+          icon={<Clock size={16} />}
+        />
+      </div>
+
+      <DashboardSection
+        title={t('dashboard.requests.title')}
+        description={t('dashboard.requests.desc')}
+        href="/friends/requests"
+        linkLabel={t('dashboard.viewAll')}
+      >
+        <FriendRequests />
+      </DashboardSection>
+
+      <DashboardSection
+        title={t('dashboard.suggestions.title')}
+        description={t('dashboard.suggestions.desc')}
+        href="/friends/suggestions"
+        linkLabel={t('dashboard.viewAll')}
+      >
+        {/* Capped at 5 the way the legacy page capped it. A dashboard is a summary; the full
+            ranked list is one click away and lives at `/friends/suggestions`. */}
+        <FriendSuggestions limit={5} />
+      </DashboardSection>
+    </div>
   );
 }
 
-export default function DashboardPage() {
-  const t = useT();
-  const { data: profile } = useProfile();
-  const { data: friends } = useFriends();
-  const { data: suggestions } = useFriendSuggestions();
-  const { data: pendingRequests } = usePendingRequests();
-  const { data: followers } = useFollowers();
-  const { data: following } = useFollowing();
-
-  const { mutate: sendRequest, isPending: isSending } = useSendFriendRequest();
-  const { mutate: acceptRequest } = useAcceptFriendRequest();
-  const { mutate: rejectRequest } = useRejectFriendRequest();
-
-  const firstName = profile?.fullname?.split(' ')[0];
-
+/**
+ * Heading + "see all" link wrapper. Local to this page on purpose: it is layout for this one
+ * composition, not a primitive — `shared/` earns a component when a second page needs it.
+ */
+function DashboardSection({
+  title,
+  description,
+  href,
+  linkLabel,
+  children,
+}: {
+  title: string;
+  description: string;
+  href: string;
+  linkLabel: string;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="space-y-8">
-      {/* Greeting */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">
-          {firstName ? t('dashboard.welcomeName', { name: firstName }) : t('dashboard.welcome')}
-        </h1>
-        <p className="text-muted-foreground mt-1">{t('dashboard.subtitle')}</p>
+    <section className="flex flex-col gap-3">
+      <div className="flex items-baseline justify-between gap-3">
+        <div>
+          <h2 className="text-nx-h3 text-nx-text-primary">{title}</h2>
+          <p className="text-nx-caption text-nx-text-muted">{description}</p>
+        </div>
+        <Link
+          href={href}
+          className="shrink-0 text-nx-body-sm text-nx-text-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
+        >
+          {linkLabel}
+        </Link>
       </div>
-
-      {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          title={t('dashboard.stats.friends')}
-          value={friends?.totalCount}
-          icon={Users}
-          description={t('dashboard.stats.friendsDesc')}
-        />
-        <StatCard
-          title={t('dashboard.stats.followers')}
-          value={followers?.totalElements}
-          icon={UserCheck}
-          description={t('dashboard.stats.followersDesc')}
-        />
-        <StatCard
-          title={t('dashboard.stats.following')}
-          value={following?.totalElements}
-          icon={UserPlus}
-          description={t('dashboard.stats.followingDesc')}
-        />
-        <StatCard
-          title={t('dashboard.stats.pending')}
-          value={pendingRequests?.length}
-          icon={Clock}
-          description={t('dashboard.stats.pendingDesc')}
-        />
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Pending friend requests */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              {t('dashboard.requests.title')}
-              {pendingRequests && pendingRequests.length > 0 && (
-                <Badge variant="secondary">{pendingRequests.length}</Badge>
-              )}
-            </CardTitle>
-            <CardDescription>{t('dashboard.requests.desc')}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {!pendingRequests || pendingRequests.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-6">
-                {t('dashboard.requests.empty')}
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {pendingRequests.map((req) => (
-                  <div key={req.id} className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={req.requesterProfilePictureUrl} />
-                        <AvatarFallback>{req.requesterFullName?.[0]?.toUpperCase()}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="text-sm font-medium">{req.requesterFullName}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(req.createdAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button size="sm" onClick={() => acceptRequest(req.id)}>
-                        {t('dashboard.requests.accept')}
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => rejectRequest(req.id)}>
-                        {t('dashboard.requests.reject')}
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Suggested friends */}
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('dashboard.suggestions.title')}</CardTitle>
-            <CardDescription>{t('dashboard.suggestions.desc')}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {!suggestions || suggestions.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-6">
-                {t('dashboard.suggestions.empty')}
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {suggestions.slice(0, 5).map((person) => (
-                  <div key={person.id} className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={person.profilePictureUrl} />
-                        <AvatarFallback>{person.fullname?.[0]?.toUpperCase()}</AvatarFallback>
-                      </Avatar>
-                      <p className="text-sm font-medium">{person.fullname}</p>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={isSending}
-                      onClick={() => sendRequest({ addresseeId: person.id })}
-                    >
-                      <UserPlus className="h-4 w-4 mr-1" />
-                      {t('dashboard.suggestions.add')}
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+      {children}
+    </section>
   );
 }
