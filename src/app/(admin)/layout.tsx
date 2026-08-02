@@ -1,16 +1,19 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
 import { ShieldCheck, LogOut, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLogout } from '@/lib/hooks/use-auth';
 import { useProfile } from '@/lib/hooks/use-user';
 import { setRoleCookie } from '@/lib/hooks/use-admin-role';
 import { useT } from '@/lib/i18n';
+import { cn } from '@/lib/utils';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { mutate: logout } = useLogout();
   const { data: profile, isLoading, isError } = useProfile();
   const t = useT();
@@ -43,6 +46,35 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
             <span className="font-bold text-lg">{t('admin.title')}</span>
           </div>
+
+          {/* Added at P2.13d. Until now this header had NO navigation at all, because `(admin)`
+              held exactly one page — `/admin/roadmap` would have been a route with no way in.
+              Two plain links rather than a nav component: the admin shell is legacy and gets
+              rebuilt at P3.4, so anything more here is work that gets thrown away. */}
+          <nav className="flex items-center gap-1">
+            <Link
+              href="/admin/moderation"
+              className={cn(
+                'rounded-lg px-3 py-1.5 text-sm font-medium transition-colors',
+                pathname === '/admin/moderation'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+              )}
+            >
+              {t('admin.moderation.title')}
+            </Link>
+            <Link
+              href="/admin/roadmap"
+              className={cn(
+                'rounded-lg px-3 py-1.5 text-sm font-medium transition-colors',
+                pathname === '/admin/roadmap'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+              )}
+            >
+              {t('nav.roadmap')}
+            </Link>
+          </nav>
 
           <Button variant="ghost" size="sm" onClick={() => logout()} className="gap-2">
             <LogOut className="h-4 w-4" />
