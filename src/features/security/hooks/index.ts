@@ -15,5 +15,5 @@ export {
   useChangePassword,
   useChangeProfilePicture,
   setRoleCookie,
-  syncRoleFromProfile,
+  useSyncRoleFromProfile,
 } from './use-profile';

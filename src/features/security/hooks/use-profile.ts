@@ -1,5 +1,6 @@
 'use client';
 
+import { useCallback } from 'react';
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { profileApi } from '../api/profile';
 import type { ChangePasswordRequest, UpdateProfileRequest, UserProfile } from '../types/profile';
@@ -86,9 +87,7 @@ export function setRoleCookie(isAdmin: boolean) {
  * regular app, not on an error, and an admin who ends up in `(main)` is redirected out by that
  * layout anyway.
  */
-export async function syncRoleFromProfile(
-  queryClient: QueryClient
-): Promise<UserProfile['role'] | null> {
+async function syncRoleFromProfile(queryClient: QueryClient): Promise<UserProfile['role'] | null> {
   try {
     const profile = await queryClient.fetchQuery({
       queryKey: securityKeys.profile(),
@@ -100,4 +99,20 @@ export async function syncRoleFromProfile(
     console.error('[syncRoleFromProfile] could not read the profile for role routing:', error);
     return null;
   }
+}
+
+/**
+ * THE HOOK IS THE PUBLIC SHAPE; the function above is not exported. Added at P3.5/P3.6.
+ *
+ * The barrel used to export `syncRoleFromProfile(queryClient)` directly, which forced its one
+ * caller — `app/(auth)/post-auth-redirect.ts` — to call `useQueryClient()` itself. That made a
+ * route file the only thing in `src/app` importing `@tanstack/react-query`, and P3.6's whole
+ * criterion is that routes compose feature surfaces rather than touch the data layer. Taking the
+ * client here instead removes the last one.
+ *
+ * It returns a callback rather than running on mount: the caller decides *when* sign-in finished.
+ */
+export function useSyncRoleFromProfile() {
+  const queryClient = useQueryClient();
+  return useCallback(() => syncRoleFromProfile(queryClient), [queryClient]);
 }

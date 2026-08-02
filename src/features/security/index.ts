@@ -31,7 +31,7 @@ export {
   useChangePassword,
   useChangeProfilePicture,
   setRoleCookie,
-  syncRoleFromProfile,
+  useSyncRoleFromProfile,
 } from './hooks';
 
 export {
