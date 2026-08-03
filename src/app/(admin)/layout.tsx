@@ -47,7 +47,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
     if (!profile) return;
     setRoleCookie(profile.role === 'ADMIN');
-    if (profile.role !== 'ADMIN') router.replace('/dashboard');
+    if (profile.role !== 'ADMIN') router.replace('/newsfeed');
   }, [profile, isError, router]);
 
   // Nothing of the admin surface renders until the role is known. Flashing the moderation queue

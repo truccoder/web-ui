@@ -42,6 +42,9 @@ export const vi: Messages = {
     dashboard: 'Dashboard',
     logout: 'Đăng xuất',
     primary: 'Điều hướng chính',
+    groupStream: 'Dòng chảy',
+    groupGrowth: 'Phát triển',
+    groupNetwork: 'Mạng lưới',
     openMenu: 'Mở điều hướng',
   },
 
@@ -872,6 +875,10 @@ export const vi: Messages = {
   },
 
   profile: {
+    network: {
+      title: 'Mạng lưới của bạn',
+      viewAll: 'Tất cả bạn bè',
+    },
     professionalHint: 'Trình giải thích dùng hồ sơ này để nói vừa tầm bạn.',
     professionalHintLink: 'Sang mục Kiến thức',
     title: 'Trang cá nhân',

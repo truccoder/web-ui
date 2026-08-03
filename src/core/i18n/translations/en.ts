@@ -44,6 +44,9 @@ export const en = {
     dashboard: 'Dashboard',
     logout: 'Logout',
     primary: 'Main navigation',
+    groupStream: 'Stream',
+    groupGrowth: 'Growth',
+    groupNetwork: 'Network',
     openMenu: 'Open navigation',
   },
 
@@ -894,6 +897,10 @@ export const en = {
   },
 
   profile: {
+    network: {
+      title: 'Your network',
+      viewAll: 'All friends',
+    },
     professionalHint: 'Your explainer uses this profile to pitch answers at your level.',
     professionalHintLink: 'Go to Knowledge',
     title: 'Profile',

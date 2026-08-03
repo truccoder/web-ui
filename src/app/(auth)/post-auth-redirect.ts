@@ -18,7 +18,11 @@ import { useSyncRoleFromProfile } from '@/features/security';
  *
  * IT STAYS AT THE ROUTE LAYER, not inside the feature, because *where to navigate after auth* is a
  * fact about this app's routes, not about the security domain. A `features/security` that knew
- * `/dashboard` and `/admin/moderation` would fail the extraction test for the sake of two strings.
+ * `/newsfeed` and `/admin/moderation` would fail the extraction test for the sake of two strings.
+ *
+ * P5.2 changed the non-admin destination from `/dashboard` to `/newsfeed`: `/dashboard` was
+ * absorbed into `/profile`, and landing a returning user on their own profile is not what a feed
+ * app does. Must stay in step with `homePath` in `src/middleware.ts`.
  *
  * WHAT P3.6 CHANGED: this used to take a `QueryClient` and pass it in, which made this route file
  * the only thing under `src/app` importing `@tanstack/react-query`. The client is now taken inside
@@ -31,6 +35,6 @@ export function usePostAuthRedirect() {
 
   return async function redirectAfterAuth() {
     const role = await syncRole();
-    router.replace(role === 'ADMIN' ? '/admin/moderation' : '/dashboard');
+    router.replace(role === 'ADMIN' ? '/admin/moderation' : '/newsfeed');
   };
 }

@@ -39,7 +39,10 @@ export function middleware(request: NextRequest) {
   // client-side, so we only redirect here on a *confirmed* role.
   const role = request.cookies.get('role')?.value;
   const isAdminArea = pathname.startsWith('/admin');
-  const homePath = role === 'ADMIN' ? '/admin/moderation' : '/dashboard';
+  // `/newsfeed` rather than the old `/dashboard`, which was absorbed into `/profile` at P5.2.
+  // A signed-in user lands on the feed, not on their own profile — the same destination `/`
+  // already redirects to, and the one a social app opens on. Change this single line to move it.
+  const homePath = role === 'ADMIN' ? '/admin/moderation' : '/newsfeed';
 
   if (hasSession && isPublicPath) {
     return NextResponse.redirect(new URL(homePath, request.url));
