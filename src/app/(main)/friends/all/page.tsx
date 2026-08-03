@@ -1,17 +1,10 @@
 'use client';
 
 import { FriendsList } from '@/features/friendships';
-import { useT } from '@/core/i18n';
 
+/**
+ * Heading and tab strip live in `../layout.tsx` (P5.1) — this page is now only its own surface.
+ */
 export default function AllFriendsPage() {
-  const t = useT();
-  return (
-    <div className="mx-auto max-w-2xl space-y-4">
-      <h1 className="text-nx-title font-semibold tracking-tight text-nx-text-primary">
-        {t('friends.all.title')}
-      </h1>
-
-      <FriendsList />
-    </div>
-  );
+  return <FriendsList />;
 }

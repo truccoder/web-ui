@@ -6,7 +6,6 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   BookOpen,
   Globe,
-  LayoutDashboard,
   LogOut,
   MessageCircle,
   Menu as MenuIcon,
@@ -15,8 +14,6 @@ import {
   Search,
   TrendingUp,
   User,
-  UserCheck,
-  UserPlus,
   Users,
 } from 'lucide-react';
 import {
@@ -57,10 +54,11 @@ import { useI18n, useT } from '@/core/i18n';
  *  - `lib/hooks/use-user` + `lib/hooks/use-friendship` → `features/security` +
  *    `features/friendships`. Those two legacy modules had no other consumer left and are deleted
  *    here, which is what P2.2d's table predicted.
- *  - eleven near-identical hand-written `<Link className={cn(...)}>` blocks → one `NAV_ITEMS`
- *    array rendered by one `NavLink`. The duplication was not just styling: each copy carried its
- *    own active-state expression, and `/chats` had drifted into `pathname === '/chats' ||
- *    pathname.startsWith('/chats')` — the second half subsuming the first.
+ *  - eleven near-identical hand-written `<Link className={cn(...)}>` blocks → one data array
+ *    rendered by one `NavLink`. The duplication was not just styling: each copy carried its own
+ *    active-state expression, and `/chats` had drifted into `pathname === '/chats' ||
+ *    pathname.startsWith('/chats')` — the second half subsuming the first. (P5.1 later grouped
+ *    that array; see `NAV_GROUPS`.)
  *
  * THE REACT WARNING TRACKED IN `findings/shared.md` IS ADDRESSED HERE. "Can't perform a React
  * state update on a component that hasn't mounted yet" fired on every `(main)` page, including
@@ -80,39 +78,88 @@ interface NavItem {
   keywords?: string;
   /** Rows that carry the pending-friend-request count. */
   badge?: 'pendingRequests';
+  /**
+   * Stay highlighted for every path under this prefix, not just an exact match. Only `/friends`
+   * needs it: one row now stands for three tabbed routes.
+   */
+  matchPrefix?: string;
 }
 
 /**
+ * NAV IS GROUPED, NOT FLAT — restructured at P5.1.
+ *
+ * It used to be ten rows of equal weight with no headings, which is what "điều hướng rối" meant:
+ * ten peers give the eye nothing to grab. They are now three groups of two to three, labelled by
+ * WHAT THE PERSON IS DOING rather than by module name — a reader looking for the roadmap is
+ * thinking "I want to grow", not "I want the roadmap domain".
+ *
+ * TWO ROWS DISAPPEARED WITHOUT LOSING A SURFACE:
+ *  - The three `/friends/*` rows became one row plus a tab strip in `friends/layout.tsx`. All three
+ *    URLs still work; the pending count moved onto that tab, so nothing worth glancing at was lost.
+ *  - `/dashboard` was absorbed into `/profile` at P5.2 — the two were the same page wearing
+ *    different names (both claimed to be "home of the signed-in account").
+ *
  * NO `/admin/*` ENTRY HERE, AND THAT IS NOT AN OVERSIGHT. The middleware redirects every `ADMIN`
  * session out of `(main)` entirely, so this nav only ever renders for someone who could not use an
  * admin link. The admin surfaces are reached from the `(admin)` header instead.
  */
-const NAV_ITEMS: NavItem[] = [
-  { href: '/newsfeed', labelKey: 'nav.newsfeed', icon: Newspaper, keywords: 'feed home bai viet' },
-  { href: '/trending', labelKey: 'nav.trending', icon: TrendingUp, keywords: 'hot xu huong' },
-  { href: '/knowledge', labelKey: 'nav.knowledge', icon: BookOpen, keywords: 'kien thuc token' },
-  { href: '/roadmap', labelKey: 'nav.roadmap', icon: RouteIcon, keywords: 'lo trinh skill' },
-  { href: '/friends/all', labelKey: 'nav.friendsAll', icon: Users, keywords: 'ban be' },
+interface NavGroup {
+  labelKey: string;
+  items: NavItem[];
+}
+
+const NAV_GROUPS: NavGroup[] = [
   {
-    href: '/friends/requests',
-    labelKey: 'nav.friendsRequests',
-    icon: UserCheck,
-    keywords: 'loi moi ket ban',
-    badge: 'pendingRequests',
+    labelKey: 'nav.groupStream',
+    items: [
+      {
+        href: '/newsfeed',
+        labelKey: 'nav.newsfeed',
+        icon: Newspaper,
+        keywords: 'feed home bai viet',
+      },
+      { href: '/trending', labelKey: 'nav.trending', icon: TrendingUp, keywords: 'hot xu huong' },
+    ],
   },
   {
-    href: '/friends/suggestions',
-    labelKey: 'nav.friendsSuggestions',
-    icon: UserPlus,
-    keywords: 'goi y',
+    labelKey: 'nav.groupGrowth',
+    items: [
+      { href: '/roadmap', labelKey: 'nav.roadmap', icon: RouteIcon, keywords: 'lo trinh skill' },
+      {
+        href: '/knowledge',
+        labelKey: 'nav.knowledge',
+        icon: BookOpen,
+        keywords: 'kien thuc token',
+      },
+    ],
   },
-  { href: '/chats', labelKey: 'nav.chats', icon: MessageCircle, keywords: 'tin nhan message' },
-  { href: '/profile', labelKey: 'nav.profile', icon: User, keywords: 'trang ca nhan account' },
-  { href: '/dashboard', labelKey: 'nav.dashboard', icon: LayoutDashboard, keywords: 'home' },
+  {
+    labelKey: 'nav.groupNetwork',
+    items: [
+      // Points at `/friends/all`, but stays highlighted across every `/friends/*` tab — see
+      // `isActive` below. One row, three surfaces.
+      {
+        href: '/friends/all',
+        labelKey: 'nav.friends',
+        icon: Users,
+        keywords: 'ban be loi moi goi y',
+        badge: 'pendingRequests',
+        matchPrefix: '/friends',
+      },
+      { href: '/chats', labelKey: 'nav.chats', icon: MessageCircle, keywords: 'tin nhan message' },
+    ],
+  },
 ];
 
 /**
- * `/notifications` IS REACHABLE FROM THE BELL, NOT FROM THIS LIST. P2.6cd added a sidebar row only
+ * Rows that sit below the groups, separated: this is "you", not a place you go to do work.
+ */
+const NAV_FOOTER_ITEMS: NavItem[] = [
+  { href: '/profile', labelKey: 'nav.profile', icon: User, keywords: 'trang ca nhan account home' },
+];
+
+/**
+ * `/notifications` IS REACHABLE FROM THE BELL, NOT FROM THE RAIL. P2.6cd added a sidebar row only
  * because a route nothing links to is not a surface, and said in place that P3.4 would replace it
  * with the topbar bell. The bell is here now, it carries the unread badge, and its footer links to
  * the page — a second entry point with no badge would be the weaker of the two.
@@ -121,6 +168,16 @@ const NAV_ITEMS: NavItem[] = [
 const PALETTE_ONLY_ITEMS: NavItem[] = [
   { href: '/notifications', labelKey: 'nav.notifications', icon: Users, keywords: 'thong bao' },
 ];
+
+/** Every route the palette should know about, in rail order. */
+const ALL_NAV_ITEMS: NavItem[] = [
+  ...NAV_GROUPS.flatMap((group) => group.items),
+  ...NAV_FOOTER_ITEMS,
+  ...PALETTE_ONLY_ITEMS,
+];
+
+const isActive = (item: NavItem, pathname: string) =>
+  item.matchPrefix ? pathname.startsWith(item.matchPrefix) : pathname === item.href;
 
 /** Count pill. Only rendered when there is something to count — a "0" badge is visual noise. */
 function CountBadge({ count }: { count: number }) {
@@ -200,14 +257,40 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         </span>
       </Link>
 
-      <nav aria-label={t('nav.primary')} className="flex-1 overflow-y-auto px-2 pb-2">
-        <div className="flex flex-col gap-0.5">
-          {NAV_ITEMS.map((item) => (
+      <nav
+        aria-label={t('nav.primary')}
+        className="flex flex-1 flex-col gap-4 overflow-y-auto px-2 pb-2"
+      >
+        {NAV_GROUPS.map((group) => (
+          // `aria-labelledby` rather than a bare heading: the group label is a real landmark name,
+          // so a screen reader announces "Mạng lưới, group" instead of reading a stray word.
+          <div key={group.labelKey} role="group" aria-labelledby={`navgrp-${group.labelKey}`}>
+            <div
+              id={`navgrp-${group.labelKey}`}
+              className="px-2.5 pb-1.5 text-nx-micro font-medium uppercase tracking-wide text-nx-text-faint"
+            >
+              {t(group.labelKey)}
+            </div>
+            <div className="flex flex-col gap-0.5">
+              {group.items.map((item) => (
+                <NavLink
+                  key={item.href}
+                  item={item}
+                  active={isActive(item, pathname)}
+                  count={item.badge === 'pendingRequests' ? pendingCount : undefined}
+                  onNavigate={onNavigate}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+
+        <div className="mt-auto flex flex-col gap-0.5 border-t border-nx-border-subtle pt-3">
+          {NAV_FOOTER_ITEMS.map((item) => (
             <NavLink
               key={item.href}
               item={item}
-              active={pathname === item.href}
-              count={item.badge === 'pendingRequests' ? pendingCount : undefined}
+              active={isActive(item, pathname)}
               onNavigate={onNavigate}
             />
           ))}
@@ -316,7 +399,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
   const paletteActions = useMemo<CommandAction[]>(
     () => [
-      ...[...NAV_ITEMS, ...PALETTE_ONLY_ITEMS].map((item) => ({
+      ...ALL_NAV_ITEMS.map((item) => ({
         id: item.href,
         label: t(item.labelKey),
         keywords: item.keywords,

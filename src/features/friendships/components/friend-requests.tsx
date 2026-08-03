@@ -22,6 +22,16 @@ import { FriendListItem } from './friend-list-item';
 
 type RequestTab = 'received' | 'sent';
 
+export interface FriendRequestsProps {
+  /**
+   * Size of this component's own received/sent strip. Added at P5.1, when `/friends` gained a
+   * page-level tab strip above it: two same-sized strips stacked read as one confused row. The
+   * page passes `sm` so the hierarchy is visible — outer strip picks the surface, inner strip
+   * picks a direction within it.
+   */
+  tabSize?: 'sm' | 'md';
+}
+
 function RequestRowSkeleton() {
   return (
     <div className="flex items-center gap-3 p-3">
@@ -56,7 +66,7 @@ function ErrorBanner({ error }: { error: unknown }) {
   );
 }
 
-export function FriendRequests() {
+export function FriendRequests({ tabSize = 'md' }: FriendRequestsProps = {}) {
   const { t, locale } = useI18n();
   const [tab, setTab] = useState<RequestTab>('received');
 
@@ -75,6 +85,7 @@ export function FriendRequests() {
   return (
     <div className="space-y-4">
       <Tabs
+        size={tabSize}
         aria-label={t('friends.requests.title')}
         active={tab}
         onChange={(id) => setTab(id as RequestTab)}
