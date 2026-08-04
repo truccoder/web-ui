@@ -3,11 +3,9 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
 import { en, type Messages } from './translations/en';
 import { vi } from './translations/vi';
+import { LOCALE_COOKIE, LOCALE_COOKIE_MAX_AGE, type Locale } from './locale';
 
-export type Locale = 'en' | 'vi';
-
-const STORAGE_KEY = 'app_locale';
-const DEFAULT_LOCALE: Locale = 'vi';
+export type { Locale };
 
 const bundles: Record<Locale, Messages> = { en, vi };
 
@@ -38,27 +36,27 @@ interface I18nContextType {
 
 const I18nContext = createContext<I18nContextType | null>(null);
 
-function getInitialLocale(): Locale {
-  if (typeof window === 'undefined') return DEFAULT_LOCALE;
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY) as Locale | null;
-    if (saved && saved in bundles) return saved;
-  } catch {
-    // ignore SSR / private browsing
-  }
-  return DEFAULT_LOCALE;
-}
-
-export function I18nProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>(getInitialLocale);
+/**
+ * `initialLocale` is REQUIRED, and is the whole point of P5.3: the provider no longer discovers
+ * the locale for itself. The root layout reads the cookie during server render and hands the same
+ * value down, so the server tree and the first client tree are identical by construction. A
+ * provider that read the cookie here (via `document.cookie`) would be back to the old bug — that
+ * read returns nothing on the server.
+ */
+export function I18nProvider({
+  initialLocale,
+  children,
+}: {
+  initialLocale: Locale;
+  children: ReactNode;
+}) {
+  const [locale, setLocaleState] = useState<Locale>(initialLocale);
 
   const setLocale = useCallback((next: Locale) => {
     setLocaleState(next);
-    try {
-      localStorage.setItem(STORAGE_KEY, next);
-    } catch {
-      // ignore
-    }
+    // Not `httpOnly` on purpose — this is a display preference the client itself must write, and
+    // there is no server route that would set it. `SameSite=Lax` keeps it off cross-site requests.
+    document.cookie = `${LOCALE_COOKIE}=${next}; path=/; max-age=${LOCALE_COOKIE_MAX_AGE}; samesite=lax`;
   }, []);
 
   const t: TranslateFn = useCallback(
