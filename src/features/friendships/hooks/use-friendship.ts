@@ -97,3 +97,31 @@ export function useCancelFriendRequest() {
     },
   });
 }
+
+/**
+ * End a friendship. Takes the OTHER USER's id, not a request id.
+ *
+ * INVALIDATES BOTH FRIENDS AND SUGGESTIONS, because the backend changes both: `unfriend` evicts
+ * the suggestion cache for **each** of the two people, since they are now candidates for one
+ * another again and everyone's mutual-friend counts shifted. Refreshing the friends list alone
+ * would leave the suggestions panel confidently omitting the person you just removed.
+ *
+ * `friendsRoot` rather than a sized key, because the list is cached per `limit` and per infinite
+ * page — the prefix sweeps the preview on `/profile` and the paged list on `/friends/all` together.
+ *
+ * NO OPTIMISTIC REMOVAL. The list is cursor-paginated and carries a server-computed `totalCount`;
+ * splicing a row out locally means either leaving that count wrong or recomputing a number the
+ * server owns. The same reasoning kept reactions optimistic only on `myReaction` in `posts`.
+ *
+ * Pending and sent are untouched: ending a friendship creates no request in either direction.
+ */
+export function useUnfriend() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (userId: number) => friendshipApi.unfriend(userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: friendshipKeys.friendsRoot });
+      queryClient.invalidateQueries({ queryKey: friendshipKeys.suggestionsRoot });
+    },
+  });
+}

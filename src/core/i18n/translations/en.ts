@@ -828,6 +828,14 @@ export const en = {
         desc: 'Friends you connect with will show up here.',
       },
       allLoaded: "You've seen all your friends",
+      unfriend: 'Unfriend',
+      unfriendAria: 'Unfriend ${name}',
+      unfriendTitle: 'Remove this friend?',
+      unfriendDesc:
+        'You and ${name} will no longer be friends. You can send a new request any time.',
+      unfriendCancel: 'Keep friend',
+      unfriendConfirm: 'Unfriend',
+      unfriendError: 'Could not remove this friend',
     },
     suggestions: {
       title: 'Friend Suggestions',
@@ -900,6 +908,34 @@ export const en = {
     network: {
       title: 'Your network',
       viewAll: 'All friends',
+    },
+    // Grouped by SURFACE rather than by owning feature, which is the convention already in force:
+    // `features/bookstore` reads `post.book.*` on the feed card and `payment.*` on the result page.
+    // These keys belong to the books section of `/profile`.
+    books: {
+      title: 'Your books',
+      loadError: 'Could not load your books',
+      emptyTitle: 'No books yet',
+      emptyDesc: 'Books you publish from the composer show up here.',
+      delete: 'Delete',
+      deleteAria: 'Delete ${title}',
+      deleteTitle: 'Delete this book?',
+      deleteDesc: '“${title}” will be removed for everyone. This cannot be undone.',
+      deleteCancel: 'Cancel',
+      deleteConfirm: 'Delete book',
+      deleteError: 'Could not delete this book',
+    },
+    skills: {
+      title: 'Your skills',
+      loadError: 'Could not load your skills',
+      emptyTitle: 'No skills claimed yet',
+      emptyDesc: 'Claim a skill from a roadmap and it shows up here.',
+      browseRoadmaps: 'Browse roadmaps',
+      status: {
+        verified: 'Verified',
+        pending: 'Awaiting review',
+        rejected: 'Rejected',
+      },
     },
     professionalHint: 'Your explainer uses this profile to pitch answers at your level.',
     professionalHintLink: 'Go to Knowledge',

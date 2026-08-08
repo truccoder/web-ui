@@ -6,6 +6,7 @@ export { BookRatingSummary, type BookRatingSummaryProps } from './book-rating-su
 // scope. Re-exporting it here would put that static path back into every server bundle importing
 // this barrel and break the production build again — which is exactly what happened once.
 export { BookReviewForm, type BookReviewFormProps } from './book-review-form';
+export { MyBooksList, type MyBooksListProps } from './my-books-list';
 export { BookReviewList, type BookReviewListProps } from './book-review-list';
 export { PaymentResultPanel, type PaymentResultPanelProps } from './payment-result-panel';
 export { StarRating, type StarRatingProps } from './star-rating';

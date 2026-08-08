@@ -3,10 +3,12 @@
 import Link from 'next/link';
 import { Clock, Users } from 'lucide-react';
 import { StatTile } from '@/shared/components';
+import { MyBooksList } from '@/features/bookstore';
 import { GithubStatsCard } from '@/features/github';
 import { FriendRequests, useFriends, usePendingRequests } from '@/features/friendships';
 import { ProfessionalProfileForm } from '@/features/knowledge';
 import { MyReputationCard } from '@/features/reputation';
+import { MySkillsCard } from '@/features/roadmap';
 import {
   ChangePasswordForm,
   ProfileIdentityCard,
@@ -42,11 +44,20 @@ import { useT } from '@/core/i18n';
  *    to grow their network is already heading.
  * Incoming requests stayed, because they are addressed to you and are actionable where they sit.
  *
- * TWO THINGS STILL MISSING, both measured rather than forgotten:
- *  - "MY VERIFIED SKILLS" — nothing exposes the signed-in user's roadmap progress, so a skills
- *    card would have to invent the one thing it exists to show. Goes in with backend D1.
- *  - "MY BOOKS" — `GET /books/author/{id}` and `DELETE /books/{id}` exist and work, but there is
- *    no surface for them; this is where they belong. Goes in with backend D2.
+ * NOTHING IS KNOWINGLY MISSING ANY MORE. The two gaps this header used to list both closed on
+ * 2026-08-09, and neither was blocked on what the old note claimed:
+ *
+ * "MY SKILLS" LANDED AT M3. The note said a skills card "would have to invent the one thing it
+ * exists to show", which was true while B21 was open — `findByUserId()` existed with no controller
+ * in front of it. `GET /users/{userId}/roadmap-progress` shipped, so the card shows real rows. It
+ * is the one section here whose contents depend on WHO IS LOOKING: the backend returns pending and
+ * rejected claims only to the owner, which on this page is always the viewer.
+ *
+ * "MY BOOKS" LANDED AT M2, and the note it replaces was wrong about why it was absent: it said
+ * "goes in with backend D2", but `GET /books/author/{id}` and `DELETE /books/{id}` were never
+ * blocked on anything — both work today. What was missing was a page with a reason to list books
+ * by author, which is what this page became when it absorbed `/dashboard`. It closes the last gap
+ * in bookstore's endpoint coverage (9/11 → 11/11).
  */
 export default function ProfilePage() {
   const t = useT();
@@ -69,7 +80,7 @@ export default function ProfilePage() {
 
       <section className="flex flex-col gap-3">
         <div className="flex items-baseline justify-between gap-3">
-          <h2 className="text-nx-h3 text-nx-text-primary">{t('profile.network.title')}</h2>
+          <h2 className="text-nx-title-sm text-nx-text-primary">{t('profile.network.title')}</h2>
           <Link
             href="/friends/all"
             className="shrink-0 text-nx-body-sm text-nx-text-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
@@ -99,7 +110,7 @@ export default function ProfilePage() {
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-nx-h3 text-nx-text-primary">{t('knowledge.profile.title')}</h2>
+        <h2 className="text-nx-title-sm text-nx-text-primary">{t('knowledge.profile.title')}</h2>
         <ProfessionalProfileForm />
         {/* Said here because the form no longer sits next to the feature that depends on it:
             without a professional profile the explainer refuses to run (428). */}
@@ -114,11 +125,37 @@ export default function ProfilePage() {
         </p>
       </section>
 
+      {/* Sits between the professional profile and GitHub because that is the order of how hard
+          the claim is to make: what you say you do → what the app has verified you can do → what
+          your code shows. Linking to /roadmap rather than embedding the claim form: claiming a
+          skill needs a roadmap and a node picked from it, which is a whole surface, not a card. */}
       <section className="flex flex-col gap-3">
-        <h2 className="text-nx-h3 text-nx-text-primary">{t('github.title')}</h2>
+        <div className="flex items-baseline justify-between gap-3">
+          <h2 className="text-nx-title-sm text-nx-text-primary">{t('profile.skills.title')}</h2>
+          <Link
+            href="/roadmap"
+            className="shrink-0 text-nx-body-sm text-nx-text-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
+          >
+            {t('profile.skills.browseRoadmaps')}
+          </Link>
+        </div>
+        <MySkillsCard userId={profile?.id} />
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-nx-title-sm text-nx-text-primary">{t('github.title')}</h2>
         {/* `undefined` until the profile resolves, which keeps the stats query idle rather than
             firing it for a user id nobody has yet. */}
         <GithubStatsCard userId={profile?.id} />
+      </section>
+
+      {/* Sits after GitHub and before credentials, keeping the page's rule that facts about you
+          come before tasks: what you have published is another thing your account *is*, while
+          changing a password is something you *do*. Takes `profile?.id` for the same reason the
+          stats card does — the query stays idle until there is an id to ask about. */}
+      <section className="flex flex-col gap-3">
+        <h2 className="text-nx-title-sm text-nx-text-primary">{t('profile.books.title')}</h2>
+        <MyBooksList authorId={profile?.id} />
       </section>
 
       <ProfileInfoForm />

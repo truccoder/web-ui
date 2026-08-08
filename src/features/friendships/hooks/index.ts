@@ -9,4 +9,5 @@ export {
   useAcceptFriendRequest,
   useRejectFriendRequest,
   useCancelFriendRequest,
+  useUnfriend,
 } from './use-friendship';

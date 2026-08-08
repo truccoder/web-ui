@@ -7,7 +7,7 @@ import {
   type UseMutationOptions,
 } from '@tanstack/react-query';
 import { useMyProfile } from '@/features/security';
-import { roadmapApi, skillVerificationApi } from '../api';
+import { roadmapApi, skillVerificationApi, userProgressApi } from '../api';
 import type {
   CreateRoadmapInput,
   CreateRoadmapNodeInput,
@@ -160,11 +160,18 @@ export function usePendingVerifications(enabled = true) {
 /**
  * POST /v1/api/skills/verify — claim a node.
  *
- * INVALIDATES NOTHING, AND THAT IS NOT AN OVERSIGHT. There is no endpoint that reads a user's own
- * progress back (B21), so there is no cached query this could refresh. The queue is not it
- * either: only `MOD_VERIFIED` and `QUIZ_VERIFIED` land there, and only an admin can read it, so
- * invalidating `pendingVerifications` from an ordinary user's submission would refetch a list
- * they are not allowed to see.
+ * INVALIDATES THE SUBMITTER'S OWN PROGRESS, AND NOTHING ELSE. This used to invalidate nothing,
+ * for a reason that has expired: B21 meant no endpoint could read a user's progress back, so there
+ * was no cached query to refresh. `GET /users/{userId}/roadmap-progress` now exists, a claim
+ * immediately shows up in it (as `VERIFIED` or `PENDING_APPROVAL` depending on tier), and a skills
+ * card that does not move after you claim a skill looks broken.
+ *
+ * The whole `progress` prefix is swept rather than one user's key, because the mutation is not
+ * told whose progress it just changed — the backend takes the submitter from the JWT.
+ *
+ * THE QUEUE IS STILL NOT INVALIDATED. Only `MOD_VERIFIED` and `QUIZ_VERIFIED` land there, and only
+ * an admin can read it, so invalidating `pendingVerifications` from an ordinary user's submission
+ * would refetch a list they are not allowed to see.
  *
  * A SUCCESSFUL MUTATION DOES NOT MEAN THE CLAIM WAS ACCEPTED. The endpoint returns `void` and the
  * four tiers behave differently behind it — `SELF_VERIFIED` verifies instantly, the two mod tiers
@@ -176,10 +183,35 @@ export function usePendingVerifications(enabled = true) {
  * both passes its own `onSuccess`.
  */
 export function useSubmitVerification(options?: RoadmapMutationOptions<SkillVerificationInput>) {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: SkillVerificationInput) =>
       skillVerificationApi.submitVerification(payload),
     ...options,
+    onSuccess: (data, payload, ...rest) => {
+      queryClient.invalidateQueries({ queryKey: roadmapKeys.progressAll });
+      options?.onSuccess?.(data, payload, ...rest);
+    },
+  });
+}
+
+/**
+ * GET /v1/api/users/{userId}/roadmap-progress — one user's claimed nodes.
+ *
+ * WHAT COMES BACK DEPENDS ON WHO IS ASKING, not on any argument here: the backend returns only
+ * `VERIFIED` rows unless the viewer is the user themselves. So the same `userId` yields a longer
+ * list on your own profile than on someone else's, and a consumer must render all three statuses
+ * rather than assuming everything it received is verified.
+ *
+ * NO `enabled` GATE ON A ROLE, unlike `usePendingVerifications` — this endpoint is open even to
+ * signed-out visitors. The `enabled` argument exists only so a caller holding an id that has not
+ * resolved yet (`profile?.id`) can keep the query idle instead of firing it for `NaN`.
+ */
+export function useRoadmapProgress(userId: number, enabled = true) {
+  return useQuery({
+    queryKey: roadmapKeys.progress(userId),
+    queryFn: () => userProgressApi.getRoadmapProgress(userId),
+    enabled: enabled && Number.isFinite(userId),
   });
 }
 
@@ -202,6 +234,10 @@ export function useApproveVerification(options?: RoadmapMutationOptions<number>)
     ...options,
     onSuccess: (data, progressId, ...rest) => {
       queryClient.invalidateQueries({ queryKey: roadmapKeys.pendingVerifications });
+      // The requester's own skills card now reads this row as VERIFIED. The queue row carries a
+      // `userId`, but this mutation is handed only a `progressId`, so the whole prefix is swept
+      // rather than one user's key.
+      queryClient.invalidateQueries({ queryKey: roadmapKeys.progressAll });
       options?.onSuccess?.(data, progressId, ...rest);
     },
   });
@@ -220,6 +256,8 @@ export function useRejectVerification(options?: RoadmapMutationOptions<number>) 
     ...options,
     onSuccess: (data, progressId, ...rest) => {
       queryClient.invalidateQueries({ queryKey: roadmapKeys.pendingVerifications });
+      // Same reason as approve: the row moves to REJECTED, which the owner can now see.
+      queryClient.invalidateQueries({ queryKey: roadmapKeys.progressAll });
       options?.onSuccess?.(data, progressId, ...rest);
     },
   });

@@ -30,4 +30,20 @@ export const roadmapKeys = {
    * status to put in the key. If a filter is ever added there, it belongs here too.
    */
   pendingVerifications: ['roadmap', 'pending-verifications'] as const,
+
+  /**
+   * One user's claimed nodes.
+   *
+   * A THIRD BRANCH, and it is the one the other two DO touch — unlike `roadmaps`/`nodes` and
+   * `pendingVerifications`, which provably cannot move each other. Approving or rejecting a claim
+   * changes both the moderator queue and the requester's progress list, so the verification
+   * mutations invalidate this prefix as well. Submitting a claim changes only this one.
+   *
+   * Keyed by user id because the endpoint is per user, and because the SAME user id returns
+   * different rows to different viewers (the owner also sees pending and rejected). Two accounts
+   * sharing one cache entry would show one of them the other's private rows — the key is per
+   * user, and the cache is per session, which is what keeps those apart.
+   */
+  progressAll: ['roadmap', 'progress'] as const,
+  progress: (userId: number) => ['roadmap', 'progress', userId] as const,
 };

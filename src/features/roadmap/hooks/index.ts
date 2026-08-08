@@ -7,6 +7,7 @@ export {
   useCreateRoadmapNode,
   usePendingVerifications,
   useSubmitVerification,
+  useRoadmapProgress,
   useApproveVerification,
   useRejectVerification,
   type RoadmapMutationOptions,

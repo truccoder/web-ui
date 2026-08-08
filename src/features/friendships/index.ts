@@ -27,6 +27,7 @@ export {
   useAcceptFriendRequest,
   useRejectFriendRequest,
   useCancelFriendRequest,
+  useUnfriend,
 } from './hooks';
 
 export type {

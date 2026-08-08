@@ -1,15 +1,28 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import { Card, EmptyState, Skeleton } from '@/shared/components';
+import { useEffect, useRef, useState } from 'react';
+import { UserMinus } from 'lucide-react';
+import { Button, Card, Dialog, EmptyState, Skeleton } from '@/shared/components';
+import { getErrorMessage } from '@/shared/lib/api-error';
 import { useT } from '@/core/i18n';
-import { useInfiniteFriends } from '../hooks/use-friendship';
+import { useInfiniteFriends, useUnfriend } from '../hooks/use-friendship';
 import { FriendListItem } from './friend-list-item';
 
 /**
  * The `/friends/all` surface: the whole friends list, cursor-paginated
  * (`GET /v1/api/friendships`) and loaded as you scroll. Owns its own count line because
  * `totalCount` only exists inside the query; the page owns the h1 above it.
+ *
+ * UNFRIENDING LANDED HERE ON 2026-08-09, when `DELETE /v1/api/friendships/{userId}` appeared. Until
+ * then the findings recorded "no endpoint to unfriend" as a hard ceiling: a friendship could be
+ * formed and never ended, which this list quietly reflected by offering no action at all.
+ *
+ * IT IS BEHIND A CONFIRM, unlike accept/reject on the requests screen. Those are decisions about a
+ * request that is already asking to be decided; this destroys an existing relationship from a row
+ * whose primary purpose is just to be looked at, so a misclick has to cost a second click.
+ *
+ * THE ENDPOINT IS IDEMPOTENT — 204 whether or not the friendship existed — so the dialog says the
+ * two will no longer be friends rather than claiming anything was verified and removed.
  */
 
 function FriendRowSkeleton() {
@@ -28,6 +41,11 @@ export function FriendsList() {
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteFriends();
 
   const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // Held whole rather than by id: the dialog names the person, and reading the name back out of
+  // the list would break the moment the row disappears on success.
+  const [pending, setPending] = useState<{ userId: number; fullName: string } | null>(null);
+  const unfriend = useUnfriend();
 
   useEffect(() => {
     const el = sentinelRef.current;
@@ -79,10 +97,56 @@ export function FriendsList() {
               name={friend.fullName}
               avatarUrl={friend.profilePictureUrl}
               subtitle={friend.username ? `@${friend.username}` : undefined}
+              actions={
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  icon={<UserMinus className="size-3.5" />}
+                  aria-label={t('friends.all.unfriendAria', { name: friend.fullName })}
+                  onClick={() => {
+                    // Clear a previous failure so the dialog never opens showing an error that
+                    // belonged to a different person.
+                    unfriend.reset();
+                    setPending({ userId: friend.userId, fullName: friend.fullName });
+                  }}
+                >
+                  {t('friends.all.unfriend')}
+                </Button>
+              }
             />
           </div>
         ))}
       </Card>
+
+      <Dialog
+        open={pending != null}
+        onClose={() => setPending(null)}
+        title={t('friends.all.unfriendTitle')}
+        description={t('friends.all.unfriendDesc', { name: pending?.fullName ?? '' })}
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setPending(null)}>
+              {t('friends.all.unfriendCancel')}
+            </Button>
+            <Button
+              variant="danger"
+              loading={unfriend.isPending}
+              onClick={() => {
+                if (!pending) return;
+                unfriend.mutate(pending.userId, { onSuccess: () => setPending(null) });
+              }}
+            >
+              {t('friends.all.unfriendConfirm')}
+            </Button>
+          </>
+        }
+      >
+        {unfriend.isError && (
+          <p role="alert" className="text-nx-body-sm text-nx-status-danger-fg">
+            {getErrorMessage(unfriend.error, t('friends.all.unfriendError'))}
+          </p>
+        )}
+      </Dialog>
 
       <div ref={sentinelRef} />
 

@@ -23,7 +23,7 @@
  * Populated at 2a with types + api and at 2b with hooks. UI (2c) and wiring (2d) follow.
  */
 
-export { roadmapApi, skillVerificationApi } from './api';
+export { roadmapApi, skillVerificationApi, userProgressApi } from './api';
 
 export {
   RoadmapList,
@@ -36,6 +36,8 @@ export {
   type PendingVerificationQueueProps,
   RoadmapAdminPanel,
   type RoadmapAdminPanelProps,
+  MySkillsCard,
+  type MySkillsCardProps,
 } from './components';
 
 export {
@@ -47,6 +49,7 @@ export {
   useCreateRoadmapNode,
   usePendingVerifications,
   useSubmitVerification,
+  useRoadmapProgress,
   useApproveVerification,
   useRejectVerification,
   type RoadmapMutationOptions,
@@ -62,4 +65,6 @@ export type {
   SkillVerificationInput,
   PendingVerification,
   VerificationTier,
+  VerificationStatus,
+  RoadmapProgress,
 } from './types';

@@ -6,3 +6,4 @@ export {
   type PendingVerificationQueueProps,
 } from './pending-verification-queue';
 export { RoadmapAdminPanel, type RoadmapAdminPanelProps } from './roadmap-admin-panel';
+export { MySkillsCard, type MySkillsCardProps } from './my-skills-card';

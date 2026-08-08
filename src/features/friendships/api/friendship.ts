@@ -47,4 +47,27 @@ export const friendshipApi = {
   /** POST /v1/api/friendships/requests/{requestId}/reject — reject an incoming request. */
   rejectRequest: (requestId: number) =>
     api.post<void>(`/v1/api/friendships/requests/${requestId}/reject`).then((r) => r.data),
+
+  /**
+   * DELETE /v1/api/friendships/{userId} — end an existing friendship.
+   *
+   * KEYED BY THE OTHER PERSON, NOT BY A REQUEST ID, and the backend's own note says why: what is
+   * being deleted is the friendship, which is identified by who it is with — not by the request row
+   * that once created it. That row is deleted too (`deleteAcceptedBetween`), so unfriending and
+   * re-adding starts genuinely fresh rather than reviving an old ACCEPTED row.
+   *
+   * IDEMPOTENT: **204 even when the two were never friends**, by design rather than by accident.
+   * So a success here does not prove a friendship existed, and the UI must not report "removed" as
+   * if it had verified something — it reports that the state is now "not friends", which is true
+   * either way. There is no 404 to handle.
+   *
+   * 400 IS THE ONE REAL ERROR: `unfriend(self, self)` throws "You cannot unfriend yourself". No
+   * surface should be able to produce it, since you are never in your own friends list, but it is
+   * the only failure mode worth showing verbatim if one ever does.
+   *
+   * IT CLOSES A CEILING THE FINDINGS RECORDED as "no endpoint to unfriend" — measured on the live
+   * spec 2026-08-09, in the same backend batch as public profiles and appeals.
+   */
+  unfriend: (userId: number) =>
+    api.delete<void>(`/v1/api/friendships/${userId}`).then((r) => r.data),
 };

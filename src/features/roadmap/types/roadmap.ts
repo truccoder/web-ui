@@ -106,6 +106,40 @@ export type CreateRoadmapNodeInput = Omit<Schemas['RoadmapNodeDto'], 'id' | 'roa
 export type SkillVerificationInput = Schemas['SkillVerificationRequestDto'];
 
 /**
+ * `VerificationStatus` — where a claim stands. Only the owner ever sees the non-VERIFIED two.
+ */
+export type VerificationStatus = NonNullable<Schemas['RoadmapProgressDto']['status']>;
+
+/**
+ * One node a user has claimed, as returned by `GET /v1/api/users/{userId}/roadmap-progress`.
+ *
+ * THE CONTROLLER LIVES IN `com.socialapp.roadmap` DESPITE THE `/users/...` PATH, so it belongs to
+ * this feature rather than to `security`. Same species of oddity as `PaymentController` sitting in
+ * `bookstore` — mirror the package, note the surprise (CLAUDE.md §3/§4).
+ *
+ * WHAT THE VIEWER SEES DEPENDS ON WHO THEY ARE, and that is server-side, not a UI concern:
+ * `getProgressForUser` filters to `VERIFIED` unless the viewer IS the user. So on the owner's own
+ * profile the array can contain `PENDING_APPROVAL` and `REJECTED` rows, and on anyone else's it
+ * cannot. A consumer must therefore render all three statuses rather than assuming everything it
+ * receives is verified — the same array shape means different things to different callers.
+ *
+ * IT CLOSES B21. The ledger recorded "`findByUserId()` exists, controller missing" as the reason
+ * `/profile` had no skills card; the controller now exists and the card is possible.
+ *
+ * `verifiedAt` IS NULL UNTIL A CLAIM IS ACTUALLY VERIFIED — a pending row has no verification
+ * moment yet — while `nodeId`/`nodeName` come from a join that cannot miss and `status`/`tier` are
+ * non-null columns. `RoadmapProgressDto.from` copies all five straight off the entity.
+ *
+ * NO PROOF LINK AND NO VERIFIER, deliberately: the endpoint is open to signed-out visitors (the
+ * profile it belongs to is), so the DTO carries nothing that would leak who vouched for what.
+ */
+export type RoadmapProgress = {
+  [K in keyof Required<Schemas['RoadmapProgressDto']>]: K extends 'verifiedAt'
+    ? Required<Schemas['RoadmapProgressDto']>[K] | null
+    : NonNullable<Schemas['RoadmapProgressDto'][K]>;
+};
+
+/**
  * One row in the moderator queue.
  *
  * EVERYTHING EXCEPT THE THREE PROOF/PICTURE FIELDS IS PRESENT. `SkillVerificationService.

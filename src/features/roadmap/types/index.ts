@@ -7,4 +7,6 @@ export type {
   SkillVerificationInput,
   PendingVerification,
   VerificationTier,
+  VerificationStatus,
+  RoadmapProgress,
 } from './roadmap';

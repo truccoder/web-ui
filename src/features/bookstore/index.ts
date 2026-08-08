@@ -33,6 +33,8 @@ export {
   type BookReviewFormProps,
   BookReviewList,
   type BookReviewListProps,
+  MyBooksList,
+  type MyBooksListProps,
   PaymentResultPanel,
   type PaymentResultPanelProps,
   StarRating,
