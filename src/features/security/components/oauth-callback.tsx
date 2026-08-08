@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { Button, Card } from '@/shared/components';
@@ -13,10 +13,13 @@ import { useOAuthCallback } from '../hooks/use-oauth';
 export interface OAuthCallbackProps {
   provider: OAuthProvider;
   /**
-   * Where to go after a successful exchange. The route injects role-aware routing;
-   * without it the component falls back to `/dashboard`.
+   * Where to go after a successful exchange. REQUIRED, and deliberately so: this component
+   * must not know a single one of this app's route strings. `usePostAuthRedirect` owns that
+   * decision at the route layer precisely so `features/security` stays extractable — a
+   * default here would reintroduce the second source of truth that file exists to prevent.
+   * It also rotted: the old default was `/dashboard`, a route P5.2 absorbed into `/profile`.
    */
-  onSuccess?: () => void;
+  onSuccess: () => void;
 }
 
 /**
@@ -28,7 +31,6 @@ export interface OAuthCallbackProps {
  */
 export function OAuthCallback({ provider, onSuccess }: OAuthCallbackProps) {
   const t = useT();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const callback = useOAuthCallback(provider);
 
@@ -42,14 +44,9 @@ export function OAuthCallback({ provider, onSuccess }: OAuthCallbackProps) {
     if (fired.current || !code || providerError) return;
     fired.current = true;
     callback.mutate(code, {
-      onSuccess: () => {
-        // The route injects role-aware routing (legacy bridge, ledger §6). Fallback
-        // sends everyone to /dashboard.
-        if (onSuccess) onSuccess();
-        else router.replace('/dashboard');
-      },
+      onSuccess,
     });
-  }, [code, providerError, callback, router, onSuccess]);
+  }, [code, providerError, callback, onSuccess]);
 
   const hasError = providerError || !code || callback.isError;
 

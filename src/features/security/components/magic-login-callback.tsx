@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Loader2, XCircle } from 'lucide-react';
 import { Button, Card } from '@/shared/components';
@@ -9,8 +9,12 @@ import { useT } from '@/core/i18n';
 import { useMagicLinkLogin } from '../hooks/use-recovery';
 
 export interface MagicLoginCallbackProps {
-  /** Where to go after sign-in; the route injects role-aware routing. Defaults to /dashboard. */
-  onSuccess?: () => void;
+  /**
+   * Where to go after sign-in. REQUIRED for the same reason as `OAuthCallbackProps.onSuccess`:
+   * route strings belong to `usePostAuthRedirect`, not to this feature. The old `/dashboard`
+   * default outlived the route P5.2 absorbed.
+   */
+  onSuccess: () => void;
 }
 
 /**
@@ -20,7 +24,6 @@ export interface MagicLoginCallbackProps {
  */
 export function MagicLoginCallback({ onSuccess }: MagicLoginCallbackProps) {
   const t = useT();
-  const router = useRouter();
   const token = useSearchParams().get('token');
   const login = useMagicLinkLogin();
   const fired = useRef(false);
@@ -28,16 +31,8 @@ export function MagicLoginCallback({ onSuccess }: MagicLoginCallbackProps) {
   useEffect(() => {
     if (fired.current || !token) return;
     fired.current = true;
-    login.mutate(
-      { token },
-      {
-        onSuccess: () => {
-          if (onSuccess) onSuccess();
-          else router.replace('/dashboard');
-        },
-      }
-    );
-  }, [token, login, router, onSuccess]);
+    login.mutate({ token }, { onSuccess });
+  }, [token, login, onSuccess]);
 
   if (!token || login.isError) {
     return (
