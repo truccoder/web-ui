@@ -6,9 +6,12 @@ const publicPaths = [
   '/register',
   '/forgot-password',
   '/reset-password',
-  '/room',
-  '/join',
-  '/call',
+  // OAuth callback runs BEFORE a session exists — it is what establishes one — so it
+  // must be reachable while logged out.
+  '/oauth',
+  // `/room`, `/join` and `/call` used to sit here. They were Twilio video routes, deleted at
+  // P2.7d along with the rest of Twilio; leaving them listed left three unauthenticated path
+  // prefixes standing open for routes that no longer exist.
 ];
 
 // Reachable regardless of session state: a just-registered (and thus already
@@ -36,7 +39,10 @@ export function middleware(request: NextRequest) {
   // client-side, so we only redirect here on a *confirmed* role.
   const role = request.cookies.get('role')?.value;
   const isAdminArea = pathname.startsWith('/admin');
-  const homePath = role === 'ADMIN' ? '/admin/moderation' : '/dashboard';
+  // `/newsfeed` rather than the old `/dashboard`, which was absorbed into `/profile` at P5.2.
+  // A signed-in user lands on the feed, not on their own profile — the same destination `/`
+  // already redirects to, and the one a social app opens on. Change this single line to move it.
+  const homePath = role === 'ADMIN' ? '/admin/moderation' : '/newsfeed';
 
   if (hasSession && isPublicPath) {
     return NextResponse.redirect(new URL(homePath, request.url));
@@ -47,7 +53,9 @@ export function middleware(request: NextRequest) {
   }
 
   if (hasSession && role === 'USER' && isAdminArea) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    // `homePath` rather than a second literal: this said `/dashboard`, which since P5.2 is itself
+    // only a redirect to `/profile`, so bouncing a user out of the admin area cost two extra hops.
+    return NextResponse.redirect(new URL(homePath, request.url));
   }
 
   return NextResponse.next();
