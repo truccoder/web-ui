@@ -33,7 +33,7 @@ export default function NewsfeedPage() {
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-4">
       <div>
-        <h1 className="text-nx-h2 font-semibold tracking-tight text-nx-text-primary">
+        <h1 className="text-nx-title font-semibold tracking-tight text-nx-text-primary">
           {t('newsfeed.title')}
         </h1>
         <p className="mt-0.5 text-nx-body-sm text-nx-text-secondary">{t('newsfeed.subtitle')}</p>

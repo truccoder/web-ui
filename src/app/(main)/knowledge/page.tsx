@@ -31,7 +31,7 @@ export default function KnowledgePage() {
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-8">
       <div>
-        <h1 className="text-nx-h2 font-semibold tracking-tight text-nx-text-primary">
+        <h1 className="text-nx-title font-semibold tracking-tight text-nx-text-primary">
           {t('knowledge.title')}
         </h1>
         <p className="mt-0.5 text-nx-body-sm text-nx-text-secondary">{t('knowledge.subtitle')}</p>
@@ -52,7 +52,9 @@ export default function KnowledgePage() {
       </section>
 
       <section>
-        <h2 className="mb-3 text-nx-h3 text-nx-text-primary">{t('knowledge.library.title')}</h2>
+        <h2 className="mb-3 text-nx-title-sm text-nx-text-primary">
+          {t('knowledge.library.title')}
+        </h2>
         <KnowledgeLibrary />
       </section>
     </div>

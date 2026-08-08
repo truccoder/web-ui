@@ -38,7 +38,7 @@ export function StatTile({ label, value, description, icon, className }: StatTil
       </div>
 
       {/* `tabular-nums` so a row of tiles keeps its digits aligned as the numbers change. */}
-      <span className="text-nx-h2 font-semibold tabular-nums text-nx-text-primary">
+      <span className="text-nx-title font-semibold tabular-nums text-nx-text-primary">
         {value === undefined ? '—' : value.toLocaleString('en-US')}
       </span>
 

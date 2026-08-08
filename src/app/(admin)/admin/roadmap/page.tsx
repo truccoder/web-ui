@@ -49,12 +49,12 @@ function AdminRoadmapContent() {
       </div>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-nx-h3 text-nx-text-primary">{t('roadmap.queue.title')}</h2>
+        <h2 className="text-nx-title-sm text-nx-text-primary">{t('roadmap.queue.title')}</h2>
         <PendingVerificationQueue />
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-nx-h3 text-nx-text-primary">{t('roadmap.title')}</h2>
+        <h2 className="text-nx-title-sm text-nx-text-primary">{t('roadmap.title')}</h2>
         <RoadmapList
           selectedId={roadmapId}
           onSelect={(id) => router.replace(`/admin/roadmap?id=${id}`)}

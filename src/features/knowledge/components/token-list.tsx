@@ -29,7 +29,7 @@ export function TokenList() {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-nx-h3 text-nx-text-primary">{t('knowledge.tokens.title')}</h2>
+        <h2 className="text-nx-title-sm text-nx-text-primary">{t('knowledge.tokens.title')}</h2>
         <Button
           size="sm"
           variant="secondary"

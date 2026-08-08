@@ -116,7 +116,7 @@ export function PaymentResultPanel({ transactionRef }: PaymentResultPanelProps) 
   return (
     <div className="flex max-w-sm flex-col items-center gap-3 text-center">
       {view.icon}
-      <h1 className="text-nx-h2 font-semibold text-nx-text-primary">{view.title}</h1>
+      <h1 className="text-nx-title font-semibold text-nx-text-primary">{view.title}</h1>
       <p className="text-nx-body-sm text-nx-text-secondary">{view.description}</p>
       <Link href="/newsfeed" className="mt-4">
         <Button variant="secondary">{t('payment.backToNewsfeed')}</Button>

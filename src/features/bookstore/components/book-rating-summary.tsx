@@ -53,7 +53,7 @@ export function BookRatingSummary({ bookId, enabled = true }: BookRatingSummaryP
   return (
     <div className="flex items-start gap-4">
       <div className="shrink-0 text-center">
-        <div className="text-nx-h2 tabular-nums">{average.toFixed(1)}</div>
+        <div className="text-nx-title tabular-nums">{average.toFixed(1)}</div>
         <StarRating rating={average} />
         <div className="mt-1 text-nx-caption text-nx-text-muted">
           {t('post.book.reviewCount', { count: data.totalRatings })}
