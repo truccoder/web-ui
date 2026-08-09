@@ -108,9 +108,28 @@ interface NavGroup {
   items: NavItem[];
 }
 
+/**
+ * TWO GROUPS, NOT THREE — the round-14 rail (`handoff/density-r14.md` §1).
+ *
+ * The product has two halves: OTHER PEOPLE and YOU. `Bảng tin` · `Bạn bè` · `Chats` are all other
+ * people; `Lộ trình` · `Kho lưu trữ` are all you. That is a cleaner split than the three groups it
+ * replaces (`Dòng chảy` / `Phát triển` / `Mạng lưới`), and it dissolved `Dòng chảy` entirely —
+ * with `Bảng tin` moved into the community half that group had no members left.
+ *
+ * WHY `Cộng đồng` AND NOT `Mạng lưới`: the feed's `Tất cả` tab is every post in the product plus
+ * every crawled item, with no filter of any kind. `Mạng lưới` names the friend edge and nothing
+ * else, so filing the feed under it would say the feed is your friends — which the product
+ * explicitly says it is not. `Cộng đồng` says the wider thing, and it is the honest complement to
+ * `Phát triển`: outward, then inward.
+ *
+ * `/trending` IS NOT IN THE RAIL and that is the design, not an omission. The DS folds crawled
+ * content into the feed's `Tất cả` tab and the ledger's `Từ bên ngoài` section, retiring the
+ * separate destination. The route still exists and still works — folding it into the feed is R4
+ * — so it moves to `PALETTE_ONLY_ITEMS` rather than being stranded with no way in.
+ */
 const NAV_GROUPS: NavGroup[] = [
   {
-    labelKey: 'nav.groupStream',
+    labelKey: 'nav.groupCommunity',
     items: [
       {
         href: '/newsfeed',
@@ -118,24 +137,6 @@ const NAV_GROUPS: NavGroup[] = [
         icon: Newspaper,
         keywords: 'feed home bai viet',
       },
-      { href: '/trending', labelKey: 'nav.trending', icon: TrendingUp, keywords: 'hot xu huong' },
-    ],
-  },
-  {
-    labelKey: 'nav.groupGrowth',
-    items: [
-      { href: '/roadmap', labelKey: 'nav.roadmap', icon: RouteIcon, keywords: 'lo trinh skill' },
-      {
-        href: '/knowledge',
-        labelKey: 'nav.knowledge',
-        icon: BookOpen,
-        keywords: 'kien thuc token',
-      },
-    ],
-  },
-  {
-    labelKey: 'nav.groupNetwork',
-    items: [
       // Points at `/friends/all`, but stays highlighted across every `/friends/*` tab — see
       // `isActive` below. One row, three surfaces.
       {
@@ -147,6 +148,21 @@ const NAV_GROUPS: NavGroup[] = [
         matchPrefix: '/friends',
       },
       { href: '/chats', labelKey: 'nav.chats', icon: MessageCircle, keywords: 'tin nhan message' },
+    ],
+  },
+  {
+    labelKey: 'nav.groupGrowth',
+    items: [
+      { href: '/roadmap', labelKey: 'nav.roadmap', icon: RouteIcon, keywords: 'lo trinh skill' },
+      {
+        // `Thư viện` (the book library, `GET /books`) is the third member of this group in the DS.
+        // It is not here because the route does not exist yet — R4 builds it. A rail item that
+        // 404s is exactly what the DS's own rule forbids.
+        href: '/knowledge',
+        labelKey: 'nav.knowledge',
+        icon: BookOpen,
+        keywords: 'kien thuc token kho luu tru',
+      },
     ],
   },
 ];
@@ -167,6 +183,9 @@ const NAV_FOOTER_ITEMS: NavItem[] = [
  */
 const PALETTE_ONLY_ITEMS: NavItem[] = [
   { href: '/notifications', labelKey: 'nav.notifications', icon: Users, keywords: 'thong bao' },
+  // Retired from the rail by the round-14 grouping (see `NAV_GROUPS`), kept reachable here until
+  // R4 folds crawled content into the feed. The palette is a keyboard index of every route.
+  { href: '/trending', labelKey: 'nav.trending', icon: TrendingUp, keywords: 'hot xu huong' },
 ];
 
 /** Every route the palette should know about, in rail order. */
@@ -243,11 +262,14 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <div className="flex h-full flex-col">
+      {/* THE BRAND IS NOT HERE ANY MORE — it moved to the top bar at R3, where the DS puts it.
+          The rail is destinations only. It stays in the mobile Drawer, though, because the drawer
+          is shown INSTEAD of the bar's rail affordance and needs to say what app it belongs to. */}
       <Link
         href="/newsfeed"
         onClick={onNavigate}
         className={cn(
-          'flex items-center gap-2.5 px-4 py-4',
+          'flex items-center gap-2.5 px-4 py-4 md:hidden',
           'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-nx-focus-ring'
         )}
       >
@@ -259,7 +281,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
       <nav
         aria-label={t('nav.primary')}
-        className="flex flex-1 flex-col gap-4 overflow-y-auto px-2 pb-2"
+        className="flex flex-1 flex-col gap-4 overflow-y-auto px-2 pb-2 md:pt-4"
       >
         {NAV_GROUPS.map((group) => (
           // `aria-labelledby` rather than a bare heading: the group label is a real landmark name,
@@ -435,67 +457,123 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
      * an admin — redirected out of this shell by the effect above — never opens a socket at all.
      */
     <ChatClientProvider enabled={Boolean(profile) && profile?.role !== 'ADMIN'}>
+      {/**
+       * THE R4 SKELETON: a slim bar across the top, a rail and a canvas under it, and neither
+       * flank paints anything. Replaces the round-1 shell (a filled 240px sidebar with a border,
+       * and content in a 1024px box).
+       *
+       * WHAT THE CHANGE IS ACTUALLY ABOUT, since "sidebar → rail" undersells it: separation used
+       * to be drawn (a fill plus a right border marked where the sidebar stopped), and is now
+       * PLACED. The ground is recessed (`surface-page` at gray-100), the bar and the cards are
+       * raised on it, and the flanks are simply ground with things standing on it. That is why
+       * the rail has no fill and no border — it is not an undecorated sidebar, it is not a panel
+       * at all. It is why the gutter between regions is empty: the gutter IS the boundary.
+       *
+       * THE BAR CARRIES NO DESTINATIONS AND EXACTLY ONE COUNT. Brand, search, bell, avatar —
+       * nothing else. The rejected round-2 skeleton put a second row of group tabs here and it
+       * changed under the reader when they switched groups. Destinations live in the rail, where
+       * they hold still; the one number in the chrome is the bell's, because it is a queue you
+       * can clear rather than attention bait.
+       */}
       <div
         className={cn(
           'bg-nx-surface-page',
           isFullBleed ? 'flex h-[100dvh] flex-col overflow-hidden' : 'min-h-screen'
         )}
       >
-        <aside className="fixed inset-y-0 hidden w-60 flex-col border-r border-nx-border-subtle bg-nx-surface-card md:flex">
-          <SidebarContent />
-        </aside>
+        {/* 56px, raised on the ground with a hairline shadow and NO bottom border — the elevation
+            is what separates it, so a border would be saying the same thing twice. Full-bleed
+            rather than capped with the shell: the search field centres on the viewport. */}
+        <header
+          className={cn(
+            'sticky top-0 z-30 flex h-nx-topbar shrink-0 items-center gap-3 px-3.5 xl:px-5',
+            'bg-nx-surface-card shadow-nx-1'
+          )}
+        >
+          <IconButton
+            label={t('nav.openMenu')}
+            className="md:hidden"
+            onClick={() => setDrawerOpen(true)}
+          >
+            <MenuIcon />
+          </IconButton>
+
+          {/* Wordmark drops below 1280 and the mark stands alone — the bar's budget goes to the
+              search field first. Hidden entirely on mobile, where the drawer carries the brand. */}
+          <Link
+            href="/newsfeed"
+            className={cn(
+              'hidden shrink-0 items-center gap-2.5 md:flex',
+              'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring'
+            )}
+          >
+            <BrandMark size={24} />
+            <span className="hidden text-nx-body font-semibold tracking-tight text-nx-text-primary xl:inline">
+              {t('app.name')}
+            </span>
+          </Link>
+
+          {/* Capped at 440 and centred in what the bar has left, rather than stretched: a field
+              that runs the width of a 1512px window reads as a page-wide input, not a tool. */}
+          <div className="mx-auto w-full max-w-[440px] min-w-0">
+            <SearchBar />
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setPaletteOpen(true)}
+            className={cn(
+              'hidden shrink-0 items-center gap-1.5 rounded-nx-sm border border-nx-border-default px-2 py-1',
+              'font-mono text-nx-micro text-nx-text-muted hover:bg-nx-surface-hover sm:flex',
+              'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring'
+            )}
+          >
+            {t('palette.shortcutHint')}
+          </button>
+
+          <NotificationBell />
+        </header>
 
         <Drawer
           open={drawerOpen}
           onClose={() => setDrawerOpen(false)}
-          width={240}
+          width={256}
           label={t('nav.primary')}
         >
           <SidebarContent onNavigate={() => setDrawerOpen(false)} />
         </Drawer>
 
-        <div className={cn('md:ml-60', isFullBleed && 'flex min-h-0 flex-1 flex-col')}>
-          {/* ONE topbar for both breakpoints, replacing the previous mobile header plus a separate
-              desktop search strip. Two bars meant two `sticky top-0` elements, and the old code
-              had to switch one of them to `md:sticky` to stop them overlapping. */}
-          <header
+        {/* The shell is capped at its own budget — 248 rail + 40 gutter + 672 canvas (+ 40 + 300
+            for the ledger, which R3-2 adds) — and centred on the ground. What lies outside the cap
+            is ground, the same substance as the gaps between cards, so it reads as page margin
+            rather than as an over-wide layout. */}
+        <div
+          className={cn(
+            'mx-auto flex w-full max-w-[var(--spacing-nx-shell-max)]',
+            'gap-6 xl:gap-nx-region-gutter',
+            isFullBleed && 'min-h-0 flex-1'
+          )}
+        >
+          {/* Hangs below the bar and owns its own scroller, so a long rail never scrolls the
+              canvas and a long canvas never scrolls the rail. No fill, no border. */}
+          <aside
             className={cn(
-              'sticky top-0 z-30 flex shrink-0 items-center gap-2 px-3 py-2 sm:px-4',
-              'border-b border-nx-border-subtle bg-nx-surface-card'
+              'sticky top-nx-topbar hidden h-[calc(100dvh-var(--spacing-nx-topbar))] w-nx-sidebar',
+              'shrink-0 md:flex'
             )}
           >
-            <IconButton
-              label={t('nav.openMenu')}
-              className="md:hidden"
-              onClick={() => setDrawerOpen(true)}
-            >
-              <MenuIcon />
-            </IconButton>
-
-            <div className="min-w-0 flex-1">
-              <SearchBar />
-            </div>
-
-            {/* The shortcut is discoverable only if something shows it. Hidden below `sm`, where
-                there is usually no Ctrl key to press. */}
-            <button
-              type="button"
-              onClick={() => setPaletteOpen(true)}
-              className={cn(
-                'hidden shrink-0 items-center gap-1.5 rounded-nx-sm border border-nx-border-default px-2 py-1',
-                'font-mono text-nx-micro text-nx-text-muted hover:bg-nx-surface-hover sm:flex',
-                'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring'
-              )}
-            >
-              {t('palette.shortcutHint')}
-            </button>
-
-            <NotificationBell />
-          </header>
+            <SidebarContent />
+          </aside>
 
           <main
             className={cn(
-              isFullBleed ? 'min-h-0 flex-1' : 'mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8'
+              'min-w-0 flex-1',
+              isFullBleed
+                ? 'flex min-h-0 flex-col'
+                : // The reading column is hard-capped and centred in whatever the canvas has.
+                  // 28 top / 24 side / 72 bottom: the deep bottom pad is scroll run-out, so the
+                  // last card in a feed does not sit flush against the viewport edge.
+                  'mx-auto w-full max-w-[var(--spacing-nx-canvas)] px-6 pt-7 pb-18'
             )}
           >
             {children}

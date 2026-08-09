@@ -42,6 +42,9 @@ export const vi: Messages = {
     dashboard: 'Dashboard',
     logout: 'Đăng xuất',
     primary: 'Điều hướng chính',
+    // R15 rail: hai nhóm — người khác, rồi bạn. `groupStream`/`groupNetwork` giữ lại vì
+    // `/trending` và các nhãn cũ còn tham chiếu ở nơi khác; xoá khi R4 dọn xong.
+    groupCommunity: 'Cộng đồng',
     groupStream: 'Dòng chảy',
     groupGrowth: 'Phát triển',
     groupNetwork: 'Mạng lưới',

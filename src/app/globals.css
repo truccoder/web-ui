@@ -421,6 +421,10 @@
 
      The proximity ladder below is NOT renamed: those are read via `var()` inside arbitrary
      values and gap/padding utilities alike, and a `--spacing-nx-space-pad` would be absurd. */
+  /* Mirrors the pre-existing raw `--nx-sidebar-width` into the spacing namespace so the rail can
+     be sized with `w-nx-sidebar` like every other region. Both names are kept: the raw one is
+     referenced by older code and by the DS's own docs. */
+  --spacing-nx-sidebar: 248px;
   --spacing-nx-topbar: 56px;
   --spacing-nx-subnav: 40px;
   --spacing-nx-ledger: 300px;

@@ -44,6 +44,7 @@ export const en = {
     dashboard: 'Dashboard',
     logout: 'Logout',
     primary: 'Main navigation',
+    groupCommunity: 'Community',
     groupStream: 'Stream',
     groupGrowth: 'Growth',
     groupNetwork: 'Network',
