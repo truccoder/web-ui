@@ -1,271 +1,166 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Camera, Loader2 } from 'lucide-react';
+import Link from 'next/link';
+import { Clock, Users } from 'lucide-react';
+import { StatTile } from '@/shared/components';
+import { MyBooksList } from '@/features/bookstore';
+import { GithubStatsCard } from '@/features/github';
+import { FriendRequests, useFriends, usePendingRequests } from '@/features/friendships';
+import { ProfessionalProfileForm } from '@/features/knowledge';
+import { MyReputationCard } from '@/features/reputation';
+import { MySkillsCard } from '@/features/roadmap';
 import {
-  useProfile,
-  useUpdateProfile,
-  useUploadProfilePicture,
-  useChangePassword,
-} from '@/lib/hooks/use-user';
-import { updateProfileSchema, type UpdateProfileFormData } from '@/lib/schemas/user';
-import { changePasswordSchema, type ChangePasswordFormData } from '@/lib/schemas/user';
-import { useT } from '@/lib/i18n';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
-import { getNeutralAvatarColor } from '@/lib/avatar-color';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+  ChangePasswordForm,
+  ProfileIdentityCard,
+  ProfileInfoForm,
+  useMyProfile,
+} from '@/features/security';
+import { useT } from '@/core/i18n';
 
-function ProfilePictureUpload({ liveFullname }: { liveFullname?: string }) {
-  const { data: profile } = useProfile();
-  const { mutate: uploadPicture, isPending } = useUploadProfilePicture();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [preview, setPreview] = useState<string | null>(null);
-  const t = useT();
-
-  const initials = (liveFullname || profile?.fullname)
-    ?.trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
-  const avatarColor = getNeutralAvatarColor(profile?.id ?? liveFullname ?? 'default');
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) return;
-
-    setPreview(URL.createObjectURL(file));
-    uploadPicture(file, {
-      onSettled: () => {
-        setPreview(null);
-        if (fileInputRef.current) fileInputRef.current.value = '';
-      },
-    });
-  };
-
-  const displayUrl = preview ?? profile?.profilePictureUrl;
-
-  return (
-    <div className="flex flex-col items-center gap-4">
-      <div className="relative group">
-        <Avatar className="h-28 w-28">
-          {displayUrl ? <AvatarImage src={displayUrl} /> : null}
-          <AvatarFallback className={`${avatarColor} text-white text-3xl`}>
-            {initials ?? '?'}
-          </AvatarFallback>
-        </Avatar>
-
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={isPending}
-          className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer disabled:cursor-not-allowed"
-        >
-          {isPending ? (
-            <Loader2 className="h-6 w-6 text-white animate-spin" />
-          ) : (
-            <Camera className="h-6 w-6 text-white" />
-          )}
-        </button>
-
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          className="hidden"
-          onChange={handleFileSelect}
-        />
-      </div>
-      <p className="text-xs text-muted-foreground">{t('profile.uploadHint')}</p>
-    </div>
-  );
-}
-
-function ProfileInfoTab({ onFullnameChange }: { onFullnameChange: (value: string) => void }) {
-  const { data: profile } = useProfile();
-  const { mutate: updateProfile, isPending } = useUpdateProfile();
-  const t = useT();
-
-  const {
-    register,
-    handleSubmit,
-    control,
-    formState: { errors },
-  } = useForm<UpdateProfileFormData>({
-    resolver: zodResolver(updateProfileSchema),
-    values: { fullname: profile?.fullname ?? '' },
-  });
-
-  const onSubmit = (data: UpdateProfileFormData) => {
-    updateProfile(data);
-  };
-
-  const fullname = useWatch({ control, name: 'fullname' });
-  useEffect(() => {
-    onFullnameChange(fullname ?? '');
-  }, [fullname, onFullnameChange]);
-
-  return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="fullname">{t('profile.info.fullname')}</Label>
-        <Input id="fullname" {...register('fullname')} />
-        {errors.fullname && <p className="text-sm text-destructive">{errors.fullname.message}</p>}
-      </div>
-
-      <Button type="submit" disabled={isPending}>
-        {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        {isPending ? t('profile.info.saving') : t('profile.info.save')}
-      </Button>
-    </form>
-  );
-}
-
-function ChangePasswordTab() {
-  const { mutate: changePassword, isPending } = useChangePassword();
-  const t = useT();
-
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<ChangePasswordFormData>({
-    resolver: zodResolver(changePasswordSchema),
-  });
-
-  const onSubmit = (data: ChangePasswordFormData) => {
-    changePassword(
-      { currentPassword: data.currentPassword, newPassword: data.newPassword },
-      { onSuccess: () => reset() }
-    );
-  };
-
-  return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="currentPassword">{t('profile.password.currentPassword')}</Label>
-        <Input
-          id="currentPassword"
-          type="password"
-          placeholder={t('profile.password.currentPlaceholder')}
-          {...register('currentPassword')}
-        />
-        {errors.currentPassword && (
-          <p className="text-sm text-destructive">{errors.currentPassword.message}</p>
-        )}
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="newPassword">{t('profile.password.newPassword')}</Label>
-        <Input
-          id="newPassword"
-          type="password"
-          placeholder={t('profile.password.newPlaceholder')}
-          {...register('newPassword')}
-        />
-        {errors.newPassword && (
-          <p className="text-sm text-destructive">{errors.newPassword.message}</p>
-        )}
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="confirmPassword">{t('profile.password.confirm')}</Label>
-        <Input
-          id="confirmPassword"
-          type="password"
-          placeholder={t('profile.password.confirmPlaceholder')}
-          {...register('confirmPassword')}
-        />
-        {errors.confirmPassword && (
-          <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
-        )}
-      </div>
-
-      <Button type="submit" disabled={isPending}>
-        {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        {isPending ? t('profile.password.updating') : t('profile.password.update')}
-      </Button>
-    </form>
-  );
-}
-
+/**
+ * `/profile` — assembled at P3.2, and it ABSORBED `/dashboard` at P5.2. Owning domain: `security`.
+ *
+ * WHY THE MERGE. The two routes were the same page wearing different names: both opened by
+ * claiming to be the home of the signed-in account. `/dashboard` had a greeting, a friend count
+ * and incoming requests; `/profile` had identity, Elite Score, professional profile, GitHub and
+ * credentials. No boundary existed that a person could predict, so every visit started with
+ * "which one has the thing I want". One page, one answer.
+ *
+ * FIVE DOMAINS, ORDERED BY WHOSE ACCOUNT THIS IS RATHER THAN BY SIZE. `security` owns the shell
+ * and everything that is literally the account; `reputation`, `friendships`, `knowledge` and
+ * `github` each contribute through their barrels — no domain reaches into another's internals and
+ * this page mediates nothing between them.
+ *
+ * The order is: who you are → what the app scores you at → what your network is doing → what you
+ * do professionally → what your code says → your credentials. Credentials go last because changing
+ * a password is a task, not a fact about you, and putting a task first makes a page of facts read
+ * like a form.
+ *
+ * WHAT THE MERGE DROPPED, deliberately:
+ *  - THE GREETING. "Chào mừng trở lại, X" sat directly above an identity card showing the same
+ *    name and face. Saying it twice is not warmth, it is noise.
+ *  - FRIEND SUGGESTIONS. They were on the dashboard, and they are about *other* people — this page
+ *    is about you. They live one click away on the friends tabs, which is where someone who wants
+ *    to grow their network is already heading.
+ * Incoming requests stayed, because they are addressed to you and are actionable where they sit.
+ *
+ * NOTHING IS KNOWINGLY MISSING ANY MORE. The two gaps this header used to list both closed on
+ * 2026-08-09, and neither was blocked on what the old note claimed:
+ *
+ * "MY SKILLS" LANDED AT M3. The note said a skills card "would have to invent the one thing it
+ * exists to show", which was true while B21 was open — `findByUserId()` existed with no controller
+ * in front of it. `GET /users/{userId}/roadmap-progress` shipped, so the card shows real rows. It
+ * is the one section here whose contents depend on WHO IS LOOKING: the backend returns pending and
+ * rejected claims only to the owner, which on this page is always the viewer.
+ *
+ * "MY BOOKS" LANDED AT M2, and the note it replaces was wrong about why it was absent: it said
+ * "goes in with backend D2", but `GET /books/author/{id}` and `DELETE /books/{id}` were never
+ * blocked on anything — both work today. What was missing was a page with a reason to list books
+ * by author, which is what this page became when it absorbed `/dashboard`. It closes the last gap
+ * in bookstore's endpoint coverage (9/11 → 11/11).
+ */
 export default function ProfilePage() {
-  const { data: profile, isLoading } = useProfile();
-  const [liveFullname, setLiveFullname] = useState('');
   const t = useT();
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
+  const { data: profile } = useMyProfile();
+  const { data: friends } = useFriends();
+  const { data: pendingRequests } = usePendingRequests();
 
   return (
-    <div className="space-y-8">
+    <div className="mx-auto flex max-w-2xl flex-col gap-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">{t('profile.title')}</h1>
-        <p className="text-muted-foreground mt-1">{t('profile.subtitle')}</p>
+        <h1 className="text-nx-title font-semibold tracking-tight text-nx-text-primary">
+          {t('profile.title')}
+        </h1>
+        <p className="mt-1 text-nx-body-sm text-nx-text-muted">{t('profile.subtitle')}</p>
       </div>
 
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row items-center gap-6">
-            <ProfilePictureUpload liveFullname={liveFullname} />
-            <div className="text-center sm:text-left">
-              <h2 className="text-2xl font-bold">{liveFullname || profile?.fullname || '—'}</h2>
-              <p className="text-muted-foreground text-sm mt-1">
-                {t('profile.id', { id: profile?.userId ?? '' })}
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <ProfileIdentityCard />
 
-      <Separator />
+      <MyReputationCard />
 
-      <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="profile">{t('profile.tabs.info')}</TabsTrigger>
-          <TabsTrigger value="password">{t('profile.tabs.password')}</TabsTrigger>
-        </TabsList>
+      <section className="flex flex-col gap-3">
+        <div className="flex items-baseline justify-between gap-3">
+          <h2 className="text-nx-title-sm text-nx-text-primary">{t('profile.network.title')}</h2>
+          <Link
+            href="/friends/all"
+            className="shrink-0 text-nx-body-sm text-nx-text-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
+          >
+            {t('profile.network.viewAll')}
+          </Link>
+        </div>
 
-        <TabsContent value="profile">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('profile.info.title')}</CardTitle>
-              <CardDescription>{t('profile.info.desc')}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ProfileInfoTab onFullnameChange={setLiveFullname} />
-            </CardContent>
-          </Card>
-        </TabsContent>
+        {/* `StatTile` takes the raw value: while the queries are in flight both read "—" rather
+            than a zero that would be indistinguishable from "you have no friends". */}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <StatTile
+            label={t('dashboard.stats.friends')}
+            value={friends?.totalCount}
+            description={t('dashboard.stats.friendsDesc')}
+            icon={<Users size={16} />}
+          />
+          <StatTile
+            label={t('dashboard.stats.pending')}
+            value={pendingRequests?.length}
+            description={t('dashboard.stats.pendingDesc')}
+            icon={<Clock size={16} />}
+          />
+        </div>
 
-        <TabsContent value="password">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('profile.password.title')}</CardTitle>
-              <CardDescription>{t('profile.password.desc')}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ChangePasswordTab />
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+        <FriendRequests />
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-nx-title-sm text-nx-text-primary">{t('knowledge.profile.title')}</h2>
+        <ProfessionalProfileForm />
+        {/* Said here because the form no longer sits next to the feature that depends on it:
+            without a professional profile the explainer refuses to run (428). */}
+        <p className="text-nx-caption text-nx-text-muted">
+          {t('profile.professionalHint')}{' '}
+          <Link
+            href="/knowledge"
+            className="text-nx-text-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
+          >
+            {t('profile.professionalHintLink')}
+          </Link>
+        </p>
+      </section>
+
+      {/* Sits between the professional profile and GitHub because that is the order of how hard
+          the claim is to make: what you say you do → what the app has verified you can do → what
+          your code shows. Linking to /roadmap rather than embedding the claim form: claiming a
+          skill needs a roadmap and a node picked from it, which is a whole surface, not a card. */}
+      <section className="flex flex-col gap-3">
+        <div className="flex items-baseline justify-between gap-3">
+          <h2 className="text-nx-title-sm text-nx-text-primary">{t('profile.skills.title')}</h2>
+          <Link
+            href="/roadmap"
+            className="shrink-0 text-nx-body-sm text-nx-text-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
+          >
+            {t('profile.skills.browseRoadmaps')}
+          </Link>
+        </div>
+        <MySkillsCard userId={profile?.id} />
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-nx-title-sm text-nx-text-primary">{t('github.title')}</h2>
+        {/* `undefined` until the profile resolves, which keeps the stats query idle rather than
+            firing it for a user id nobody has yet. */}
+        <GithubStatsCard userId={profile?.id} />
+      </section>
+
+      {/* Sits after GitHub and before credentials, keeping the page's rule that facts about you
+          come before tasks: what you have published is another thing your account *is*, while
+          changing a password is something you *do*. Takes `profile?.id` for the same reason the
+          stats card does — the query stays idle until there is an id to ask about. */}
+      <section className="flex flex-col gap-3">
+        <h2 className="text-nx-title-sm text-nx-text-primary">{t('profile.books.title')}</h2>
+        <MyBooksList authorId={profile?.id} />
+      </section>
+
+      <ProfileInfoForm />
+
+      <ChangePasswordForm />
     </div>
   );
 }
