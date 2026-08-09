@@ -164,6 +164,11 @@ export const vi: Messages = {
   },
 
   newsfeed: {
+    tabs: {
+      label: 'Lọc bảng tin',
+      all: 'Tất cả',
+      friends: 'Bạn bè',
+    },
     title: 'Bảng tin',
     subtitle: 'Cập nhật mới nhất từ bạn bè và những người bạn theo dõi',
     error: 'Không thể tải bài viết. Vui lòng thử lại.',

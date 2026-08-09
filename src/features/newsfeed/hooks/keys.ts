@@ -14,4 +14,11 @@
 export const newsfeedKeys = {
   all: ['newsfeed'] as const,
   feed: () => ['newsfeed', 'feed'] as const,
+
+  /**
+   * The `Tất cả` tab. A SEPARATE BRANCH FROM `feed`, not a parameter on it: the two read
+   * different endpoints with different pagination, and a write that changes one changes the
+   * other, so `useRefreshFeed` sweeps the shared `all` prefix rather than either leaf.
+   */
+  publicFeed: () => ['newsfeed', 'public'] as const,
 };

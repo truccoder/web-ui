@@ -7,7 +7,7 @@ import { Button, Card, EmptyState, Skeleton } from '@/shared/components';
 import { useT } from '@/core/i18n';
 import { cn } from '@/shared/lib/cn';
 import { newsfeedKeys } from '../hooks/keys';
-import { useNewsfeed } from '../hooks/use-feed';
+import { useNewsfeed, usePublicFeed } from '../hooks/use-feed';
 import { FeedPost } from './feed-post';
 
 /**
@@ -24,7 +24,19 @@ import { FeedPost } from './feed-post';
  * (see `useNewsfeed`). The sentinel is observed rather than driven by a scroll handler, so it
  * still works when the viewport is tall enough that no scrolling ever happens.
  */
+/**
+ * WHICH FEED. The two scopes are different ENDPOINTS, not a filter applied to one — see
+ * `newsfeedApi.getPublicFeed`. `friends` is the Redis fan-out and can only contain posts by
+ * people you are connected to; `all` is a query over the posts table with no personalisation.
+ * That is why the tab is `Tất cả` rather than `Khám phá`, and why the friends tab can never show
+ * crawled content: not because it is filtered out, but because crawled items have no author to
+ * be connected to.
+ */
+export type FeedScope = 'all' | 'friends';
+
 export interface NewsfeedProps {
+  /** @default "friends" */
+  scope?: FeedScope;
   className?: string;
 }
 
@@ -44,10 +56,16 @@ function PostSkeleton() {
   );
 }
 
-export function Newsfeed({ className }: NewsfeedProps) {
+export function Newsfeed({ scope = 'friends', className }: NewsfeedProps) {
   const t = useT();
   const queryClient = useQueryClient();
-  const feed = useNewsfeed();
+  // BOTH HOOKS RUN, and the unused one is what keeps hook order stable across a tab switch —
+  // calling one or the other conditionally is the classic way to break the rules of hooks. The
+  // idle branch costs nothing: react-query does not fetch a query nothing is reading once its
+  // `enabled` is false, and switching tabs then finds the other branch already warm in cache.
+  const friendsFeed = useNewsfeed(scope === 'friends');
+  const publicFeed = usePublicFeed(scope === 'all');
+  const feed = scope === 'all' ? publicFeed : friendsFeed;
 
   const sentinelRef = useRef<HTMLDivElement>(null);
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = feed;
@@ -70,8 +88,10 @@ export function Newsfeed({ className }: NewsfeedProps) {
     return () => observer.disconnect();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
+  // Sweeps the whole feature prefix rather than one branch: a reaction or comment written from a
+  // card in one tab changes the same post as seen from the other.
   const refresh = () => {
-    queryClient.invalidateQueries({ queryKey: newsfeedKeys.feed() });
+    queryClient.invalidateQueries({ queryKey: newsfeedKeys.all });
   };
 
   if (feed.isLoading) {

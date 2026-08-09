@@ -97,3 +97,17 @@ export type FeedPage = {
   size: number;
   hasMore: boolean;
 };
+
+/**
+ * One page of the public feed (`GET /v1/api/posts/public`).
+ *
+ * SAME ITEMS, DIFFERENT PAGINATION. `posts` is the very same `FeedPostDataDto[]` that `/feed`
+ * returns — which is the whole reason the two tabs can share one card — but the cursor replaces
+ * the page number. `nextCursor` is the last id of the page and is null once `hasMore` is false,
+ * so the paging rule is "pass back what you were given", not "add one".
+ */
+export type PublicFeedPage = {
+  posts: FeedPost[];
+  nextCursor: number | null;
+  hasMore: boolean;
+};

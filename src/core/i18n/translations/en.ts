@@ -165,6 +165,11 @@ export const en = {
   },
 
   newsfeed: {
+    tabs: {
+      label: 'Filter the feed',
+      all: 'All',
+      friends: 'Friends',
+    },
     title: 'Newsfeed',
     subtitle: 'Latest updates from your friends and people you follow',
     error: 'Failed to load posts. Please try again.',

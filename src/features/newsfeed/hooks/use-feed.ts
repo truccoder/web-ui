@@ -19,12 +19,37 @@ const PAGE_SIZE = 10;
  * refetch that returns a different page number cannot desynchronise the cursor from the
  * server's idea of where it is.
  */
-export function useNewsfeed() {
+export function useNewsfeed(enabled = true) {
   return useInfiniteQuery({
+    enabled,
     queryKey: newsfeedKeys.feed(),
     queryFn: ({ pageParam }) => newsfeedApi.getFeed(pageParam, PAGE_SIZE),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.page + 1 : undefined),
+  });
+}
+
+/**
+ * GET /v1/api/posts/public, cursor-paged. The `Tất cả` tab.
+ *
+ * `initialPageParam` IS `undefined`, NOT 0 OR 1. The first request must send no cursor at all —
+ * the backend reads "no cursor" as "from the newest", while `cursor=0` would ask for posts after
+ * id 0 on a table whose ids climb, i.e. the oldest page. axios drops undefined params, so the
+ * first call is a bare `?limit=10`.
+ *
+ * `getNextPageParam` returns `nextCursor` verbatim rather than deriving anything: with a cursor
+ * the server owns the position entirely, which is the property that makes it safe against posts
+ * being written while the reader pages. `?? undefined` because the DTO says null and react-query
+ * reads undefined as "no more pages".
+ */
+export function usePublicFeed(enabled = true) {
+  return useInfiniteQuery({
+    enabled,
+    queryKey: newsfeedKeys.publicFeed(),
+    queryFn: ({ pageParam }) => newsfeedApi.getPublicFeed(pageParam, PAGE_SIZE),
+    initialPageParam: undefined as number | undefined,
+    getNextPageParam: (lastPage) =>
+      lastPage.hasMore ? (lastPage.nextCursor ?? undefined) : undefined,
   });
 }
 
@@ -43,6 +68,9 @@ export function useNewsfeed() {
 export function useRefreshFeed() {
   const queryClient = useQueryClient();
   return () => {
-    queryClient.invalidateQueries({ queryKey: newsfeedKeys.feed() });
+    // BOTH BRANCHES, because a new post belongs in both tabs: `/feed` fans it out to the author's
+    // own timeline and `/posts/public` is a query that will now match it. Sweeping the shared
+    // `all` prefix is one call and cannot drift as branches are added.
+    queryClient.invalidateQueries({ queryKey: newsfeedKeys.all });
   };
 }

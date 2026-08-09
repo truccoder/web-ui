@@ -21,8 +21,14 @@
 
 export { newsfeedApi } from './api';
 
-export { newsfeedKeys, useNewsfeed, useRefreshFeed } from './hooks';
+export { newsfeedKeys, useNewsfeed, usePublicFeed, useRefreshFeed } from './hooks';
 
-export { Newsfeed, type NewsfeedProps, FeedPost, type FeedPostProps } from './components';
+export {
+  Newsfeed,
+  type NewsfeedProps,
+  type FeedScope,
+  FeedPost,
+  type FeedPostProps,
+} from './components';
 
-export type { FeedPost as FeedPostData, FeedBookSummary, FeedPage } from './types';
+export type { FeedPost as FeedPostData, FeedBookSummary, FeedPage, PublicFeedPage } from './types';
