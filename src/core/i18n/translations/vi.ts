@@ -876,7 +876,16 @@ export const vi: Messages = {
     },
   },
 
+  ledger: {
+    label: 'Tóm lược',
+    evidence: 'Bằng chứng',
+    external: 'Từ bên ngoài',
+    recentWeeks: '18 tuần gần nhất',
+    itemCount: '${count} bài',
+  },
+
   reputation: {
+    remaining: 'còn',
     title: 'Elite Score',
     desc: 'Điểm uy tín tích luỹ từ đóng góp của bạn',
     verifiedExpert: 'Chuyên gia đã xác minh',

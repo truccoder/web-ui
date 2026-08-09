@@ -897,7 +897,16 @@ export const en = {
     },
   },
 
+  ledger: {
+    label: 'Summary',
+    evidence: 'Evidence',
+    external: 'From outside',
+    recentWeeks: 'Last 18 weeks',
+    itemCount: '${count} items',
+  },
+
   reputation: {
+    remaining: 'needs',
     title: 'Elite Score',
     desc: 'Reputation earned from your contributions',
     verifiedExpert: 'Verified Expert',

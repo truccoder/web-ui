@@ -17,6 +17,8 @@ export {
   ReputationCard,
   type ReputationCardProps,
   MyReputationCard,
+  RepProgress,
+  type RepProgressProps,
 } from './components';
 
 export { reputationKeys, useReputation } from './hooks';

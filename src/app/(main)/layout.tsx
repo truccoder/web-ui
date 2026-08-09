@@ -30,6 +30,7 @@ import { ChatClientProvider, ChatDock } from '@/features/chat';
 import { usePendingRequests } from '@/features/friendships';
 import { NotificationBell } from '@/features/notifications';
 import { SearchBar } from '@/features/search';
+import { Ledger } from './ledger';
 import { setRoleCookie, useLogout, useMyProfile } from '@/features/security';
 import { useI18n, useT } from '@/core/i18n';
 
@@ -578,6 +579,12 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           >
             {children}
           </main>
+
+          {/* The third region. Hidden below 1024 rather than reflowed under the canvas: it is a
+              glance-at-it summary, and a summary that has to be scrolled past to reach the content
+              is not one. `isFullBleed` drops it too — `/chats` is a conversation filling the
+              viewport, and the ledger would be a column of statistics beside someone's message. */}
+          {!isFullBleed && <Ledger />}
         </div>
 
         <CommandPalette

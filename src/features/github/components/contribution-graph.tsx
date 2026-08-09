@@ -24,24 +24,55 @@ import type { ContributionCalendar } from '../types/github';
  */
 export interface ContributionGraphProps {
   calendar: ContributionCalendar;
+  /**
+   * How many trailing weeks to draw. Omit for the full calendar (the `/profile` case).
+   *
+   * THE LEDGER PASSES 18, AND THE COUNT IS FIXED RATHER THAN DERIVED FROM THE WIDTH. Deriving it
+   * looks tidier and is wrong: the ledger is 300px at the full step and 272 at 1280, so a
+   * width-derived count would mean the summary shows *a different amount of history depending on
+   * how wide the window is*. A quantity of history is editorial, not responsive. 18 is a quarter
+   * plus a fortnight — enough to show a habit, too little to be the year `/profile` already shows.
+   * What derives instead is the CELL, below.
+   */
+  weeks?: number;
+  /** The total line above the grid. @default true */
+  legend?: boolean;
+  /**
+   * Cell edge in px. The ledger computes `clamp(8, 11, floor((drawable − 17 × gap) / 18))` so 18
+   * weeks always fit without a horizontal scroller — 11px at a 300px ledger, 10px at 272.
+   * @default 10
+   */
+  cellSize?: number;
   className?: string;
 }
 
-export function ContributionGraph({ calendar, className }: ContributionGraphProps) {
+export function ContributionGraph({
+  calendar,
+  weeks: weekCount,
+  legend = true,
+  cellSize = 10,
+  className,
+}: ContributionGraphProps) {
   const t = useT();
 
   // A week with no days is not worth a column, and the backend's empty-object fallback is already
   // filtered out upstream (`normalizeStats` turns `{}` into null), so this only guards a partial
   // week — which GitHub does emit for the current one.
-  const weeks = calendar.weeks.filter((week) => week.contributionDays.length > 0);
+  const allWeeks = calendar.weeks.filter((week) => week.contributionDays.length > 0);
+  // Trailing slice: the most recent `weekCount` weeks, because the near past is what a habit
+  // reads from. `slice(-n)` on a shorter array returns the whole thing, so a new account with
+  // nine weeks of history draws nine columns rather than padding to eighteen.
+  const weeks = weekCount ? allWeeks.slice(-weekCount) : allWeeks;
 
   if (weeks.length === 0) return null;
 
   return (
     <div className={cn('flex flex-col gap-2', className)}>
-      <p className="text-nx-caption text-nx-text-secondary">
-        {t('github.graph.total', { count: calendar.totalContributions })}
-      </p>
+      {legend && (
+        <p className="text-nx-caption text-nx-text-secondary">
+          {t('github.graph.total', { count: calendar.totalContributions })}
+        </p>
+      )}
 
       {/* Horizontal scroll rather than squeezing 53 columns into the container: shrinking the
           cells past ~10px makes the density unreadable, which is the only thing the graph is for.
@@ -59,8 +90,12 @@ export function ContributionGraph({ calendar, className }: ContributionGraphProp
                     count: day.contributionCount,
                     date: day.date,
                   })}
-                  className="size-[10px] shrink-0 rounded-[2px]"
-                  style={{ backgroundColor: day.color || 'var(--nx-surface-sunken)' }}
+                  className="shrink-0 rounded-[2px]"
+                  style={{
+                    width: cellSize,
+                    height: cellSize,
+                    backgroundColor: day.color || 'var(--nx-surface-sunken)',
+                  }}
                 />
               ))}
             </div>
