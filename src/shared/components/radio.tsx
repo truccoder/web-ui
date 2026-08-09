@@ -47,7 +47,7 @@ export function Radio({ label, className, disabled, onChange, id, ...props }: Ra
         aria-hidden
         className={cn(
           'relative grid size-4 shrink-0 place-items-center rounded-nx-full border',
-          'border-nx-border-default bg-nx-surface-card',
+          'border-nx-border-default bg-nx-surface-raised',
           'transition-colors duration-[var(--nx-duration-fast)] ease-nx-out',
           'peer-checked:border-nx-accent peer-checked:bg-nx-accent',
           'peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2',
@@ -60,7 +60,7 @@ export function Radio({ label, className, disabled, onChange, id, ...props }: Ra
       >
         {/* The inner dot appears on check without animating in — the constitution's motion set
             has no scale, so it fades or it does nothing. */}
-        <span className="size-1.5 rounded-nx-full bg-nx-surface-card opacity-0 transition-opacity duration-[var(--nx-duration-fast)]" />
+        <span className="size-1.5 rounded-nx-full bg-nx-surface-raised opacity-0 transition-opacity duration-[var(--nx-duration-fast)]" />
       </label>
 
       {label && (

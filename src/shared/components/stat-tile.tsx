@@ -6,11 +6,12 @@ import { cn } from '@/shared/lib/cn';
 /**
  * A single headline number with a label and a one-line explanation.
  *
- * NO DESIGN SYSTEM SPECIMEN EXISTS FOR THIS. The DS ships nothing stat-, metric-, tile- or
- * KPI-shaped — `components/display/` is Avatar, Badge, Card, DeveloperIdentity, EmptyState,
- * ExpertiseTag, RepScore, Skeleton, Tag — so this is composed from `Card` plus type tokens rather
- * than matched against a specimen. Recorded as ds-deviation #27, same class as the chat bubbles
- * (#21) and the contribution graph (#26).
+ * ROUND 15 GAVE THIS A REAL SPECIMEN, closing ds-deviation #27. The note this replaces said "no
+ * design system specimen exists for this" and composed the tile by eye; `components/display/`
+ * now ships `StatTile` with geometry in `handoff/component-specs.md`. Two things came from it:
+ * the card is `variant="inset"`, so a 4-up strip reads as ONE recessed data band rather than four
+ * floating boxes, and the value is **mono** — this product's rule is that computed numbers are
+ * always mono and tabular, and a stat tile is nothing but a computed number.
  *
  * `value` TAKES `undefined` AND RENDERS AN EM DASH, which is the whole reason it is a prop rather
  * than `children`. A dashboard tile is read at a glance, and "0" and "we have not loaded this yet"
@@ -31,14 +32,21 @@ export interface StatTileProps {
 
 export function StatTile({ label, value, description, icon, className }: StatTileProps) {
   return (
-    <Card padding={16} className={cn('flex flex-col gap-1', className)}>
+    <Card variant="inset" padding={16} className={cn('flex flex-col gap-1', className)}>
       <div className="flex items-start justify-between gap-2">
         <span className="text-nx-caption font-medium text-nx-text-secondary">{label}</span>
-        {icon && <span className="shrink-0 text-nx-text-muted">{icon}</span>}
+        {icon && <span className="shrink-0 text-nx-text-muted [&>svg]:size-4">{icon}</span>}
       </div>
 
-      {/* `tabular-nums` so a row of tiles keeps its digits aligned as the numbers change. */}
-      <span className="text-nx-title font-semibold tabular-nums text-nx-text-primary">
+      {/* Mono + `tabular-nums`: digits stay aligned down a column of tiles and across a value that
+          changes under the reader. The em dash is `text-faint` so "not known" recedes instead of
+          reading as a value in its own right. */}
+      <span
+        className={cn(
+          'font-mono text-nx-title font-semibold tabular-nums',
+          value === undefined ? 'text-nx-text-faint' : 'text-nx-text-primary'
+        )}
+      >
         {value === undefined ? '—' : value.toLocaleString('en-US')}
       </span>
 

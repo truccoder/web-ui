@@ -13,6 +13,13 @@ import { cn } from '@/shared/lib/cn';
  * and a `text-primary` label — fields read lighter than buttons, which do use `border-strong`.
  * Corrected here so Input, Select and Textarea are one family.
  *
+ * R15 SURFACE MOVE: the field sits on `surface-raised`, not `surface-card`. In light the two
+ * resolve to the same white, so nothing changes; in dark `raised` is gray-700 against a gray-800
+ * card, which is the whole point — a field inside a card has to be a step ABOVE it, and under the
+ * old dark values (card 900, raised 800) that step was being spent just to clear the card. The
+ * same one-line change applies to Textarea, Select and Radio; they are one family and the spec
+ * gives them one anatomy.
+ *
  * DEVIATION, deliberate: `Input.prompt.md` says "amber focus ring". The constitution
  * reserves amber for reputation alone (§1.3), assigns focus to blue (§1.2), sets
  * `--focus-ring: var(--blue-500)`, and applies `outline: 2px solid var(--focus-ring)`
@@ -88,7 +95,7 @@ export function Input({
 
       <div
         className={cn(
-          'flex w-full items-center gap-2 rounded-nx-sm border bg-nx-surface-card px-2.5',
+          'flex w-full items-center gap-2 rounded-nx-sm border bg-nx-surface-raised px-2.5',
           'transition-colors duration-[var(--nx-duration-fast)] ease-nx-out',
           // Ring drawn on the wrapper so prefix/suffix sit inside it.
           'focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-nx-focus-ring',

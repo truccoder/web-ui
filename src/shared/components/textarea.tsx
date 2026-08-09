@@ -74,7 +74,7 @@ export function Textarea({
 
       <div
         className={cn(
-          'flex w-full rounded-nx-sm border bg-nx-surface-card px-2.5 py-2',
+          'flex w-full rounded-nx-sm border bg-nx-surface-raised px-2.5 py-2',
           'transition-colors duration-[var(--nx-duration-fast)] ease-nx-out',
           'focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-nx-focus-ring',
           error ? 'border-nx-status-danger' : 'border-nx-border-default',

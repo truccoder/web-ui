@@ -100,9 +100,21 @@
   --nx-red-700: #992f2f;
 
   /* ── Semantic aliases — light ── */
-  --nx-surface-page: var(--nx-gray-50);
+  /* R15: gray-50 → gray-100. The ground is recessed a step further so a card can sit ON it
+     without a border doing the separating. This is the R4 surface model: recessed ground,
+     raised cards. Everything reads one notch deeper as a result. */
+  --nx-surface-page: var(--nx-gray-100);
   --nx-surface-card: var(--nx-gray-0);
   --nx-surface-sunken: var(--nx-gray-100);
+  /* R15, NEW: the chrome regions — top bar, rail, ledger. Deliberately EQUAL to the page:
+     R4's answer to the owner's "∩" complaint is that chrome is not painted at all. The
+     rejected alternative (three painted regions) survives in the kit as `--nx-r3-*` and is
+     NOT transcribed here — see the round-15 block further down. */
+  --nx-surface-chrome: var(--nx-surface-page);
+  /* R15, NEW: the one fill/border that must read on EVERY plane, hence an alpha rather than
+     a step off the ramp — it darkens a white card and lightens a sunken well by the same
+     perceptual amount. `--nx-border-subtle` is now defined as this. */
+  --nx-tint: rgba(16, 24, 32, 0.08);
   --nx-surface-raised: var(--nx-gray-0);
   --nx-surface-inverse: var(--nx-gray-950);
   --nx-surface-overlay: rgba(16, 24, 32, 0.55);
@@ -116,14 +128,21 @@
   --nx-text-faint: var(--nx-gray-400);
   --nx-text-inverse: var(--nx-gray-50);
   --nx-text-accent: var(--nx-blue-600);
-  --nx-text-link: var(--nx-blue-500);
+  /* R15: blue-500 → blue-600. A link sits in running prose on a now-deeper ground; 500 was
+     carrying too little contrast against body text at 15/1.6. */
+  --nx-text-link: var(--nx-blue-600);
   --nx-text-link-hover: var(--nx-blue-700);
   /* text/glyphs on saturated fills — constant across themes */
   --nx-text-on-color: #ffffff;
 
-  --nx-border-default: var(--nx-gray-200);
-  --nx-border-strong: var(--nx-gray-300);
-  --nx-border-subtle: var(--nx-gray-100);
+  /* R15 RE-VALUES ALL THREE BORDERS, and this is the single most visible change in the
+     round. gray-200/300 were hairlines that vanished against a gray-50 page; with the
+     ground at gray-100 they would have vanished completely. A border in this system is now
+     something you can actually see — it is used sparingly (constitution: not on cards, not
+     on the feed, not on the flanks) precisely because it carries weight where it appears. */
+  --nx-border-default: var(--nx-gray-500);
+  --nx-border-strong: var(--nx-gray-600);
+  --nx-border-subtle: var(--nx-tint);
 
   --nx-accent: var(--nx-blue-500);
   --nx-accent-hover: var(--nx-blue-600);
@@ -170,9 +189,19 @@
    `attribute="data-theme"` and writes nothing else. */
 [data-theme='dark'] {
   --nx-surface-page: var(--nx-gray-950);
-  --nx-surface-card: var(--nx-gray-900);
-  --nx-surface-sunken: #0b1219;
-  --nx-surface-raised: var(--nx-gray-800);
+  /* R15 LIFTS THE WHOLE RAISED SET ONE STEP: card 900 → 800, raised 800 → 700, and sunken
+     goes from the one-off #0b1219 back onto the ramp at 950. In dark, a card cannot be
+     separated from the ground by a shadow — there is no light to cast one — so the step has
+     to be luminance, and 950-vs-900 was not a step anyone could see. This is the same
+     complaint, in dark, that gray-50 → gray-100 answers in light. */
+  --nx-surface-card: var(--nx-gray-800);
+  --nx-surface-sunken: var(--nx-gray-950);
+  --nx-surface-raised: var(--nx-gray-700);
+  /* R15, NEW — unpainted, exactly as in light. */
+  --nx-surface-chrome: var(--nx-surface-page);
+  /* R15, NEW — the light tint's dark twin: lightens rather than darkens, same 0.1 alpha
+     everywhere so one rule reads on card, ground and well alike. */
+  --nx-tint: rgba(236, 238, 240, 0.1);
   --nx-surface-inverse: var(--nx-gray-50);
   --nx-surface-overlay: rgba(0, 0, 0, 0.6);
   --nx-surface-hover: rgba(236, 238, 240, 0.06);
@@ -188,9 +217,12 @@
   --nx-text-link: #6ba3d8;
   --nx-text-link-hover: #8fbce5;
 
-  --nx-border-default: #2c343b;
-  --nx-border-strong: var(--nx-gray-700);
-  --nx-border-subtle: var(--nx-gray-800);
+  /* R15: borders climb the ramp in dark for the same reason they descend it in light — a
+     border must be visible against the surface it divides. The old #2c343b was a one-off
+     that sat almost exactly on gray-800, i.e. on the old card colour. */
+  --nx-border-default: var(--nx-gray-400);
+  --nx-border-strong: var(--nx-gray-300);
+  --nx-border-subtle: var(--nx-tint);
 
   --nx-accent: var(--nx-blue-400);
   --nx-accent-hover: var(--nx-blue-300);
@@ -228,6 +260,10 @@
 @theme inline {
   --color-nx-surface-page: var(--nx-surface-page);
   --color-nx-surface-card: var(--nx-surface-card);
+  /* R15. Equal to page today, but it is a SEPARATE utility on purpose: `bg-nx-surface-chrome`
+     on the rail states "this is chrome", so if chrome ever gets painted again it is one token
+     away rather than a hunt for which `bg-nx-surface-page` meant which thing. */
+  --color-nx-surface-chrome: var(--nx-surface-chrome);
   --color-nx-surface-sunken: var(--nx-surface-sunken);
   --color-nx-surface-raised: var(--nx-surface-raised);
   --color-nx-surface-inverse: var(--nx-surface-inverse);
@@ -343,6 +379,109 @@
   /* Layout */
   --container-nx-content: 960px;
   --container-nx-wide: 1200px;
+}
+
+/* ── Round-15 shell + spacing tokens ──────────────────────────────────────────
+   TRANSCRIBED VERBATIM as plain data (Constraint #1) from the round-15 delivery at
+   `D:\DATN\Elite Nexus Design System`: `handoff/theme.css` and `tokens/layout.css`.
+   Values copied, nothing re-derived, no component source read.
+
+   WHAT THE DELIVERY ACTUALLY CHANGES — measured, and NOT what a first glance suggests.
+   `handoff/globals.reference.css` is byte-identical to this file as it stood before round
+   15, so the system was built on top of what already shipped. That makes the token NAME
+   set purely additive: 46 new, none removed. It does NOT make the delivery value-neutral —
+   `tokens/colors.css` re-values 11 existing tokens (5 light, 6 dark), listed at their
+   definitions below. Those 11 move every screen at once, which is the point of a reskin,
+   but it is why this block alone is not the whole of R1.
+
+   THIS @theme BLOCK is the additive half: new names only, no existing value touched.
+
+   WHAT IS DELIBERATELY NOT TRANSCRIBED: the kit's archive ladders. `tokens/layout.css`
+   carries four spacing fittings (r4/r5/r8/r9) and `tokens/colors.css` a whole rejected
+   surface model (`--nx-r3-*`), all switchable via `[data-nx-space]` / `[data-nx-surfaces]`.
+   That machinery exists so the project owner can compare rounds by clicking; it is kit
+   apparatus, not product. Only the DEFAULT fitting (R9 spacing, R4 surfaces) comes across.
+   If a comparison is ever needed again, it belongs in the kit, not in the app's CSS. */
+@theme {
+  /* The shell's regions. R4's skeleton: one 56px bar, a 248px rail that paints nothing,
+     a hard-capped reading column, and a 300px ledger. The budget is
+     248 + 40 + 672 + 40 + 300 = 1300, which the DS calls `--nx-shell-max`.
+
+     DELIBERATELY RENAMED into Tailwind's `--spacing-*` namespace. The DS declares these as
+     raw `:root` vars (`--nx-canvas-measure`, `--nx-ledger-width`, `--nx-topbar-height`, …)
+     because its kit writes plain CSS; in Tailwind v4 the same values under `--spacing-nx-*`
+     also generate `w-nx-canvas`, `max-w-nx-shell-max`, `h-nx-topbar` and friends, which is
+     how the rest of this file already treats layout (`--container-nx-*`). The name mapping,
+     for anyone reading the DS docs and grepping here:
+
+       DS --nx-topbar-height   → --spacing-nx-topbar        DS --nx-canvas-measure  → --spacing-nx-canvas
+       DS --nx-subnav-height   → --spacing-nx-subnav        DS --nx-shell-max       → --spacing-nx-shell-max
+       DS --nx-ledger-width    → --spacing-nx-ledger        DS --nx-region-gutter   → --spacing-nx-region-gutter
+       DS --nx-chat-measure    → --spacing-nx-chat-measure  DS --nx-context-bar-…   → --spacing-nx-context-bar
+
+     The proximity ladder below is NOT renamed: those are read via `var()` inside arbitrary
+     values and gap/padding utilities alike, and a `--spacing-nx-space-pad` would be absurd. */
+  --spacing-nx-topbar: 56px;
+  --spacing-nx-subnav: 40px;
+  --spacing-nx-ledger: 300px;
+  --spacing-nx-ledger-sm: 272px;
+  --spacing-nx-canvas: 672px;
+  --spacing-nx-shell-max: 1300px;
+  --spacing-nx-region-gutter: 40px;
+  --spacing-nx-region-gutter-sm: 24px;
+  --spacing-nx-chat-measure: 600px;
+  --spacing-nx-context-bar: 48px;
+}
+
+:root {
+  /* THE PROXIMITY LADDER. Five rungs, and the point of it is that each rung names a
+     RELATIONSHIP rather than a size — "content to its container edge" is `--nx-space-pad`
+     whatever 20 happens to be this round. The kit refitted these twice (R5 → R8 → R9)
+     without a single component changing, which is the whole argument for naming them.
+
+     READ PER AXIS since R8: horizontal padding is paid once, vertical padding is paid
+     again at every block boundary down the feed. Hence pad and pad-y differ (20 / 16).
+
+     NOTHING IN A REBUILT COMPONENT MAY SET A SPACING VALUE THAT IS NOT ONE OF THESE. That
+     is the rule the kit enforces on itself, and it is what makes the ladder refittable —
+     one `gap={14}` outside the ladder and the next refitting silently skips that spot. */
+  --nx-space-hit: 2px; /* hit-area only; never a visible gap */
+  --nx-space-pair: 4px; /* two glyphs that read as one thing */
+  --nx-space-utterance: 6px; /* consecutive bubbles from one speaker */
+  --nx-space-tight: 8px; /* inside one component — icon ↔ its label */
+  --nx-space-pad-half: 10px; /* = pad / 2, for the inset split rule */
+  --nx-space-element: 12px; /* element ↔ element inside a container */
+  --nx-space-group: 16px; /* group ↔ group, VERTICAL only */
+  --nx-space-pad-y: 16px; /* content ↔ container edge, VERTICAL */
+  --nx-space-turn: 16px; /* one speaker's turn ↔ the next */
+  --nx-space-pad: 20px; /* content ↔ container edge, HORIZONTAL */
+  --nx-space-block: 20px; /* block ↔ block */
+  --nx-space-datum: 20px; /* a labelled figure ↔ the next */
+  --nx-space-row: 32px; /* the row unit — a MINIMUM, not a fixed height */
+  --nx-space-region: 40px; /* region ↔ region. Equals the shell gutter, on purpose */
+  --nx-space-section: 40px; /* section ↔ section within one canvas */
+  --nx-space-runout: 48px; /* clearance under a scroller's last item */
+
+  /* Set-inset: a bare fill that reads as a group without drawing a box. */
+  --nx-space-bare-fill: transparent;
+  --nx-space-bare-pad: 12px;
+  --nx-space-set-inset: 12px;
+  --nx-space-set-inset-text: 8px;
+
+  /* Flanks hang below the bar and own their own scrollers. `--nx-sticky-offset` is the
+     escape hatch for a surface that stacks something above the bar; it defaults to the
+     bar's own height, so the common case needs no override. */
+  --nx-flank-height: calc(100dvh - var(--nx-sticky-offset, 56px));
+  --nx-focus-aside: 300px;
+  --nx-focus-panel: 300px;
+
+  /* The roadmap's horizontal stage. */
+  --nx-path-stage: 280px;
+  --nx-path-stage-max: 360px;
+  --nx-path-connector: 48px;
+
+  /* The reading measure, in characters rather than px — it has to track the font. */
+  --measure-nx-read: 68ch;
 }
 
 :root {

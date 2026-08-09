@@ -73,7 +73,7 @@ export function Select({
           aria-invalid={error ? true : undefined}
           aria-describedby={description ? describedById : undefined}
           className={cn(
-            'w-full cursor-pointer appearance-none rounded-nx-sm border bg-nx-surface-card',
+            'w-full cursor-pointer appearance-none rounded-nx-sm border bg-nx-surface-raised',
             'py-0 pl-2.5 pr-8 text-nx-text-primary',
             'transition-colors duration-[var(--nx-duration-fast)] ease-nx-out',
             'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring',

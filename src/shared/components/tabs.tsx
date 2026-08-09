@@ -82,7 +82,11 @@ export function Tabs({
       aria-label={ariaLabel}
       onKeyDown={onKeyDown}
       style={style}
-      className={cn('flex gap-1 border-b border-nx-border-default font-sans', className)}
+      // R15: the rail the tabs sit on is `border-subtle`, not `border-default`. `border-default`
+      // climbed the ramp this round to become a line you can actually see; a tab strip's baseline
+      // is not that — it is the faintest possible hint of a shared edge, and at the new value it
+      // was competing with the 2px active indicator sitting on top of it.
+      className={cn('flex gap-1 border-b border-nx-border-subtle font-sans', className)}
     >
       {items.map((item) => {
         const isActive = item.id === active;
