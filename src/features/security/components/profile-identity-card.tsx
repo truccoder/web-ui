@@ -42,7 +42,7 @@ export function ProfileIdentityCard() {
   const displayUrl = preview ?? profile?.profilePictureUrl;
 
   return (
-    <Card padding={24} className="w-full">
+    <Card className="w-full">
       <div className="flex flex-col items-center gap-5 sm:flex-row">
         <div className="group relative shrink-0">
           <Avatar src={displayUrl} name={profile?.fullName} size="2xl" />

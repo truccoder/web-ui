@@ -66,5 +66,20 @@ export const config = {
   // unset, axios calls resolve to same-origin relative paths (e.g. /v1/api/auth/login)
   // instead of hitting the backend. Without this exclusion those requests were silently
   // 307-redirected to /login by this middleware instead of failing with a clear 404.
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|api|v1).*)'],
+  //
+  // `sw.js` AND `manifest.webmanifest` ARE EXCLUDED FOR A MEASURED REASON, not for tidiness.
+  // Both are static assets served from the app's own origin, and both were being caught by this
+  // matcher and 307'd to /login for anyone without a session. For the manifest that is merely
+  // wrong; for the service worker it is fatal, and it fails in a way nothing else surfaces:
+  //
+  //   SecurityError: Failed to register a ServiceWorker for scope ('http://localhost:3000/')
+  //   with script ('http://localhost:3000/sw.js'): The script resource is behind a redirect,
+  //   which is disallowed.
+  //
+  // The browser refuses a worker script that arrives via a redirect — a deliberate rule, since a
+  // worker takes control of every request on its scope. So push notifications could never
+  // register on a cold visit, and the only trace was one console error on the login page.
+  // Caught 2026-08-10 by reading the console on `/login`; `tsc`, `lint` and `build` are all blind
+  // to it, and so is every screen that only gets opened while already signed in.
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js|api|v1).*)'],
 };

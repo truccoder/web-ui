@@ -56,8 +56,11 @@ export const githubApi = {
    * linked"}`. The state layer must not retry it and the UI must render it as an empty state with
    * a link action, never as an error.
    *
-   * TAKES ANY USER ID, but nothing else in this app can use that: there is no public profile
-   * endpoint, so the only id a screen can supply is the signed-in user's own.
+   * TAKES ANY USER ID, and `/u/{username}` finally uses that. This note used to end "nothing else
+   * in this app can use that: there is no public profile endpoint, so the only id a screen can
+   * supply is the signed-in user's own" — true until 2026-08-09. Callers rendering someone else
+   * must pass `readOnly` to `GithubStatsCard`: `sync` and `unlink` take no id and act on the
+   * CALLER, so those buttons under another person's name operate on the wrong account.
    *
    * Normalised on the way out — see `normalizeStats`.
    */

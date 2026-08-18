@@ -2,6 +2,7 @@ export { bookstoreKeys } from './keys';
 
 export {
   useBook,
+  useLibrary,
   useBooksByAuthor,
   useBookPreviewUrl,
   useBookReviews,

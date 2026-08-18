@@ -8,6 +8,7 @@ import {
 } from '@tanstack/react-query';
 import { moderationApi } from '../api';
 import type { AdminReviewInput, ModerationSearchParams } from '../types/moderation';
+import type { Appeal, AppealDecisionInput, AppealInput, AppealStatus } from '../types/moderation';
 import { moderationKeys } from './keys';
 
 /**
@@ -96,6 +97,105 @@ export function useReviewPost(options?: ModerationMutationOptions<ReviewPostVari
     onSuccess: (data, variables, ...rest) => {
       queryClient.invalidateQueries({ queryKey: moderationKeys.all });
       options?.onSuccess?.(data, variables, ...rest);
+    },
+  });
+}
+
+/**
+ * GET /admin/moderation/appeals — the queue an admin works.
+ *
+ * `status` IS IN THE KEY because the server filters on it: each status is a different response,
+ * and sharing a key would let the last-fetched filter overwrite the cache for the others. Same
+ * reasoning as the post and log searches.
+ */
+export function useAppeals(status: AppealStatus = 'PENDING', page = 1, size = 10) {
+  return useQuery({
+    queryKey: moderationKeys.appeals(status, page, size),
+    queryFn: () => moderationApi.getAppeals(status, page, size),
+  });
+}
+
+export interface AppealDecisionVariables {
+  appealId: number;
+  payload?: AppealDecisionInput;
+}
+
+/**
+ * Approving and rejecting both invalidate the WHOLE domain, and approving is the reason why.
+ *
+ * A rejection only moves the appeal between statuses. An approval **erases the violation and
+ * re-evaluates the ban**, which can take a user off the banned list and changes what the logs
+ * describe — three branches move at once and none of them is derivable from the response.
+ */
+export function useApproveAppeal(
+  options?: ModerationMutationOptions<AppealDecisionVariables, Appeal>
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ appealId, payload }: AppealDecisionVariables) =>
+      moderationApi.approveAppeal(appealId, payload),
+    ...options,
+    onSuccess: (data, variables, ...rest) => {
+      queryClient.invalidateQueries({ queryKey: moderationKeys.all });
+      options?.onSuccess?.(data, variables, ...rest);
+    },
+  });
+}
+
+/** POST /admin/moderation/appeals/{id}/reject — the sanction stands. */
+export function useRejectAppeal(
+  options?: ModerationMutationOptions<AppealDecisionVariables, Appeal>
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ appealId, payload }: AppealDecisionVariables) =>
+      moderationApi.rejectAppeal(appealId, payload),
+    ...options,
+    onSuccess: (data, variables, ...rest) => {
+      queryClient.invalidateQueries({ queryKey: moderationKeys.all });
+      options?.onSuccess?.(data, variables, ...rest);
+    },
+  });
+}
+
+/**
+ * ─── THE USER SIDE ──────────────────────────────────────────────────────────────────────────
+ *
+ * `GET /moderation/my-violations` and `GET /moderation/appeals` are the only moderation reads an
+ * ordinary account can make, and together they answer one question: what has this product decided
+ * about me, and did contesting it go anywhere.
+ */
+
+/** What has been recorded against the signed-in account. */
+export function useMyViolations() {
+  return useQuery({
+    queryKey: moderationKeys.myViolations,
+    queryFn: moderationApi.getMyViolations,
+  });
+}
+
+/** The signed-in account's own appeals, with the reviewer's decision once there is one. */
+export function useMyAppeals() {
+  return useQuery({
+    queryKey: moderationKeys.myAppeals,
+    queryFn: moderationApi.getMyAppeals,
+  });
+}
+
+/**
+ * Submitting an appeal invalidates BOTH lists, not just the appeals one.
+ *
+ * The new appeal obviously belongs in `myAppeals` — but it also flips `appealPending` on the
+ * violation it contests, and that flag is what removes the appeal button from the row. Refreshing
+ * only the appeals list would leave the button live on a violation that already has one, and the
+ * backend rejects the duplicate.
+ */
+export function useSubmitAppeal() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: AppealInput) => moderationApi.submitAppeal(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: moderationKeys.mine });
     },
   });
 }

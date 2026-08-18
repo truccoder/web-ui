@@ -17,4 +17,13 @@ export const moderationKeys = {
   posts: (params: ModerationSearchParams) => ['moderation', 'posts', params] as const,
   logs: (params: ModerationSearchParams) => ['moderation', 'logs', params] as const,
   bannedUsers: (page: number, size: number) => ['moderation', 'banned-users', page, size] as const,
+  appeals: (status: string, page: number, size: number) =>
+    ['moderation', 'appeals', status, page, size] as const,
+
+  // The user side. Separate from `all` on purpose: an admin decision invalidates the queue, and a
+  // user appealing invalidates only their own two lists — sharing a prefix would make every
+  // moderator action refetch every reader's violations.
+  mine: ['moderation', 'mine'] as const,
+  myViolations: ['moderation', 'mine', 'violations'] as const,
+  myAppeals: ['moderation', 'mine', 'appeals'] as const,
 };

@@ -3,10 +3,11 @@
 import Link from 'next/link';
 import { Clock, Users } from 'lucide-react';
 import { StatTile } from '@/shared/components';
-import { MyBooksList } from '@/features/bookstore';
+import { BlockedUsersList } from '@/features/blocks';
 import { GithubStatsCard } from '@/features/github';
 import { FriendRequests, useFriends, usePendingRequests } from '@/features/friendships';
 import { ProfessionalProfileForm } from '@/features/knowledge';
+import { MyViolationsPanel } from '@/features/moderation';
 import { MyReputationCard } from '@/features/reputation';
 import { MySkillsCard } from '@/features/roadmap';
 import {
@@ -66,7 +67,7 @@ export default function ProfilePage() {
   const { data: pendingRequests } = usePendingRequests();
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-6">
+    <div className="flex flex-col gap-[var(--nx-space-section)]">
       <div>
         <h1 className="text-nx-title font-semibold tracking-tight text-nx-text-primary">
           {t('profile.title')}
@@ -91,7 +92,9 @@ export default function ProfilePage() {
 
         {/* `StatTile` takes the raw value: while the queries are in flight both read "—" rather
             than a zero that would be indistinguishable from "you have no friends". */}
-        <div className="grid gap-4 sm:grid-cols-2">
+        {/* 12 between filled tiles, matching the kit's own card grid. The `p-20` wrapper that
+            briefly sat here belonged to the bare-set reading, which the kit does not ship. */}
+        <div className="grid gap-[var(--nx-space-element)] sm:grid-cols-2">
           <StatTile
             label={t('dashboard.stats.friends')}
             value={friends?.totalCount}
@@ -149,13 +152,30 @@ export default function ProfilePage() {
         <GithubStatsCard userId={profile?.id} />
       </section>
 
-      {/* Sits after GitHub and before credentials, keeping the page's rule that facts about you
-          come before tasks: what you have published is another thing your account *is*, while
-          changing a password is something you *do*. Takes `profile?.id` for the same reason the
-          stats card does — the query stays idle until there is an id to ask about. */}
+      {/* THE BOOKS SECTION LEFT THIS PAGE. It used to sit here on the argument that "what you have
+          published is another thing your account *is*" — true, but the kit puts an author's shelf
+          in `/library` beside the catalogue, and a shelf next to other shelves beats a shelf
+          filed under account settings. Same component, same endpoint, one home: `/library`'s
+          `Sách tôi viết` tab. Moved rather than duplicated, so there is still exactly one place a
+          book can be deleted from. */}
+
+      {/* MODERATION, FROM THE RECEIVING END. `AppealController` shipped with the 2026-08-09 batch
+          and had no surface: a post could be removed and an account banned for seven days with
+          nothing on screen explaining it and no way to contest it. It sits above the block list
+          because both answer "what has been decided about me", and below the sections that are
+          about what you have made. */}
       <section className="flex flex-col gap-3">
-        <h2 className="text-nx-title-sm text-nx-text-primary">{t('profile.books.title')}</h2>
-        <MyBooksList authorId={profile?.id} />
+        <h2 className="text-nx-title-sm text-nx-text-primary">{t('moderationMine.title')}</h2>
+        <MyViolationsPanel />
+      </section>
+
+      {/* THE OTHER HALF OF BLOCKING. The control lives on `/u/{username}`; without a list, a block
+          is an invisible, permanent edit to what the product shows you and there is no way to
+          review or undo it. Filed under the account because that is what it is — a setting about
+          what you see, not a list of people you know. */}
+      <section className="flex flex-col gap-3">
+        <h2 className="text-nx-title-sm text-nx-text-primary">{t('blocks.title')}</h2>
+        <BlockedUsersList />
       </section>
 
       <ProfileInfoForm />

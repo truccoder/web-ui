@@ -58,27 +58,37 @@ const TYPE_ICON: Record<NotificationType, LucideIcon> = {
 /**
  * Where a notification can actually take you.
  *
- * MOST OF THEM NOWHERE, AND THAT IS A ROUTING FACT RATHER THAN AN OVERSIGHT. `referenceType`
- * only ever holds `"POST"`, `"BOOK"` or `"FRIEND_REQUEST"`, and this app has no single-post
- * route and no book-detail route — the feed is the only place a post is rendered, and it is
- * paginated from Redis with no way to jump to one entry. Shipping `/posts/{id}` here would be
- * a link that 404s, which the project has already ruled out once for profiles (CLAUDE.md
- * Phase 3.1). So only the two friendship destinations are linked, and they are keyed off
- * `type`, not `referenceType`: an accepted request no longer exists on the requests screen, so
- * `FRIEND_ACCEPTED` belongs on the friends list instead.
+ * ALL NINE TYPES REACH SOMETHING NOW. This function used to link only the two friendship types,
+ * and the note explaining why was right at the time: *"this app has no single-post route and no
+ * book-detail route… shipping `/posts/{id}` here would be a link that 404s."* Both routes exist,
+ * so a notification that names a thing opens that thing — which is the whole job of a
+ * notification, and the one it could not do for seven of the nine.
+ *
+ * `referenceType` IS WHAT DECIDES, NOT `type`, for everything except friendship. The backend sets
+ * the pair together at each producer — `PostReactionService`, `CommentService`, `EventService`
+ * and `EventReminderScheduler` all send `referenceType: "POST"` with the post's id;
+ * `BookReviewService` and `MomoService` send `"BOOK"` with the book's. Reading the type instead
+ * would mean re-deriving a mapping the payload already carries, and it would break silently the
+ * day a tenth type ships. The guard on `referenceId` is not defensive noise: the column is
+ * nullable, and `/posts/undefined` is a worse outcome than a row that does not navigate.
+ *
+ * FRIENDSHIP STAYS KEYED OFF `type`, and that exception is real. Its `referenceId` is the
+ * FRIEND REQUEST's id, not a person's, and no route takes one — and an accepted request no
+ * longer exists on the requests screen, so `FRIEND_ACCEPTED` has to land on the friends list
+ * instead. The reference is genuinely unusable here; the other two are not.
  *
  * Returning `null` makes the row a plain `<button>` — still activatable, still marks read, just
  * does not navigate.
  */
 function hrefFor(notification: AppNotification): string | null {
-  switch (notification.type) {
-    case 'FRIEND_REQUEST':
-      return '/friends/requests';
-    case 'FRIEND_ACCEPTED':
-      return '/friends/all';
-    default:
-      return null;
-  }
+  if (notification.type === 'FRIEND_REQUEST') return '/friends/requests';
+  if (notification.type === 'FRIEND_ACCEPTED') return '/friends/all';
+
+  const { referenceType, referenceId } = notification;
+  if (referenceId == null) return null;
+  if (referenceType === 'POST') return `/posts/${referenceId}`;
+  if (referenceType === 'BOOK') return `/books/${referenceId}`;
+  return null;
 }
 
 export function NotificationItem({ notification, onRead, className }: NotificationItemProps) {

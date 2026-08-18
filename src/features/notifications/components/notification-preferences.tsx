@@ -65,7 +65,7 @@ export function NotificationPreferences({ className }: NotificationPreferencesPr
 
   if (isLoading) {
     return (
-      <Card padding={16} className={cn('flex flex-col gap-4', className)}>
+      <Card className={cn('flex flex-col gap-4', className)}>
         <Skeleton width={160} height={14} />
         <Skeleton lines={3} />
       </Card>
@@ -74,7 +74,7 @@ export function NotificationPreferences({ className }: NotificationPreferencesPr
 
   if (isError || !preference) {
     return (
-      <Card padding={16} className={className}>
+      <Card className={className}>
         <EmptyState
           compact
           title={t('notifications.prefs.error')}
@@ -125,7 +125,7 @@ export function NotificationPreferences({ className }: NotificationPreferencesPr
   };
 
   return (
-    <Card padding={16} className={cn('flex flex-col gap-5', className)}>
+    <Card className={cn('flex flex-col gap-5', className)}>
       <div className="flex flex-col gap-3">
         <h2 className="text-nx-title-sm font-semibold text-nx-text-primary">
           {t('notifications.prefs.channels')}

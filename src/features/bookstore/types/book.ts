@@ -157,3 +157,23 @@ export type PaymentStatus = {
     Schemas['PaymentStatusResponse'][K]
   >;
 };
+
+/**
+ * One page of the library (`GET /v1/api/books`).
+ *
+ * THE ENDPOINT THAT DID NOT EXIST UNTIL 2026-08-09. Every note in this feature about "there is no
+ * `GET /books`, so the only way to reach a book is its author or a post that embeds it" was true
+ * when written and is not any more. `getLibrary` is a plain catalogue read.
+ *
+ * CURSOR-PAGINATED, matching `/posts/public` and for the same reason: the rows are ordered by an
+ * id that keeps climbing, and offset paging over a table being written to shows the reader the
+ * same book twice. `nextCursor` is null once `hasMore` is false.
+ *
+ * The items are the SAME `Book` the rest of this feature uses, so both traps on that type apply
+ * here in full — read `downloadUrl != null` for access, never `purchased`.
+ */
+export type BookPage = {
+  items: Book[];
+  nextCursor: number | null;
+  hasMore: boolean;
+};

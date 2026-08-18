@@ -28,7 +28,7 @@ export function ChangePasswordForm() {
   });
 
   return (
-    <Card padding={24} className="w-full">
+    <Card className="w-full">
       <div className="mb-4">
         <h3 className="text-nx-heading font-semibold text-nx-text-primary">
           {t('profile.password.title')}
@@ -36,7 +36,8 @@ export function ChangePasswordForm() {
         <p className="text-nx-body-sm text-nx-text-muted">{t('profile.password.desc')}</p>
       </div>
 
-      <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
+      {/* `method="post"` — see `LoginForm`. Two passwords on this one. */}
+      <form onSubmit={submit} method="post" className="flex flex-col gap-4" noValidate>
         <Input
           label={t('profile.password.currentPassword')}
           type="password"

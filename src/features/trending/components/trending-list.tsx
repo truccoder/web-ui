@@ -27,7 +27,7 @@ export interface TrendingListProps {
 function CardSkeleton() {
   return (
     <div className="flex flex-col gap-3 rounded-nx-lg border border-nx-border-subtle p-4">
-      <div className="flex gap-1.5">
+      <div className="flex gap-2">
         <Skeleton width={80} height={20} radius={999} />
         <Skeleton width={64} height={20} radius={999} />
       </div>
@@ -120,7 +120,9 @@ export function TrendingList({ className }: TrendingListProps) {
       ) : items.length === 0 ? (
         <EmptyState title={t('trending.empty.title')} description={t('trending.empty.desc')} />
       ) : (
-        <div className="flex flex-col gap-4">
+        // Filled cards at the kit's 12 gap. The bare-member version this replaces came from a
+        // README passage the kit itself does not follow.
+        <div className="flex flex-col gap-[var(--nx-space-element)]">
           {items.map((item) => (
             <TrendingCard key={item.id} item={item} />
           ))}

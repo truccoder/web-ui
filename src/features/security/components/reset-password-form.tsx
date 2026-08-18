@@ -91,7 +91,9 @@ export function ResetPasswordForm() {
         <p className="text-nx-body-sm text-nx-text-secondary">{t('auth.resetPassword.subtitle')}</p>
       </div>
 
-      <form onSubmit={submit} className="mt-6 flex flex-col gap-4" noValidate>
+      {/* `method="post"` — see `LoginForm`. This one also carries the reset token, which is a
+          bearer credential in its own right. */}
+      <form onSubmit={submit} method="post" className="mt-6 flex flex-col gap-4" noValidate>
         <Input
           label={t('auth.resetPassword.newPassword')}
           type="password"

@@ -100,7 +100,7 @@ export function Tabs({
             onClick={() => onChange?.(item.id)}
             className={cn(
               // -1px pulls the indicator onto the tablist hairline instead of below it.
-              '-mb-px inline-flex items-center gap-1.5 border-b-2 bg-transparent',
+              '-mb-px inline-flex items-center gap-2 border-b-2 bg-transparent',
               'transition-colors duration-[var(--nx-duration-fast)] ease-nx-out',
               'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring',
               sizeStyles[size],

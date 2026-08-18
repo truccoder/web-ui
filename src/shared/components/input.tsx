@@ -80,7 +80,7 @@ export function Input({
   const description = error ?? hint;
 
   return (
-    <div className="flex w-full flex-col gap-1.5">
+    <div className="flex w-full flex-col gap-2">
       {label && (
         <label
           htmlFor={inputId}

@@ -27,6 +27,7 @@ export {
   useRequestMagicLink,
   useMagicLinkLogin,
   useMyProfile,
+  usePublicProfile,
   useUpdateProfile,
   useChangePassword,
   useChangeProfilePicture,

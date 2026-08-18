@@ -1,6 +1,6 @@
 'use client';
 
-import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import { newsfeedApi } from '../api/feed';
 import { newsfeedKeys } from './keys';
 
@@ -65,6 +65,38 @@ export function usePublicFeed(enabled = true) {
  * domain's cache (CLAUDE.md §4): its mutations return `void` and take an `onSuccess`, and this is
  * what the composing screen passes. That indirection is the boundary working, not overhead.
  */
+/**
+ * One person's posts, cursor-paged — the posts section of a profile.
+ *
+ * `undefined` KEEPS IT IDLE. The public profile resolves a handle to an id before it can ask, so
+ * the query has to be able to wait rather than fire for `NaN`.
+ */
+export function useUserPosts(userId: number | undefined) {
+  return useInfiniteQuery({
+    queryKey: newsfeedKeys.userPosts(userId!),
+    queryFn: ({ pageParam }) => newsfeedApi.getUserPosts(userId!, pageParam),
+    initialPageParam: undefined as number | undefined,
+    getNextPageParam: (last) => (last.hasMore ? (last.nextCursor ?? undefined) : undefined),
+    enabled: userId !== undefined,
+  });
+}
+
+/**
+ * One post by id — what the permalink page reads.
+ *
+ * `retry: false` because the interesting failure is a 404 and it is final: the post is deleted,
+ * or it is not visible to this reader (the backend answers 404 for both, deliberately, so the
+ * endpoint cannot be used to probe what exists). Three retries would only delay the empty state.
+ */
+export function usePost(postId: number | undefined) {
+  return useQuery({
+    queryKey: newsfeedKeys.post(postId!),
+    queryFn: () => newsfeedApi.getPost(postId!),
+    enabled: postId !== undefined,
+    retry: false,
+  });
+}
+
 export function useRefreshFeed() {
   const queryClient = useQueryClient();
   return () => {

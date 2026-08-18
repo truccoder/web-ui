@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { Trash2 } from 'lucide-react';
 import { Badge, Button, Card, Dialog, EmptyState, Skeleton } from '@/shared/components';
 import { getErrorMessage } from '@/shared/lib/api-error';
@@ -46,9 +47,20 @@ export interface MyBooksListProps {
    * rather than firing it for an id nobody has yet — same contract as `GithubStatsCard`.
    */
   authorId?: number;
+  /**
+   * Somebody else's shelf — drops the per-row delete and changes the empty state.
+   *
+   * `DELETE /books/{id}` is author-only server-side, so a viewer pressing it would get a 403; a
+   * button that always 403s is a lie in the UI, the same rule `PostMenu` states for edit/delete.
+   * The empty copy moves too: the owner's version tells you how to publish a book, which is not
+   * something the reader can do on another person's behalf.
+   *
+   * @default false
+   */
+  readOnly?: boolean;
 }
 
-export function MyBooksList({ authorId }: MyBooksListProps) {
+export function MyBooksList({ authorId, readOnly = false }: MyBooksListProps) {
   const t = useT();
   const localeTag = useIntlLocale();
 
@@ -88,7 +100,7 @@ export function MyBooksList({ authorId }: MyBooksListProps) {
       <EmptyState
         compact
         title={t('profile.books.emptyTitle')}
-        description={t('profile.books.emptyDesc')}
+        description={readOnly ? t('profile.books.emptyDescOther') : t('profile.books.emptyDesc')}
       />
     );
   }
@@ -106,12 +118,18 @@ export function MyBooksList({ authorId }: MyBooksListProps) {
             <BookRow
               book={book}
               localeTag={localeTag}
-              onDelete={() => {
-                // Clear any error from a previous attempt so the dialog does not open already
-                // showing a failure that belonged to a different book.
-                remove.reset();
-                setPendingDelete(book);
-              }}
+              // `undefined` rather than a no-op: the row decides whether the control exists at
+              // all from the presence of the handler, so there is one source of that truth.
+              onDelete={
+                readOnly
+                  ? undefined
+                  : () => {
+                      // Clear any error from a previous attempt so the dialog does not open already
+                      // showing a failure that belonged to a different book.
+                      remove.reset();
+                      setPendingDelete(book);
+                    }
+              }
             />
           </li>
         ))}
@@ -153,7 +171,8 @@ function BookRow({
 }: {
   book: Book;
   localeTag: string;
-  onDelete: () => void;
+  /** Absent on a shelf the reader does not own — the delete control is then not rendered. */
+  onDelete?: () => void;
 }) {
   const t = useT();
   const [coverFailed, setCoverFailed] = React.useState(false);
@@ -179,11 +198,35 @@ function BookRow({
           onError={() => setCoverFailed(true)}
         />
       ) : (
-        <div className="h-16 w-12 shrink-0 rounded-nx-sm bg-nx-surface-sunken" aria-hidden />
+        /* A COVER PLACEHOLDER THAT SAYS "no cover", NOT "broken". It used to be an empty grey
+           rectangle, which reads as a failed image — the reader cannot tell a book with no cover
+           from one whose cover would not load. The title's first letter is the cheapest signal
+           that something is deliberately standing in for the artwork, and it doubles as a weak
+           identifier when scanning a list. `aria-hidden` because the title is right beside it;
+           announcing the letter would read the same word twice. */
+        <div
+          className="h-16 w-12 flex shrink-0 items-center justify-center rounded-nx-sm bg-nx-surface-sunken"
+          aria-hidden
+        >
+          <span className="text-nx-heading font-semibold text-nx-text-faint">
+            {book.title?.trim()?.charAt(0)?.toUpperCase() || '?'}
+          </span>
+        </div>
       )}
 
       <div className="min-w-0 flex-1">
-        <p className="truncate text-nx-body font-medium text-nx-text-primary">{book.title}</p>
+        {/* The catalogue's titles link; these were the one book list that still did not, so the
+            same row behaved differently depending on which screen it was drawn on. */}
+        {book.id != null ? (
+          <Link
+            href={`/books/${book.id}`}
+            className="block truncate text-nx-body font-medium text-nx-text-primary hover:underline"
+          >
+            {book.title}
+          </Link>
+        ) : (
+          <p className="truncate text-nx-body font-medium text-nx-text-primary">{book.title}</p>
+        )}
 
         <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className="text-nx-caption text-nx-text-secondary">{price}</span>
@@ -200,15 +243,17 @@ function BookRow({
         </div>
       </div>
 
-      <Button
-        size="sm"
-        variant="ghost"
-        icon={<Trash2 className="size-3.5" />}
-        onClick={onDelete}
-        aria-label={t('profile.books.deleteAria', { title: book.title ?? '' })}
-      >
-        {t('profile.books.delete')}
-      </Button>
+      {onDelete && (
+        <Button
+          size="sm"
+          variant="ghost"
+          icon={<Trash2 className="size-3.5" />}
+          onClick={onDelete}
+          aria-label={t('profile.books.deleteAria', { title: book.title ?? '' })}
+        >
+          {t('profile.books.delete')}
+        </Button>
+      )}
     </Card>
   );
 }

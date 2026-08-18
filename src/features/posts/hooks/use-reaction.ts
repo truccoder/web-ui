@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  useInfiniteQuery,
   useMutation,
   useQuery,
   useQueryClient,
@@ -158,4 +159,21 @@ function restoreReaction(
   const queryKey = postKeys.myReaction(postId);
   if (context.previous === undefined) queryClient.removeQueries({ queryKey, exact: true });
   else queryClient.setQueryData<MyReaction>(queryKey, context.previous);
+}
+
+/**
+ * Who reacted to a post, cursor-paged.
+ *
+ * `enabled` IS THE POINT OF THIS HOOK'S SHAPE. The list only matters once somebody asks to see it,
+ * and a card that fetched it eagerly would put one request per post on every feed render to fill a
+ * dialog most readers never open. The caller passes `false` until the dialog is open.
+ */
+export function useReactors(postId: number, type?: ReactionType, enabled = true) {
+  return useInfiniteQuery({
+    queryKey: postKeys.reactors(postId, type),
+    queryFn: ({ pageParam }) => reactionsApi.getReactors(postId, type, pageParam),
+    initialPageParam: undefined as number | undefined,
+    getNextPageParam: (last) => (last.hasMore ? last.nextCursor : undefined),
+    enabled,
+  });
 }

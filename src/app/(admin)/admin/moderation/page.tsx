@@ -1,7 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { BannedUsersTab, ModerationLogsTab, ModerationPostsTab } from '@/features/moderation';
+import {
+  AppealsTab,
+  BannedUsersTab,
+  ModerationLogsTab,
+  ModerationPostsTab,
+} from '@/features/moderation';
 import { Tabs } from '@/shared/components';
 import { useT } from '@/core/i18n';
 
@@ -50,6 +55,9 @@ export default function AdminModerationPage() {
           { id: 'posts', label: t('moderation.tabs.posts') },
           { id: 'logs', label: t('moderation.tabs.logs') },
           { id: 'banned', label: t('moderation.tabs.banned') },
+          // Added once users could appeal at all. Without it the product accepts appeals and
+          // gives nobody the ability to decide them — a promise of review no screen can keep.
+          { id: 'appeals', label: t('moderation.tabs.appeals') },
         ]}
       />
 
@@ -60,6 +68,7 @@ export default function AdminModerationPage() {
       )}
       {tab === 'logs' && <ModerationLogsTab />}
       {tab === 'banned' && <BannedUsersTab onViewPost={viewPost} />}
+      {tab === 'appeals' && <AppealsTab />}
     </div>
   );
 }

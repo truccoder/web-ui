@@ -59,7 +59,7 @@ export function Textarea({
   React.useEffect(resize, [resize, props.value]);
 
   return (
-    <div className="flex w-full flex-col gap-1.5">
+    <div className="flex w-full flex-col gap-2">
       {label && (
         <label
           htmlFor={textareaId}

@@ -5,6 +5,7 @@ import { useT } from '@/core/i18n';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { cn } from '@/shared/lib/cn';
 import { useRoadmapNodes } from '../hooks/use-roadmap';
+import { buildTree, type TreeNode } from '../lib/tree';
 import type { RoadmapNode } from '../types/roadmap';
 
 /**
@@ -28,37 +29,6 @@ export interface RoadmapNodeTreeProps {
   /** Rendered next to each node; the caller supplies the claim control. Omit for a read-only tree. */
   renderNodeAction?: (node: RoadmapNode) => React.ReactNode;
   className?: string;
-}
-
-interface TreeNode extends RoadmapNode {
-  children: TreeNode[];
-}
-
-/**
- * Flat list → tree, WITHOUT LOSING ANYTHING.
- *
- * The orphan case is real, not defensive padding: nothing on the backend checks that
- * `parentNodeId` points at a node of the SAME roadmap (`addNodeToRoadmap` only checks the parent
- * exists at all), so this endpoint can legitimately hand back a node whose parent is on another
- * track and therefore absent from this array. Such a node is promoted to a root rather than
- * dropped — a skill silently vanishing from the page is far worse than one sitting at the wrong
- * depth, and dropping it would also hide the underlying data problem from whoever could fix it.
- *
- * Order within each level is inherited from `useRoadmapNodes`, which sorts by
- * `orderIndex` then `id`; `Map` preserves insertion order, so the children come out sorted too
- * without sorting a second time.
- */
-function buildTree(nodes: RoadmapNode[]): TreeNode[] {
-  const byId = new Map<number, TreeNode>();
-  for (const node of nodes) byId.set(node.id, { ...node, children: [] });
-
-  const roots: TreeNode[] = [];
-  for (const node of byId.values()) {
-    const parent = node.parentNodeId != null ? byId.get(node.parentNodeId) : undefined;
-    if (parent) parent.children.push(node);
-    else roots.push(node);
-  }
-  return roots;
 }
 
 /**
@@ -108,7 +78,14 @@ export function RoadmapNodeTree({ roadmapId, renderNodeAction, className }: Road
   const nodes = useRoadmapNodes(roadmapId);
 
   if (roadmapId === undefined) {
-    return <EmptyState compact className={className} title={t('roadmap.nodes.pickRoadmap')} />;
+    return (
+      <EmptyState
+        compact
+        className={className}
+        title={t('roadmap.nodes.pickRoadmap')}
+        description={t('roadmap.nodes.pickRoadmapDesc')}
+      />
+    );
   }
 
   if (nodes.isLoading) {
@@ -136,7 +113,14 @@ export function RoadmapNodeTree({ roadmapId, renderNodeAction, className }: Road
     // Note this cannot distinguish "no such roadmap" from "roadmap with no nodes": the endpoint
     // answers 200 `[]` for a bad id rather than 404. The wording covers both without claiming
     // which one happened.
-    return <EmptyState compact className={className} title={t('roadmap.nodes.empty')} />;
+    return (
+      <EmptyState
+        compact
+        className={className}
+        title={t('roadmap.nodes.empty')}
+        description={t('roadmap.nodes.emptyDesc')}
+      />
+    );
   }
 
   return (

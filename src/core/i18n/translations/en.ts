@@ -31,7 +31,8 @@ export const en = {
 
   nav: {
     roadmap: 'Roadmaps',
-    knowledge: 'Knowledge',
+    library: 'Library',
+    knowledge: 'Archive',
     newsfeed: 'Newsfeed',
     trending: 'Trending',
     notifications: 'Notifications',
@@ -40,6 +41,7 @@ export const en = {
     friendsSuggestions: 'Suggestions',
     friendsRequests: 'Friend Requests',
     chats: 'Chats',
+    projects: 'Projects',
     profile: 'Profile',
     dashboard: 'Dashboard',
     logout: 'Logout',
@@ -255,6 +257,12 @@ export const en = {
       // `github-stats-card.tsx` and B23.
       desc: 'Linking is not available yet: the sign-in and linking flows currently share one callback, so the authorisation never reaches the linking step.',
     },
+    // The viewer's variant: it does not explain B23, because "how do I fix this?" is not a
+    // question anyone asks about somebody else's account.
+    notLinkedOther: {
+      title: 'No GitHub account linked',
+      desc: 'This person has not connected a GitHub account to their profile.',
+    },
     sync: 'Sync now',
     // Never "synced": the endpoint answers 200 whether or not GitHub replied.
     syncRateLimited: 'Already synced recently. GitHub data can be refreshed once an hour.',
@@ -281,6 +289,17 @@ export const en = {
       posts: 'Queue',
       logs: 'Decision log',
       banned: 'Banned users',
+      appeals: 'Appeals',
+    },
+    appeals: {
+      filter: 'Filter by status',
+      loadError: 'Could not load appeals',
+      empty: 'No appeals with this status',
+      approve: 'Approve',
+      reject: 'Reject',
+      note: 'Reviewer note',
+      notePlaceholder: 'Note (optional)',
+      decisionError: 'Could not process this appeal. Please try again.',
     },
     filters: {
       postId: 'Post ID',
@@ -345,11 +364,21 @@ export const en = {
     list: {
       loadFailed: 'Could not load the roadmaps',
       empty: 'No roadmaps yet',
+      emptyDesc: 'Roadmaps show up here once an admin creates them.',
     },
     nodes: {
       pickRoadmap: 'Pick a roadmap to see its skills',
+      pickRoadmapDesc: 'Each roadmap is a set of skills you can claim.',
       loadFailed: 'Could not load the skills',
       empty: 'This roadmap has no skills yet',
+      emptyDesc: 'Skills appear as an admin adds them to the roadmap.',
+    },
+    path: {
+      legend: {
+        verified: 'Verified',
+        pending: 'Awaiting review',
+        open: 'Not started',
+      },
     },
     verify: {
       claim: 'Claim',
@@ -457,6 +486,9 @@ export const en = {
     photo: 'Photo',
     posting: 'Posting...',
     post: 'Post',
+    cancel: 'Cancel',
+    dialogTitle: 'New post · ${type}',
+    dialogNote: 'Your post may need to pass moderation before it appears in the feed.',
     visibility: {
       PUBLIC: 'Public',
       FRIENDS: 'Friends',
@@ -464,6 +496,7 @@ export const en = {
     },
     removeType: 'Remove',
     type: {
+      REGULAR: 'Status',
       CODE_SNIPPET: 'Code',
       ARTICLE: 'Article',
       QNA: 'Question',
@@ -603,6 +636,20 @@ export const en = {
   },
 
   post: {
+    reactors: {
+      title: 'Who reacted',
+      count: '${count} people',
+      all: 'All',
+      empty: 'Nobody here yet',
+      loadError: 'Could not load the list',
+      loadMore: 'Load more',
+    },
+    backToFeed: 'Back to the feed',
+    permalink: {
+      notFoundTitle: 'This post is not available',
+      notFoundDesc: 'It may have been removed, or you may not have access to it.',
+      open: 'Open post',
+    },
     unknownAuthor: 'Unknown author',
     qna: {
       accept: 'Accept answer',
@@ -617,6 +664,10 @@ export const en = {
     },
     edit: {
       edit: 'Edit',
+      menuLabel: 'Post options',
+      deleteTitle: 'Delete this post?',
+      deleteDesc:
+        'The post and every comment and reaction on it will be removed. This cannot be undone.',
       save: 'Save changes',
       content: 'Content',
       delete: 'Delete',
@@ -725,7 +776,7 @@ export const en = {
     profileMoved:
       'Your professional profile moved to the profile page — the explainer will not run without it.',
     profileMovedLink: 'Open profile',
-    title: 'Knowledge',
+    title: 'Archive',
     subtitle: 'Your sync tokens and saved explanations.',
     profile: {
       title: 'Professional profile',
@@ -788,7 +839,7 @@ export const en = {
       links: 'Further reading',
     },
     library: {
-      title: 'My library',
+      title: 'Saved explanations',
       count: '${count} saved explanations',
       emptyTitle: 'Your library is empty',
       emptyDesc: 'Explain a post and save it, and it will show up here.',
@@ -904,16 +955,164 @@ export const en = {
 
   ledger: {
     label: 'Summary',
-    evidence: 'Evidence',
+    evidence: 'Capability',
     external: 'From outside',
+    contributions: 'contributions',
     recentWeeks: 'Last 18 weeks',
     itemCount: '${count} items',
+  },
+
+  moderationMine: {
+    title: 'Violations & appeals',
+    loadError: 'Could not load your moderation history',
+    emptyTitle: 'Nothing on record',
+    emptyDesc: 'If one of your posts is removed, the record and your right to appeal appear here.',
+    appeal: 'Appeal',
+    appealPending: 'Appeal submitted, awaiting review',
+    appealsTitle: 'Your appeals',
+    appealTitle: 'Submit an appeal',
+    appealDesc: 'Say why you think this decision is wrong. A person will read it and reply.',
+    reasonLabel: 'Reason for the appeal',
+    reasonPlaceholder: 'This post was about... and does not violate... because...',
+    submitAppeal: 'Submit appeal',
+    cancel: 'Cancel',
+    submitError: 'Could not submit the appeal. Please try again.',
+    status: {
+      PENDING: 'Awaiting review',
+      APPROVED: 'Approved',
+      REJECTED: 'Rejected',
+    },
+  },
+  projects: {
+    title: 'Projects',
+    subtitle: 'Find people to build with, or a place to contribute.',
+    tabs: {
+      board: 'Project board',
+      mine: 'My applications',
+    },
+    loadError: 'Could not load projects',
+    emptyTitle: 'No projects yet',
+    emptyDesc: 'Be the first to post a project and open a role.',
+    openPositions: '${count} open roles',
+    quantity: 'Needs ${count} people',
+    backToBoard: 'Back to the board',
+    apply: 'Apply',
+    applyTitle: 'Apply · ${title}',
+    applyDesc: 'Say briefly what you can do for this role. The owner reads exactly this.',
+    messageLabel: 'Your application',
+    messagePlaceholder: 'I have worked on... and could take on...',
+    submitApplication: 'Send application',
+    applyError: 'Could not send the application. The role may have closed.',
+    cancel: 'Cancel',
+    accept: 'Accept',
+    reject: 'Reject',
+    decisionError: 'Could not process this application. The role may have just filled up.',
+    status: {
+      OPEN: 'Open',
+      CLOSED: 'Closed',
+    },
+    positionStatus: {
+      OPEN: 'Open',
+      FILLED: 'Filled',
+      CLOSED: 'Closed',
+    },
+    applicationStatus: {
+      PENDING: 'Pending',
+      ACCEPTED: 'Accepted',
+      REJECTED: 'Rejected',
+    },
+    detail: {
+      positions: 'Open roles',
+      noPositions: 'This project has no roles yet',
+      applications: 'Applications',
+      noApplications: 'Nobody has applied yet',
+      applicationsError: 'Could not load applications',
+      notFoundTitle: 'Project not found',
+      notFoundDesc: 'This project does not exist or has been removed.',
+    },
+    mine: {
+      loadError: 'Could not load your applications',
+      emptyTitle: 'You have not applied to anything',
+      emptyDesc: 'Applications you send, and their outcomes, show up here.',
+    },
+    create: {
+      action: 'Post a project',
+      title: 'Post a new project',
+      desc: 'Describe the project and the roles you need. Roles cannot be edited after posting.',
+      projectTitle: 'Project name',
+      projectTitlePlaceholder: 'e.g. A Vietnamese learning platform for developers',
+      description: 'Project description',
+      descriptionPlaceholder: 'What it does, where it is, what you need from people joining...',
+      positions: 'Roles',
+      positionsNote:
+        'There is no endpoint to add or edit roles after posting — this list is final.',
+      positionTitle: 'Role title',
+      positionTitlePlaceholder: 'e.g. Backend Engineer',
+      skills: 'Required skills',
+      skillsPlaceholder: 'Comma-separated skills: Kotlin, PostgreSQL',
+      addPosition: 'Add a role',
+      removePosition: 'Remove role',
+      submit: 'Post project',
+      error: 'Could not post the project. Please try again.',
+    },
+  },
+  blocks: {
+    block: 'Block',
+    unblock: 'Unblock',
+    cancel: 'Cancel',
+    title: 'People you blocked',
+    confirmTitle: 'Block ${name}?',
+    confirmDesc:
+      'Neither of you will see the other’s posts, and any existing friendship is deleted — unblocking later does not restore it.',
+    blockError: 'Could not block this person. Please try again.',
+    loadError: 'Could not load your block list',
+    emptyTitle: 'You have not blocked anyone',
+    emptyDesc: 'Blocked people disappear from your feed, your search results and your friends.',
+    unknownUser: 'User',
+  },
+  library: {
+    tabs: {
+      browse: 'Browse',
+      mine: 'Written by me',
+    },
+    title: 'Library',
+    subtitle: 'Books published by the community',
+    owned: 'Owned',
+    loadError: 'Could not load the library',
+    emptyTitle: 'The library is empty',
+    emptyDesc: 'Books show up here as people publish them.',
+  },
+
+  bookDetail: {
+    back: 'Back to the library',
+    untitled: 'Untitled book',
+    pages: 'Pages',
+    pageCount: '${count} pages',
+    size: 'File size',
+    downloads: 'Downloads',
+    reviewsTitle: 'Reviews',
+    // "Not available", not "does not exist": the endpoint answers 404 for a deleted book and 503
+    // for one whose storage object is missing. The page cannot tell them apart, so it does not
+    // claim to.
+    notFoundTitle: 'This book is not available',
+    notFoundDesc: 'It may have been removed, or its file cannot be reached right now.',
+  },
+
+  publicProfile: {
+    skillsTitle: 'Verified skills',
+    postsTitle: 'Posts',
+    postsEmpty: 'No posts you can see',
+    postsError: 'Could not load posts',
+    notFoundTitle: 'No such person',
+    notFoundDesc: 'There is no account with the handle @${username}.',
   },
 
   reputation: {
     remaining: 'needs',
     title: 'Elite Score',
     desc: 'Reputation earned from your contributions',
+    // The viewer's variant — "your" on someone else's profile attributes their score to the reader.
+    descOther: 'Reputation earned from their contributions',
     verifiedExpert: 'Verified Expert',
     toNextLevel: '${remaining} points to reach ${next}',
     topLevel: "You're at the top level",
@@ -932,6 +1131,9 @@ export const en = {
       loadError: 'Could not load your books',
       emptyTitle: 'No books yet',
       emptyDesc: 'Books you publish from the composer show up here.',
+      // On someone else's profile: the reader cannot publish on their behalf.
+      emptyDescOther: 'This person has not published any books.',
+      titleOther: 'Published books',
       delete: 'Delete',
       deleteAria: 'Delete ${title}',
       deleteTitle: 'Delete this book?',
@@ -945,6 +1147,8 @@ export const en = {
       loadError: 'Could not load your skills',
       emptyTitle: 'No skills claimed yet',
       emptyDesc: 'Claim a skill from a roadmap and it shows up here.',
+      // The viewer cannot claim a skill on someone else's behalf, so the instruction is wrong here.
+      emptyDescOther: 'This person has no verified skills yet.',
       browseRoadmaps: 'Browse roadmaps',
       status: {
         verified: 'Verified',
@@ -986,6 +1190,8 @@ export const en = {
   },
 
   chat: {
+    messageUser: 'Message',
+    messageUserError: 'Could not open the conversation. Please try again.',
     sayHi: 'Say hi to start the conversation!',
     minimize: 'Minimize',
     close: 'Close',
@@ -1017,6 +1223,10 @@ export const en = {
       'This person has never used chat, so they cannot be messaged yet. Ask them to open Chats once.',
     openChat: 'Open chat',
     expand: 'Reopen chat window',
+    info: {
+      label: 'Conversation details',
+      verifiedSkills: 'Verified skills',
+    },
   },
 };
 

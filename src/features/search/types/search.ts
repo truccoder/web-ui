@@ -73,3 +73,16 @@ export type SearchResponse = {
   users: SearchUser[];
   posts: SearchPost[];
 };
+
+/**
+ * One row of the type-ahead dropdown.
+ *
+ * ONE FLAT SHAPE FOR EVERY KIND OF HIT, which the backend chose deliberately: the dropdown draws a
+ * single list, and a client that switched on per-type payloads to render four identical rows would
+ * end up re-implementing this flattening anyway.
+ *
+ * `type` IS WHAT `id` REFERS TO — a user id or a book id — so it is also what decides where a row
+ * navigates. `sublabel` for a person is their handle with the `@` already prefixed by the server.
+ */
+export type Suggestion = Schemas['SuggestionDto'];
+export type SuggestionType = NonNullable<Suggestion['type']>;

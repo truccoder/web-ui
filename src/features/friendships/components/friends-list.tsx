@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { UserMinus } from 'lucide-react';
-import { Button, Card, Dialog, EmptyState, Skeleton } from '@/shared/components';
+import { Button, Dialog, EmptyState, Skeleton } from '@/shared/components';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { useT } from '@/core/i18n';
 import { useInfiniteFriends, useUnfriend } from '../hooks/use-friendship';
@@ -27,7 +27,7 @@ import { FriendListItem } from './friend-list-item';
 
 function FriendRowSkeleton() {
   return (
-    <div className="flex items-center gap-3 p-3">
+    <div className="flex items-center gap-3 rounded-nx-md bg-nx-surface-card px-5 py-3">
       <Skeleton circle height={40} />
       <div className="flex-1">
         <Skeleton width={160} height={14} />
@@ -67,11 +67,11 @@ export function FriendsList() {
 
   if (isLoading) {
     return (
-      <Card padding={0} className="divide-y divide-nx-border-subtle overflow-hidden">
+      <div className="flex flex-col gap-4">
         {Array.from({ length: 6 }).map((_, i) => (
           <FriendRowSkeleton key={i} />
         ))}
-      </Card>
+      </div>
     );
   }
 
@@ -90,13 +90,15 @@ export function FriendsList() {
         {t('friends.all.subtitle', { count: totalCount })}
       </p>
 
-      <Card padding={0} className="divide-y divide-nx-border-subtle overflow-hidden">
+      <div className="flex flex-col gap-4">
         {friends.map((friend) => (
-          <div key={friend.userId} className="p-3">
+          <div key={friend.userId}>
             <FriendListItem
               name={friend.fullName}
               avatarUrl={friend.profilePictureUrl}
               subtitle={friend.username ? `@${friend.username}` : undefined}
+              // The friends list is one of only two payloads carrying a handle, so it can link.
+              href={friend.username ?? undefined}
               actions={
                 <Button
                   size="sm"
@@ -116,7 +118,7 @@ export function FriendsList() {
             />
           </div>
         ))}
-      </Card>
+      </div>
 
       <Dialog
         open={pending != null}
@@ -151,11 +153,11 @@ export function FriendsList() {
       <div ref={sentinelRef} />
 
       {isFetchingNextPage && (
-        <Card padding={0} className="divide-y divide-nx-border-subtle overflow-hidden">
+        <div className="flex flex-col gap-4">
           {Array.from({ length: 2 }).map((_, i) => (
             <FriendRowSkeleton key={i} />
           ))}
-        </Card>
+        </div>
       )}
 
       {!hasNextPage && (

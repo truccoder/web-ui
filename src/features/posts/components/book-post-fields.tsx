@@ -184,7 +184,7 @@ function FileField({
   };
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-2">
       <span className="text-nx-body-sm font-medium text-nx-text-primary">{label}</span>
 
       {file ? (

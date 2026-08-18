@@ -2,9 +2,12 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
+  Archive,
+  ArrowLeft,
   BookOpen,
+  Briefcase,
   Globe,
   LogOut,
   MessageCircle,
@@ -149,6 +152,18 @@ const NAV_GROUPS: NavGroup[] = [
         matchPrefix: '/friends',
       },
       { href: '/chats', labelKey: 'nav.chats', icon: MessageCircle, keywords: 'tin nhan message' },
+      /**
+       * `/projects` JOINS THE COMMUNITY GROUP RATHER THAN `Phát triển`, and the split the group
+       * names decides it: `Cộng đồng` is other people, `Phát triển` is you. A project board is
+       * entirely about finding other people to build with — the fact that it also grows your
+       * experience is true of the feed too.
+       */
+      {
+        href: '/projects',
+        labelKey: 'nav.projects',
+        icon: Briefcase,
+        keywords: 'du an tuyen team project',
+      },
     ],
   },
   {
@@ -156,14 +171,14 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/roadmap', labelKey: 'nav.roadmap', icon: RouteIcon, keywords: 'lo trinh skill' },
       {
-        // `Thư viện` (the book library, `GET /books`) is the third member of this group in the DS.
-        // It is not here because the route does not exist yet — R4 builds it. A rail item that
-        // 404s is exactly what the DS's own rule forbids.
         href: '/knowledge',
         labelKey: 'nav.knowledge',
-        icon: BookOpen,
-        keywords: 'kien thuc token kho luu tru',
+        icon: Archive,
+        keywords: 'kien thuc token kho luu tru archive',
       },
+      // The group's third member, added once `/library` existed. It was deliberately absent while
+      // the route did not — a rail item that 404s is what the DS's own rule forbids.
+      { href: '/library', labelKey: 'nav.library', icon: BookOpen, keywords: 'thu vien sach book' },
     ],
   },
 ];
@@ -235,7 +250,12 @@ function NavLink({
       // background only says it to people who can see it.
       aria-current={active ? 'page' : undefined}
       className={cn(
-        'flex items-center gap-2.5 rounded-nx-sm px-2.5 py-2 text-nx-ui',
+        // `h-8` + `gap-2`, measured off the kit: a rail item there is `height 32 · padding 0 10px
+        // · gap 8 · radius 6`. Ours was `py-2` + `gap-2.5`, which made it 37 tall with a 10px
+        // icon↔label gap — 32 is the DS's ROW UNIT, and 10 is the inset split, not a gap.
+        // `min-h-8` rather than `h-8` because the row unit is a minimum: a wrapped Vietnamese
+        // label has to grow its row instead of clipping.
+        'flex min-h-8 items-center gap-2 rounded-nx-sm px-2.5 text-nx-ui',
         'transition-colors duration-[var(--nx-duration-fast)] ease-nx-out',
         'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-nx-focus-ring',
         active
@@ -250,14 +270,67 @@ function NavLink({
   );
 }
 
-function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+/**
+ * Identity in the top bar — the avatar, and behind it the two things you can do to an account.
+ *
+ * IT MOVED HERE FROM THE RAIL'S FOOTER at R5-4, because the kit puts it here and the rail's copy
+ * was the odd one out: the bar already carried the brand, the search and the bell — everything
+ * that is true of the app rather than of a page — and identity is the last member of that set. A
+ * rail is destinations; "you" is not a destination.
+ *
+ * NOT DUPLICATED. The rail's footer lost this trigger rather than keeping a second one — two
+ * identity affordances on one screen is exactly the ambiguity the DS's single cluster avoids. The
+ * locale toggle stays in the rail because the design has no locale control anywhere, so there is
+ * no specified home to move it to; inventing one in the bar would be the guess, not the move.
+ *
+ * 34px hit area around a 24px avatar, matching the bell beside it — measured off the kit, and it
+ * is why the avatar is `sm` rather than the `md` the rail used.
+ */
+function MeMenu() {
   const t = useT();
   const router = useRouter();
+  const { data: profile } = useMyProfile();
+  const { mutate: logout } = useLogout();
+
+  return (
+    <Menu
+      align="end"
+      width={200}
+      trigger={
+        <button
+          type="button"
+          // The accessible name is the person's name once it is known; before that it is the
+          // generic label, so the control is never announced as an unnamed button.
+          aria-label={profile?.fullName ?? t('nav.profile')}
+          className={cn(
+            'grid size-[34px] shrink-0 place-items-center rounded-nx-sm',
+            'hover:bg-nx-surface-hover',
+            'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-nx-focus-ring'
+          )}
+        >
+          <Avatar src={profile?.profilePictureUrl} name={profile?.fullName} size="sm" />
+        </button>
+      }
+      items={[
+        {
+          // `Menu` items are actions, not anchors — its keyboard contract keeps focus on the
+          // trigger, which a real `<a>` inside the panel would break.
+          label: t('nav.profile'),
+          icon: <User />,
+          onSelect: () => router.push('/profile'),
+        },
+        '-',
+        { label: t('nav.logout'), icon: <LogOut />, danger: true, onSelect: () => logout() },
+      ]}
+    />
+  );
+}
+
+function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+  const t = useT();
   const { locale, setLocale } = useI18n();
   const pathname = usePathname();
-  const { data: profile } = useMyProfile();
   const { data: pendingRequests } = usePendingRequests();
-  const { mutate: logout } = useLogout();
 
   const pendingCount = pendingRequests?.length ?? 0;
 
@@ -270,7 +343,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         href="/newsfeed"
         onClick={onNavigate}
         className={cn(
-          'flex items-center gap-2.5 px-4 py-4 md:hidden',
+          'flex items-center gap-2.5 px-4 py-4 lg:hidden',
           'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-nx-focus-ring'
         )}
       >
@@ -282,7 +355,24 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
       <nav
         aria-label={t('nav.primary')}
-        className="flex flex-1 flex-col gap-4 overflow-y-auto px-2 pb-2 md:pt-4"
+        /**
+         * THE DATUM IS 20, NOT 28 — correcting my own correction from the previous round.
+         *
+         * The kit's README says *"datum 28 — the rail, the canvas and the ledger all start their
+         * first block at y = 56 + 28 = 84"*, and I moved all three regions to `pt-7` on the
+         * strength of that sentence. The kit itself renders its rail `nav` at `padding: 20px 10px
+         * 0px` and its canvas wrapper at `padding-top: 20px`, putting both first blocks at **76**.
+         * The README paragraph describes an earlier fitting; the SPACE switch defaults to R9 and
+         * that is what ships.
+         *
+         * 28 is also on no course the system has — the vertical course is 8 · 12 · 16 · 20 — which
+         * is the part I should have noticed without opening a browser.
+         *
+         * `px-2.5` and `gap-3`: the kit's nav insets 10 (the set's half of the inset split, with
+         * the item's own 10 completing the 20 line to its label) and spaces group-from-group at
+         * `element` 12. Ours were 8 and 16.
+         */
+        className="flex flex-1 flex-col gap-3 overflow-y-auto px-2.5 pb-12 lg:pt-5"
       >
         {NAV_GROUPS.map((group) => (
           // `aria-labelledby` rather than a bare heading: the group label is a real landmark name,
@@ -325,7 +415,9 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           type="button"
           onClick={() => setLocale(locale === 'vi' ? 'en' : 'vi')}
           className={cn(
-            'flex w-full items-center gap-2.5 rounded-nx-sm px-2.5 py-2 text-nx-ui',
+            // Same row unit as the nav items above it — it sits in the same column and any other
+            // height would read as a different kind of thing.
+            'flex min-h-8 w-full items-center gap-2 rounded-nx-sm px-2.5 text-nx-ui',
             'text-nx-text-secondary hover:bg-nx-surface-hover hover:text-nx-text-primary',
             'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-nx-focus-ring'
           )}
@@ -337,46 +429,9 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           </span>
         </button>
 
-        {/* Opens upward: the trigger sits at the bottom edge, where a downward panel would be
-            off-screen. Sign-out is `danger` and last, after a separator — `Menu.prompt.md`. */}
-        <Menu
-          side="top"
-          align="start"
-          width={200}
-          className="w-full"
-          trigger={
-            <button
-              type="button"
-              className={cn(
-                'flex w-full items-center gap-2.5 rounded-nx-sm px-2.5 py-2 text-nx-ui',
-                'text-nx-text-primary hover:bg-nx-surface-hover',
-                'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-nx-focus-ring'
-              )}
-            >
-              <Avatar src={profile?.profilePictureUrl} name={profile?.fullName} size="sm" />
-              {/* `suppressHydrationWarning`: the server has no session, so it renders the
-                  placeholder and the client fills the real name in on the first paint. */}
-              <span className="flex-1 truncate text-left" suppressHydrationWarning>
-                {profile?.fullName ?? '…'}
-              </span>
-            </button>
-          }
-          items={[
-            {
-              // `Menu` items are actions, not anchors — its keyboard contract keeps focus on the
-              // trigger, which a real `<a>` inside the panel would break. So this pushes through
-              // the client router rather than rendering a link.
-              label: t('nav.profile'),
-              icon: <User />,
-              onSelect: () => {
-                onNavigate?.();
-                router.push('/profile');
-              },
-            },
-            '-',
-            { label: t('nav.logout'), icon: <LogOut />, danger: true, onSelect: () => logout() },
-          ]}
-        />
+        {/* THE IDENTITY TRIGGER LEFT THIS FOOTER at R5-4 — it is `MeMenu` in the top bar now. What
+            stays is the locale toggle, which the design specifies nowhere; moving it to the bar to
+            keep it company would be inventing a slot rather than following one. */}
       </div>
     </div>
   );
@@ -386,6 +441,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const t = useT();
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { data: profile } = useMyProfile();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -395,8 +451,34 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
    * `/chats` fills the viewport exactly instead of growing the page: it is a conversation, and one
    * that pushes its composer below the fold is broken. Every other route keeps `min-h-screen` and
    * scrolls, which is what a feed has to do.
+   *
+   * AN OPEN ROADMAP IS THE SECOND TENANT, and it was missing. `layout-r7.md` §3.1 names focus
+   * mode's four by hand, each with one parameter:
+   *
+   * | tenant | parameter | what it draws |
+   * | --- | --- | --- |
+   * | `/chats` | `bleed` | the tenant owns the full width and its own scrollers |
+   * | `/kho/{id}` | `panel` | a 300 companion column, right |
+   * | **`/roadmap/{id}`** | **`extent`** | **the content governs its own width** |
+   * | the reader | — | the measure, centred |
+   *
+   * A roadmap tree is `extent`: it is a graph, not prose, and forcing it through a 672 measure
+   * makes it wrap at a width chosen for reading sentences. `density-r8.md` §3 is explicit that
+   * the reason is the SHAPE and not the subject — *"a focus shape has no second region to scroll
+   * past, so a page scroll buys nothing"* — and that `/roadmap/{id}` inherits it for that reason.
+   *
+   * KEYED OFF `?id=` BECAUSE THAT IS THE ROUTE WE HAVE. The DS writes `/roadmap/{id}`; ours keeps
+   * the open track in a query param, and the two are the same state. Changing the URL shape is a
+   * separate decision — it would break every link already shared — so the shape is read from
+   * where it actually lives rather than the route being bent to match a spec's spelling.
    */
-  const isFullBleed = pathname.startsWith('/chats');
+  const roadmapId = searchParams.get('id');
+  const isFullBleed =
+    pathname.startsWith('/chats') || (pathname.startsWith('/roadmap') && Boolean(roadmapId));
+
+  // The tenant's name for the context bar, taken from the rail's own item list so the two can
+  // never disagree about what a route is called.
+  const focusLabelKey = pathname.startsWith('/chats') ? 'nav.chats' : 'nav.roadmap';
 
   useEffect(() => {
     if (!profile) return;
@@ -485,55 +567,165 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         {/* 56px, raised on the ground with a hairline shadow and NO bottom border — the elevation
             is what separates it, so a border would be saying the same thing twice. Full-bleed
             rather than capped with the shell: the search field centres on the viewport. */}
+        {/**
+         * R5-4: TWO CENTRES BECAME ONE MECHANISM — `handoff/layout-r7.md` §5.3, measured off the
+         * kit rather than inferred.
+         *
+         * The bar used to be one full-bleed flex row: brand, then a field with `mx-auto` taking
+         * whatever was left, then the controls. That centres the field in the SPACE BETWEEN two
+         * flanks of unequal width, which is not the same thing as centring it on the viewport —
+         * and the two drift apart the moment either flank changes (a longer name, a badge
+         * appearing). The kit's answer is that the field is not in the row's flow at all: the
+         * header spans the viewport, the field is absolutely positioned at `left: 50%` on IT, and
+         * brand + controls flow inside a row capped at the shell's own budget. Nothing has to
+         * agree with anything.
+         *
+         * MEASURED IN THE KIT AT 1280: header 56 · row capped and centred · field 320 centred on
+         * the viewport · `⌘K` INSIDE the field · bell and avatar at the right.
+         *
+         * THE ROW IS CAPPED AT THE SHELL CAP, so the brand's left edge lands on the rail's and the
+         * controls' right edge on the ledger's. That is one cap serving both, not a second
+         * mechanism to keep in sync — the failure mode this whole round is about.
+         */}
+        {/**
+         * THE SHADOW BELONGS TO THE BOTTOM OF THE CHROME, NOT TO THE TOP BAR. In focus mode the
+         * top bar is followed by a 48px context bar, and `layout-r7.md` §3.2 is explicit that the
+         * pair is **one card 104 tall**: *"the shadow moves to the bottom of the pair… two stacked
+         * shadows would re-close the ∩ r4 spent a round opening — vertically this time."* So the
+         * bar drops its own shadow exactly when something else is going to sit under it.
+         */}
         <header
           className={cn(
-            'sticky top-0 z-30 flex h-nx-topbar shrink-0 items-center gap-3 px-3.5 xl:px-5',
-            'bg-nx-surface-card shadow-nx-1'
+            'sticky top-0 z-30 h-nx-topbar shrink-0 bg-nx-surface-card',
+            !isFullBleed && 'shadow-nx-1'
           )}
         >
-          <IconButton
-            label={t('nav.openMenu')}
-            className="md:hidden"
-            onClick={() => setDrawerOpen(true)}
-          >
-            <MenuIcon />
-          </IconButton>
-
-          {/* Wordmark drops below 1280 and the mark stands alone — the bar's budget goes to the
-              search field first. Hidden entirely on mobile, where the drawer carries the brand. */}
-          <Link
-            href="/newsfeed"
+          <div
             className={cn(
-              'hidden shrink-0 items-center gap-2.5 md:flex',
-              'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring'
+              'mx-auto flex h-full w-full max-w-[var(--spacing-nx-shell-max)]',
+              'items-center gap-2.5 px-3.5 xl:px-5'
             )}
           >
-            <BrandMark size={24} />
-            <span className="hidden text-nx-body font-semibold tracking-tight text-nx-text-primary xl:inline">
-              {t('app.name')}
-            </span>
-          </Link>
+            <IconButton
+              label={t('nav.openMenu')}
+              // Pairs with the rail's `lg:flex` — the two must switch on the same number, or
+              // there is a band with neither a rail nor a way to open one.
+              className="lg:hidden"
+              onClick={() => setDrawerOpen(true)}
+            >
+              <MenuIcon />
+            </IconButton>
 
-          {/* Capped at 440 and centred in what the bar has left, rather than stretched: a field
-              that runs the width of a 1512px window reads as a page-wide input, not a tool. */}
-          <div className="mx-auto w-full max-w-[440px] min-w-0">
-            <SearchBar />
+            {/**
+             * THE MARK IS ALWAYS IN THE BAR; ONLY THE WORDMARK STEPS. The DS's brand row reads
+             * `mark + wordmark` at 1440 · 1280 · 1024 · 768 and `mark only` at 375 — so the
+             * wordmark drops at the PHONE step, not at 1280. This was hidden entirely below 768
+             * (leaving the bar with no brand at all whenever the drawer was shut) and dropped its
+             * wordmark below 1280, which is two steps too eager.
+             */}
+            <Link
+              href="/newsfeed"
+              className={cn(
+                'flex shrink-0 items-center gap-2.5',
+                'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring'
+              )}
+            >
+              <BrandMark size={24} />
+              <span className="hidden text-nx-body font-semibold tracking-tight text-nx-text-primary min-[576px]:inline">
+                {t('app.name')}
+              </span>
+            </Link>
+
+            <div className="ml-auto flex shrink-0 items-center gap-1">
+              {/* Below 576 the field does not exist (the DS derives that number: at 576 the
+                  centred field's clamped minimum no longer fits between the two reserves), so the
+                  palette needs a control of its own down there. Above it, the hint inside the
+                  field is that control. */}
+              <IconButton
+                label={t('palette.label')}
+                className="min-[576px]:hidden"
+                onClick={() => setPaletteOpen(true)}
+              >
+                <Search />
+              </IconButton>
+
+              <NotificationBell />
+
+              <MeMenu />
+            </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setPaletteOpen(true)}
+          {/**
+           * THE FIELD, OUT OF FLOW. `left-1/2 -translate-x-1/2` on the header centres it on the
+           * VIEWPORT, which is the one thing both flanks can be wrong about without moving it.
+           *
+           * 320 wide, 360 from 1280 up — `FIELD_MAX 360 (320 compact)` in §5.3, and 320 is what
+           * the kit measured at 1265. It stops existing below 576 rather than shrinking past
+           * usefulness; the icon button above takes over there.
+           */}
+          <div
             className={cn(
-              'hidden shrink-0 items-center gap-1.5 rounded-nx-sm border border-nx-border-default px-2 py-1',
-              'font-mono text-nx-micro text-nx-text-muted hover:bg-nx-surface-hover sm:flex',
-              'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring'
+              // 320 AT EVERY WIDTH. The README's step table promises `field 360` at 1440 and 320
+              // at 1280, so this widened at `xl`. The kit renders the field 320 wide at 1280,
+              // 1441 AND 1685 — it never takes the 360. Measured three times before removing the
+              // step, because a table saying otherwise is exactly the kind of thing worth
+              // double-checking.
+              'absolute top-1/2 left-1/2 hidden w-[320px] -translate-x-1/2 -translate-y-1/2',
+              'min-[576px]:block'
             )}
           >
-            {t('palette.shortcutHint')}
-          </button>
-
-          <NotificationBell />
+            <SearchBar
+              shortcutLabel={t('palette.shortcutHint')}
+              shortcutAriaLabel={t('palette.label')}
+              onShortcutClick={() => setPaletteOpen(true)}
+            />
+          </div>
         </header>
+
+        {/**
+         * THE CONTEXT BAR — focus mode's second row, and the half of the shape that was missing.
+         *
+         * `layout-r7.md` §3.2 fixes its geometry and gives the reason for each number: **48 tall**
+         * ("the two-line row unit, already in the system — not a new number"), the top bar's own
+         * fill, and **no shadow of its own** because the shadow belongs to the bottom of the pair.
+         * Measured in the kit's `/chats`: a full-width band at `y=56`, `height 48`,
+         * `rgb(255,255,255)`, carrying a trail back to where you came from and the tenant's name.
+         *
+         * IT ONLY EXISTS IN FOCUS MODE. A shell screen already names itself in its own canvas
+         * header beside its primary action (R8 moved it there to buy back 40px on every screen);
+         * a second title in the chrome would be that same string twice.
+         *
+         * THE TITLE COMES FROM THE RAIL'S OWN ITEM LIST rather than a per-page slot. A slot would
+         * be the honest long-term shape — the kit's bar also carries a count ("3 hội thoại") that
+         * only the page knows — but a slot API is a mechanism, and this needs a name. When a
+         * tenant has something to add here, that is the moment to build the slot, not before.
+         */}
+        {isFullBleed && (
+          <div
+            className={cn(
+              'sticky top-nx-topbar z-30 flex h-nx-subnav shrink-0 items-center gap-2',
+              'bg-nx-surface-card px-3.5 shadow-nx-1 xl:px-5'
+            )}
+          >
+            <Link
+              href="/newsfeed"
+              className={cn(
+                'inline-flex items-center gap-1.5 text-nx-body-sm text-nx-text-muted',
+                'hover:text-nx-text-primary',
+                'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring'
+              )}
+            >
+              <ArrowLeft className="size-4" aria-hidden />
+              {t('nav.newsfeed')}
+            </Link>
+            <span className="text-nx-text-faint" aria-hidden>
+              /
+            </span>
+            <span className="truncate text-nx-ui font-medium text-nx-text-primary">
+              {t(focusLabelKey)}
+            </span>
+          </div>
+        )}
 
         <Drawer
           open={drawerOpen}
@@ -544,23 +736,49 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           <SidebarContent onNavigate={() => setDrawerOpen(false)} />
         </Drawer>
 
-        {/* The shell is capped at its own budget — 248 rail + 40 gutter + 672 canvas (+ 40 + 300
-            for the ledger, which R3-2 adds) — and centred on the ground. What lies outside the cap
-            is ground, the same substance as the gaps between cards, so it reads as page margin
-            rather than as an over-wide layout. */}
+        {/**
+         * The shell is capped at its own budget and centred on the ground; what lies outside the
+         * cap is ground, so it reads as page margin rather than as an over-wide layout.
+         *
+         * THE GUTTER STEPS AT 1440, NOT AT 1280 — corrected after measuring. The budget is
+         * `248 + 40 + 672 + 40 + 300 = 1300` at the full step and `248 + 24 + 672 + 24 + 272 =
+         * 1240` at the next one down, and the DS assigns 1240 to **1280**. Tailwind's `xl` is
+         * 1280, so `xl:gap-nx-region-gutter` was spending the 1300 budget in a 1265 viewport
+         * (1280 less the scrollbar). Something had to give, and `flex-1` gave it out of the
+         * canvas: measured at 1280, the reading column was **637px against a 672 measure**.
+         *
+         * That is the one number the whole system is derived from, so it cannot be the thing that
+         * absorbs a shortfall. Both `--spacing-nx-*-sm` tokens existed for this step and had no
+         * consumer anywhere in the app.
+         *
+         * THE CAP DOES NOT APPLY IN FOCUS MODE, and that is `density-r10.md`'s second headline —
+         * *the cap stops applying to a shape that has no flanks*. The 1300 is the sum of a rail, a
+         * measure, a ledger and two gutters; focus mode has none of those, so capping it is
+         * arithmetic about regions that are not on screen. Measured before the fix: `/chats` ran
+         * 1300 wide, centred, with 150px of bare ground down each side of a transcript — while the
+         * kit's own focus region measures the full 1600 at 1600. The owner asked for exactly this
+         * on the other tenant: *Roadmap cũng phải làm full tối đa*.
+         */}
         <div
           className={cn(
-            'mx-auto flex w-full max-w-[var(--spacing-nx-shell-max)]',
-            'gap-6 xl:gap-nx-region-gutter',
-            isFullBleed && 'min-h-0 flex-1'
+            'mx-auto flex w-full',
+            'gap-nx-region-gutter-sm min-[1440px]:gap-nx-region-gutter',
+            isFullBleed ? 'min-h-0 flex-1' : 'max-w-[var(--spacing-nx-shell-max)]'
           )}
         >
           {/* Hangs below the bar and owns its own scroller, so a long rail never scrolls the
               canvas and a long canvas never scrolls the rail. No fill, no border. */}
           <aside
             className={cn(
+              // `lg` (1024), not `md` (768): the DS gives 768 a **Drawer** and only starts the
+              // 248 rail at 1024. Showing it at 768 left 768 − 248 − 24 = 496 for a 672 measure.
               'sticky top-nx-topbar hidden h-[calc(100dvh-var(--spacing-nx-topbar))] w-nx-sidebar',
-              'shrink-0 md:flex'
+              'shrink-0',
+              // FOCUS MODE IS "top bar 56 + context bar 48 + ONE REGION" (`layout-r7.md` §3.1).
+              // The rail is a second region, so it goes — the context bar's trail is what replaces
+              // it, which is why that bar had to exist before this line could be written. The
+              // hamburger and the Drawer stay, so navigation is still one tap away.
+              isFullBleed ? 'hidden' : 'lg:flex'
             )}
           >
             <SidebarContent />
@@ -571,10 +789,23 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
               'min-w-0 flex-1',
               isFullBleed
                 ? 'flex min-h-0 flex-col'
-                : // The reading column is hard-capped and centred in whatever the canvas has.
-                  // 28 top / 24 side / 72 bottom: the deep bottom pad is scroll run-out, so the
-                  // last card in a feed does not sit flush against the viewport edge.
-                  'mx-auto w-full max-w-[var(--spacing-nx-canvas)] px-6 pt-7 pb-18'
+                : /**
+                   * NO HORIZONTAL PADDING FROM `lg` UP, WHICH IS THE SECOND HALF OF THE MEASURE
+                   * BUG. `max-w` caps the BOX, so `max-w-672 px-6` gave a 624 reading column —
+                   * the cards were 48 narrower than the measure and the gutter beside them read
+                   * as 40 + 24. The canvas region IS 672 and the inset is the card's own padding,
+                   * so the region must not add its own.
+                   *
+                   * Below `lg` the canvas is full-bleed against the viewport with no rail beside
+                   * it, so there it keeps the DS's 16 of edge padding.
+                   *
+                   * 20 top is the datum — measured, not read. The kit's canvas wrapper renders
+                   * `padding-top: 20px`, putting its first card at 76; the README's "datum 28"
+                   * describes an earlier fitting and 28 is on no course the ladder has. Shared
+                   * with the rail and the ledger, which is the property that actually matters.
+                   * 48 bottom is the DS's runout, was 72.
+                   */
+                  'mx-auto w-full max-w-[var(--spacing-nx-canvas)] px-4 pt-5 pb-12 lg:px-0'
             )}
           >
             {children}

@@ -27,7 +27,7 @@ export interface SearchResultsProps {
 /** Section heading with its icon and count. Both sections are identical but for those. */
 function SectionHeading({ icon, label }: { icon: React.ReactNode; label: string }) {
   return (
-    <p className="flex items-center gap-1.5 px-1 py-1 text-nx-body-sm font-medium text-nx-text-secondary">
+    <p className="flex items-center gap-2 px-1 py-1 text-nx-body-sm font-medium text-nx-text-secondary">
       {icon}
       {label}
     </p>

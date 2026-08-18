@@ -32,6 +32,9 @@ export {
   type ModerationLogsTabProps,
   BannedUsersTab,
   type BannedUsersTabProps,
+  MyViolationsPanel,
+  AppealsTab,
+  type AppealsTabProps,
 } from './components';
 
 export {
@@ -42,6 +45,13 @@ export {
   useReviewPost,
   type ModerationMutationOptions,
   type ReviewPostVariables,
+  useAppeals,
+  useApproveAppeal,
+  useRejectAppeal,
+  type AppealDecisionVariables,
+  useMyViolations,
+  useMyAppeals,
+  useSubmitAppeal,
 } from './hooks';
 
 export type {

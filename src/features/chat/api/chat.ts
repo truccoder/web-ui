@@ -22,4 +22,19 @@ export const chatApi = {
    * backend fixes landed for this checkpoint; see `findings/chat.md` R2/R4.
    */
   getToken: () => api.get<ChatToken>('/v1/api/chat/token').then((r) => r.data),
+
+  /**
+   * POST /v1/api/chat/participants/{userId} — introduce a pair to Stream. 204.
+   *
+   * THIS IS WHY CHAT ONLY EVER WORKED BETWEEN FRIENDS. `GET /token` upserts the caller *and their
+   * friends* into Stream, and Stream refuses to create a channel containing a user it has never
+   * seen — so opening a conversation with anyone outside that set failed at `channel.watch()`,
+   * with an error about the member rather than about the reason.
+   *
+   * IDEMPOTENT AND SAFE FOR FRIENDS TOO, which the backend states explicitly, and that is what
+   * lets the caller stop caring: nothing on this side has to work out whether the two are already
+   * friends before opening a conversation. Call it first, always.
+   */
+  ensureParticipants: (userId: number) =>
+    api.post<void>(`/v1/api/chat/participants/${userId}`).then((r) => r.data),
 };

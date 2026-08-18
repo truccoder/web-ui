@@ -120,7 +120,9 @@ export function RegisterForm() {
         <p className="text-nx-body-sm text-nx-text-secondary">{t('auth.register.subtitle')}</p>
       </div>
 
-      <form onSubmit={submit} className="mt-6 flex flex-col gap-4" noValidate>
+      {/* `method="post"` for the reason spelled out in `LoginForm`: without it a form defaults to
+          GET, and an unhydrated page submits the password into the URL. */}
+      <form onSubmit={submit} method="post" className="mt-6 flex flex-col gap-4" noValidate>
         <Input
           label={t('auth.fullname')}
           autoComplete="name"

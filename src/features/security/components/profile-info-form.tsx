@@ -27,7 +27,7 @@ export function ProfileInfoForm() {
   const submit = handleSubmit((body) => update.mutate(body));
 
   return (
-    <Card padding={24} className="w-full">
+    <Card className="w-full">
       <div className="mb-4">
         <h3 className="text-nx-heading font-semibold text-nx-text-primary">
           {t('profile.info.title')}
@@ -35,7 +35,8 @@ export function ProfileInfoForm() {
         <p className="text-nx-body-sm text-nx-text-muted">{t('profile.info.desc')}</p>
       </div>
 
-      <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
+      {/* `method="post"` — see `LoginForm`. */}
+      <form onSubmit={submit} method="post" className="flex flex-col gap-4" noValidate>
         <Input
           label={t('profile.info.fullname')}
           autoComplete="name"

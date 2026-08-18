@@ -69,7 +69,7 @@ export function LinkBody({ details, className }: LinkBodyProps) {
       )}
 
       <span className="flex min-w-0 flex-1 flex-col gap-1">
-        <span className="flex items-center gap-1.5 font-mono text-nx-micro text-nx-text-muted">
+        <span className="flex items-center gap-2 font-mono text-nx-micro text-nx-text-muted">
           <ExternalLink aria-hidden className="size-3 shrink-0" />
           <span className="truncate">{host}</span>
         </span>

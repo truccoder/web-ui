@@ -10,10 +10,12 @@ import {
   HelpCircle,
   Link2,
   ListChecks,
+  MessageSquare,
   X,
 } from 'lucide-react';
-import { Avatar, Button, Card, Select, Textarea } from '@/shared/components';
+import { Avatar, Button, Card, Dialog, Menu, Select, Textarea } from '@/shared/components';
 import { getErrorMessage } from '@/shared/lib/api-error';
+import { cn } from '@/shared/lib/cn';
 import { useMyProfile } from '@/features/security';
 import { useT } from '@/core/i18n';
 import { useCreateBookPost, useCreatePost } from '../hooks/use-post';
@@ -95,6 +97,41 @@ import { QuizComposer, emptyQuiz, isQuizReady, normalizeQuiz } from './quiz-comp
  * `PENDING_MODERATION` whenever moderation is enabled, so a freshly posted item may not
  * appear in the feed at all. Claiming "posted!" and showing nothing is how a working app
  * looks broken.
+ *
+ * ────────────────────────────────────────────────────────────────────────────────────────────
+ * R5-2: THE COMPOSER IS A LAUNCHER, THE FORM IS A DIALOG — and this is a bigger change than
+ * "make it one line".
+ *
+ * Measured off the rendered kit rather than read off the spec, because the spec sentence
+ * ("composer in one line", `layout-r7.md` §5.2) is the one thing prose gets wrong here. In the
+ * kit the composer is 68px tall and holds exactly three things: a 32px avatar, a **`button`
+ * styled to look like a text field**, and the type `Menu`. There is no textarea in it, no
+ * visibility select, and NO POST BUTTON — the whole form lives in a `Dialog` 560 wide, titled
+ * `Soạn bài · <type>`, whose footer is `Huỷ` + `Đăng bài`. `component-specs.md` confirms the
+ * width from the other direction: "A confirm has no fields, so it never needs the composer's
+ * 560".
+ *
+ * So the composer is not a small form; it is a **launcher for a form**. That is what buys the
+ * top of the product's first screen — the most expensive space in the app was being spent on a
+ * control most people touch once a session. R4-4 already made this argument when it collapsed
+ * the nine type chips into a `Menu`; this finishes the same argument.
+ *
+ * THE DRAFT SURVIVES CLOSING, and that is why every piece of state stays HERE rather than
+ * moving into the dialog. `Dialog` renders nothing while closed, so state held inside it would
+ * be destroyed the moment someone dismissed the panel to check something in the feed. Holding
+ * it in the always-mounted launcher costs nothing and makes the field-shaped button able to
+ * show the draft back — closing is a pause, not a discard.
+ *
+ * NO TYPE SWITCHER INSIDE THE DIALOG, matching the kit and `feed-r12.md` §2.1: the type is
+ * chosen once, by the composer's own menu, and the dialog title is where that choice is
+ * confirmed. The panel's old `Bỏ` header went with it — it existed to name the type and to get
+ * back to `REGULAR`, and the title now does the first while the launcher menu does the second.
+ *
+ * THE DIALOG DESCRIPTION IS **NOT** THE KIT'S. The kit reads "Giới hạn 5 bài mỗi phút. Nội dung
+ * trùng trong 60 giây sẽ bị…" — a rate limit and a duplicate-content rule. Neither exists:
+ * `PostService` has no rate limiting and no duplicate check (measured). Printing them would
+ * announce a guarantee the server does not make. The moderation hedge is used instead, because
+ * it describes something that IS true, and it is more useful before posting than after.
  */
 export interface PostComposerProps {
   /** Called after a successful create, for the host page to refresh its feed. */
@@ -113,9 +150,13 @@ const SWITCHABLE_TYPES = [
   'BOOK',
   'EVENT',
 ] as const;
-type SwitchableType = (typeof SWITCHABLE_TYPES)[number];
-
-const TYPE_ICONS: Record<SwitchableType, ReactNode> = {
+/**
+ * Keyed by `PostType`, not `SwitchableType`: the menu now labels itself with the CURRENT kind,
+ * and the current kind can be `REGULAR` — which `SWITCHABLE_TYPES` deliberately excludes because
+ * the old chip row only ever rendered the kinds you were not on.
+ */
+const TYPE_ICONS: Record<PostType, ReactNode> = {
+  REGULAR: <MessageSquare />,
   CODE_SNIPPET: <Code2 />,
   ARTICLE: <FileText />,
   QNA: <HelpCircle />,
@@ -142,6 +183,7 @@ export function PostComposer({ onPosted }: PostComposerProps) {
   const [location, setLocation] = useState<LocationResolution | undefined>();
   const [postType, setPostType] = useState<PostType>('REGULAR');
   const [justPosted, setJustPosted] = useState(false);
+  const [open, setOpen] = useState(false);
 
   const [code, setCode] = useState<CodeSnippetDetails>({ language: 'plaintext', code: '' });
   const [article, setArticle] = useState<ArticleDetails>({});
@@ -173,6 +215,9 @@ export function PostComposer({ onPosted }: PostComposerProps) {
     setBookFileError(undefined);
     setQuiz(undefined);
     setJustPosted(true);
+    // The panel closes on success, so the confirmation has to land somewhere that is still on
+    // screen — it renders under the launcher, not inside the dialog that just went away.
+    setOpen(false);
     onPosted?.();
   };
 
@@ -335,38 +380,124 @@ export function PostComposer({ onPosted }: PostComposerProps) {
     create.mutate(base);
   };
 
-  return (
-    <Card padding={16} className="w-full">
-      <div className="flex gap-3">
-        <Avatar src={profile?.profilePictureUrl} name={profile?.fullName} size="lg" />
+  const typeLabel = t(`createPost.type.${postType}`);
+  const placeholder = t(`createPost.contentPlaceholder.${postType}`, { fullname: firstName });
 
+  return (
+    <>
+      {/**
+       * THE LAUNCHER. One row, three controls, 34px tall — see the file note for why it is a
+       * launcher rather than a form.
+       *
+       * THE FIELD IS A `button`, NOT AN `input`, and the kit is explicit about it. A real input
+       * here would be a second place to type the same post: focus it, type a sentence, and the
+       * dialog would have to either carry that text over or throw it away, and whichever it did
+       * would surprise half the people who tried. A button has one behaviour — it opens the
+       * thing you actually write in — and it can still SHOW the draft, which is the only job the
+       * input shape was doing.
+       */}
+      <Card className="w-full">
+        <div className="flex items-center gap-[var(--nx-space-pair)]">
+          <Avatar src={profile?.profilePictureUrl} name={profile?.fullName} size="md" />
+
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            className={cn(
+              'flex h-[34px] min-w-0 flex-1 items-center rounded-nx-sm border border-nx-border-default bg-nx-surface-raised px-2.5 text-left text-nx-ui',
+              'transition-colors hover:bg-nx-surface-hover',
+              trimmed ? 'text-nx-text-primary' : 'text-nx-text-faint'
+            )}
+          >
+            <span className="truncate">{trimmed || placeholder}</span>
+          </button>
+
+          {/**
+           * THE TYPE MENU MOVED HERE FROM THE FORM, and picking a type now OPENS the dialog in
+           * the same gesture. Splitting them would make choosing `Câu hỏi` do nothing visible —
+           * the panel that asks for the question is behind a second click nobody was told about.
+           *
+           * `REGULAR` IS IN THE LIST though it is not in `SWITCHABLE_TYPES` (see R4-4): the old
+           * chip row could never offer a way back to a plain post because it only rendered the
+           * types you were not on. A menu has room to say it, and now it is the ONLY way back —
+           * the panel's `Bỏ` header went away with the inline form.
+           */}
+          <Menu
+            width={220}
+            trigger={
+              <Button size="sm" variant="secondary" icon={TYPE_ICONS[postType]}>
+                {typeLabel}
+              </Button>
+            }
+            items={[
+              {
+                label: t('createPost.type.REGULAR'),
+                icon: TYPE_ICONS.REGULAR,
+                onSelect: () => {
+                  setPostType('REGULAR');
+                  setOpen(true);
+                },
+              },
+              '-',
+              ...SWITCHABLE_TYPES.filter((type) => type !== postType).map((type) => ({
+                label: t(`createPost.type.${type}`),
+                icon: TYPE_ICONS[type],
+                onSelect: () => {
+                  setPostType(type);
+                  setOpen(true);
+                },
+              })),
+            ]}
+          />
+        </div>
+
+        {/* The confirmation lives under the launcher rather than in the dialog, because the
+            dialog is gone by the time there is anything to confirm. */}
+        {justPosted && !pending && (
+          <p className="mt-3 rounded-nx-sm bg-nx-status-info-bg px-3 py-2 text-nx-body-sm text-nx-status-info-fg">
+            {t('createPost.submittedPendingReview')}
+          </p>
+        )}
+      </Card>
+
+      <Dialog
+        open={open}
+        onClose={() => setOpen(false)}
+        width={560}
+        maxHeight="80vh"
+        title={t('createPost.dialogTitle', { type: typeLabel })}
+        // NOT `submittedPendingReview`, which is the *after* message and opens with "Đã gửi bài".
+        // Read before posting it claims the post is already sent. Same fact, correct tense.
+        description={t('createPost.dialogNote')}
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setOpen(false)}>
+              {t('createPost.cancel')}
+            </Button>
+            <Button onClick={submit} disabled={!canSubmit} loading={pending}>
+              {/* A book post uploads a file, so it can be slow enough that "Đang đăng..." is not
+                  enough of a signal on its own — the button also stays disabled throughout. */}
+              {pending ? t('createPost.posting') : t('createPost.post')}
+            </Button>
+          </>
+        }
+      >
         <div className="flex min-w-0 flex-1 flex-col gap-3">
           <Textarea
             autoResize
             rows={2}
             value={content}
             onChange={(event) => setContent(event.target.value)}
-            placeholder={t(`createPost.contentPlaceholder.${postType}`, { fullname: firstName })}
+            placeholder={placeholder}
             aria-label={t('createPost.post')}
           />
 
+          {/* NO HEADER ON THIS PANEL ANY MORE. It used to carry the type's name and a `Bỏ`
+              button; the dialog title names the type, and the launcher's menu is the way back to
+              a plain post. Two places saying the same word was the thing worth removing — the
+              panel is now just the fields the type needs. */}
           {postType !== 'REGULAR' && (
             <div className="flex flex-col gap-3 rounded-nx-sm border border-nx-border-default bg-nx-surface-sunken p-3">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-nx-body-sm font-semibold text-nx-text-primary">
-                  {t(`createPost.type.${postType}`)}
-                </span>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  icon={<X />}
-                  onClick={() => setPostType('REGULAR')}
-                  aria-label={t('createPost.removeType')}
-                >
-                  {t('createPost.removeType')}
-                </Button>
-              </div>
-
               {postType === 'CODE_SNIPPET' && <CodeSnippetFields value={code} onChange={setCode} />}
               {postType === 'ARTICLE' && <ArticleFields value={article} onChange={setArticle} />}
               {postType === 'QNA' && <QnaFields />}
@@ -424,35 +555,9 @@ export function PostComposer({ onPosted }: PostComposerProps) {
               </Button>
             )}
 
-            {SWITCHABLE_TYPES.filter((type) => type !== postType).map((type) => (
-              <Button
-                key={type}
-                size="sm"
-                variant="ghost"
-                icon={TYPE_ICONS[type]}
-                onClick={() => setPostType(type)}
-              >
-                {t(`createPost.type.${type}`)}
-              </Button>
-            ))}
-          </div>
-
-          {error && (
-            <p
-              role="alert"
-              className="rounded-nx-sm bg-nx-status-danger-bg px-3 py-2 text-nx-body-sm text-nx-status-danger-fg"
-            >
-              {getErrorMessage(error)}
-            </p>
-          )}
-
-          {justPosted && !pending && (
-            <p className="rounded-nx-sm bg-nx-status-info-bg px-3 py-2 text-nx-body-sm text-nx-status-info-fg">
-              {t('createPost.submittedPendingReview')}
-            </p>
-          )}
-
-          <div className="flex items-center justify-between gap-3">
+            {/* Visibility sits with the other two attachment-shaped controls rather than in the
+                footer: all three answer "what else is true about this post", while the footer is
+                for committing it. The kit's footer holds only `Huỷ` and `Đăng bài`. */}
             <Select
               size="sm"
               className="w-auto"
@@ -464,15 +569,18 @@ export function PostComposer({ onPosted }: PostComposerProps) {
                 label: t(`createPost.visibility.${value}`),
               }))}
             />
-
-            <Button onClick={submit} disabled={!canSubmit} loading={pending}>
-              {/* A book post uploads a file, so it can be slow enough that "Posting..." is not
-                  enough of a signal on its own — the button also stays disabled throughout. */}
-              {pending ? t('createPost.posting') : t('createPost.post')}
-            </Button>
           </div>
+
+          {error && (
+            <p
+              role="alert"
+              className="rounded-nx-sm bg-nx-status-danger-bg px-3 py-2 text-nx-body-sm text-nx-status-danger-fg"
+            >
+              {getErrorMessage(error)}
+            </p>
+          )}
         </div>
-      </div>
-    </Card>
+      </Dialog>
+    </>
   );
 }

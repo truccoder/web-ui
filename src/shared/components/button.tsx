@@ -26,7 +26,11 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 
 /** Heights are canonical per constitution §11.2 — screens do not override them. */
 const sizeStyles: Record<NonNullable<ButtonProps['size']>, string> = {
-  sm: 'h-7 gap-1.5 px-2.5 text-nx-body-sm',
+  // `gap-1` (4), measured off the kit: a 28px-high button there renders `gap: 4px; padding: 0 10px`.
+  // This was `gap-2` — 6px, which is not on the sub-scale at all (`2 · 4 · 8`, and round 5.1 says
+  // "5 · 6 · 7 are gone from both kits"). Confirmed by sampling every gap in the rendered kit: 8 · 4
+  // · 2 · 12 · 16 · 20 and no 6 anywhere.
+  sm: 'h-7 gap-1 px-2.5 text-nx-body-sm',
   md: 'h-[34px] gap-2 px-3 text-nx-ui',
   lg: 'h-10 gap-2 px-4 text-nx-ui',
 };

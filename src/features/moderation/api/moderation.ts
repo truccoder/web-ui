@@ -1,5 +1,11 @@
 import api from '@/core/api/axios';
 import type {
+  Appeal,
+  AppealDecisionInput,
+  AppealInput,
+  AppealPage,
+  AppealStatus,
+  UserViolation,
   AdminReviewInput,
   BannedUserPage,
   ModerationLogPage,
@@ -88,4 +94,58 @@ export const moderationApi = {
    */
   reviewPost: (postId: number, payload: AdminReviewInput) =>
     api.post<void>(`/v1/api/admin/moderation/posts/${postId}/review`, payload).then((r) => r.data),
+
+  /**
+   * GET /v1/api/admin/moderation/appeals — the appeal queue.
+   *
+   * DEFAULTS TO `PENDING` SERVER-SIDE, "because that is the only status with anything to do".
+   * The parameter exists so a decided appeal can still be looked up, which is why this passes it
+   * explicitly rather than relying on the default: a queue that silently only ever shows one
+   * status is a queue whose filter nobody can find.
+   */
+  getAppeals: (status: AppealStatus = 'PENDING', page = 1, size = 10) =>
+    api
+      .get<AppealPage>('/v1/api/admin/moderation/appeals', { params: { status, page, size } })
+      .then((r) => r.data),
+
+  /**
+   * POST /v1/api/admin/moderation/appeals/{appealId}/approve.
+   *
+   * NOT A STATUS CHANGE — approving **erases the violation and re-evaluates the ban**. So this can
+   * unlock an account, which is the mirror image of `reviewPost`'s ability to lock one.
+   *
+   * The body is optional all the way down (`@RequestBody(required = false)`), so a decision with
+   * no note sends nothing rather than `{}`.
+   */
+  approveAppeal: (appealId: number, payload?: AppealDecisionInput) =>
+    api
+      .post<Appeal>(`/v1/api/admin/moderation/appeals/${appealId}/approve`, payload)
+      .then((r) => r.data),
+
+  /** POST /v1/api/admin/moderation/appeals/{appealId}/reject — lets the sanction stand. */
+  rejectAppeal: (appealId: number, payload?: AppealDecisionInput) =>
+    api
+      .post<Appeal>(`/v1/api/admin/moderation/appeals/${appealId}/reject`, payload)
+      .then((r) => r.data),
+
+  /**
+   * ─── THE USER SIDE. Not `/admin/**`, so these three are the only moderation calls an ordinary
+   * account may make, and `SecurityConfig`'s URL gate does not apply to them.
+   */
+
+  /**
+   * GET /v1/api/moderation/my-violations — what has been recorded against the caller.
+   *
+   * `appealPending` on each row is what stops a second appeal for the same violation: the backend
+   * rejects a duplicate, so the row itself carries the reason the button is gone.
+   */
+  getMyViolations: () =>
+    api.get<UserViolation[]>('/v1/api/moderation/my-violations').then((r) => r.data),
+
+  /** GET /v1/api/moderation/appeals — the caller's own appeals and their decisions. */
+  getMyAppeals: () => api.get<Appeal[]>('/v1/api/moderation/appeals').then((r) => r.data),
+
+  /** POST /v1/api/moderation/appeals — 201 with the created appeal. */
+  submitAppeal: (payload: AppealInput) =>
+    api.post<Appeal>('/v1/api/moderation/appeals', payload).then((r) => r.data),
 };

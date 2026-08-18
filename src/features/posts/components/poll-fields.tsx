@@ -75,7 +75,7 @@ export function PollFields({ value, onChange }: PollFieldsProps) {
         placeholder={t('createPost.poll.questionPlaceholder')}
       />
 
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-2">
         <span className="text-nx-body-sm font-medium text-nx-text-primary">
           {t('createPost.poll.options')}
         </span>

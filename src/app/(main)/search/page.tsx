@@ -25,7 +25,7 @@ function SearchContent() {
   const query = (searchParams.get('q') ?? '').trim();
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-4">
+    <div className="flex flex-col gap-[var(--nx-space-section)]">
       <div>
         <h1 className="text-nx-title font-semibold text-nx-text-primary">{t('search.title')}</h1>
         {query && (

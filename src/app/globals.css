@@ -288,6 +288,18 @@
   --color-nx-border-strong: var(--nx-border-strong);
   --color-nx-border-subtle: var(--nx-border-subtle);
 
+  /* `--nx-tint` had NO `--color-` alias, so every `bg-nx-tint` in the app compiled to nothing.
+     Tailwind v4 generates a colour utility only for names declared in `@theme`; the raw variable
+     existing on `:root` is what makes the omission silent — the class is emitted, it just carries
+     no declaration, and the element renders transparent instead of erroring.
+
+     What that cost: the level progress track in the ledger and on `/profile`. The amber fill has
+     `--color-nx-rep` and rendered; the track behind it did not, so a bar at 8% was a short amber
+     stub floating on the ground with nothing to measure it against — which is why it read as
+     "there is no progress bar". Reported by the owner, found by grepping the theme block for the
+     token rather than by reading the component, which looked correct and was correct. */
+  --color-nx-tint: var(--nx-tint);
+
   --color-nx-accent: var(--nx-accent);
   --color-nx-accent-hover: var(--nx-accent-hover);
   --color-nx-accent-soft: var(--nx-accent-soft);
@@ -426,7 +438,11 @@
      referenced by older code and by the DS's own docs. */
   --spacing-nx-sidebar: 248px;
   --spacing-nx-topbar: 56px;
-  --spacing-nx-subnav: 40px;
+  /* 48, not 40. `layout-r7.md` §3.2 sets the context bar at the TWO-LINE ROW UNIT — "already in
+     the system (§3.4 gives request rows 48). Not a new number." Measured in the kit's `/chats`:
+     a band at y=56 exactly 48 tall. The 40 here had no consumer, so nothing moved when it was
+     wrong — it was simply waiting to be believed. */
+  --spacing-nx-subnav: 48px;
   --spacing-nx-ledger: 300px;
   --spacing-nx-ledger-sm: 272px;
   --spacing-nx-canvas: 672px;
@@ -435,6 +451,14 @@
   --spacing-nx-region-gutter-sm: 24px;
   --spacing-nx-chat-measure: 600px;
   --spacing-nx-context-bar: 48px;
+  /* Focus mode's two companion columns, mirrored into the spacing namespace so they can be sized
+     with `w-nx-focus-aside` / `w-nx-focus-panel`. The raw `--nx-focus-aside` above has carried the
+     value since round 7 and had no consumer, because the tenants that use it were not built:
+     `/chats`'s info column (300, measured) and `/kho/{id}`'s panel. `layout-r7.md:123` asserted
+     280 for the aside and is annotated in the DS as superseded — the kit renders 300, and the
+     render is the specimen. */
+  --spacing-nx-focus-aside: var(--nx-focus-aside);
+  --spacing-nx-focus-panel: var(--nx-focus-panel);
 }
 
 :root {
@@ -466,10 +490,15 @@
   --nx-space-section: 40px; /* section ↔ section within one canvas */
   --nx-space-runout: 48px; /* clearance under a scroller's last item */
 
-  /* Set-inset: a bare fill that reads as a group without drawing a box. */
-  --nx-space-bare-fill: transparent;
-  --nx-space-bare-pad: 12px;
-  --nx-space-set-inset: 12px;
+  /* Set-inset. `--nx-space-pad-half` (10) above IS the inset split — round 5.1 defines it as
+     "half a rung, for the inset split": the set insets 10 and the member's own 10 completes the
+     20 line to its text.
+
+     A `--nx-space-bare-pad: 12px` / `--nx-space-set-inset: 12px` pair used to sit here. Both had
+     ZERO consumers anywhere in `src/`, and both carried 12 where round 5.1 says 10 — a leftover
+     from an earlier fitting. Unused tokens that contradict the spec are worse than no tokens:
+     the next person to reach for one would have written the wrong number believing it was the
+     DS's. `--nx-space-pad-half` is the live token for the inset split. */
   --nx-space-set-inset-text: 8px;
 
   /* Flanks hang below the bar and own their own scrollers. `--nx-sticky-offset` is the
@@ -511,6 +540,13 @@
   }
   html {
     @apply font-sans;
+    /* Reserve the scrollbar's width even when the page does not scroll. Without it the whole
+       shell jumps sideways by ~8px whenever navigation moves between a long page and a short one
+       — measured between `/profile` (scrolls) and `/library` (does not), where the rail moved
+       from x=120 to x=128. The shell is centred on the ground, so any change in available width
+       moves every region at once, which makes the jump far more visible than it would be in a
+       left-aligned layout. */
+    scrollbar-gutter: stable;
   }
   /* Accessibility floor, constitution §9/§12: motion explains state change and
      nothing else, so reduced-motion collapses all of it. */

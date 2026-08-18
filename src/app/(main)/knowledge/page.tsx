@@ -29,7 +29,7 @@ export default function KnowledgePage() {
   const t = useT();
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-8">
+    <div className="flex flex-col gap-[var(--nx-space-section)]">
       <div>
         <h1 className="text-nx-title font-semibold tracking-tight text-nx-text-primary">
           {t('knowledge.title')}

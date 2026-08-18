@@ -29,6 +29,8 @@ export {
 } from './hooks';
 
 export {
+  MessageUserButton,
+  type MessageUserButtonProps,
   ChatDock,
   type ChatDockProps,
   ChatMessenger,

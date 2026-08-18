@@ -1,6 +1,7 @@
 'use client';
 
 import { cn } from '@/shared/lib/cn';
+import { useIntlLocale } from '@/shared/lib/format';
 import { useT } from '@/core/i18n';
 import type { Reputation } from '../types/reputation';
 
@@ -32,6 +33,13 @@ export interface RepProgressProps {
 
 export function RepProgress({ reputation, nextLevelName, className }: RepProgressProps) {
   const t = useT();
+  /**
+   * `en-US` WAS HARDCODED HERE, and on a Vietnamese screen that is not a cosmetic slip: `8,800`
+   * rendered with a comma, and in Vietnamese the comma is the DECIMAL separator — the line read
+   * as eight point eight. The design's own `còn 34.098` uses the dot, which is what `vi-VN`
+   * produces. Six other call sites still pass `en-US`; they are listed in the R5-3 ledger entry.
+   */
+  const localeTag = useIntlLocale();
   const { eliteScore, currentLevelMin, nextLevelMin, levelName } = reputation;
 
   const atTop = nextLevelMin == null;
@@ -43,9 +51,20 @@ export function RepProgress({ reputation, nextLevelName, className }: RepProgres
   const percent = atTop || span <= 0 ? 100 : ((eliteScore - currentLevelMin) / span) * 100;
 
   return (
-    <div className={cn('flex flex-col gap-1.5', className)}>
+    <div className={cn('flex flex-col gap-2', className)}>
       <div
-        className="h-1 w-full overflow-hidden rounded-nx-full bg-nx-surface-sunken"
+        /**
+         * THE TRACK IS `--nx-tint`, NOT `surface-sunken`, and the reason is the same one that
+         * moved `StatTile` off `inset`. R15 lowered the page to gray-100, where `surface-sunken`
+         * already was, so the two are identical in light — and this bar lives in the ledger, which
+         * IS the page ground. A sunken track there is a 4px invisible line: measured on `/profile`,
+         * where the ledger's bar could not be seen at all.
+         *
+         * `--nx-tint` is the token defined for exactly this: the one fill that must read on EVERY
+         * plane, an alpha rather than a step off the ramp, so it darkens a card and the ground by
+         * the same perceptual amount.
+         */
+        className="h-1 w-full overflow-hidden rounded-nx-full bg-nx-tint"
         role="progressbar"
         aria-valuenow={Math.round(percent)}
         aria-valuemin={0}
@@ -59,16 +78,34 @@ export function RepProgress({ reputation, nextLevelName, className }: RepProgres
         />
       </div>
 
+      {/**
+       * THE DISTANCE AND THE DESTINATION ARE GATED SEPARATELY — R5-3, and this used to be one
+       * gate on `nextLevelName`.
+       *
+       * That was measured wrong in the ledger: `nextLevelName` does not exist on the backend
+       * (B26), so a single gate threw away `còn 8.800` as well — a number `nextLevelMin` DOES
+       * supply — and the line collapsed to a bare `Expert`, which says nothing a bar cannot.
+       * A level bar exists to express a distance; the one piece of the sentence the product can
+       * actually compute was the piece being suppressed.
+       *
+       * So: the distance renders whenever there is a next level, and `→ <name>` joins it only
+       * when the name arrives. The day B26 lands, the line becomes the design's
+       * `Architect · còn 34.098 → Elite` with no further change here.
+       */}
       <p className="text-nx-caption text-nx-text-secondary">
         <span className="font-medium text-nx-text-primary">{levelName}</span>
-        {!atTop && nextLevelName && (
+        {!atTop && (
           <>
             {' · '}
             {/* The number is computed, so it is mono and tabular like every computed number here. */}
             {t('reputation.remaining')}{' '}
-            <span className="font-mono tabular-nums">{remaining.toLocaleString('en-US')}</span>
-            {' → '}
-            {nextLevelName}
+            <span className="font-mono tabular-nums">{remaining.toLocaleString(localeTag)}</span>
+            {nextLevelName && (
+              <>
+                {' → '}
+                {nextLevelName}
+              </>
+            )}
           </>
         )}
       </p>

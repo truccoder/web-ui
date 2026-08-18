@@ -24,4 +24,5 @@ export type {
   UpdateProfileRequest,
   ChangePasswordRequest,
   ProfilePictureResponse,
+  PublicProfile,
 } from './profile';

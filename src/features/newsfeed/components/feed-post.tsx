@@ -198,6 +198,7 @@ export function FeedPost({ post, onChanged }: FeedPostProps) {
       content={editing ? undefined : post.content}
       location={location}
       hashtags={post.hashtags}
+      postType={post.postType}
       // `commentCount` and `likeCount` are live again. They were withheld from P2.4'd until
       // F-A because `fanOutPost` never set either and no comment or reaction path touched the
       // cached entry, so both were the `int` default of 0 on every post — and "0 comments"

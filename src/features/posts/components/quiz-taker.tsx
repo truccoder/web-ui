@@ -71,7 +71,7 @@ export function QuizTaker({ postId, quiz, className }: QuizTakerProps) {
           const chosen = answers[questionIndex];
 
           return (
-            <li key={questionIndex} className="flex flex-col gap-1.5">
+            <li key={questionIndex} className="flex flex-col gap-2">
               <p className="text-nx-body-sm font-medium text-nx-text-primary">
                 {question.question}
               </p>

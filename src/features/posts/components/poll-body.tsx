@@ -52,7 +52,7 @@ export function PollBody({ details, className }: PollBodyProps) {
     >
       {hasQuestion && <p className="text-nx-ui font-semibold text-nx-text-primary">{question}</p>}
 
-      <ul className="flex flex-col gap-1.5">
+      <ul className="flex flex-col gap-2">
         {visibleOptions.map((option, index) => (
           // `id` is what the composer assigns (1..n) and is the stable key a future vote
           // call would use; index is only a fallback for rows written before that.

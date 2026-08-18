@@ -29,7 +29,8 @@ export const vi: Messages = {
 
   nav: {
     roadmap: 'Lộ trình',
-    knowledge: 'Kiến thức',
+    library: 'Thư viện',
+    knowledge: 'Kho lưu trữ',
     newsfeed: 'Bảng tin',
     trending: 'Xu hướng',
     notifications: 'Thông báo',
@@ -38,6 +39,7 @@ export const vi: Messages = {
     friendsSuggestions: 'Gợi ý',
     friendsRequests: 'Lời mời kết bạn',
     chats: 'Chats',
+    projects: 'Dự án',
     profile: 'Trang cá nhân',
     dashboard: 'Dashboard',
     logout: 'Đăng xuất',
@@ -252,6 +254,12 @@ export const vi: Messages = {
       title: 'Chưa liên kết tài khoản GitHub',
       desc: 'Chưa liên kết được: luồng đăng nhập và luồng liên kết đang dùng chung một callback, nên mã uỷ quyền không bao giờ tới được bước liên kết.',
     },
+    // Bản cho người xem hồ sơ người khác: không giải thích B23, vì "làm sao sửa" không phải câu
+    // hỏi người ta đặt ra với tài khoản của người lạ.
+    notLinkedOther: {
+      title: 'Chưa liên kết GitHub',
+      desc: 'Người này chưa nối tài khoản GitHub vào hồ sơ.',
+    },
     sync: 'Đồng bộ ngay',
     syncRateLimited: 'Vừa đồng bộ xong. Mỗi giờ chỉ làm mới dữ liệu GitHub được một lần.',
     unlink: 'Huỷ liên kết',
@@ -277,6 +285,17 @@ export const vi: Messages = {
       posts: 'Hàng chờ',
       logs: 'Nhật ký quyết định',
       banned: 'Người bị cấm',
+      appeals: 'Khiếu nại',
+    },
+    appeals: {
+      filter: 'Lọc theo trạng thái',
+      loadError: 'Không tải được danh sách khiếu nại',
+      empty: 'Không có khiếu nại nào ở trạng thái này',
+      approve: 'Chấp nhận',
+      reject: 'Từ chối',
+      note: 'Ghi chú của người duyệt',
+      notePlaceholder: 'Ghi chú (không bắt buộc)',
+      decisionError: 'Không xử lý được khiếu nại này. Vui lòng thử lại.',
     },
     filters: {
       postId: 'Post ID',
@@ -336,11 +355,21 @@ export const vi: Messages = {
     list: {
       loadFailed: 'Không tải được lộ trình',
       empty: 'Chưa có lộ trình nào',
+      emptyDesc: 'Quản trị viên tạo lộ trình xong thì chúng sẽ hiện ở đây.',
     },
     nodes: {
       pickRoadmap: 'Chọn một lộ trình để xem các kỹ năng',
+      pickRoadmapDesc: 'Mỗi lộ trình là một tập kỹ năng bạn có thể ghi nhận.',
       loadFailed: 'Không tải được danh sách kỹ năng',
       empty: 'Lộ trình này chưa có kỹ năng nào',
+      emptyDesc: 'Kỹ năng sẽ xuất hiện khi quản trị viên thêm vào lộ trình.',
+    },
+    path: {
+      legend: {
+        verified: 'Đã xác minh',
+        pending: 'Chờ duyệt',
+        open: 'Chưa bắt đầu',
+      },
     },
     verify: {
       claim: 'Ghi nhận',
@@ -447,7 +476,10 @@ export const vi: Messages = {
     placeholder: '${fullname} đang nghĩ gì vậy?',
     photo: 'Ảnh',
     posting: 'Đang đăng...',
-    post: 'Đăng',
+    post: 'Đăng bài',
+    cancel: 'Huỷ',
+    dialogTitle: 'Soạn bài · ${type}',
+    dialogNote: 'Bài viết có thể phải qua kiểm duyệt trước khi xuất hiện trên bảng tin.',
     visibility: {
       PUBLIC: 'Công khai',
       FRIENDS: 'Bạn bè',
@@ -455,6 +487,7 @@ export const vi: Messages = {
     },
     removeType: 'Bỏ',
     type: {
+      REGULAR: 'Trạng thái',
       CODE_SNIPPET: 'Code',
       ARTICLE: 'Bài viết',
       QNA: 'Câu hỏi',
@@ -593,6 +626,20 @@ export const vi: Messages = {
   },
 
   post: {
+    reactors: {
+      title: 'Ai đã bày tỏ cảm xúc',
+      count: '${count} người',
+      all: 'Tất cả',
+      empty: 'Chưa có ai ở mục này',
+      loadError: 'Không tải được danh sách',
+      loadMore: 'Tải thêm',
+    },
+    backToFeed: 'Về bảng tin',
+    permalink: {
+      notFoundTitle: 'Không xem được bài viết này',
+      notFoundDesc: 'Bài viết có thể đã bị gỡ, hoặc bạn không có quyền xem nó.',
+      open: 'Mở bài viết',
+    },
     unknownAuthor: 'Tác giả không xác định',
     qna: {
       accept: 'Chọn làm đáp án',
@@ -607,6 +654,9 @@ export const vi: Messages = {
     },
     edit: {
       edit: 'Sửa',
+      menuLabel: 'Tuỳ chọn bài viết',
+      deleteTitle: 'Xoá bài viết?',
+      deleteDesc: 'Bài viết cùng mọi bình luận và phản ứng của nó sẽ bị gỡ. Không thể hoàn tác.',
       save: 'Lưu thay đổi',
       content: 'Nội dung',
       delete: 'Xoá',
@@ -711,7 +761,7 @@ export const vi: Messages = {
     profileMoved:
       'Hồ sơ nghề nghiệp đã chuyển sang trang cá nhân — thiếu nó thì trình giải thích không chạy.',
     profileMovedLink: 'Mở trang cá nhân',
-    title: 'Kiến thức',
+    title: 'Kho lưu trữ',
     subtitle: 'Token đồng bộ và thư viện giải thích của bạn.',
     profile: {
       title: 'Hồ sơ nghề nghiệp',
@@ -773,7 +823,7 @@ export const vi: Messages = {
       links: 'Đọc thêm',
     },
     library: {
-      title: 'Thư viện của tôi',
+      title: 'Giải thích đã lưu',
       count: '${count} giải thích đã lưu',
       emptyTitle: 'Thư viện còn trống',
       emptyDesc: 'Giải thích một bài viết rồi lưu lại, nó sẽ nằm ở đây.',
@@ -883,16 +933,163 @@ export const vi: Messages = {
 
   ledger: {
     label: 'Tóm lược',
-    evidence: 'Bằng chứng',
+    evidence: 'Năng lực',
     external: 'Từ bên ngoài',
+    contributions: 'đóng góp',
     recentWeeks: '18 tuần gần nhất',
     itemCount: '${count} bài',
+  },
+
+  moderationMine: {
+    title: 'Vi phạm & khiếu nại',
+    loadError: 'Không tải được lịch sử kiểm duyệt của bạn',
+    emptyTitle: 'Chưa có ghi nhận nào',
+    emptyDesc: 'Khi một bài của bạn bị gỡ, ghi nhận và quyền khiếu nại sẽ xuất hiện ở đây.',
+    appeal: 'Khiếu nại',
+    appealPending: 'Đã gửi khiếu nại, đang chờ xét',
+    appealsTitle: 'Khiếu nại của bạn',
+    appealTitle: 'Gửi khiếu nại',
+    appealDesc: 'Nói rõ vì sao bạn cho rằng quyết định này chưa đúng. Một người sẽ đọc và trả lời.',
+    reasonLabel: 'Lý do khiếu nại',
+    reasonPlaceholder: 'Bài này nói về... và không vi phạm vì...',
+    submitAppeal: 'Gửi khiếu nại',
+    cancel: 'Huỷ',
+    submitError: 'Không gửi được khiếu nại. Vui lòng thử lại.',
+    status: {
+      PENDING: 'Đang chờ xét',
+      APPROVED: 'Đã chấp nhận',
+      REJECTED: 'Đã từ chối',
+    },
+  },
+  projects: {
+    title: 'Dự án',
+    subtitle: 'Tìm người cùng làm, hoặc tìm một chỗ để góp sức.',
+    tabs: {
+      board: 'Bảng dự án',
+      mine: 'Đơn của tôi',
+    },
+    loadError: 'Không tải được danh sách dự án',
+    emptyTitle: 'Chưa có dự án nào',
+    emptyDesc: 'Hãy là người đầu tiên đăng một dự án và mở vị trí tuyển.',
+    openPositions: '${count} vị trí đang mở',
+    quantity: 'Cần ${count} người',
+    backToBoard: 'Về bảng dự án',
+    apply: 'Ứng tuyển',
+    applyTitle: 'Ứng tuyển · ${title}',
+    applyDesc: 'Nói ngắn gọn bạn làm được gì cho vị trí này. Chủ dự án sẽ đọc đúng đoạn này.',
+    messageLabel: 'Nội dung ứng tuyển',
+    messagePlaceholder: 'Tôi đã làm... và có thể nhận phần...',
+    submitApplication: 'Gửi đơn',
+    applyError: 'Không gửi được đơn. Vị trí có thể đã đóng.',
+    cancel: 'Huỷ',
+    accept: 'Nhận',
+    reject: 'Từ chối',
+    decisionError: 'Không xử lý được đơn này. Có thể vị trí vừa đủ người.',
+    status: {
+      OPEN: 'Đang mở',
+      CLOSED: 'Đã đóng',
+    },
+    positionStatus: {
+      OPEN: 'Đang mở',
+      FILLED: 'Đã đủ người',
+      CLOSED: 'Đã đóng',
+    },
+    applicationStatus: {
+      PENDING: 'Đang chờ',
+      ACCEPTED: 'Đã nhận',
+      REJECTED: 'Đã từ chối',
+    },
+    detail: {
+      positions: 'Vị trí tuyển',
+      noPositions: 'Dự án này chưa mở vị trí nào',
+      applications: 'Đơn ứng tuyển',
+      noApplications: 'Chưa có ai ứng tuyển',
+      applicationsError: 'Không tải được đơn ứng tuyển',
+      notFoundTitle: 'Không tìm thấy dự án',
+      notFoundDesc: 'Dự án này không tồn tại hoặc đã bị gỡ.',
+    },
+    mine: {
+      loadError: 'Không tải được đơn của bạn',
+      emptyTitle: 'Bạn chưa ứng tuyển vị trí nào',
+      emptyDesc: 'Đơn bạn gửi và kết quả sẽ hiện ở đây.',
+    },
+    create: {
+      action: 'Đăng dự án',
+      title: 'Đăng dự án mới',
+      desc: 'Mô tả dự án và các vị trí bạn cần. Vị trí không sửa được sau khi đăng.',
+      projectTitle: 'Tên dự án',
+      projectTitlePlaceholder: 'Ví dụ: Nền tảng học tiếng Việt cho lập trình viên',
+      description: 'Mô tả dự án',
+      descriptionPlaceholder: 'Dự án làm gì, đang ở giai đoạn nào, cần gì ở người tham gia...',
+      positions: 'Vị trí tuyển',
+      positionsNote:
+        'Không có endpoint sửa hay thêm vị trí sau khi đăng — danh sách này là cuối cùng.',
+      positionTitle: 'Tên vị trí',
+      positionTitlePlaceholder: 'Ví dụ: Backend Engineer',
+      skills: 'Kỹ năng yêu cầu',
+      skillsPlaceholder: 'Kỹ năng, cách nhau bằng dấu phẩy: Kotlin, PostgreSQL',
+      addPosition: 'Thêm vị trí',
+      removePosition: 'Bỏ vị trí',
+      submit: 'Đăng dự án',
+      error: 'Không đăng được dự án. Vui lòng thử lại.',
+    },
+  },
+  blocks: {
+    block: 'Chặn',
+    unblock: 'Bỏ chặn',
+    cancel: 'Huỷ',
+    title: 'Người bạn đã chặn',
+    confirmTitle: 'Chặn ${name}?',
+    confirmDesc:
+      'Hai người sẽ không thấy bài viết của nhau, và tình bạn hiện có sẽ bị xoá — bỏ chặn sau này không khôi phục lại tình bạn đó.',
+    blockError: 'Không chặn được người này. Vui lòng thử lại.',
+    loadError: 'Không tải được danh sách đã chặn',
+    emptyTitle: 'Bạn chưa chặn ai',
+    emptyDesc: 'Người bạn chặn sẽ biến mất khỏi bảng tin, tìm kiếm và danh sách bạn bè của bạn.',
+    unknownUser: 'Người dùng',
+  },
+  library: {
+    tabs: {
+      browse: 'Duyệt sách',
+      mine: 'Sách tôi viết',
+    },
+    title: 'Thư viện',
+    subtitle: 'Sách do cộng đồng xuất bản',
+    owned: 'Đã sở hữu',
+    loadError: 'Không thể tải thư viện',
+    emptyTitle: 'Thư viện còn trống',
+    emptyDesc: 'Khi có người đăng sách, sách sẽ xuất hiện ở đây.',
+  },
+
+  bookDetail: {
+    back: 'Về thư viện',
+    untitled: 'Sách chưa đặt tên',
+    pages: 'Số trang',
+    pageCount: '${count} trang',
+    size: 'Dung lượng tệp',
+    downloads: 'Lượt tải',
+    reviewsTitle: 'Đánh giá',
+    // "Không xem được" chứ không phải "không tồn tại": endpoint trả 404 cho sách đã xoá và 503
+    // cho sách còn đó nhưng tệp trong kho đã mất — trang không phân biệt được, nên không đoán.
+    notFoundTitle: 'Không xem được sách này',
+    notFoundDesc: 'Sách có thể đã bị gỡ, hoặc tệp của nó đang không truy cập được.',
+  },
+
+  publicProfile: {
+    skillsTitle: 'Kỹ năng đã xác minh',
+    postsTitle: 'Bài viết',
+    postsEmpty: 'Không có bài viết nào bạn xem được',
+    postsError: 'Không tải được bài viết',
+    notFoundTitle: 'Không tìm thấy người này',
+    notFoundDesc: 'Không có tài khoản nào với tên @${username}.',
   },
 
   reputation: {
     remaining: 'còn',
     title: 'Elite Score',
     desc: 'Điểm uy tín tích luỹ từ đóng góp của bạn',
+    // Bản cho trang cá nhân người khác — "của bạn" ở đó là gán nhầm điểm của người ta cho người đọc.
+    descOther: 'Điểm uy tín tích luỹ từ đóng góp của người này',
     verifiedExpert: 'Chuyên gia đã xác minh',
     toNextLevel: 'Còn ${remaining} điểm nữa để đạt ${next}',
     topLevel: 'Bạn đã ở cấp cao nhất',
@@ -908,6 +1105,9 @@ export const vi: Messages = {
       loadError: 'Không thể tải sách của bạn',
       emptyTitle: 'Chưa có sách nào',
       emptyDesc: 'Sách bạn đăng từ trình soạn bài sẽ hiện ở đây.',
+      // Trên hồ sơ người khác: người đọc không đăng sách hộ được.
+      emptyDescOther: 'Người này chưa xuất bản cuốn sách nào.',
+      titleOther: 'Sách đã xuất bản',
       delete: 'Xoá',
       deleteAria: 'Xoá ${title}',
       deleteTitle: 'Xoá cuốn sách này?',
@@ -921,6 +1121,8 @@ export const vi: Messages = {
       loadError: 'Không thể tải kỹ năng của bạn',
       emptyTitle: 'Chưa ghi nhận kỹ năng nào',
       emptyDesc: 'Ghi nhận một kỹ năng từ lộ trình, nó sẽ hiện ở đây.',
+      // Người xem hồ sơ người khác không "ghi nhận kỹ năng" hộ được, nên câu hướng dẫn kia sai đối tượng.
+      emptyDescOther: 'Người này chưa có kỹ năng nào được xác minh.',
       browseRoadmaps: 'Xem lộ trình',
       status: {
         verified: 'Đã xác minh',
@@ -962,6 +1164,8 @@ export const vi: Messages = {
   },
 
   chat: {
+    messageUser: 'Nhắn tin',
+    messageUserError: 'Không mở được cuộc trò chuyện. Vui lòng thử lại.',
     sayHi: 'Hãy chào để bắt đầu cuộc trò chuyện!',
     minimize: 'Thu nhỏ',
     close: 'Đóng',
@@ -994,5 +1198,9 @@ export const vi: Messages = {
       'Người này chưa dùng chat bao giờ nên chưa nhắn được. Nhờ họ mở mục Chats một lần.',
     openChat: 'Mở chat',
     expand: 'Mở lại cửa sổ chat',
+    info: {
+      label: 'Thông tin cuộc trò chuyện',
+      verifiedSkills: 'Kỹ năng đã xác minh',
+    },
   },
 };

@@ -11,3 +11,11 @@ export type {
   ModerationLogPage,
   BannedUserPage,
 } from './moderation';
+export type {
+  UserViolation,
+  Appeal,
+  AppealInput,
+  AppealStatus,
+  ViolationSeverity,
+} from './moderation';
+export type { AppealPage, AppealDecisionInput } from './moderation';

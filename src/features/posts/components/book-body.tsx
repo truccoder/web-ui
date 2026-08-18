@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
+import Link from 'next/link';
 import { Badge } from '@/shared/components';
 import { useT } from '@/core/i18n';
 import { cn } from '@/shared/lib/cn';
@@ -62,7 +63,7 @@ export function BookBody({ book, actions, className }: BookBodyProps) {
   const localeTag = useIntlLocale();
   const [coverFailed, setCoverFailed] = useState(false);
 
-  const { title, description, coverImageUrl, fileFormat, fileSizeBytes, totalPages } = book;
+  const { bookId, title, description, coverImageUrl, fileFormat, fileSizeBytes, totalPages } = book;
   const { price, currency, isFree, avgRating, reviewCount } = book;
 
   if (!title?.trim()) return null;
@@ -93,14 +94,32 @@ export function BookBody({ book, actions, className }: BookBodyProps) {
         />
       )}
 
-      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-        <p className="text-nx-ui font-semibold text-nx-text-primary">{title}</p>
+      <div className="flex min-w-0 flex-1 flex-col gap-2">
+        {/**
+         * THE TITLE REACHES THE BOOK, VIA A ROUTE RATHER THAN AN IMPORT. `/books/{id}` belongs to
+         * `features/bookstore`; a URL is not a module, so linking to it crosses no boundary — the
+         * same reason the `actions` slot exists instead of this file calling `BookController`.
+         *
+         * `bookId` has always been on `FeedBookSummaryDto` and was only ever used to fetch. It is
+         * absent on nothing the feed returns, but the field is optional on this summary type, so
+         * the plain heading stays as the fallback.
+         */}
+        {bookId != null ? (
+          <Link
+            href={`/books/${bookId}`}
+            className="text-nx-ui font-semibold text-nx-text-primary hover:underline"
+          >
+            {title}
+          </Link>
+        ) : (
+          <p className="text-nx-ui font-semibold text-nx-text-primary">{title}</p>
+        )}
 
         {description?.trim() && (
           <p className="line-clamp-2 text-nx-body-sm text-nx-text-secondary">{description}</p>
         )}
 
-        <div className="flex flex-wrap items-center gap-1.5">
+        <div className="flex flex-wrap items-center gap-2">
           {fileFormat && (
             <Badge mono variant="neutral">
               {fileFormat}

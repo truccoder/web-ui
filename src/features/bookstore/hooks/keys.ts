@@ -11,6 +11,9 @@
  * invalidated explicitly when a book is deleted.
  */
 export const bookstoreKeys = {
+  /** The catalogue. Its own branch: nothing a single book's write touches can reorder it. */
+  library: ['bookstore', 'library'] as const,
+
   all: ['bookstore'] as const,
 
   /** Everything about one book — the prefix to invalidate after a review. */

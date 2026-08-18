@@ -19,9 +19,18 @@ export const postKeys = {
   /**
    * The current user's own reaction on one post. Scoped under the post id (so it is swept
    * by `post(postId)`) and suffixed `me` because that is all the endpoint answers — there
-   * is no endpoint for a post's reaction totals or reactor list, so no key for them either.
+   * with the post) rather than in a namespace of its own. The reactor list now has its own key
+   * below; the totals deliberately do not — the feed payload already carries them.
    */
   myReaction: (postId: number) => ['posts', postId, 'reaction', 'me'] as const,
+
+  /**
+   * Who reacted, optionally narrowed to one type. `type` is in the key because the server filters
+   * on it and `totalCount` changes with it — sharing a key would let a filtered count overwrite
+   * the unfiltered one.
+   */
+  reactors: (postId: number, type?: string) =>
+    ['posts', postId, 'reaction', 'reactors', type ?? 'all'] as const,
   locationSearch: (request: LocationResolutionRequest) => ['posts', 'locations', request] as const,
 
   /**

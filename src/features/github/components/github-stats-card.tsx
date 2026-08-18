@@ -40,10 +40,24 @@ import { PinnedRepoList } from './pinned-repo-list';
 export interface GithubStatsCardProps {
   /** Whose stats to show. Undefined while the caller is still resolving it. */
   userId?: number;
+  /**
+   * Somebody else's GitHub — drop `Đồng bộ` / `Huỷ liên kết`, and change the empty state.
+   *
+   * NOT COSMETIC. `POST /github/sync` and `DELETE /github/unlink` take **no user id**: both act on
+   * the authenticated caller. Rendered under a stranger's name they would read as controls over
+   * that person's account and would quietly re-sync or UNLINK the viewer's own — a destructive
+   * action performed on the wrong account with no way to tell from the screen.
+   *
+   * `readOnly` is the prop rather than "isMe" because the caller already knows which page it is;
+   * making the card compare ids would mean it needs the session, which is `features/security`.
+   *
+   * @default false
+   */
+  readOnly?: boolean;
   className?: string;
 }
 
-export function GithubStatsCard({ userId, className }: GithubStatsCardProps) {
+export function GithubStatsCard({ userId, readOnly = false, className }: GithubStatsCardProps) {
   const t = useT();
   const relativeTime = useRelativeTime();
 
@@ -56,11 +70,14 @@ export function GithubStatsCard({ userId, className }: GithubStatsCardProps) {
   }
 
   if (isNotLinked(stats.error)) {
+    // A viewer gets a different sentence. The owner's copy explains WHY linking cannot be
+    // completed (B23) — which is an answer to "how do I fix this?", a question nobody asks about
+    // somebody else's account.
     return (
       <EmptyState
         className={className}
-        title={t('github.notLinked.title')}
-        description={t('github.notLinked.desc')}
+        title={readOnly ? t('github.notLinkedOther.title') : t('github.notLinked.title')}
+        description={readOnly ? t('github.notLinkedOther.desc') : t('github.notLinked.desc')}
       />
     );
   }
@@ -79,7 +96,7 @@ export function GithubStatsCard({ userId, className }: GithubStatsCardProps) {
   if (!data) return null;
 
   return (
-    <Card padding={16} className={cn('flex flex-col gap-4', className)}>
+    <Card className={cn('flex flex-col gap-4', className)}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-center gap-2">
           <a
@@ -92,25 +109,27 @@ export function GithubStatsCard({ userId, className }: GithubStatsCardProps) {
           </a>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            variant="secondary"
-            loading={sync.isPending}
-            onClick={() => sync.mutate()}
-            icon={<RefreshCw className="size-3.5" aria-hidden />}
-          >
-            {t('github.sync')}
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            loading={unlink.isPending}
-            onClick={() => unlink.mutate()}
-          >
-            {t('github.unlink')}
-          </Button>
-        </div>
+        {!readOnly && (
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="secondary"
+              loading={sync.isPending}
+              onClick={() => sync.mutate()}
+              icon={<RefreshCw className="size-3.5" aria-hidden />}
+            >
+              {t('github.sync')}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              loading={unlink.isPending}
+              onClick={() => unlink.mutate()}
+            >
+              {t('github.unlink')}
+            </Button>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-wrap items-center gap-4">

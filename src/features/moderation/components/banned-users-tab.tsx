@@ -78,7 +78,7 @@ export function BannedUsersTab({ onViewPost, className }: BannedUsersTabProps) {
       <ul className="flex flex-col gap-3">
         {query.data?.content.map((user) => (
           <li key={user.userId}>
-            <Card padding={16} className="flex flex-col gap-2">
+            <Card className="flex flex-col gap-2">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex flex-col gap-0.5">
                   <p className="text-nx-body-sm font-medium text-nx-text-primary">
@@ -110,7 +110,7 @@ export function BannedUsersTab({ onViewPost, className }: BannedUsersTabProps) {
               </p>
 
               {user.triggeringPostIds.length > 0 && (
-                <div className="flex flex-wrap items-center gap-1.5">
+                <div className="flex flex-wrap items-center gap-2">
                   <span className="text-nx-caption text-nx-text-muted">
                     {t('moderation.banned.triggeringPosts')}
                   </span>

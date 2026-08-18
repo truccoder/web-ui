@@ -1,6 +1,7 @@
 import api from '@/core/api/axios';
 import type {
   Book,
+  BookPage,
   BookReview,
   CreateReviewRequest,
   PresignedUrl,
@@ -8,7 +9,7 @@ import type {
 } from '../types/book';
 
 /**
- * `BookController` (`com.socialapp.bookstore`) — 8 endpoints, 8 functions. Bare responses, no
+ * `BookController` (`com.socialapp.bookstore`) — 9 endpoints, 9 functions. Bare responses, no
  * envelope, consistent with every other controller in this backend.
  *
  * THERE IS NO "LIST BOOKS" ENDPOINT. No `GET /books`, no search, no pagination anywhere in this
@@ -51,6 +52,20 @@ export const bookApi = {
    * Inherits the 503 hazard of `getBook`, amplified: the DTO is built per book, so ONE book with
    * broken storage fails the entire list.
    */
+  /**
+   * GET /v1/api/books — the whole catalogue, newest first. The `Thư viện` destination.
+   *
+   * NEW ON 2026-08-09, AND IT REMOVES A CEILING THIS FEATURE WAS BUILT AROUND. Until it shipped
+   * there was no way to list books at all: the only routes to one were `GET /books/author/{id}`
+   * and a post that happened to embed it, which is why the domain had a "my books" surface long
+   * before it had a shop.
+   *
+   * Cursor-paginated like `/posts/public`, not page-paginated like `/feed` — pass back the
+   * `nextCursor` you were given, and send none at all for the first page.
+   */
+  getLibrary: (cursor?: number, limit = 12) =>
+    api.get<BookPage>('/v1/api/books', { params: { cursor, limit } }).then((r) => r.data),
+
   getBooksByAuthor: (authorId: number) =>
     api.get<Book[]>(`/v1/api/books/author/${authorId}`).then((r) => r.data),
 

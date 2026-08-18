@@ -30,6 +30,8 @@ export {
   type RoadmapListProps,
   RoadmapNodeTree,
   type RoadmapNodeTreeProps,
+  RoadmapStagePath,
+  type RoadmapStagePathProps,
   SkillVerificationForm,
   type SkillVerificationFormProps,
   PendingVerificationQueue,

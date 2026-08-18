@@ -36,8 +36,15 @@ export interface DeveloperIdentityProps extends React.HTMLAttributes<HTMLDivElem
   role?: string;
   /** Mono handle, e.g. "@minh.tran". */
   handle?: string;
-  /** Right-aligned mono timestamp on the name line. */
-  time?: string;
+  /**
+   * Right-aligned mono timestamp on the name line.
+   *
+   * `ReactNode`, NOT `string`, so a caller can make it the post's permalink. A timestamp that
+   * links to the thing it timestamps is the one anchor a card can carry without adding a control:
+   * it is already there, it is already the least-interesting text on the row, and it is where
+   * every reader has been trained to look for "this specific post".
+   */
+  time?: React.ReactNode;
   /** Single mono metadata line that REPLACES role + handle. */
   meta?: string;
   /** md = feed/article header · sm = compact rows (comments, panels). @default "md" */

@@ -132,7 +132,7 @@ export function EventRsvpBar({ postId, maxAttendees, onChanged, className }: Eve
               disabled={disabled}
               onClick={() => pick(status)}
               className={cn(
-                'inline-flex h-7 items-center gap-1.5 rounded-nx-xs border px-2',
+                'inline-flex h-7 items-center gap-2 rounded-nx-xs border px-2',
                 'text-nx-caption',
                 'transition-colors duration-[var(--nx-duration-fast)] ease-nx-out',
                 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring',

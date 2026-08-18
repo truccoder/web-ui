@@ -15,6 +15,7 @@ import type { SearchResponse } from '../types/search';
 export const searchKeys = {
   all: ['search'] as const,
   query: (q: string, size: number) => [...searchKeys.all, q, size] as const,
+  suggest: (q: string, limit: number) => [...searchKeys.all, 'suggest', q, limit] as const,
 };
 
 /**
@@ -46,6 +47,32 @@ export function useSearch(query: string, size: number = DEFAULT_SIZE) {
      * A minute. Typing a term, opening a result and coming back should not re-query, but search
      * over live data should not be pinned for a session either.
      */
+    staleTime: 60_000,
+  });
+}
+
+/** How many rows the dropdown asks for. The server caps this at 20 whatever is sent. */
+const SUGGEST_LIMIT = 6;
+
+/**
+ * Type-ahead suggestions, one request per settled keystroke.
+ *
+ * THE DEBOUNCE IS THE CALLER'S, NOT THIS HOOK'S. The endpoint is documented as "fired once per
+ * keystroke", but firing on literally every character puts a request in flight for terms nobody
+ * finished typing. The component owns the timing because it owns the keyboard; this hook only
+ * refuses to ask below the same floor `useSearch` uses, where a one-character substring match with
+ * no ranking returns a list nobody can use.
+ *
+ * NOT INVALIDATED, EVER — same reasoning as `useSearch`: the result is a function of the term.
+ * `staleTime` keeps a term the user backspaces into from re-fetching.
+ */
+export function useSuggestions(query: string, limit: number = SUGGEST_LIMIT) {
+  const trimmed = query.trim();
+
+  return useQuery({
+    queryKey: searchKeys.suggest(trimmed, limit),
+    queryFn: () => searchApi.suggest(trimmed, limit),
+    enabled: trimmed.length >= MIN_QUERY_LENGTH,
     staleTime: 60_000,
   });
 }

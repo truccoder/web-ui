@@ -69,7 +69,7 @@ export function TrendingFilters({
         tabs={TIME_RANGES.map((range) => ({ id: range, label: t(`trending.timeRange.${range}`) }))}
       />
 
-      <div className="flex flex-wrap gap-1.5" role="group" aria-label={t('trending.categoryLabel')}>
+      <div className="flex flex-wrap gap-2" role="group" aria-label={t('trending.categoryLabel')}>
         <CategoryChip
           label={t('trending.allCategories')}
           active={category === undefined}

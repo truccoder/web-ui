@@ -1,5 +1,5 @@
 import api from '@/core/api/axios';
-import type { SearchResponse } from '../types/search';
+import type { SearchResponse, Suggestion } from '../types/search';
 
 /**
  * SearchController (`com.socialapp.search`) — 1 endpoint, 1 function. Bare response, no wrapper.
@@ -22,4 +22,21 @@ export const searchApi = {
    */
   search: (q: string, size = 20) =>
     api.get<SearchResponse>('/v1/api/search', { params: { q, size } }).then((r) => r.data),
+
+  /**
+   * GET /v1/api/search/suggest — the type-ahead dropdown, fired per keystroke.
+   *
+   * IT IS NOT `search` WITH A SMALL `size`, and the backend split it out for reasons a caller has
+   * to respect. The results page ranks friends first (a Neo4j round trip for the viewer's friend
+   * ids), counts total hits for the pager, and hydrates every post with its author, its book and
+   * six detail blobs. None of that is affordable per character typed, so none of it happens here —
+   * which is also why this returns a flat `SuggestionDto[]` and not a `SearchResponse`.
+   *
+   * PEOPLE AND BOOKS ONLY. There are no post suggestions: a post has no short label to complete.
+   *
+   * `limit` IS CAPPED AT 20 SERVER-SIDE (`@Max`). Without the ceiling this would be a cheaper way
+   * to page through the user table than the paged endpoint, which is the reason it exists.
+   */
+  suggest: (q: string, limit = 6) =>
+    api.get<Suggestion[]>('/v1/api/search/suggest', { params: { q, limit } }).then((r) => r.data),
 };

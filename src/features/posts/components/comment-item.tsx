@@ -80,7 +80,7 @@ export function CommentItem({
   const replyCount = replies?.length ?? 0;
 
   return (
-    <div className={cn('flex flex-col gap-1.5', className)}>
+    <div className={cn('flex flex-col gap-2', className)}>
       <DeveloperIdentity
         size="sm"
         name={comment.authorFullName?.trim() || t('post.unknownAuthor')}

@@ -1,5 +1,5 @@
 import api from '@/core/api/axios';
-import type { FeedPage, PublicFeedPage } from '../types/feed';
+import type { FeedPage, FeedPost, PublicFeedPage } from '../types/feed';
 
 /**
  * NewsfeedController (`com.socialapp.newsfeed`) — 1 endpoint. Bare responses, no wrapper.
@@ -53,4 +53,40 @@ export const newsfeedApi = {
     api
       .get<PublicFeedPage>('/v1/api/posts/public', { params: { cursor, limit } })
       .then((r) => r.data),
+
+  /**
+   * GET /v1/api/users/{userId}/posts — one person's posts.
+   *
+   * IT LIVES HERE FOR THE SAME REASON `getPublicFeed` DOES: it returns `PostPageResponseDto`, the
+   * identical page shape and the identical item type as the two feeds, so a third copy of that
+   * type in `features/posts` would be the drift waiting to happen. The backend files the endpoint
+   * under `/users/{id}/…` because the subject is the user; the payload is still a feed page.
+   *
+   * WHAT COMES BACK DEPENDS ON WHO IS ASKING, and a screen must not describe it as "their posts".
+   * A stranger sees PUBLIC only, a friend also sees FRIENDS, and the author additionally sees
+   * PRIVATE and anything still in — or rejected by — moderation. So the same profile shows a
+   * different number of posts to different readers, by design, and no count derived from it is a
+   * total.
+   */
+  getUserPosts: (userId: number, cursor?: number, limit = 10) =>
+    api
+      .get<PublicFeedPage>(`/v1/api/users/${userId}/posts`, { params: { cursor, limit } })
+      .then((r) => r.data),
+
+  /**
+   * GET /v1/api/posts/{postId} — one post.
+   *
+   * IT RETURNS `FeedPostDataDto`, THE SAME ITEM THE FEEDS RETURN, which is the whole reason the
+   * permalink page can render the identical card instead of a second, subtly different one.
+   *
+   * IT LIVES IN THIS FEATURE FOR THE SAME REASON THE OTHER THREE DO — the type it answers with is
+   * `features/newsfeed`'s. Putting it in `features/posts` (which owns the writes) would point
+   * posts → newsfeed and create this project's first dependency cycle; the same call this file
+   * already documents for `getPublicFeed`.
+   *
+   * OPEN TO GUESTS, and visibility is applied server-side from the JWT — a post you may not see
+   * answers 404 rather than 403, so the page cannot distinguish "deleted" from "not yours to
+   * read" and must not claim either.
+   */
+  getPost: (postId: number) => api.get<FeedPost>(`/v1/api/posts/${postId}`).then((r) => r.data),
 };

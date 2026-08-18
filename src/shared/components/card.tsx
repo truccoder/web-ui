@@ -17,6 +17,15 @@ import { cn } from '@/shared/lib/cn';
  * The constitution's rule that almost nothing in flow has a border — not cards, not the feed, not
  * the rail, not the ledger — only becomes affordable once the ground does the separating.
  *
+ * THERE IS NO `bare` VARIANT, AND THAT IS A DECISION WITH A HISTORY. The kit's README (round 5.1)
+ * says four sets — the roadmap nodes, the book grid, the external list and the `StatTile` row —
+ * take `Card variant="bare"`: no fill, no border, hover only, because a filled member inside a
+ * 12px-gap set is a padding-beats-gap inversion. I added the variant and applied it to three of
+ * them. Then I measured: the kit's own book cell is `330 wide · rgb(255,255,255) · 16px 20px ·
+ * radius 8`, sitting in a grid with exactly the 12px gap that passage calls an inversion. Every
+ * card in the kit is filled. The variant was removed rather than left unused, because a variant
+ * that exists is a variant someone will reach for.
+ *
  * THREE VARIANTS, each naming which plane the card sits on:
  *  - `flat` (default) — `surface-card`, transparent 1px edge. The transparent border is not
  *    decoration: it reserves the pixel so that opting into `bordered` cannot shift layout by 2px.
@@ -31,7 +40,22 @@ import { cn } from '@/shared/lib/cn';
  * "blue tint + accent edge" (§2.1). Constitution §0 wins on conflict, so selected is blue.
  */
 export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
-  /** Padding in px, or any CSS length. 16 on the canvas, 12 in the shell. @default 16 */
+  /**
+   * Padding in px, or any CSS length.
+   *
+   * THE DEFAULT IS TWO-AXIS — `16px 20px`, not a single 16. The ladder has carried
+   * `--nx-space-pad: 20px` (horizontal) and `--nx-space-pad-y: 16px` (vertical) since round 8,
+   * because a rung is read **per axis**: horizontal padding is paid once, vertical padding is paid
+   * again at every block boundary down a feed. A square 16 collapses that distinction and makes
+   * the card 4px narrow in its text inset.
+   *
+   * Measured rather than inferred: every white rounded surface in the rendered kit computes to
+   * `padding: 16px 20px` — 13 of them on the feed screen, with no other value.
+   *
+   * Passing a number still works and still means all four sides; it is an override, not the norm.
+   *
+   * @default "16px 20px"
+   */
   padding?: number | string;
   /** Which plane the card sits on. @default "flat" */
   variant?: 'flat' | 'inset' | 'raised';
@@ -62,7 +86,7 @@ const interactiveStyles: Record<NonNullable<CardProps['variant']>, string> = {
 };
 
 export function Card({
-  padding = 16,
+  padding = 'var(--nx-space-pad-y) var(--nx-space-pad)',
   variant = 'flat',
   bordered = false,
   interactive = false,

@@ -102,7 +102,7 @@ export function EventFields({ value, onChange, className }: EventFieldsProps) {
         />
       </div>
 
-      <div className="flex flex-wrap items-center gap-1.5">
+      <div className="flex flex-wrap items-center gap-2">
         {END_SHORTCUT_HOURS.map((hours) => (
           <button
             key={hours}

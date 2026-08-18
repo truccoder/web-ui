@@ -2,32 +2,51 @@ import api from '@/core/api/axios';
 import type {
   ApplyToPositionInput,
   CreateProjectInput,
+  Project,
+  ProjectApplication,
+  ProjectPage,
   SuggestedCandidate,
 } from '../types/matchmaking';
 
 /**
- * `ProjectController` (`/v1/api/projects`) — 5 endpoints, 5 functions.
+ * `ProjectController` (`/v1/api/projects`) — 9 endpoints, 9 functions.
  *
- * READ THIS BEFORE BUILDING ANYTHING ON TOP: FOUR OF THESE FIVE FUNCTIONS NEED AN ID THAT NO
- * ENDPOINT CAN PRODUCE. There is no list of projects, no list of positions, and no list of
- * applications — not in this controller and not anywhere else in the API. The repositories do not
- * even contain unused finders to expose (unlike `roadmap`, where `findByUserId` existed and was
- * simply not wired up). So:
+ * THE WARNING THAT USED TO OPEN THIS FILE IS DEAD, and it is quoted here because it explains why
+ * the domain sat unbuilt for so long: "FOUR OF THESE FIVE FUNCTIONS NEED AN ID THAT NO ENDPOINT
+ * CAN PRODUCE. There is no list of projects, no list of positions, and no list of applications."
  *
- *  - `createProject` answers `void`. The service builds and returns a `ProjectEntity` with its id
- *    and its positions' ids — and the controller throws it away. The creator cannot learn what
- *    they just made.
- *  - `applyToPosition`, `getSuggestedCandidates` need a `positionId`; nothing hands one out.
- *  - `acceptApplication`, `rejectApplication` need an `applicationId`; nothing hands one out.
+ * All three lists exist now, and `createProject` returns the created project with its id instead
+ * of `void`. So every id these calls need has a source, and the screens that were impossible are
+ * ordinary.
  *
- * Measured at 2ab: creating a project answered 200 with an empty body, and the resulting
- * project/position ids were only visible by querying Postgres directly.
- *
- * These functions are written and typed anyway — the endpoints are real and their contracts are
- * settled, so when the backend adds the reads (B24) nothing here changes. What cannot be built on
- * them yet is a screen.
+ * ONE PATH DETAIL WORTH NOT BREAKING: the detail and inbox routes are declared `{projectId:\d+}`
+ * server-side so that `/projects/applications` routes to the literal sibling rather than trying to
+ * bind "applications" as an id. Nothing on this side depends on it, but a caller that sends a
+ * non-numeric id gets a 404 from the router rather than a 400 from the handler.
  */
 export const matchmakingApi = {
+  /** GET /v1/api/projects — browse, newest first. Cursor paging; `hasMore` is the only total. */
+  getProjects: (cursor?: number, limit = 10) =>
+    api.get<ProjectPage>('/v1/api/projects', { params: { cursor, limit } }).then((r) => r.data),
+
+  /** GET /v1/api/projects/{projectId} — one project with its positions. */
+  getProject: (projectId: number) =>
+    api.get<Project>(`/v1/api/projects/${projectId}`).then((r) => r.data),
+
+  /**
+   * GET /v1/api/projects/{projectId}/applications — the owner's inbox.
+   *
+   * **403 FOR ANYONE ELSE**, which makes this the one read in the domain that is a permission
+   * boundary rather than a query. A screen must not call it speculatively to find out whether the
+   * viewer owns the project — compare `authorId` to the signed-in id instead.
+   */
+  getProjectApplications: (projectId: number) =>
+    api.get<ProjectApplication[]>(`/v1/api/projects/${projectId}/applications`).then((r) => r.data),
+
+  /** GET /v1/api/projects/applications/mine — what the caller has applied to. */
+  getMyApplications: () =>
+    api.get<ProjectApplication[]>('/v1/api/projects/applications/mine').then((r) => r.data),
+
   /**
    * POST /v1/api/projects — create a project together with all of its positions.
    *
@@ -35,10 +54,11 @@ export const matchmakingApi = {
    * the `positions` array sent here is permanent. `title` and `description` are `@NotBlank`;
    * each position's `title` is too, and `quantity` is `@Min(1)`.
    *
-   * Returns nothing — see the file note. A caller cannot confirm the result or link to it.
+   * RETURNS THE CREATED PROJECT (201), ids included — it used to answer `void` and discard them.
+   * That single change is what makes "create, then open what you made" possible.
    */
   createProject: (payload: CreateProjectInput) =>
-    api.post<void>('/v1/api/projects', payload).then((r) => r.data),
+    api.post<Project>('/v1/api/projects', payload).then((r) => r.data),
 
   /**
    * POST /v1/api/projects/positions/{positionId}/apply.
@@ -73,8 +93,8 @@ export const matchmakingApi = {
   /**
    * GET /v1/api/projects/positions/{positionId}/suggested-candidates.
    *
-   * **THIS ENDPOINT IS CURRENTLY BROKEN AND ANSWERS 500 EVERY TIME.** `findBySkillsMatch` is the
-   * one native query in the backend, and it names the table without its schema —
+   * IT USED TO ANSWER 500 EVERY TIME — measure before trusting it. `findBySkillsMatch` is the
+   * one native query in the backend, and it named the table without its schema —
    * `SELECT * FROM t_user_professional_profiles`, while the table is
    * `socialapp.t_user_professional_profiles`. Measured at 2ab:
    * `relation "t_user_professional_profiles" does not exist`. Every other repository uses JPQL,

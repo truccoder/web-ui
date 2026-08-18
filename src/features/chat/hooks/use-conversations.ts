@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import type { Channel, StreamChat } from 'stream-chat';
+import { chatApi } from '../api/chat';
 import { useChatClient } from './use-chat-client';
 import type { ChatConversation } from '../types/chat';
 
@@ -149,15 +150,27 @@ export function useConversations() {
    * clients to sort the ids identically forever.
    *
    * NOTHING GATES WHO MAY BE MESSAGED. Channel creation happens here on the client, so the
-   * friendship graph is not consulted — decided as option (a) in `findings/chat.md` R6. The UI
-   * only ever offers friends as targets, but that is a UI convention, not a rule the server
-   * enforces.
+   * friendship graph is not consulted — decided as option (a) in `findings/chat.md` R6.
+   *
+   * AND NOW THE UI CAN ACTUALLY OFFER NON-FRIENDS, which it could not before. The note that used
+   * to end this paragraph ("The UI only ever offers friends as targets") was not a convention — it
+   * was a limit: `GET /token` upserts the caller and their FRIENDS into Stream, and Stream refuses
+   * to create a channel containing a user it has never seen, so `watch()` failed for anyone else
+   * with an error about the member rather than about the cause.
+   *
+   * `ensureParticipants` introduces the pair first. It is idempotent and safe for friends too, so
+   * it runs unconditionally rather than after a check this hook would have to make against another
+   * feature's data.
    */
   const startConversation = useCallback(
     async (otherUserId: string): Promise<string> => {
       if (!client || !userId) {
         throw new Error('Chat is not connected');
       }
+
+      // Before the channel, not after: Stream rejects a member it has never seen, and the failure
+      // reads as a channel error rather than a missing-user one.
+      await chatApi.ensureParticipants(Number(otherUserId));
 
       const channel = client.channel(CHANNEL_TYPE, {
         members: [userId, otherUserId],

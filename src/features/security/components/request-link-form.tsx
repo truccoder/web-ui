@@ -85,7 +85,9 @@ export function RequestLinkForm({ variant }: RequestLinkFormProps) {
         <p className="text-nx-body-sm text-nx-text-secondary">{tk('subtitle')}</p>
       </div>
 
-      <form onSubmit={submit} className="mt-6 flex flex-col gap-4" noValidate>
+      {/* `method="post"` — see `LoginForm`. No password here, but an email address in a URL is
+          still personal data written into history and access logs. */}
+      <form onSubmit={submit} method="post" className="mt-6 flex flex-col gap-4" noValidate>
         <Input
           label={t('auth.email')}
           type="email"

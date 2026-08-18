@@ -33,6 +33,20 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
     login.mutate(values, { onSuccess: () => onSuccess?.() });
   });
 
+  /**
+   * `padding={24}` STAYS ON THE AUTH CARDS WHILE THE CANVAS CARDS DROPPED IT, and the line is
+   * deliberate.
+   *
+   * A census of five kit screens found exactly three card paddings — `16px 20px` (the standard
+   * card), `12px 20px` (a denser row) and `0 10px` (a bare set member) — and **no 24 anywhere**;
+   * 24 is also on neither course (horizontal 8 · 12 · 20 · 40, vertical 8 · 12 · 16 · 20). So
+   * every card inside the app shell moved to the default.
+   *
+   * The auth screens are not inside the shell. They are one card alone on an empty viewport, with
+   * no neighbouring block for the ladder to relate them to — and the kit ships no auth specimen,
+   * so there is nothing to measure. Shrinking them would be a guess dressed up as a correction.
+   * Left at 24 with the reason written down instead.
+   */
   return (
     <Card padding={24} className="w-full">
       <div className="flex flex-col items-center gap-2 text-center">
@@ -43,7 +57,26 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
         <p className="text-nx-body-sm text-nx-text-secondary">{t('auth.login.subtitle')}</p>
       </div>
 
-      <form onSubmit={submit} className="mt-6 flex flex-col gap-4" noValidate>
+      {/**
+       * `method="post"` ON A FORM THAT IS SUBMITTED BY JAVASCRIPT — deliberately, and this is not
+       * belt-and-braces.
+       *
+       * A `<form>` with no `method` defaults to **GET**. `onSubmit` normally preventDefaults it,
+       * so the attribute never matters — until the moment `onSubmit` does not run. Measured, not
+       * theorised: with the dev server down the bundle never loaded, React never hydrated, the
+       * browser fell back to its native submit, and the page navigated to
+       * `/login?email=…&password=12345678`.
+       *
+       * A password in a query string does not stay in the address bar. It goes into browser
+       * history, into the server's access log, and into the `Referer` header of the next request
+       * off that page. `method="post"` puts the same values in a request body that nothing
+       * records — the submission still fails, which is correct, but it fails without leaking.
+       *
+       * Every form on this screen family that carries a secret or an identifier gets the same
+       * treatment, because "JavaScript did not run" is not a rare state: it is every failed
+       * deploy, every chunk 404, every extension that breaks hydration.
+       */}
+      <form onSubmit={submit} method="post" className="mt-6 flex flex-col gap-4" noValidate>
         <Input
           label={t('auth.email')}
           type="email"
@@ -53,7 +86,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
           {...register('email')}
         />
 
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <label
               htmlFor="login-password"

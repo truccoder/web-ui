@@ -6,10 +6,17 @@ type Schemas = components['schemas'];
  * Types for `ProjectController` (`/v1/api/projects`), derived from `schema.gen.ts`.
  * BE package `com.socialapp.matchmaking`.
  *
- * THIS FILE IS ALMOST ALL REQUEST TYPES, AND THAT IS THE DOMAIN'S DEFINING FACT. Four of the five
- * endpoints return `void` and the fifth is the only read — so there is exactly one response shape
- * here. Nothing lists projects, positions or applications, which is why the ids those endpoints
- * need cannot be obtained from the API at all. Recorded as B24; see `findings/matchmaking.md`.
+ * THE NOTE THAT USED TO BE HERE IS OBSOLETE AND IS WORTH QUOTING BECAUSE IT WAS THE REASON THIS
+ * DOMAIN HAD NO SCREENS: "Four of the five endpoints return `void` and the fifth is the only read
+ * … Nothing lists projects, positions or applications, which is why the ids those endpoints need
+ * cannot be obtained from the API at all" (B24).
+ *
+ * That ceiling is gone. `ProjectController` now has NINE endpoints: a cursor-paged project list, a
+ * project-with-positions read, the owner's application inbox, the applicant's own applications —
+ * and `createProject` answers `201` with the created `ProjectResponseDto` INCLUDING its id and its
+ * positions' ids, which the backend's own javadoc records as a deliberate fix ("this method threw
+ * it away, so a client had no way to navigate to what it had just created"). Every id the write
+ * endpoints need is now reachable, so the domain is buildable end to end.
  */
 
 /** `SeniorityLevel`, reused from the `knowledge` package's professional profile. */
@@ -65,3 +72,42 @@ export type CreateProjectInput = Schemas['ProjectRequestDTO'];
  * accepted. The UI decides whether to require it.
  */
 export type ApplyToPositionInput = Schemas['ApplicationRequestDTO'];
+
+/**
+ * ─── RESPONSE TYPES, all new: none of these existed while the controller had one read. ────────
+ */
+
+/** One role on a project. `status` is per-position, so a filled role sits beside an open one. */
+export type ProjectPosition = Schemas['ProjectPositionResponseDto'];
+
+/**
+ * A project with its roles.
+ *
+ * `positions` IS PRESENT ON BOTH THE LIST AND THE DETAIL READ, which is worth knowing before
+ * writing a screen: the card in a list can show how many roles are open without fetching the
+ * project, so browsing costs one request rather than one per card.
+ *
+ * The author arrives as `authorId` + `authorFullName` + `authorProfilePictureUrl` and **no
+ * username**, so a project's author cannot link to `/u/{username}` — the same gap the feed has
+ * (B28).
+ */
+export type Project = Schemas['ProjectResponseDto'];
+
+/** One page of the project list. Cursor-paged, same contract as posts and books. */
+export type ProjectPage = Required<Pick<Schemas['ProjectPageResponseDto'], 'hasMore'>> & {
+  items: Project[];
+  nextCursor?: number;
+};
+
+/**
+ * One application, as both sides see it.
+ *
+ * ONE SHAPE FOR TWO AUDIENCES. `GET /{id}/applications` (the owner's inbox) and
+ * `GET /applications/mine` (the applicant's own) return the same DTO, which is why it carries both
+ * the applicant's identity and the project's title — each side ignores the half it already knows.
+ */
+export type ProjectApplication = Schemas['ProjectApplicationResponseDto'];
+
+export type ProjectStatus = NonNullable<Project['status']>;
+export type PositionStatus = NonNullable<ProjectPosition['status']>;
+export type ApplicationStatus = NonNullable<ProjectApplication['status']>;

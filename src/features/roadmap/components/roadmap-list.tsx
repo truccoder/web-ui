@@ -53,18 +53,35 @@ export function RoadmapList({ selectedId, onSelect, className }: RoadmapListProp
   if ((roadmaps.data?.length ?? 0) === 0) {
     // Says only that there are none, not "an admin has not made any yet" — a reader cannot act on
     // that and it advertises a surface most of them will never be shown.
-    return <EmptyState className={className} title={t('roadmap.list.empty')} />;
+    return (
+      <EmptyState
+        className={className}
+        title={t('roadmap.list.empty')}
+        description={t('roadmap.list.emptyDesc')}
+      />
+    );
   }
 
   return (
-    <ul className={cn('flex flex-col gap-2', className)}>
+    /**
+     * TWO-UP GRID, matching the kit's roadmap index: 330-wide cards, two to the 672 measure.
+     * Same `auto-fit minmax` mechanism as the library, and the same reason — a track is a short
+     * title plus one line of description, so a full-measure row per track was mostly empty band.
+     *
+     * WHAT THE KIT HAS AND THIS DOES NOT: the index is split into `Đang theo` and `Khám phá thêm`,
+     * and each card carries a progress row. Both need to know which roadmap a progress row belongs
+     * to, and `RoadmapProgressDto` carries `nodeId`/`nodeName` with **no `roadmapId`** — the only
+     * way to map back is to fetch every roadmap's nodes and search them, one request per track.
+     * That is an N+1 over the catalogue to render a heading, so the split waits for the field.
+     */
+    <ul className={cn('grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-3', className)}>
       {roadmaps.data?.map((roadmap) => (
         <li key={roadmap.id}>
           <Card
             interactive
             selected={roadmap.id === selectedId}
             padding={12}
-            className="w-full"
+            className="h-full w-full"
             // A card is a div, so the click target has to be a real button for the keyboard to
             // reach it — the card carries the appearance, the button carries the behaviour.
           >

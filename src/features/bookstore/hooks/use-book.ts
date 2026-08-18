@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { bookApi } from '../api';
 import type { CreateReviewRequest } from '../types/book';
 import { bookstoreKeys } from './keys';
@@ -41,6 +41,27 @@ export function useBooksByAuthor(authorId: number, enabled = true) {
     queryKey: bookstoreKeys.byAuthor(authorId),
     queryFn: () => bookApi.getBooksByAuthor(authorId),
     enabled: enabled && Number.isFinite(authorId),
+  });
+}
+
+/**
+ * GET /v1/api/books — the catalogue, cursor-paged. Backs the `Thư viện` screen.
+ *
+ * `initialPageParam` is `undefined`, not 0: no cursor means "from the newest", while `cursor=0`
+ * would ask for books after id 0 — the oldest page. Same contract as the public feed.
+ *
+ * NOT INVALIDATED BY `useDeleteBook`, deliberately: that mutation sweeps `byAuthorRoot` because it
+ * knows a book left some author's list, but the catalogue is a separate branch and a deleted book
+ * disappearing from it costs one refetch on the next visit. Sweeping both from a delete would tie
+ * the shop's cache to a management action taken on a different screen.
+ */
+export function useLibrary(enabled = true) {
+  return useInfiniteQuery({
+    enabled,
+    queryKey: bookstoreKeys.library,
+    queryFn: ({ pageParam }) => bookApi.getLibrary(pageParam, 12),
+    initialPageParam: undefined as number | undefined,
+    getNextPageParam: (last) => (last.hasMore ? (last.nextCursor ?? undefined) : undefined),
   });
 }
 

@@ -63,3 +63,4 @@ export { EventRsvpBar, type EventRsvpBarProps } from './event-rsvp-bar';
 export { EventAttendeeList, type EventAttendeeListProps } from './event-attendee-list';
 export { EventCalendarActions, type EventCalendarActionsProps } from './event-calendar-actions';
 export { EventFields, type EventFieldsProps } from './event-fields';
+export { ReactorDialog, type ReactorDialogProps } from './reactor-dialog';

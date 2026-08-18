@@ -37,3 +37,20 @@ export type MyReaction = {
 export type UpsertReactionRequest = {
   reactionType: ReactionType;
 };
+
+/**
+ * One page of "who reacted".
+ *
+ * THE ROWS ARE `PublicUserResponse`, the same shape the block list renders — so they carry a
+ * `username` and can link to `/u/{username}`, which the feed's own author field still cannot
+ * (B28). A reactor is more reachable than the person whose post they reacted to.
+ *
+ * `totalCount` IS THE TOTAL FOR THE FILTER ASKED FOR, not for the post: request `type=LIKE` and it
+ * counts likes. Nothing may present it as "reactions on this post" while a filter is active.
+ */
+export type ReactorPage = {
+  reactors: Schemas['PublicUserResponse'][];
+  nextCursor?: number;
+  hasMore: boolean;
+  totalCount: number;
+};

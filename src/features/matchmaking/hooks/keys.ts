@@ -1,12 +1,27 @@
 /**
  * Query keys for `features/matchmaking`.
  *
- * ONE KEY, BECAUSE THERE IS ONE READ. Four of the five endpoints are writes returning `void`, and
- * the only query is the candidate shortlist for a position. There is nothing else to cache and,
- * until the backend exposes the missing lists (B24), nothing else to invalidate.
+ * IT USED TO BE ONE KEY, "BECAUSE THERE IS ONE READ" — four of five endpoints were writes
+ * returning `void` and nothing listed projects, positions or applications. There are four reads
+ * now, and they share the `matchmaking` prefix so that an accept or a reject can invalidate all of
+ * them at once: filling the last slot of a position changes the project read as well as the inbox,
+ * and a `void` response cannot say whether it did.
  */
 export const matchmakingKeys = {
   all: ['matchmaking'] as const,
+
+  /** The browse list. `limit` is in the key because it changes the page shape. */
+  projects: (limit: number) => ['matchmaking', 'projects', limit] as const,
+
+  /** One project with its positions. */
+  project: (projectId: number) => ['matchmaking', 'project', projectId] as const,
+
+  /** The owner's inbox for one project. Never fetched by anyone else — it answers 403. */
+  projectApplications: (projectId: number) =>
+    ['matchmaking', 'project', projectId, 'applications'] as const,
+
+  /** What the signed-in account has applied to. */
+  myApplications: ['matchmaking', 'my-applications'] as const,
 
   /** Shortlisted candidates for one position. */
   suggestedCandidates: (positionId: number) =>

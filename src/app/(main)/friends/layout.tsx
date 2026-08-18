@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { Tabs } from '@/shared/components';
-import { usePendingRequests } from '@/features/friendships';
+import { useInfiniteFriends, usePendingRequests } from '@/features/friendships';
 import { useT } from '@/core/i18n';
 
 /**
@@ -23,10 +23,20 @@ import { useT } from '@/core/i18n';
  * the one thing that was worth glancing at.
  */
 
+/**
+ * TAB ORDER IS THE KIT'S — `Lời mời · Gợi ý · Bạn bè` — and it is not the order the app had.
+ *
+ * `Tất cả` used to lead because it is the biggest list. The kit leads with the queue instead, and
+ * that is the better read: requests are the only tab with a deadline attached (someone is waiting),
+ * suggestions are the only one that grows the graph, and the friends list is the one you go to
+ * when you already know who you are looking for. Ordered by what needs you, not by size.
+ *
+ * The rail still points at `/friends/all`; the order here is the strip's, not the entry point's.
+ */
 const TABS = [
-  { id: 'all', href: '/friends/all', labelKey: 'friends.all.title' },
   { id: 'requests', href: '/friends/requests', labelKey: 'friends.requests.title' },
   { id: 'suggestions', href: '/friends/suggestions', labelKey: 'friends.suggestions.title' },
+  { id: 'all', href: '/friends/all', labelKey: 'friends.all.title' },
 ];
 
 export default function FriendsLayout({ children }: { children: React.ReactNode }) {
@@ -35,11 +45,16 @@ export default function FriendsLayout({ children }: { children: React.ReactNode 
   const pathname = usePathname();
   const { data: pendingRequests } = usePendingRequests();
 
+  // Shares the friends list's cache entry, so the strip's count and the list's own subtitle can
+  // never disagree and no extra request is made.
+  const { data: friendPages } = useInfiniteFriends();
+
   const pendingCount = pendingRequests?.length ?? 0;
+  const friendCount = friendPages?.pages[0]?.totalCount ?? 0;
   const active = TABS.find((tab) => pathname.startsWith(tab.href))?.id ?? 'all';
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-4">
+    <div className="flex flex-col gap-[var(--nx-space-section)]">
       <h1 className="text-nx-title font-semibold tracking-tight text-nx-text-primary">
         {t('friends.title')}
       </h1>
@@ -54,8 +69,28 @@ export default function FriendsLayout({ children }: { children: React.ReactNode 
         tabs={TABS.map((tab) => ({
           id: tab.id,
           label: t(tab.labelKey),
-          // Only the incoming-requests tab carries a count, and only when there is one to carry.
-          count: tab.id === 'requests' && pendingCount > 0 ? pendingCount : undefined,
+          /**
+           * TWO TABS CARRY A COUNT, and the third deliberately does not.
+           *
+           * `Lời mời` counts a queue — it is the number that decides whether to open the tab at
+           * all. `Bạn bè` counts the collection, which the kit shows as `128`; it comes from the
+           * SAME query the list itself runs (`useInfiniteFriends`), so this is a cache read and
+           * not a second request.
+           *
+           * `Gợi ý` has no count because a suggestion count means nothing: the endpoint returns
+           * whatever page you ask for out of a ranked stream, so any number here would be
+           * describing the page size, not a quantity of suggestions.
+           */
+          count:
+            tab.id === 'requests'
+              ? pendingCount > 0
+                ? pendingCount
+                : undefined
+              : tab.id === 'all'
+                ? friendCount > 0
+                  ? friendCount
+                  : undefined
+                : undefined,
         }))}
       />
 

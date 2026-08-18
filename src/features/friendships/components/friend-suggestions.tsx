@@ -1,7 +1,7 @@
 'use client';
 
 import { UserPlus } from 'lucide-react';
-import { Button, Card, EmptyState, Skeleton } from '@/shared/components';
+import { Button, EmptyState, Skeleton } from '@/shared/components';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { useT } from '@/core/i18n';
 import {
@@ -36,9 +36,9 @@ export interface FriendSuggestionsProps {
 
 function SuggestionRowSkeleton() {
   return (
-    <div className="flex items-center gap-3 p-3">
+    <div className="flex items-center gap-3 rounded-nx-md bg-nx-surface-card px-5 py-3">
       <Skeleton circle height={40} />
-      <div className="flex flex-1 flex-col gap-1.5">
+      <div className="flex flex-1 flex-col gap-2">
         <Skeleton width={150} height={14} />
         <Skeleton width={80} height={12} />
       </div>
@@ -55,11 +55,11 @@ export function FriendSuggestions({ limit }: FriendSuggestionsProps = {}) {
 
   if (isLoading) {
     return (
-      <Card padding={0} className="divide-y divide-nx-border-subtle overflow-hidden">
+      <div className="flex flex-col gap-4">
         {Array.from({ length: 5 }).map((_, i) => (
           <SuggestionRowSkeleton key={i} />
         ))}
-      </Card>
+      </div>
     );
   }
 
@@ -85,12 +85,12 @@ export function FriendSuggestions({ limit }: FriendSuggestionsProps = {}) {
         </p>
       )}
 
-      <Card padding={0} className="divide-y divide-nx-border-subtle overflow-hidden">
+      <div className="flex flex-col gap-4">
         {(limit === undefined ? suggestions : suggestions.slice(0, limit)).map(
           ({ profile, mutualFriends }) => {
             const alreadySent = sentIds.has(profile.userId);
             return (
-              <div key={profile.userId} className="p-3">
+              <div key={profile.userId}>
                 <FriendListItem
                   name={profile.fullName}
                   avatarUrl={profile.profilePictureUrl}
@@ -118,7 +118,7 @@ export function FriendSuggestions({ limit }: FriendSuggestionsProps = {}) {
             );
           }
         )}
-      </Card>
+      </div>
     </div>
   );
 }

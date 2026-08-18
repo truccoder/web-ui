@@ -1,7 +1,8 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { Card, DeveloperIdentity, DeveloperMeta } from '@/shared/components';
+import Link from 'next/link';
+import { Badge, Card, DeveloperIdentity, DeveloperMeta } from '@/shared/components';
 import { RepScore } from '@/features/reputation';
 import { useT } from '@/core/i18n';
 import { cn } from '@/shared/lib/cn';
@@ -30,10 +31,15 @@ import { LocationBadge } from './location-badge';
  * Slots rather than flags: the card should not grow a boolean per feature, and the things
  * that fill them live in files that do not exist yet.
  *
- * Note what is NOT a prop either: `postType`. The card renders a body it is handed rather
- * than switching on the type itself, so the type stays with whoever builds that body.
- * Accepting it "for later" would be an unused prop that invites a switch statement straight
- * back into the shell.
+ * `postType` IS A PROP NOW, and the note it replaces was right until round 15. It read: "the card
+ * renders a body it is handed rather than switching on the type itself … accepting it for later
+ * would be an unused prop that invites a switch statement straight back into the shell."
+ *
+ * The reasoning still holds and is why the prop is used the way it is: the card renders the type
+ * as a LABEL and never branches on it. There is no switch here, no per-type layout, and the body
+ * still arrives fully built through the `body` slot. What changed is that the DS's block spec puts
+ * the kind of thing in the badge row at the top of the body, so the type became something the card
+ * has to *display* rather than something it might have been tempted to *interpret*.
  */
 
 /** Everything the identity row needs, as the feed payload actually spells it. */
@@ -72,6 +78,12 @@ export interface PostCardProps {
    */
   location?: LocationResolution;
   hashtags?: string[] | null;
+  /**
+   * The post's kind, rendered as a label in the badge row and nothing else — see the file note.
+   * `REGULAR` is suppressed at the render site rather than here, so a caller never has to know
+   * which values are worth showing.
+   */
+  postType?: string | null;
   commentCount?: number;
   /** Type-specific body. */
   body?: ReactNode;
@@ -94,6 +106,7 @@ export function PostCard({
   content,
   location,
   hashtags,
+  postType,
   commentCount,
   body,
   actions,
@@ -109,16 +122,57 @@ export function PostCard({
   const authorName = author.fullName?.trim() || t('post.unknownAuthor');
 
   return (
-    <Card padding={16} className={cn('flex flex-col gap-3', className)} data-post-id={postId}>
+    /**
+     * THREE GROUPS AT THE `group` RUNG (16), EVERYTHING INSIDE A GROUP AT `tight` (8) — the round-15
+     * block spec. The card used to be a flat column at a single 12px gap, which made "the author"
+     * and "the third paragraph of the body" siblings of equal weight. Two rungs instead of one is
+     * what turns a list of elements into a face, a body and an acting row.
+     *
+     * The groups are: who wrote it → what it says → what you can do about it.
+     */
+    <Card
+      className={cn('flex flex-col gap-[var(--nx-space-group)]', className)}
+      data-post-id={postId}
+    >
       <div className="flex items-start gap-2">
         <DeveloperIdentity
           className="min-w-0 flex-1"
           name={authorName}
           src={author.profilePictureUrl ?? undefined}
-          time={relativeTime(createdAt)}
+          /**
+           * THE TIMESTAMP IS THE PERMALINK — added once `/posts/{id}` existed.
+           *
+           * The card had no way to address itself: every post lived only inside a scrolling list,
+           * so one could not be sent to anyone and a post cited as evidence for a skill had no
+           * address. The timestamp is where that anchor belongs rather than a new control,
+           * because it is already on the row, already the least-interesting text on it, and
+           * already where readers look for "this specific post".
+           *
+           * NOT the author's name and not the whole card: the name's destination is a person (and
+           * cannot be built yet — `FeedPostDataDto` has no `authorUsername`, B28), and a
+           * card-wide anchor would swallow every reaction click that misses its button.
+           */
+          time={
+            <Link href={`/posts/${postId}`} className="hover:text-nx-text-primary hover:underline">
+              {relativeTime(createdAt)}
+            </Link>
+          }
           rep={
-            // Null and undefined both mean "not sent"; 0 is a real score and still renders.
-            author.eliteScore != null ? (
+            /**
+             * A ZERO SCORE RENDERS NOTHING, and that is a change from "0 is a real score so it
+             * still renders". Both readings are defensible; this one is chosen by looking at a
+             * real feed.
+             *
+             * The chip exists to tell one author apart from another. Everyone starts at 0, so on
+             * any feed with new accounts it repeated `0 · Newcomer` beside every name — seven
+             * identical chips down one column, saying nothing except that the product has a
+             * scoring system. Suppressing it at 0 costs nothing (there is no reputation to
+             * report) and makes a chip that DOES appear mean something.
+             *
+             * `> 0` rather than `!= null`: null and undefined still mean "not sent", and now 0
+             * means "nothing earned yet", which reads the same to a person.
+             */
+            author.eliteScore != null && author.eliteScore > 0 ? (
               <RepScore
                 score={author.eliteScore}
                 size="sm"
@@ -134,29 +188,60 @@ export function PostCard({
         {menu}
       </div>
 
-      {content && (
-        // `whitespace-pre-wrap` because the composer's textarea keeps the author's line
-        // breaks and the backend stores them verbatim; collapsing them here would silently
-        // reflow every multi-paragraph post.
-        <p className="whitespace-pre-wrap break-words text-nx-body text-nx-text-primary">
-          {content}
-        </p>
-      )}
+      {/* THE BODY GROUP. Prose, the type-specific body, the location and the hashtags are all one
+          thing — what the post says — so they sit at the `tight` rung together and the 16 above
+          separates them from the face rather than from each other. Rendered only when it has
+          something in it, so a bare-body post does not pay for an empty 16. */}
+      {(content || body || location || (hashtags && hashtags.length > 0)) && (
+        <div className="flex flex-col gap-[var(--nx-space-tight)]">
+          {/**
+           * THE BADGE ROW OPENS THE BODY, and it used to not exist at all — the post type was
+           * invisible and the hashtags sat alone at the very bottom of the card, after the
+           * location and before the rule.
+           *
+           * Reading order is what changed: the DS puts *what kind of thing this is* and *what it
+           * is about* before the prose, so a reader scanning a column can skip a `POLL` or stop on
+           * a `Redis` without parsing a paragraph first. At the bottom the same two facts arrive
+           * after the reader has already decided.
+           *
+           * TWO DIFFERENT KINDS OF BADGE, deliberately styled apart. The type is `mono neutral`
+           * because it is a machine fact — the enum the backend stored. The hashtags are `accent`
+           * because they are author-declared claims about subject matter. Same row, different
+           * weight, and the difference is the point.
+           *
+           * `REGULAR` IS SUPPRESSED: it is the default kind and labelling every ordinary post
+           * "REGULAR" would put a badge that never varies on most of the column — the same
+           * complaint that removed the `Khác` badge from crawled cards.
+           */}
+          {(postType && postType !== 'REGULAR') || (hashtags && hashtags.length > 0) ? (
+            <div className="flex flex-wrap items-center gap-[var(--nx-space-pair)]">
+              {postType && postType !== 'REGULAR' && (
+                <Badge mono variant="neutral">
+                  {postType}
+                </Badge>
+              )}
+              {hashtags?.map((tag) => (
+                // Still not links: `SearchController` has no hashtag handling, so "#kafka" is not
+                // a filter the backend understands and an anchor would promise a tag feed that
+                // does not exist.
+                <Badge key={tag} variant="accent">
+                  {tag}
+                </Badge>
+              ))}
+            </div>
+          ) : null}
+          {content && (
+            // `whitespace-pre-wrap` because the composer's textarea keeps the author's line
+            // breaks and the backend stores them verbatim; collapsing them here would silently
+            // reflow every multi-paragraph post.
+            <p className="whitespace-pre-wrap break-words text-nx-body text-nx-text-primary">
+              {content}
+            </p>
+          )}
 
-      {body}
+          {body}
 
-      {location && <LocationBadge location={location} mapsLabel={t('post.openInMaps')} />}
-
-      {hashtags && hashtags.length > 0 && (
-        <div className="flex flex-wrap gap-x-3 gap-y-1">
-          {hashtags.map((tag) => (
-            // Not links. `SearchController` is one free-text query over users/posts/books
-            // with no hashtag handling at all, so "#kafka" is not a filter the backend
-            // understands — linking it would promise a tag feed that does not exist.
-            <span key={tag} className="text-nx-caption text-nx-text-accent">
-              #{tag}
-            </span>
-          ))}
+          {location && <LocationBadge location={location} mapsLabel={t('post.openInMaps')} />}
         </div>
       )}
 
@@ -165,11 +250,24 @@ export function PostCard({
           control that c-2 puts in `actions`, and showing it twice would let the two drift
           apart on the same screen. */}
       {(commentCount !== undefined || actions) && (
-        <div className="flex flex-col gap-3 border-t border-nx-border-subtle pt-3">
-          {commentCount !== undefined && (
-            <DeveloperMeta>{t('post.commentCount', { count: commentCount })}</DeveloperMeta>
-          )}
-          {actions}
+        /**
+         * THE RULE IS BLED TO THE CARD EDGE — `-mx-4` cancels the card's own 16px padding so the
+         * line runs the full width. An inset rule reads as a divider *inside* a box; a bled one
+         * reads as the card's own hinge, which is what it is: above it the post, below it what you
+         * can do about the post. That distinction is the reason the reaction strip needs no label.
+         *
+         * 16 above and 16 below. The 16 above is the group rung, paid by the card's `gap`; the 16
+         * below is `pt-4` here, so the rule sits centred in a 32px band rather than being crowded
+         * against the strip.
+         */
+        <div className="flex flex-col gap-[var(--nx-space-tight)]">
+          <div className="-mx-4 border-t border-nx-border-subtle" aria-hidden />
+          <div className="flex flex-col gap-[var(--nx-space-tight)] pt-2">
+            {commentCount !== undefined && (
+              <DeveloperMeta>{t('post.commentCount', { count: commentCount })}</DeveloperMeta>
+            )}
+            {actions}
+          </div>
         </div>
       )}
     </Card>

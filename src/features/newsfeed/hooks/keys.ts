@@ -21,4 +21,13 @@ export const newsfeedKeys = {
    * other, so `useRefreshFeed` sweeps the shared `all` prefix rather than either leaf.
    */
   publicFeed: () => ['newsfeed', 'public'] as const,
+
+  /**
+   * One author's posts. Under the same `newsfeed` prefix so `useRefreshFeed` sweeps it too — a
+   * post created or deleted changes this list exactly as it changes the other two.
+   */
+  userPosts: (userId: number) => ['newsfeed', 'user-posts', userId] as const,
+
+  /** One post, for the permalink page. Same prefix, so a create or delete sweeps it too. */
+  post: (postId: number) => ['newsfeed', 'post', postId] as const,
 };

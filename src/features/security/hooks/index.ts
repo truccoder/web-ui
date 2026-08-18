@@ -11,6 +11,7 @@ export {
 } from './use-recovery';
 export {
   useMyProfile,
+  usePublicProfile,
   useUpdateProfile,
   useChangePassword,
   useChangeProfilePicture,

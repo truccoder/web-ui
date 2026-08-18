@@ -104,7 +104,7 @@ export function LocationPicker({ value, onChange }: LocationPickerProps) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1.5 rounded-nx-full border border-dashed border-nx-border-strong px-2.5 py-1 text-nx-body-sm text-nx-text-muted transition-colors duration-[var(--nx-duration-fast)] hover:border-nx-text-muted hover:text-nx-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
+        className="inline-flex items-center gap-2 rounded-nx-full border border-dashed border-nx-border-strong px-2.5 py-1 text-nx-body-sm text-nx-text-muted transition-colors duration-[var(--nx-duration-fast)] hover:border-nx-text-muted hover:text-nx-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
       >
         <MapPin className="size-3.5" aria-hidden />
         {t('createPost.location.add')}

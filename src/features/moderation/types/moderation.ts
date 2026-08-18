@@ -155,3 +155,42 @@ export type BannedUserPage = Required<
     'number' | 'size' | 'totalElements' | 'totalPages' | 'first' | 'last' | 'empty'
   >
 > & { content: BannedUser[] };
+
+/**
+ * ─── THE USER SIDE OF MODERATION ────────────────────────────────────────────────────────────
+ *
+ * `AppealController` (`/v1/api/moderation`) is in the same backend package as the admin queue but
+ * is NOT admin-gated: it answers "what has been recorded against me, and can I contest it". That
+ * is why these types live beside the admin ones rather than in a feature of their own — one
+ * backend package, one frontend feature (CLAUDE.md §2).
+ */
+
+/** One thing recorded against the caller. */
+export type UserViolation = Schemas['UserViolationDto'];
+
+/** One appeal and, once decided, how it was decided. */
+export type Appeal = Schemas['AppealDto'];
+
+/** What `POST /moderation/appeals` takes. */
+export type AppealInput = Schemas['AppealRequestDto'];
+
+export type AppealStatus = NonNullable<Appeal['status']>;
+
+export type ViolationSeverity = NonNullable<UserViolation['severity']>;
+
+/** One page of the admin appeal queue. Same page envelope as the post and log searches. */
+export type AppealPage = Required<
+  Pick<
+    Schemas['PageAppealDto'],
+    'number' | 'size' | 'totalElements' | 'totalPages' | 'first' | 'last' | 'empty'
+  >
+> & { content: Appeal[] };
+
+/**
+ * The optional note on an appeal decision.
+ *
+ * THE WHOLE BODY IS OPTIONAL SERVER-SIDE — `@RequestBody(required = false)`, with a comment saying
+ * "an admin who just wants to reject should not have to POST `{}`". So the note is genuinely
+ * optional and the UI must not demand one.
+ */
+export type AppealDecisionInput = Schemas['AppealDecisionRequestDto'];

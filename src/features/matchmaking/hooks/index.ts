@@ -1,5 +1,9 @@
 export { matchmakingKeys } from './keys';
 export {
+  useProjects,
+  useProject,
+  useProjectApplications,
+  useMyApplications,
   useSuggestedCandidates,
   useCreateProject,
   useApplyToPosition,

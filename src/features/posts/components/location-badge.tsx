@@ -47,7 +47,7 @@ export function LocationBadge({
   return (
     <span
       className={cn(
-        'inline-flex max-w-full items-center gap-1.5 rounded-nx-full',
+        'inline-flex max-w-full items-center gap-2 rounded-nx-full',
         'bg-nx-surface-sunken px-2.5 py-1 text-nx-body-sm text-nx-text-secondary',
         className
       )}

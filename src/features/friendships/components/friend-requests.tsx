@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Button, Card, EmptyState, Skeleton, Tabs } from '@/shared/components';
+import { Button, EmptyState, Skeleton, Tabs } from '@/shared/components';
 import { getErrorMessage } from '@/shared/lib/api-error';
-import { useI18n } from '@/core/i18n';
+import { useT } from '@/core/i18n';
+import { useIntlLocale } from '@/shared/lib/format';
 import {
   useAcceptFriendRequest,
   useCancelFriendRequest,
@@ -34,9 +35,9 @@ export interface FriendRequestsProps {
 
 function RequestRowSkeleton() {
   return (
-    <div className="flex items-center gap-3 p-3">
+    <div className="flex items-center gap-3 rounded-nx-md bg-nx-surface-card px-5 py-3">
       <Skeleton circle height={40} />
-      <div className="flex flex-1 flex-col gap-1.5">
+      <div className="flex flex-1 flex-col gap-2">
         <Skeleton width={160} height={14} />
         <Skeleton width={90} height={12} />
       </div>
@@ -47,11 +48,11 @@ function RequestRowSkeleton() {
 
 function RequestListSkeleton({ rows }: { rows: number }) {
   return (
-    <Card padding={0} className="divide-y divide-nx-border-subtle overflow-hidden">
+    <div className="flex flex-col gap-4">
       {Array.from({ length: rows }).map((_, i) => (
         <RequestRowSkeleton key={i} />
       ))}
-    </Card>
+    </div>
   );
 }
 
@@ -67,7 +68,10 @@ function ErrorBanner({ error }: { error: unknown }) {
 }
 
 export function FriendRequests({ tabSize = 'md' }: FriendRequestsProps = {}) {
-  const { t, locale } = useI18n();
+  const t = useT();
+  // `useIntlLocale` rather than a local `locale === 'vi' ? …` ternary: the app-locale → BCP-47 map
+  // belongs in one place, so adding a third language does not leave this row silently on English.
+  const dateLocale = useIntlLocale();
   const [tab, setTab] = useState<RequestTab>('received');
 
   const { data: pending, isLoading: loadingPending } = usePendingRequests();
@@ -78,7 +82,6 @@ export function FriendRequests({ tabSize = 'md' }: FriendRequestsProps = {}) {
   const cancel = useCancelFriendRequest();
 
   const pendingCount = pending?.length ?? 0;
-  const dateLocale = locale === 'vi' ? 'vi-VN' : 'en-US';
   const formatDate = (iso: string) =>
     new Date(iso).toLocaleDateString(dateLocale, { day: 'numeric', month: 'long' });
 
@@ -112,9 +115,9 @@ export function FriendRequests({ tabSize = 'md' }: FriendRequestsProps = {}) {
           <>
             {accept.isError && <ErrorBanner error={accept.error} />}
             {reject.isError && <ErrorBanner error={reject.error} />}
-            <Card padding={0} className="divide-y divide-nx-border-subtle overflow-hidden">
+            <div className="flex flex-col gap-4">
               {pending?.map((req) => (
-                <div key={req.id} className="p-3">
+                <div key={req.id}>
                   <FriendListItem
                     name={req.requesterFullName}
                     avatarUrl={req.requesterProfilePictureUrl}
@@ -143,7 +146,7 @@ export function FriendRequests({ tabSize = 'md' }: FriendRequestsProps = {}) {
                   />
                 </div>
               ))}
-            </Card>
+            </div>
           </>
         ))}
 
@@ -158,9 +161,9 @@ export function FriendRequests({ tabSize = 'md' }: FriendRequestsProps = {}) {
         ) : (
           <>
             {cancel.isError && <ErrorBanner error={cancel.error} />}
-            <Card padding={0} className="divide-y divide-nx-border-subtle overflow-hidden">
+            <div className="flex flex-col gap-4">
               {sent.map((req) => (
-                <div key={req.id} className="p-3">
+                <div key={req.id}>
                   <FriendListItem
                     name={req.addresseeFullName}
                     avatarUrl={req.addresseeProfilePictureUrl}
@@ -178,7 +181,7 @@ export function FriendRequests({ tabSize = 'md' }: FriendRequestsProps = {}) {
                   />
                 </div>
               ))}
-            </Card>
+            </div>
           </>
         ))}
     </div>

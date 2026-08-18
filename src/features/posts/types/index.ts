@@ -32,3 +32,4 @@ export type {
   GoogleAuthUrl,
   CalendarStatus,
 } from './event';
+export type { ReactorPage } from './reaction';

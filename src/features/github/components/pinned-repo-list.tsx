@@ -4,6 +4,7 @@ import { GitFork, Star } from 'lucide-react';
 import { Card } from '@/shared/components';
 import { useT } from '@/core/i18n';
 import { cn } from '@/shared/lib/cn';
+import { useIntlLocale } from '@/shared/lib/format';
 import type { PinnedRepo } from '../types/github';
 
 /**
@@ -30,6 +31,9 @@ export interface PinnedRepoListProps {
 
 export function PinnedRepoList({ repos, className }: PinnedRepoListProps) {
   const t = useT();
+  // Star and fork counts are grouped in the reader's locale — `1,234` and `1.234` are the same
+  // number to a machine and different numbers to a person.
+  const localeTag = useIntlLocale();
 
   if (repos.length === 0) return null;
 
@@ -75,12 +79,12 @@ export function PinnedRepoList({ repos, className }: PinnedRepoListProps) {
 
                   <span className="inline-flex items-center gap-1">
                     <Star className="size-3" aria-hidden />
-                    {repo.stargazerCount.toLocaleString('en-US')}
+                    {repo.stargazerCount.toLocaleString(localeTag)}
                   </span>
 
                   <span className="inline-flex items-center gap-1">
                     <GitFork className="size-3" aria-hidden />
-                    {repo.forkCount.toLocaleString('en-US')}
+                    {repo.forkCount.toLocaleString(localeTag)}
                   </span>
                 </span>
               </a>

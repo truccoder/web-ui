@@ -1,5 +1,6 @@
 export type {
   Book,
+  BookPage,
   BookFileFormat,
   BookReview,
   CreateReviewRequest,

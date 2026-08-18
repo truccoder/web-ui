@@ -180,7 +180,7 @@ export function QuizComposer({ value, onChange }: QuizComposerProps) {
             aria-label={t('createPost.quiz.questionN', { index: questionIndex + 1 })}
           />
 
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2">
             <span className="text-nx-body-sm font-medium text-nx-text-primary">
               {t('createPost.quiz.options')}
             </span>

@@ -10,3 +10,4 @@ export { MyBooksList, type MyBooksListProps } from './my-books-list';
 export { BookReviewList, type BookReviewListProps } from './book-review-list';
 export { PaymentResultPanel, type PaymentResultPanelProps } from './payment-result-panel';
 export { StarRating, type StarRatingProps } from './star-rating';
+export { BookLibrary, type BookLibraryProps } from './book-library';

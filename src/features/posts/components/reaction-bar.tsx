@@ -1,11 +1,13 @@
 'use client';
 
+import { useState } from 'react';
 import { Angry, Frown, Heart, Laugh, ThumbsUp } from 'lucide-react';
 import { useT } from '@/core/i18n';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { cn } from '@/shared/lib/cn';
 import { useMyReaction, useRemoveReaction, useUpsertReaction } from '../hooks/use-reaction';
 import type { ReactionType } from '../types/reaction';
+import { ReactorDialog } from './reactor-dialog';
 
 /**
  * The reaction row for a post — fills `PostCard`'s `actions` slot.
@@ -54,8 +56,17 @@ const REACTIONS = [
   { type: 'ANGRY', Icon: Angry, labelKey: 'post.reaction.ANGRY' },
 ] as const satisfies ReadonlyArray<{ type: ReactionType; Icon: typeof ThumbsUp; labelKey: string }>;
 
+/**
+ * The five types in the order this bar shows them, for anything that has to list them the same
+ * way — the reactor dialog's tabs. Exported from here rather than duplicated so the two can never
+ * disagree about the order or drop a value when the enum grows.
+ */
+export const REACTION_ORDER = REACTIONS.map((reaction) => reaction.type);
+
 export function ReactionBar({ postId, count, onChanged, className }: ReactionBarProps) {
   const t = useT();
+
+  const [reactorsOpen, setReactorsOpen] = useState(false);
 
   const myReaction = useMyReaction(postId);
   const upsert = useUpsertReaction({ onSuccess: () => onChanged?.() });
@@ -74,7 +85,10 @@ export function ReactionBar({ postId, count, onChanged, className }: ReactionBar
 
   return (
     <div className={cn('flex flex-col gap-1', className)}>
-      <div className="flex flex-wrap items-center gap-1">
+      {/* ONE ROW: verbs left, counts right. The DS's acting row reads as a sentence — what you can
+          do, then what has already been done — and pushing the counts to the far end is what makes
+          the two halves legible as different kinds of thing rather than a run of six chips. */}
+      <div className="flex flex-wrap items-center gap-[var(--nx-space-pair)]">
         {REACTIONS.map(({ type, Icon, labelKey }) => {
           const active = current === type;
           return (
@@ -85,11 +99,10 @@ export function ReactionBar({ postId, count, onChanged, className }: ReactionBar
               // actions, and it is the part a screen reader uses to announce the state
               // the border communicates visually.
               aria-pressed={active}
-              aria-label={t(labelKey)}
-              title={t(labelKey)}
               onClick={() => pick(type)}
               className={cn(
-                'inline-flex h-7 items-center justify-center rounded-nx-xs border px-2',
+                'inline-flex h-7 items-center gap-2 rounded-nx-xs border px-2',
+                'text-nx-body-sm',
                 'transition-colors duration-[var(--nx-duration-fast)] ease-nx-out',
                 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring',
                 active
@@ -97,16 +110,41 @@ export function ReactionBar({ postId, count, onChanged, className }: ReactionBar
                   : 'border-transparent text-nx-text-muted hover:bg-nx-surface-hover hover:text-nx-text-primary'
               )}
             >
-              <Icon aria-hidden className="size-4" />
+              <Icon aria-hidden className="size-4 shrink-0" />
+              {/* THE LABEL IS VISIBLE NOW, not just an `aria-label`. Five unlabelled glyphs made
+                  the reader guess which face meant what, and the guess is not obvious for `CRY`
+                  versus `ANGRY` at 16px. With the word present the icon stops carrying meaning on
+                  its own, which is what the DS's `Hữu ích · Sáng tỏ · Ghi nhận` row does too. */}
+              <span>{t(labelKey)}</span>
             </button>
           );
         })}
 
-        {count !== undefined && (
-          <span className="ml-1 font-mono text-nx-micro text-nx-text-muted">
-            {t('post.reaction.count', { count })}
-          </span>
-        )}
+        {/* THE COUNT IS A BUTTON NOW. It used to be a dead number: it said something had happened
+            and not who it happened with, which on a product whose reactions are meant to be
+            credibility signals is most of the information missing. `GET /posts/{id}/reactions`
+            existed with no caller.
+
+            IT STAYS A COUNT AT ZERO AND STOPS BEING A CONTROL — opening a list of nobody is a
+            worse answer than the number already given. */}
+        {count !== undefined &&
+          (count > 0 ? (
+            <button
+              type="button"
+              onClick={() => setReactorsOpen(true)}
+              className={cn(
+                'ml-auto pl-[var(--nx-space-element)] font-mono text-nx-micro text-nx-text-muted',
+                'hover:text-nx-text-primary hover:underline',
+                'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring'
+              )}
+            >
+              {t('post.reaction.count', { count })}
+            </button>
+          ) : (
+            <span className="ml-auto pl-[var(--nx-space-element)] font-mono text-nx-micro text-nx-text-muted">
+              {t('post.reaction.count', { count })}
+            </span>
+          ))}
       </div>
 
       {/* The optimistic highlight has already rolled back by the time this renders, so the
@@ -116,6 +154,8 @@ export function ReactionBar({ postId, count, onChanged, className }: ReactionBar
           {getErrorMessage(error)}
         </p>
       )}
+
+      <ReactorDialog postId={postId} open={reactorsOpen} onClose={() => setReactorsOpen(false)} />
     </div>
   );
 }

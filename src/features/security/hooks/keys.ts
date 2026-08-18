@@ -14,4 +14,10 @@ export const securityKeys = {
    * the feature (cycle 3 wiring), it should read this cache rather than fetch again.
    */
   profile: () => ['security', 'profile', 'me'] as const,
+
+  /**
+   * Someone else's profile, keyed by HANDLE because the endpoint is. Its own branch: nothing the
+   * signed-in user does to their own profile can change what a stranger's page shows.
+   */
+  publicProfile: (username: string) => ['security', 'profile', 'public', username] as const,
 };

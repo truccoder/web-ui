@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Tabs } from '@/shared/components';
+import { StickyBlock, Tabs } from '@/shared/components';
 import { Newsfeed, useRefreshFeed, type FeedScope } from '@/features/newsfeed';
 import { PostComposer } from '@/features/posts';
 import { useT } from '@/core/i18n';
@@ -46,22 +46,35 @@ export default function NewsfeedPage() {
     // The block rung between canvas blocks. Every gap on this screen is a ladder rung; nothing
     // sets a spacing value of its own.
     <div className="flex flex-col gap-[var(--nx-space-block)]">
-      {/* STICKY, and the sticky is the part worth reading twice. `position: sticky` leaves the
-          element in normal flow horizontally — only its paint position moves — so it keeps the
-          canvas's own centring for free, with no second mechanism to hold in agreement with the
-          first. A fixed overlay would have to reproduce the scroller's gutter reserve by hand.
-
-          `-mt-7` cancels the canvas's own top padding while stuck: the 28 above the first block
-          is ground between the chrome and the content, and when the first block becomes the
-          chrome's neighbour there is no such relationship left to space. */}
-      <div className="sticky top-0 z-20 -mx-6 -mt-7 bg-nx-surface-page px-6 pt-7">
+      {/**
+       * THE FILTER IS A CARD THAT PARKS UNDER THE CHROME, and both halves of that were wrong here.
+       *
+       * It stuck at `top-0` behind a `z-30` top bar — so scrolling did not park it, it slid the
+       * tabs *underneath* the chrome and they vanished. And its fill was `surface-page`, the
+       * ground's own colour, so even before it moved it read as no background at all: a strip of
+       * ground laid over ground. Both are what the owner reported.
+       *
+       * The chrome line is `--spacing-nx-topbar`, not zero, and the fill is `surface-card` like
+       * every other block on the ground. `StickyBlock` owns the rest — the sentinel, the latch,
+       * and R10's rule that a stuck block keeps its shadow and squares only its top two corners.
+       *
+       * NO HORIZONTAL BLEED ANY MORE, and that removes a whole class of bug rather than fixing
+       * one. The old `-mx-4 px-4 lg:mx-0` existed to paint a band wider than the measure; a card
+       * is the measure, so it needs no negative margin to keep in step with a responsive canvas
+       * padding — which is exactly what had bled 8px past the viewport at 375.
+       *
+       * `px-2.5` on the tablist is the kit's `0 10px`: the inset split (§5.1) — the bar insets 10
+       * and each tab's own 12 completes the line to its label.
+       */}
+      <StickyBlock>
         <Tabs
           tabs={tabs}
           active={scope}
           onChange={(id) => setScope(id as FeedScope)}
           aria-label={t('newsfeed.tabs.label')}
+          className="px-2.5"
         />
-      </div>
+      </StickyBlock>
 
       <PostComposer onPosted={refreshFeed} />
 

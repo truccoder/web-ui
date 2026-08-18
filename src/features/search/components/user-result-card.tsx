@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { DeveloperIdentity } from '@/shared/components';
 import { RepScore } from '@/features/reputation';
 import { useT } from '@/core/i18n';
@@ -9,10 +10,16 @@ import type { SearchUser } from '../types/search';
 /**
  * One person in the results.
  *
- * NOT A LINK, DELIBERATELY. The backend exposes only `GET /profile/me` — there is no endpoint for
- * anybody else's profile — so there is nowhere for this row to go. CLAUDE.md's Phase 3 note says
- * it plainly: design to that limit, do not ship links that 404. If a public profile endpoint
- * appears, this is the component that grows an anchor.
+ * IT IS A LINK NOW, AND FOR SIX MONTHS IT WAS NOT. The note this replaces read: "the backend
+ * exposes only `GET /profile/me` … there is nowhere for this row to go … if a public profile
+ * endpoint appears, this is the component that grows an anchor." It appeared —
+ * `GET /users/{username}/profile`, 2026-08-09 — so this is that anchor.
+ *
+ * THE LINK IS CONDITIONAL ON `username`, not on the endpoint existing. `SearchUser` types the
+ * handle as nullable and the column is neither `UNIQUE` nor `NOT NULL` on the backend (registration
+ * never sets it — the 32 values in the database are seed data), so a result with no handle is a
+ * real case rather than a defensive branch. Those rows stay static: the old rule still holds that a
+ * link which 404s is worse than no link.
  *
  * `RepScore` COMES FROM `features/reputation` THROUGH ITS BARREL, which that feature's `index.ts`
  * anticipates in writing: `eliteScore` ships inside search and feed payloads, so the component
@@ -30,7 +37,7 @@ export function UserResultCard({ user, className }: UserResultCardProps) {
   // same call `PostCard` makes for feed authors.
   const name = user.fullName?.trim() || t('search.unknownPerson');
 
-  return (
+  const row = (
     <div className={cn('flex items-center gap-3 px-3 py-3', className)}>
       <DeveloperIdentity
         name={name}
@@ -45,5 +52,16 @@ export function UserResultCard({ user, className }: UserResultCardProps) {
         className="min-w-0 flex-1"
       />
     </div>
+  );
+
+  if (!user.username) return row;
+
+  return (
+    <Link
+      href={`/u/${encodeURIComponent(user.username)}`}
+      className="block rounded-nx-sm hover:bg-nx-surface-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
+    >
+      {row}
+    </Link>
   );
 }

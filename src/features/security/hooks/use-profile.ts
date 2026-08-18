@@ -14,6 +14,31 @@ import { securityKeys } from './keys';
  * so the UI updates without a refetch. Server state stays in React Query, never Redux.
  */
 
+/**
+ * GET /v1/api/users/{username}/profile — someone else's profile.
+ *
+ * WHY THE FEED CANNOT USE THIS, stated here because it is the question every reader will have.
+ * `FeedPostDataDto` carries `authorId`, `authorFullName`, `authorEliteScore` and
+ * `authorProfilePictureUrl` — but **no `authorUsername`**, and no endpoint maps an id back to a
+ * handle. So a post in the newsfeed still has no way to reach its author's page. The two surfaces
+ * that CAN link are the friends list (`UserProfileDto`) and search (`UserDto`), both of which
+ * carry a username already. Raised as a backend request: one field on the feed DTO closes it.
+ *
+ * `enabled` guards the empty string, because a route param can be missing while the router
+ * settles and a request for `/users//profile` is a 404 nobody learns anything from.
+ *
+ * `retry: false` because the interesting failure is 404 — "no such handle" — and retrying a 404
+ * three times only delays the empty state the reader is waiting for.
+ */
+export function usePublicProfile(username: string) {
+  return useQuery({
+    queryKey: securityKeys.publicProfile(username),
+    queryFn: () => profileApi.getPublicProfile(username),
+    enabled: Boolean(username),
+    retry: false,
+  });
+}
+
 /** GET /v1/api/profile/me — the signed-in user's profile. */
 export function useMyProfile() {
   return useQuery({

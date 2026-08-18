@@ -74,7 +74,7 @@ function PostReviewCard({ post }: { post: PostModerationDetail }) {
     });
 
   return (
-    <Card padding={16} className="flex flex-col gap-3">
+    <Card className="flex flex-col gap-3">
       <div className="flex items-start justify-between gap-3">
         <div className="flex flex-col gap-0.5">
           <p className="text-nx-body-sm font-medium text-nx-text-primary">

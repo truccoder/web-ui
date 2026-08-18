@@ -4,6 +4,7 @@ import { ShieldCheck } from 'lucide-react';
 import { Card, Skeleton } from '@/shared/components';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { useT } from '@/core/i18n';
+import { useIntlLocale } from '@/shared/lib/format';
 import { useReputation } from '../hooks/use-reputation';
 import { RepScore } from './rep-score';
 
@@ -27,18 +28,31 @@ import { RepScore } from './rep-score';
 export interface ReputationCardProps {
   /** Whose score to show. Undefined while the caller is still resolving it. */
   userId?: number;
+  /**
+   * Somebody else's score — swaps the subtitle.
+   *
+   * The default reads *"Điểm uy tín tích luỹ từ đóng góp **của bạn**"* — "**your** contributions".
+   * Rendered on `/u/{handle}` that sentence attributes another person's score to the reader, which
+   * is not a tone problem but a false statement about whose number is on screen.
+   *
+   * Only the subtitle moves. The chip, the bar and the "N points to the next level" line are all
+   * facts about the subject and read correctly either way.
+   *
+   * @default false
+   */
+  readOnly?: boolean;
 }
 
 function ReputationCardShell({ children }: { children: React.ReactNode }) {
-  return (
-    <Card padding={24} className="w-full">
-      {children}
-    </Card>
-  );
+  return <Card className="w-full">{children}</Card>;
 }
 
-export function ReputationCard({ userId }: ReputationCardProps) {
+export function ReputationCard({ userId, readOnly = false }: ReputationCardProps) {
   const t = useT();
+  // Both numbers below are interpolated into a sentence, which is exactly where a wrong grouping
+  // separator does the most damage: `8.800` inside Vietnamese prose reads as 8.8, so the sentence
+  // would state a number the API never sent.
+  const localeTag = useIntlLocale();
   const { data, isPending, isError, error } = useReputation(userId);
 
   if (isPending) {
@@ -88,10 +102,12 @@ export function ReputationCard({ userId }: ReputationCardProps) {
           <h3 className="text-nx-heading font-semibold text-nx-text-primary">
             {t('reputation.title')}
           </h3>
-          <p className="text-nx-body-sm text-nx-text-muted">{t('reputation.desc')}</p>
+          <p className="text-nx-body-sm text-nx-text-muted">
+            {readOnly ? t('reputation.descOther') : t('reputation.desc')}
+          </p>
         </div>
         {verifiedExpert && (
-          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-nx-sm border border-nx-rep-border bg-nx-rep-soft px-2 py-1 text-nx-caption font-medium text-nx-rep-text">
+          <span className="inline-flex shrink-0 items-center gap-2 rounded-nx-sm border border-nx-rep-border bg-nx-rep-soft px-2 py-1 text-nx-caption font-medium text-nx-rep-text">
             <ShieldCheck className="size-3.5" aria-hidden />
             {t('reputation.verifiedExpert')}
           </span>
@@ -115,8 +131,8 @@ export function ReputationCard({ userId }: ReputationCardProps) {
           {isTopLevel
             ? t('reputation.topLevel')
             : t('reputation.toNextLevel', {
-                remaining: remaining.toLocaleString('en-US'),
-                next: nextLevelMin.toLocaleString('en-US'),
+                remaining: remaining.toLocaleString(localeTag),
+                next: nextLevelMin.toLocaleString(localeTag),
               })}
         </p>
       </div>

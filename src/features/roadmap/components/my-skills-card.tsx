@@ -40,6 +40,17 @@ export interface MySkillsCardProps {
    * rather than firing it for an id nobody has yet.
    */
   userId?: number;
+  /**
+   * Somebody else's skills — changes the EMPTY state only.
+   *
+   * The owner's copy is an instruction ("record a skill from the roadmap and it will show here"),
+   * which is an action the viewer of another person's profile cannot take and was never being
+   * offered. The rows themselves need no variant: the backend already decides what a viewer may
+   * see, and a stranger gets `VERIFIED` only.
+   *
+   * @default false
+   */
+  readOnly?: boolean;
 }
 
 const TIER_LABEL_KEY: Record<VerificationTier, string> = {
@@ -79,7 +90,7 @@ function sortRows(rows: readonly RoadmapProgress[]): RoadmapProgress[] {
   );
 }
 
-export function MySkillsCard({ userId }: MySkillsCardProps) {
+export function MySkillsCard({ userId, readOnly = false }: MySkillsCardProps) {
   const t = useT();
   const {
     data: rows,
@@ -92,7 +103,7 @@ export function MySkillsCard({ userId }: MySkillsCardProps) {
   // the page's point of view.
   if (userId == null || isPending) {
     return (
-      <Card padding={16}>
+      <Card>
         <Skeleton lines={3} />
       </Card>
     );
@@ -100,7 +111,7 @@ export function MySkillsCard({ userId }: MySkillsCardProps) {
 
   if (isError) {
     return (
-      <Card padding={16}>
+      <Card>
         <p className="text-nx-caption text-nx-status-danger-fg">
           {getErrorMessage(error, t('profile.skills.loadError'))}
         </p>
@@ -110,18 +121,20 @@ export function MySkillsCard({ userId }: MySkillsCardProps) {
 
   if (rows.length === 0) {
     return (
-      <Card padding={16}>
+      <Card>
         <EmptyState
           compact
           title={t('profile.skills.emptyTitle')}
-          description={t('profile.skills.emptyDesc')}
+          description={
+            readOnly ? t('profile.skills.emptyDescOther') : t('profile.skills.emptyDesc')
+          }
         />
       </Card>
     );
   }
 
   return (
-    <Card padding={16}>
+    <Card>
       <ul className="flex flex-col gap-2">
         {sortRows(rows).map((row) => (
           <li
@@ -129,7 +142,7 @@ export function MySkillsCard({ userId }: MySkillsCardProps) {
             className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1"
           >
             <span className="text-nx-body-sm font-medium text-nx-text-primary">{row.nodeName}</span>
-            <div className="flex shrink-0 items-center gap-1.5">
+            <div className="flex shrink-0 items-center gap-2">
               {/* The tier says HOW it was backed up, which is what makes one verified skill
                   different from another — a GitHub-certified node is a stronger claim than a
                   self-declared one, and collapsing them to a single tick throws that away. */}

@@ -25,6 +25,8 @@ export { bookApi, paymentApi } from './api';
 export {
   BookActions,
   type BookActionsProps,
+  BookLibrary,
+  type BookLibraryProps,
   BookPurchaseButton,
   type BookPurchaseButtonProps,
   BookRatingSummary,
@@ -44,6 +46,7 @@ export {
 export {
   bookstoreKeys,
   useBook,
+  useLibrary,
   useBooksByAuthor,
   useBookPreviewUrl,
   useBookReviews,
@@ -57,6 +60,7 @@ export {
 
 export type {
   Book,
+  BookPage,
   BookFileFormat,
   BookReview,
   CreateReviewRequest,

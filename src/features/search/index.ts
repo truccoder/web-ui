@@ -12,14 +12,19 @@
  * submits into it. The field lives here rather than in `shared/` because "search" is a domain
  * concept, and `shared/` holding it would be the start of the next global bucket (§4).
  *
- * RESULTS ARE DEAD ENDS, ON PURPOSE. Neither a person nor a post can be opened: the backend has
- * no public profile endpoint and the app has no post-detail route. Recorded here so nobody
- * "fixes" it by shipping links that 404 — the constraint is in CLAUDE.md's Phase 3 note.
+ * RESULTS ARE NO LONGER DEAD ENDS, AND THIS NOTE IS KEPT AS THE CORRECTION. It used to read
+ * *"neither a person nor a post can be opened: the backend has no public profile endpoint and the
+ * app has no post-detail route"*, which was true and is not: `GET /users/{username}/profile`
+ * shipped on 2026-08-09, and `/posts/{id}` and `/books/{id}` exist. A person opens at
+ * `/u/{handle}`, a post at its timestamp, a book at its row.
+ *
+ * The one constraint that survives: a user row needs a HANDLE, not an id, and `username` is
+ * nullable — so a hit on an account that never set one still shows and still does not link.
  */
 
 export { searchApi } from './api';
 
-export { useSearch, searchKeys, MIN_QUERY_LENGTH } from './hooks';
+export { useSearch, useSuggestions, searchKeys, MIN_QUERY_LENGTH } from './hooks';
 
 export {
   SearchBar,
@@ -32,4 +37,11 @@ export {
   type PostResultCardProps,
 } from './components';
 
-export type { SearchUser, SearchBook, SearchPost, SearchResponse } from './types';
+export type {
+  SearchUser,
+  SearchBook,
+  SearchPost,
+  SearchResponse,
+  Suggestion,
+  SuggestionType,
+} from './types';

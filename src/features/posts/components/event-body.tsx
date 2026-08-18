@@ -123,7 +123,7 @@ export function EventBody({ details, actions, className }: EventBodyProps) {
 
       <div className="flex flex-col gap-1 text-nx-caption text-nx-text-secondary">
         {when && (
-          <span className="flex items-center gap-1.5">
+          <span className="flex items-center gap-2">
             <CalendarDays aria-hidden className="size-3.5 shrink-0" />
             <span>
               {when}
@@ -133,7 +133,7 @@ export function EventBody({ details, actions, className }: EventBodyProps) {
         )}
 
         {location?.trim() && (
-          <span className="flex items-center gap-1.5">
+          <span className="flex items-center gap-2">
             <MapPin aria-hidden className="size-3.5 shrink-0" />
             <span className="truncate">{location}</span>
           </span>
@@ -144,7 +144,7 @@ export function EventBody({ details, actions, className }: EventBodyProps) {
             href={joinUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 text-nx-text-link hover:text-nx-text-link-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
+            className="flex items-center gap-2 text-nx-text-link hover:text-nx-text-link-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
           >
             <Video aria-hidden className="size-3.5 shrink-0" />
             <span>{t('post.event.joinOnline')}</span>
@@ -155,7 +155,7 @@ export function EventBody({ details, actions, className }: EventBodyProps) {
             `GET /events/{postId}/attendees/count`, a cycle-3 call this card does not make.
             Wording says "up to N" so the two are never confused. */}
         {maxAttendees ? (
-          <span className="flex items-center gap-1.5">
+          <span className="flex items-center gap-2">
             <Users aria-hidden className="size-3.5 shrink-0" />
             <span>{t('post.event.maxAttendees', { count: maxAttendees })}</span>
           </span>
