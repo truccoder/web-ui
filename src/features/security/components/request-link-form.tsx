@@ -63,7 +63,7 @@ export function RequestLinkForm({ variant }: RequestLinkFormProps) {
           <h1 className="text-nx-title font-semibold text-nx-text-primary">{tk('successTitle')}</h1>
           <p className="text-nx-body-sm text-nx-text-secondary">{tk('successDesc')}</p>
         </div>
-        <Link href="/login" className="mt-6 block">
+        <Link href="/login" className="mt-5 block">
           <Button variant="secondary" icon={<ArrowLeft />} className="w-full">
             {tk('backToLogin')}
           </Button>
@@ -87,7 +87,7 @@ export function RequestLinkForm({ variant }: RequestLinkFormProps) {
 
       {/* `method="post"` — see `LoginForm`. No password here, but an email address in a URL is
           still personal data written into history and access logs. */}
-      <form onSubmit={submit} method="post" className="mt-6 flex flex-col gap-4" noValidate>
+      <form onSubmit={submit} method="post" className="mt-5 flex flex-col gap-4" noValidate>
         <Input
           label={t('auth.email')}
           type="email"

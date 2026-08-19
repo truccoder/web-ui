@@ -48,10 +48,14 @@ export function BrandMark({ size = 32, className }: BrandMarkProps) {
       <g className="dark:hidden">
         <defs>
           <mask id="nx-brand-chevron">
+            {/* eslint-disable-next-line no-restricted-syntax -- mask channel, not a colour:
+                inside a <mask>, white shows and black hides. Tokenising these would break
+                the cut-out. */}
             <rect x="8" y="8" width="240" height="240" rx="52" fill="#fff" />
             <path
               d="M83.36 81.64 L129.73 128 L83.36 174.36"
               fill="none"
+              // eslint-disable-next-line no-restricted-syntax -- mask channel, see above
               stroke="#000"
               strokeWidth="17"
               strokeLinecap="round"

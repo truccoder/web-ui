@@ -39,7 +39,7 @@ export default function AdminModerationPage() {
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       <div>
         <h1 className="text-nx-title font-semibold text-nx-text-primary">
           {t('moderation.title')}

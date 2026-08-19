@@ -188,6 +188,10 @@ export function RoadmapStagePath({
                  */
                 <li
                   aria-hidden
+                  // `mt-8` (32) off-ladder on purpose: this 1px connector is aligned to the
+                  // vertical centre of the node beside it, so the value is derived from node
+                  // geometry, not from the proximity ladder.
+                  // eslint-disable-next-line no-restricted-syntax -- node geometry, not a rung
                   className="mt-8 h-px w-[var(--nx-path-connector)] shrink-0 bg-nx-border-subtle"
                 />
               )}

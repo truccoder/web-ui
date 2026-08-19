@@ -50,7 +50,13 @@ export function TrendingCard({ item, className }: TrendingCardProps) {
         {/* Score means something different per source — Hacker News points, GitHub stars — so it
             is shown as a bare number with a flame rather than labelled as any one of them. */}
         {item.score !== null && (
-          <span className="flex shrink-0 items-center gap-1 text-nx-caption font-medium text-nx-rep">
+          // `text-nx-text-muted`, NOT `text-nx-rep`. Constitution rule 1: amber belongs to
+          // Elite Score, levels and verified skills, and nothing else. This is a crawled
+          // item's upvote count on someone else's site — dressing it in the reputation
+          // colour tells the reader a Hacker News score is reputation in this product, and
+          // on the feed it rendered LOUDER than the real Elite Score chip beside it. A count
+          // is apparatus; the flame already says what kind of number it is.
+          <span className="flex shrink-0 items-center gap-1 text-nx-caption font-medium text-nx-text-muted">
             <Flame className="size-3.5" />
             {item.score.toLocaleString('vi-VN')}
           </span>

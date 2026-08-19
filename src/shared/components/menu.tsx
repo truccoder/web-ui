@@ -212,7 +212,7 @@ export function Menu({
                 onMouseEnter={() => !item.disabled && setHighlight(index)}
                 onClick={() => select(index)}
                 className={cn(
-                  'flex cursor-pointer items-center gap-2 rounded-nx-sm px-2 py-1.5 text-nx-ui',
+                  'flex cursor-pointer items-center gap-2 rounded-nx-sm px-2 py-2 text-nx-ui',
                   '[&>svg]:size-4 [&>svg]:shrink-0',
                   item.danger ? 'text-nx-status-danger-fg' : 'text-nx-text-primary',
                   item.disabled && 'pointer-events-none opacity-50',

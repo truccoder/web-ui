@@ -64,8 +64,12 @@ const TIER_LABEL_KEY: Record<VerificationTier, string> = {
  * Status → badge. `VERIFIED` is the only success; `PENDING_APPROVAL` is warning rather than info
  * because it is waiting on someone else and the owner may want to chase it.
  */
-const STATUS_VARIANT: Record<VerificationStatus, 'success' | 'warning' | 'danger'> = {
-  VERIFIED: 'success',
+// `VERIFIED` is `rep`, NOT `success`. A verified skill is the canonical amber fact in this
+// product — the ledger has always drawn it that way — and dressing it in the success green
+// made one page state the same thing in two colours. The other two stay severity colours,
+// because pending and rejected are states of a request, not reputation.
+const STATUS_VARIANT: Record<VerificationStatus, 'rep' | 'warning' | 'danger'> = {
+  VERIFIED: 'rep',
   PENDING_APPROVAL: 'warning',
   REJECTED: 'danger',
 };

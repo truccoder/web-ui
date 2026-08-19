@@ -50,7 +50,7 @@ export interface ConversationViewProps {
 export function ConversationEmpty({ className }: { className?: string }) {
   const t = useT();
   return (
-    <div className={cn('grid h-full place-items-center p-6', className)}>
+    <div className={cn('grid h-full place-items-center px-5 py-4', className)}>
       <EmptyState
         title={t('chat.selectConversation')}
         description={t('chat.selectConversationDesc')}

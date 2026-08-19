@@ -74,6 +74,43 @@ export function formatCurrency(price: number, currency: string, localeTag: strin
 }
 
 /**
+ * The same price, split so the DIGITS can be set in mono and the CURRENCY MARK cannot.
+ *
+ * `₫` has no glyph in Geist Mono. Setting the whole formatted string in mono made the browser
+ * fall back mid-string to a face with different metrics, and the symbol rendered a few pixels
+ * above the baseline — visible on every priced book in the shelf. The design system already
+ * forbids the arrangement that caused it: mono is for numbers, ids and slugs, and a currency
+ * mark is none of those.
+ *
+ * `formatToParts` rather than a regex over the formatted string, because where the symbol sits
+ * and what separates it from the digits are locale decisions — `vi-VN` trails it, `en-US`
+ * leads with `$`, and neither is ours to hardcode.
+ */
+export function formatPriceParts(
+  price: number,
+  currency: string,
+  localeTag: string
+): { amount: string; symbol: string } {
+  try {
+    const parts = new Intl.NumberFormat(localeTag, { style: 'currency', currency }).formatToParts(
+      price
+    );
+    const symbol = parts
+      .filter((part) => part.type === 'currency')
+      .map((part) => part.value)
+      .join('');
+    const amount = parts
+      .filter((part) => part.type !== 'currency')
+      .map((part) => part.value)
+      .join('')
+      .trim();
+    return { amount, symbol };
+  } catch {
+    return { amount: price.toLocaleString(localeTag), symbol: currency };
+  }
+}
+
+/**
  * "Vừa xong" / "5 phút trước" / …, falling back to an absolute date after a week.
  *
  * ALSO PROMOTED AT P2.6cd, from a local helper in `PostCard` that said the same thing about

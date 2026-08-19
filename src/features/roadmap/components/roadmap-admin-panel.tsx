@@ -66,7 +66,7 @@ export function RoadmapAdminPanel({ roadmapId, className }: RoadmapAdminPanelPro
   if (!isAdmin) return null;
 
   return (
-    <div className={cn('flex flex-col gap-6', className)}>
+    <div className={cn('flex flex-col gap-5', className)}>
       <form
         className="flex flex-col gap-3"
         onSubmit={(event) => {

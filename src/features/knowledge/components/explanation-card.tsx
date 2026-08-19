@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { ExternalLink as ExternalLinkIcon } from 'lucide-react';
 import { Badge, Card } from '@/shared/components';
+import Link from 'next/link';
 import { useT } from '@/core/i18n';
 import type { Explanation } from '../types/knowledge';
 
@@ -25,9 +26,24 @@ export interface ExplanationCardProps {
   explanation: Explanation;
   /** Slot for save / retry controls when the explanation is fresh. */
   actions?: React.ReactNode;
+  /**
+   * Show a link back to the post this explains.
+   *
+   * OFF BY DEFAULT because the fresh case renders inline UNDER the very post it explains,
+   * where a link to the current page is noise. The library is the case that needs it: without
+   * it the vault is a column of explanations with nothing to say what any of them is about,
+   * and the one thing a knowledge vault must do is get you back to the source.
+   *
+   * `postId` has been on `ExplanationResponseDto` all along; nothing was reading it.
+   */
+  showSource?: boolean;
 }
 
-export function ExplanationCard({ explanation, actions }: ExplanationCardProps) {
+export function ExplanationCard({
+  explanation,
+  actions,
+  showSource = false,
+}: ExplanationCardProps) {
   const t = useT();
   const concepts = explanation.concepts ?? [];
   const prerequisites = explanation.prerequisites ?? [];
@@ -49,6 +65,15 @@ export function ExplanationCard({ explanation, actions }: ExplanationCardProps) 
             <span className="text-nx-caption text-nx-text-muted">
               {t('knowledge.explain.version', { version: explanation.version })}
             </span>
+          )}
+
+          {showSource && explanation.postId != null && (
+            <Link
+              href={`/posts/${explanation.postId}`}
+              className="ml-auto text-nx-caption text-nx-text-link hover:underline"
+            >
+              {t('knowledge.explain.viewSource')}
+            </Link>
           )}
         </div>
 

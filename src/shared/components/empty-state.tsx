@@ -42,7 +42,7 @@ export function EmptyState({
     <div
       className={cn(
         'flex flex-col items-center gap-2 text-center',
-        compact ? 'py-6' : 'py-16',
+        compact ? 'py-5' : 'py-12',
         className
       )}
     >

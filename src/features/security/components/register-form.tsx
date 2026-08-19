@@ -75,7 +75,7 @@ export function RegisterForm() {
             {t('auth.register.checkEmailDesc', { email: submittedEmail })}
           </p>
         </div>
-        <Link href="/login" className="mt-6 block">
+        <Link href="/login" className="mt-5 block">
           <Button variant="secondary" icon={<ArrowLeft />} className="w-full">
             {t('auth.register.backToLogin')}
           </Button>
@@ -122,7 +122,7 @@ export function RegisterForm() {
 
       {/* `method="post"` for the reason spelled out in `LoginForm`: without it a form defaults to
           GET, and an unhydrated page submits the password into the URL. */}
-      <form onSubmit={submit} method="post" className="mt-6 flex flex-col gap-4" noValidate>
+      <form onSubmit={submit} method="post" className="mt-5 flex flex-col gap-4" noValidate>
         <Input
           label={t('auth.fullname')}
           autoComplete="name"

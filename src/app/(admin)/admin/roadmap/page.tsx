@@ -41,7 +41,7 @@ function AdminRoadmapContent() {
   const roadmapId = Number.isInteger(rawId) && rawId > 0 ? rawId : undefined;
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-10">
       <div>
         <h1 className="text-nx-title font-semibold text-nx-text-primary">
           {t('roadmap.admin.title')}

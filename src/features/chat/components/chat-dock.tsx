@@ -150,7 +150,7 @@ export function ChatDock({ className }: ChatDockProps) {
             {totalUnread > 0 && (
               <span
                 className={cn(
-                  'absolute -top-1 -right-1 grid h-5 min-w-5 place-items-center rounded-nx-full px-1.5',
+                  'absolute -top-1 -right-1 grid h-5 min-w-5 place-items-center rounded-nx-full px-2',
                   'bg-nx-status-danger text-nx-caption font-semibold text-white',
                   // Ring in the page background so the badge stays legible over the accent circle.
                   'ring-2 ring-nx-surface-page'

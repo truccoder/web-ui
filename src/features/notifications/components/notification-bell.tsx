@@ -138,18 +138,18 @@ export function NotificationBell({ className }: NotificationBellProps) {
                 claimed once the server has actually said so — the bug caught at P2.6cd, where a
                 paused query rendered "no notifications" over a list that was merely not loaded. */}
             {list.isPending ? (
-              <p className="px-3 py-6 text-center text-nx-body-sm text-nx-text-muted">
+              <p className="px-3 py-5 text-center text-nx-body-sm text-nx-text-muted">
                 {t('notifications.bell.loading')}
               </p>
             ) : list.status !== 'success' ? (
               <p
                 role="alert"
-                className="px-3 py-6 text-center text-nx-body-sm text-nx-status-danger-fg"
+                className="px-3 py-5 text-center text-nx-body-sm text-nx-status-danger-fg"
               >
                 {t('notifications.error')}
               </p>
             ) : notifications.length === 0 ? (
-              <p className="px-3 py-6 text-center text-nx-body-sm text-nx-text-muted">
+              <p className="px-3 py-5 text-center text-nx-body-sm text-nx-text-muted">
                 {t('notifications.empty.title')}
               </p>
             ) : (

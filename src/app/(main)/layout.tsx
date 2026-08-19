@@ -29,7 +29,7 @@ import {
   type CommandAction,
 } from '@/shared/components';
 import { cn } from '@/shared/lib/cn';
-import { ChatClientProvider, ChatDock } from '@/features/chat';
+import { ChatClientProvider } from '@/features/chat';
 import { usePendingRequests } from '@/features/friendships';
 import { NotificationBell } from '@/features/notifications';
 import { SearchBar } from '@/features/search';
@@ -380,7 +380,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           <div key={group.labelKey} role="group" aria-labelledby={`navgrp-${group.labelKey}`}>
             <div
               id={`navgrp-${group.labelKey}`}
-              className="px-2.5 pb-1.5 text-nx-micro font-medium uppercase tracking-wide text-nx-text-faint"
+              className="px-2.5 pb-2 text-nx-micro font-medium uppercase tracking-wide text-nx-text-faint"
             >
               {t(group.labelKey)}
             </div>
@@ -603,7 +603,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           <div
             className={cn(
               'mx-auto flex h-full w-full max-w-[var(--spacing-nx-shell-max)]',
-              'items-center gap-2.5 px-3.5 xl:px-5'
+              'items-center gap-2.5 px-3 xl:px-5'
             )}
           >
             <IconButton
@@ -704,13 +704,13 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           <div
             className={cn(
               'sticky top-nx-topbar z-30 flex h-nx-subnav shrink-0 items-center gap-2',
-              'bg-nx-surface-card px-3.5 shadow-nx-1 xl:px-5'
+              'bg-nx-surface-card px-3 shadow-nx-1 xl:px-5'
             )}
           >
             <Link
               href="/newsfeed"
               className={cn(
-                'inline-flex items-center gap-1.5 text-nx-body-sm text-nx-text-muted',
+                'inline-flex items-center gap-2 text-nx-body-sm text-nx-text-muted',
                 'hover:text-nx-text-primary',
                 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring'
               )}
@@ -827,8 +827,19 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           emptyLabel={t('palette.empty')}
         />
 
-        {/* Floating chat. Hides itself on `/chats`, which is the same conversations full-screen. */}
-        <ChatDock />
+        {/* THE FLOATING CHAT DOCK IS GONE, and it is the design system that removed it.
+
+            Round 15 §1.4 retired `ChatDock` from the product and kept it as a specimen in
+            `chat.card.html`. Two reasons, and neither is tidiness. Custody: a dock that can
+            hold the same thread `/chats` holds is two owners for one object, with no rule
+            saying which is authoritative when both are open — the exact thing four rounds of
+            this system went out of their way to refuse. And shape: chat here is a full-bleed
+            focus route with a measure derived from the bubble, a searchable list and an info
+            column; a 340×420 dock is a worse copy of it, not a complement.
+
+            It also floated over every screen in the product, which is the one thing the
+            surface model forbids outright — nothing in flow may appear to float. `Chats` is
+            in the rail, one click from anywhere, so nothing is lost. */}
       </div>
     </ChatClientProvider>
   );

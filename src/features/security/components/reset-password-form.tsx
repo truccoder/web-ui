@@ -46,7 +46,7 @@ export function ResetPasswordForm() {
             {t('auth.resetPassword.invalidDesc')}
           </p>
         </div>
-        <Link href="/forgot-password" className="mt-6 block">
+        <Link href="/forgot-password" className="mt-5 block">
           <Button variant="secondary" className="w-full">
             {t('auth.resetPassword.requestNewLink')}
           </Button>
@@ -69,7 +69,7 @@ export function ResetPasswordForm() {
             {t('auth.resetPassword.successDesc')}
           </p>
         </div>
-        <Link href="/login" className="mt-6 block">
+        <Link href="/login" className="mt-5 block">
           <Button className="w-full">{t('auth.resetPassword.continue')}</Button>
         </Link>
       </Card>
@@ -93,7 +93,7 @@ export function ResetPasswordForm() {
 
       {/* `method="post"` — see `LoginForm`. This one also carries the reset token, which is a
           bearer credential in its own right. */}
-      <form onSubmit={submit} method="post" className="mt-6 flex flex-col gap-4" noValidate>
+      <form onSubmit={submit} method="post" className="mt-5 flex flex-col gap-4" noValidate>
         <Input
           label={t('auth.resetPassword.newPassword')}
           type="password"

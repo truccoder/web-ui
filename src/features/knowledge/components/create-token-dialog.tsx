@@ -112,7 +112,7 @@ export function CreateTokenDialog({ open, onClose }: CreateTokenDialogProps) {
             readOnly
             value={secret}
             onFocus={(e) => e.currentTarget.select()}
-            className="w-full rounded-nx-md border border-nx-border-default bg-nx-surface-sunken px-2 py-1.5 font-mono text-nx-body-sm text-nx-text-primary"
+            className="w-full rounded-nx-md border border-nx-border-default bg-nx-surface-sunken px-2 py-2 font-mono text-nx-body-sm text-nx-text-primary"
           />
           <Button
             variant="secondary"

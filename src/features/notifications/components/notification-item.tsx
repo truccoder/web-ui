@@ -144,7 +144,7 @@ export function NotificationItem({ notification, onRead, className }: Notificati
           carry nothing there. */}
       {unread && (
         <>
-          <span className="mt-1.5 size-2 shrink-0 rounded-nx-full bg-nx-accent" aria-hidden />
+          <span className="mt-2 size-2 shrink-0 rounded-nx-full bg-nx-accent" aria-hidden />
           <span className="sr-only">{t('notifications.unreadMarker')}</span>
         </>
       )}

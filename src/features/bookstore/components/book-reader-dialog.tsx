@@ -117,7 +117,7 @@ export function BookReaderDialog({ bookId, title, open, onClose }: BookReaderDia
         ) : undefined
       }
     >
-      <div ref={scrollAreaRef} className="h-full overflow-y-auto bg-nx-surface-sunken px-4 py-6">
+      <div ref={scrollAreaRef} className="h-full overflow-y-auto bg-nx-surface-sunken px-4 py-5">
         {isPending ? (
           <Skeleton
             className="mx-auto"

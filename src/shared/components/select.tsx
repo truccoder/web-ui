@@ -16,6 +16,19 @@ export interface SelectOption {
 }
 
 export interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'size'> {
+  /**
+   * Sizing for the OUTER wrapper — the label and the field together.
+   *
+   * `className` lands on the field box, not on this, and the wrapper was hardcoded `w-full`.
+   * So a caller putting three of these in a `flex` row and sizing each with `className` got
+   * three full-width wrappers and three stacked lines instead: measured on the moderation
+   * queue's filter bar, where `w-32 / w-32 / w-52` produced three rows and pushed the queue
+   * itself below the fold.
+   *
+   * Still `w-full` when unset, so nothing that already works changes; `tailwind-merge` lets a
+   * width passed here win over that default.
+   */
+  wrapperClassName?: string;
   label?: string;
   hint?: string;
   error?: string;
@@ -40,6 +53,7 @@ export function Select({
   size = 'md',
   options = [],
   className,
+  wrapperClassName,
   id,
   disabled,
   children,
@@ -51,7 +65,7 @@ export function Select({
   const description = error ?? hint;
 
   return (
-    <div className="flex w-full flex-col gap-2">
+    <div className={cn('flex w-full flex-col gap-2', wrapperClassName)}>
       {label && (
         <label
           htmlFor={selectId}
@@ -74,6 +88,9 @@ export function Select({
           aria-describedby={description ? describedById : undefined}
           className={cn(
             'w-full cursor-pointer appearance-none rounded-nx-sm border bg-nx-surface-raised',
+            // `pr-8` (32) off-ladder on purpose — clearance for the chevron drawn over the
+            // field, same class of value as search-bar's `pr-9`. Not a rung, a footprint.
+            // eslint-disable-next-line no-restricted-syntax -- footprint, not a rung (see above)
             'py-0 pl-2.5 pr-8 text-nx-text-primary',
             'transition-colors duration-[var(--nx-duration-fast)] ease-nx-out',
             'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring',

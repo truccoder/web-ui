@@ -20,10 +20,20 @@ const PAGE_SIZE = 10;
  * transport at all — no `@EnableWebSocketMessageBroker`, no `SseEmitter`, no
  * `text/event-stream` producer anywhere in `src/main/java` — and `NotificationService.send` is
  * an `@Async` write to Postgres plus an optional OneSignal/SMTP call. Nothing pushes to this
- * client. 30s is the legacy interval, kept: it is one cheap `COUNT` per user per half-minute,
- * and it bounds how stale the badge can be at a number a person will not notice.
+ * client, so the badge is only ever as fresh as this interval.
+ *
+ * 5s, DOWN FROM 30s. The old note argued 30s was "a number a person will not notice", which is
+ * true of someone using the app and false of someone WATCHING it: in a demo the reaction is
+ * fired and the bell is expected to answer, and half a minute of nothing reads as broken rather
+ * than as polling. The cost is one `COUNT` per signed-in user per five seconds — sixfold, on a
+ * query that is already the cheapest one this app runs.
+ *
+ * This is the honest ceiling, not a realtime effect: nothing is pushed, and no part of the UI
+ * pretends otherwise. `docs/backend-plan.md` B6 asks for SSE, which removes the loop entirely
+ * rather than tuning it. If this app ever carries real traffic, put the number back to 30_000
+ * until that endpoint exists.
  */
-const UNREAD_POLL_MS = 30_000;
+const UNREAD_POLL_MS = 5_000;
 
 /**
  * GET /v1/api/notifications, paged.

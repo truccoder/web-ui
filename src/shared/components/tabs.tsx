@@ -37,7 +37,7 @@ export interface TabsProps {
 }
 
 const sizeStyles: Record<NonNullable<TabsProps['size']>, string> = {
-  sm: 'px-2.5 py-1.5 text-nx-body-sm',
+  sm: 'px-2.5 py-2 text-nx-body-sm',
   md: 'px-3 py-2.5 text-nx-ui',
 };
 
@@ -116,7 +116,7 @@ export function Tabs({
             )}
             {item.label}
             {item.count !== undefined && (
-              <span className="rounded-nx-full bg-nx-surface-sunken px-1.5 font-mono text-nx-overline text-nx-text-muted">
+              <span className="rounded-nx-full bg-nx-surface-sunken px-2 font-mono text-nx-overline text-nx-text-muted">
                 {item.count}
               </span>
             )}

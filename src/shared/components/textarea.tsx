@@ -13,6 +13,19 @@ import { cn } from '@/shared/lib/cn';
  * in step.
  */
 export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+  /**
+   * Sizing for the OUTER wrapper — the label and the field together.
+   *
+   * `className` lands on the field box, not on this, and the wrapper was hardcoded `w-full`.
+   * So a caller putting three of these in a `flex` row and sizing each with `className` got
+   * three full-width wrappers and three stacked lines instead: measured on the moderation
+   * queue's filter bar, where `w-32 / w-32 / w-52` produced three rows and pushed the queue
+   * itself below the fold.
+   *
+   * Still `w-full` when unset, so nothing that already works changes; `tailwind-merge` lets a
+   * width passed here win over that default.
+   */
+  wrapperClassName?: string;
   label?: string;
   /** Helper text below the field. */
   hint?: string;
@@ -35,6 +48,7 @@ export function Textarea({
   autoResize = false,
   mono = false,
   className,
+  wrapperClassName,
   id,
   disabled,
   rows = 3,
@@ -59,7 +73,7 @@ export function Textarea({
   React.useEffect(resize, [resize, props.value]);
 
   return (
-    <div className="flex w-full flex-col gap-2">
+    <div className={cn('flex w-full flex-col gap-2', wrapperClassName)}>
       {label && (
         <label
           htmlFor={textareaId}

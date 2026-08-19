@@ -16,7 +16,12 @@ const publicPaths = [
 
 // Reachable regardless of session state: a just-registered (and thus already
 // logged-in) user still needs to open their verification/magic-link email.
-const alwaysAccessiblePaths = ['/verify-email', '/magic-link', '/magic-login'];
+// `/offline` IS HERE FOR THE SERVICE WORKER, not for a person browsing.
+// `public/sw.js` precaches it during `install`, and that install usually happens on a first
+// visit — before anyone has signed in. Behind the session gate this route answered a 307 to
+// `/login`, so `cache.addAll` either failed the whole install or cached the login page under
+// the offline key. Either way the worker never came up.
+const alwaysAccessiblePaths = ['/verify-email', '/magic-link', '/magic-login', '/offline'];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

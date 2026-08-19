@@ -20,12 +20,12 @@ import type { PostVisibility, UpdatePostRequest } from '../types/post';
  * state, and this component sends all of it back with only the edited fields changed. There
  * is no PATCH here and there must not be one.
  *
- * TWO FIELDS CANNOT BE PRESERVED, and the frontend cannot fix it: `images` and
- * `taggedUserIds` exist on `UpdatePostRequestDto` but are **absent from the feed payload**
- * (`FeedPostDataDto` never echoes them), so there is nothing to send back and an edit nulls
- * them. Today that is harmless in practice — `PostComposer` never sets either field, so
- * posts written by this app have them empty already — but a post created by any other
- * client would silently lose them. The real fix is the backend echoing both fields.
+ * THE TWO FIELDS THAT COULD NOT BE PRESERVED NOW CAN. This note used to say `images` and
+ * `taggedUserIds` were absent from `FeedPostDataDto`, so an edit nulled them and the fix had
+ * to come from the backend. The backend did it: both are on the feed payload now, typed
+ * exactly as the update DTO wants them. `toEditorState` echoes them back, and this paragraph
+ * is kept rather than deleted because the failure it describes is the one to watch for — any
+ * key this component does not send is a key the server sets to null.
  *
  * `postType`, `eventDetails` and `bookDetails` are not on the update DTO at all, so they are
  * immutable by contract rather than by omission — no special handling needed.

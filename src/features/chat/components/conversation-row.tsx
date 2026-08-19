@@ -92,7 +92,7 @@ export function ConversationRow({
           {hasUnread && (
             <span
               className={cn(
-                'grid h-5 min-w-5 shrink-0 place-items-center rounded-nx-full px-1.5',
+                'grid h-5 min-w-5 shrink-0 place-items-center rounded-nx-full px-2',
                 'bg-nx-accent text-nx-caption font-semibold text-white'
               )}
             >

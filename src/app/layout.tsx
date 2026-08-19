@@ -30,7 +30,21 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#000000',
+  /**
+   * Mirrors `--nx-surface-page` in each theme — gray-100 light, gray-950 dark. Hardcoded
+   * because `viewport` is serialised at build time and cannot read a CSS custom property;
+   * the token names are recorded here so a token change has one place to follow.
+   *
+   * WAS `#000000`, which is not a surface this design system contains. Pure black painted the
+   * browser chrome a shade darker than the app's own ground, so the seam between the OS chrome
+   * and the page was visible on every mobile load.
+   */
+  themeColor: [
+    // eslint-disable-next-line no-restricted-syntax -- build-time metadata, see note above
+    { media: '(prefers-color-scheme: light)', color: '#eceef0' },
+    // eslint-disable-next-line no-restricted-syntax -- build-time metadata, see note above
+    { media: '(prefers-color-scheme: dark)', color: '#101820' },
+  ],
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,

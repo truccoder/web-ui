@@ -8,7 +8,7 @@ import { MyBooksList } from '@/features/bookstore';
 import { GithubStatsCard } from '@/features/github';
 import { UserPosts } from '@/features/newsfeed';
 import { MySkillsCard } from '@/features/roadmap';
-import { ReputationCard } from '@/features/reputation';
+import { ReputationCard, RepScore, useReputation } from '@/features/reputation';
 import { usePublicProfile } from '@/features/security';
 import { useT } from '@/core/i18n';
 
@@ -43,6 +43,20 @@ export default function PublicProfilePage() {
 
   const { data: profile, isPending, isError } = usePublicProfile(username);
 
+  /**
+   * THE LEVEL NEEDS A SECOND REQUEST, and that is a backend shape, not a choice.
+   * `PublicUserResponse` carries `eliteScore` but not `levelName`, and the design system
+   * forbids deriving the level from the score in the client. So the number can be drawn from
+   * the profile payload while the name it belongs to has to be fetched.
+   *
+   * Called before the early returns below — hooks cannot sit behind a branch. The hook is a
+   * no-op until `profile.id` exists, so the loading pass costs nothing.
+   *
+   * `docs/backend-plan.md` B2 asks for a `PublicProfileResponse` that carries the level, at
+   * which point this hook and the `levelName` prop below both go away.
+   */
+  const { data: reputation } = useReputation(profile?.id ?? undefined);
+
   if (isPending) {
     return (
       <div className="flex flex-col gap-[var(--nx-space-section)]">
@@ -66,16 +80,32 @@ export default function PublicProfilePage() {
 
   return (
     <div className="flex flex-col gap-[var(--nx-space-section)]">
-      <Card className="flex items-center gap-4">
+      {/* `gap-5` and `items-start`: the kit's profile hero sets `gap: var(--nx-space-pad)`
+          (20) and aligns to the top, so a wrapped Vietnamese name grows downward instead of
+          dragging the avatar off centre. Was `gap-4 items-center`. */}
+      <Card className="flex items-start gap-5">
         <Avatar
           src={profile.profilePictureUrl ?? undefined}
           name={profile.fullName ?? undefined}
           size="xl"
         />
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-nx-title font-semibold tracking-tight text-nx-text-primary">
-            {profile.fullName?.trim() || username}
-          </h1>
+          {/* The score sits BESIDE THE NAME, as the kit's profile hero does — reputation is the
+              product's central claim, so it is part of the identity line rather than a fact you
+              scroll to. `ReputationCard` further down still owns the progress to the next level;
+              this is the readout, that is the apparatus. */}
+          <div className="flex flex-wrap items-center gap-[var(--nx-space-tight)]">
+            <h1 className="truncate text-nx-title font-semibold tracking-tight text-nx-text-primary">
+              {profile.fullName?.trim() || username}
+            </h1>
+            {profile.eliteScore != null && (
+              <RepScore
+                score={profile.eliteScore}
+                showLevel={reputation?.levelName != null}
+                levelName={reputation?.levelName}
+              />
+            )}
+          </div>
           {profile.username && (
             <p className="truncate font-mono text-nx-body-sm text-nx-text-muted">
               @{profile.username}

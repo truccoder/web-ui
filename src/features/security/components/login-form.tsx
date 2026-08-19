@@ -76,7 +76,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
        * treatment, because "JavaScript did not run" is not a rare state: it is every failed
        * deploy, every chunk 404, every extension that breaks hydration.
        */}
-      <form onSubmit={submit} method="post" className="mt-6 flex flex-col gap-4" noValidate>
+      <form onSubmit={submit} method="post" className="mt-5 flex flex-col gap-4" noValidate>
         <Input
           label={t('auth.email')}
           type="email"

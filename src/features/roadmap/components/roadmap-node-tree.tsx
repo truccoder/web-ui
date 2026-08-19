@@ -47,7 +47,7 @@ function NodeRow({
     <li>
       <div
         className={cn(
-          'flex items-start justify-between gap-3 rounded-nx-sm px-2 py-1.5',
+          'flex items-start justify-between gap-3 rounded-nx-sm px-2 py-2',
           'hover:bg-nx-surface-hover'
         )}
       >

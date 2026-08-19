@@ -188,7 +188,7 @@ function FileField({
       <span className="text-nx-body-sm font-medium text-nx-text-primary">{label}</span>
 
       {file ? (
-        <div className="flex items-center justify-between gap-2 rounded-nx-sm border border-nx-border-default bg-nx-surface-card px-2.5 py-1.5">
+        <div className="flex items-center justify-between gap-2 rounded-nx-sm border border-nx-border-default bg-nx-surface-card px-2.5 py-2">
           <span className="flex min-w-0 items-center gap-2 text-nx-body-sm text-nx-text-primary">
             <span className="shrink-0 text-nx-text-muted [&>svg]:size-4" aria-hidden>
               {icon}

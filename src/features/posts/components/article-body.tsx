@@ -33,7 +33,7 @@ export function ArticleBody({ details, className }: ArticleBodyProps) {
   if (!hasTitle && !hasSummary && !showCover) return null;
 
   return (
-    <div className={cn('flex flex-col gap-2', className)}>
+    <div className={cn('flex flex-col gap-[var(--nx-space-element)]', className)}>
       {showCover && (
         // Runtime user-supplied URL from an arbitrary host: next/image would need a
         // remote-pattern allowlist that cannot be written for "anywhere", so a plain img.
@@ -54,7 +54,10 @@ export function ArticleBody({ details, className }: ArticleBodyProps) {
       )}
 
       {hasSummary && (
-        <p className="whitespace-pre-wrap break-words text-nx-body-sm text-nx-text-secondary">
+        // `max-w-[68ch]` is the kit's reading measure for post bodies. Without it the
+        // summary ran the full 672 canvas, which is roughly 88 characters at 15px — past
+        // the line length where the eye reliably finds the next line.
+        <p className="max-w-[68ch] whitespace-pre-wrap break-words text-nx-body-sm text-nx-text-secondary">
           {summary}
         </p>
       )}

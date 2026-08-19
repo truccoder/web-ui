@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { BookOpen, Search, User, X } from 'lucide-react';
 import { Avatar, Input } from '@/shared/components';
@@ -53,6 +53,36 @@ export function SearchBar({
   const router = useRouter();
   const [value, setValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+
+  /**
+   * THE FIELD RESERVES WHAT THE BADGE ACTUALLY MEASURES, not what it measured on a Mac.
+   *
+   * The reservation was `pr-9` — 36px, sized for the kit's two-character `⌘K`. This app names
+   * the key the reader's platform has, so on Windows the badge reads `Ctrl K` and renders
+   * about 52px wide. The placeholder ran underneath it on every screen in the product, since
+   * the field lives in the shell's top bar. The comment two screens down even recorded that
+   * the chip is wider than the kit's — the number it made wrong was never revisited.
+   *
+   * Measured rather than tabulated, because the label is a prop: a future locale, a third
+   * platform or a translated `Ctrl` all change the width, and a lookup table would be wrong
+   * again the same way.
+   */
+  const badgeRef = useRef<HTMLButtonElement>(null);
+  const [badgeWidth, setBadgeWidth] = useState(0);
+
+  useLayoutEffect(() => {
+    const el = badgeRef.current;
+    if (!el) {
+      setBadgeWidth(0);
+      return;
+    }
+    const measure = () => setBadgeWidth(el.offsetWidth);
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [shortcutLabel, value]);
 
   /**
    * THE DROPDOWN IS DEBOUNCED HERE, not in the hook — this component owns the keyboard, so it
@@ -157,7 +187,12 @@ export function SearchBar({
          * readers while still taking a tab stop. So it is positioned over the field instead, and
          * `pr-9` reserves the space so the text never runs underneath it.
          */
-        className={cn((value || shortcutLabel) && 'pr-9')}
+        // `pr-9` (36) covers the CLEAR button: `size-5` (20) + `right-2.5` (10) + the tight
+        // rung. Off-ladder on purpose — a control's footprint is a measurement, not a rung.
+        // eslint-disable-next-line no-restricted-syntax -- footprint, not a rung
+        className={cn(value && 'pr-9')}
+        // The badge's own width plus its 10px inset and one tight rung of breathing room.
+        style={badgeWidth ? { paddingRight: badgeWidth + 18 } : undefined}
       />
 
       {/**
@@ -179,6 +214,7 @@ export function SearchBar({
        */}
       {!value && shortcutLabel && (
         <button
+          ref={badgeRef}
           type="button"
           onClick={onShortcutClick}
           aria-label={shortcutAriaLabel ?? shortcutLabel}
@@ -239,7 +275,7 @@ export function SearchBar({
                   go(row);
                 }}
                 className={cn(
-                  'flex w-full items-center gap-2.5 px-2.5 py-1.5 text-left',
+                  'flex w-full items-center gap-2.5 px-2.5 py-2 text-left',
                   'hover:bg-nx-surface-hover',
                   'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-nx-focus-ring'
                 )}

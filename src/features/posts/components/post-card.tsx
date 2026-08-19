@@ -249,9 +249,14 @@ export function PostCard({
           is noise. The like count is NOT shown here: it belongs next to the reaction
           control that c-2 puts in `actions`, and showing it twice would let the two drift
           apart on the same screen. */}
-      {(commentCount !== undefined || actions) && (
+      {/* `commentCount` truthy, NOT `!== undefined`. A post with zero comments rendered
+          "0 bình luận" under a hairline — and the design system's rule is that counts hide
+          at zero rather than printing a 0. It also meant a brand-new post drew the
+          reading/acting hinge for a footer whose only content was that zero. */}
+      {(!!commentCount || actions) && (
         /**
-         * THE RULE IS BLED TO THE CARD EDGE — `-mx-4` cancels the card's own 16px padding so the
+         * THE RULE IS BLED TO THE CARD EDGE — `-mx-5` cancels the card's own 20px horizontal
+         * padding so the
          * line runs the full width. An inset rule reads as a divider *inside* a box; a bled one
          * reads as the card's own hinge, which is what it is: above it the post, below it what you
          * can do about the post. That distinction is the reason the reaction strip needs no label.
@@ -261,9 +266,14 @@ export function PostCard({
          * against the strip.
          */
         <div className="flex flex-col gap-[var(--nx-space-tight)]">
-          <div className="-mx-4 border-t border-nx-border-subtle" aria-hidden />
+          {/* `-mx-5`, NOT `-mx-4`. This said 4 for as long as card padding was a single 16.
+              R8 made padding two-axis — 20 horizontal, 16 vertical — and nothing came back
+              here, so the hinge stopped 4px short of both card edges and read as a divider
+              inside a box instead of the card's own hinge. Measured against `Card`'s
+              `16px 20px` default. */}
+          <div className="-mx-5 border-t border-nx-border-subtle" aria-hidden />
           <div className="flex flex-col gap-[var(--nx-space-tight)] pt-2">
-            {commentCount !== undefined && (
+            {!!commentCount && (
               <DeveloperMeta>{t('post.commentCount', { count: commentCount })}</DeveloperMeta>
             )}
             {actions}

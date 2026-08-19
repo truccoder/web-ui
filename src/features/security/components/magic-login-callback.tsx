@@ -48,7 +48,7 @@ export function MagicLoginCallback({ onSuccess }: MagicLoginCallbackProps) {
             {t('auth.magicLogin.invalidDesc')}
           </p>
         </div>
-        <Link href="/magic-link" className="mt-6 block">
+        <Link href="/magic-link" className="mt-5 block">
           <Button variant="secondary" className="w-full">
             {t('auth.magicLogin.requestNewLink')}
           </Button>

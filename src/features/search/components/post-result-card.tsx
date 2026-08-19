@@ -99,7 +99,7 @@ function BookLine({ book }: { book: SearchBook }) {
   );
 
   const base =
-    'mt-2 flex items-center gap-2 rounded-nx-md border border-nx-border-subtle px-2 py-1.5';
+    'mt-2 flex items-center gap-2 rounded-nx-md border border-nx-border-subtle px-2 py-2';
 
   return book.id != null ? (
     <Link

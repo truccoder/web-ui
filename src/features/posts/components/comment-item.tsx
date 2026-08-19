@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Badge, Button, DeveloperIdentity, DeveloperMeta } from '@/shared/components';
 import { useT } from '@/core/i18n';
 import { cn } from '@/shared/lib/cn';
-import { formatDateTime, useIntlLocale } from '@/shared/lib/format';
+import { useRelativeTime } from '@/shared/lib/format';
 import type { PostComment } from '../types/comment';
 import { CommentComposer } from './comment-composer';
 
@@ -70,7 +70,16 @@ export function CommentItem({
   className,
 }: CommentItemProps) {
   const t = useT();
-  const localeTag = useIntlLocale();
+  /**
+   * THE SAME CLOCK THE POST USES. This read `formatDateTime`, so a permalink showed the post
+   * as `6 ngày trước` and every comment under it as `09:50 13 thg 8, 2026` — two formats for
+   * the same kind of fact, a few pixels apart, and the absolute one is the harder of the two
+   * to place in a conversation you are reading top to bottom.
+   *
+   * `useRelativeTime` already falls back to an absolute date past a week, so nothing loses
+   * precision where precision starts to matter.
+   */
+  const relativeTime = useRelativeTime();
   const [editing, setEditing] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
@@ -85,7 +94,7 @@ export function CommentItem({
         size="sm"
         name={comment.authorFullName?.trim() || t('post.unknownAuthor')}
         src={comment.authorProfilePictureUrl ?? undefined}
-        time={formatDateTime(comment.createdAt, localeTag) ?? undefined}
+        time={comment.createdAt ? relativeTime(comment.createdAt) : undefined}
       />
 
       {editing ? (

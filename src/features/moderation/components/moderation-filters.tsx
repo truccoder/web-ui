@@ -45,7 +45,9 @@ export function ModerationFilters({
   const t = useT();
 
   return (
-    <div className={cn('flex flex-wrap items-end gap-3', className)}>
+    // One row, not three. The widths live on `wrapperClassName` because `className` sizes
+    // the field box while the wrapper stayed `w-full` — which is what stacked them.
+    <div className={cn('flex flex-wrap items-end gap-[var(--nx-space-element)]', className)}>
       <Input
         mono
         size="sm"
@@ -56,7 +58,7 @@ export function ModerationFilters({
         label={t('moderation.filters.postId')}
         value={postId}
         onChange={(event) => onPostIdChange(event.target.value)}
-        className="w-32"
+        wrapperClassName="w-32"
       />
 
       <Input
@@ -66,7 +68,7 @@ export function ModerationFilters({
         label={t('moderation.filters.userId')}
         value={userId}
         onChange={(event) => onUserIdChange(event.target.value)}
-        className="w-32"
+        wrapperClassName="w-32"
       />
 
       <Select
@@ -78,7 +80,7 @@ export function ModerationFilters({
           { value: '', label: t('moderation.filters.anyStatus') },
           ...STATUSES.map((value) => ({ value, label: t(`moderation.status.${value}`) })),
         ]}
-        className="w-52"
+        wrapperClassName="w-52"
       />
     </div>
   );

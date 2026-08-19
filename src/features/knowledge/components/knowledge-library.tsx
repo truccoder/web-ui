@@ -58,7 +58,11 @@ export function KnowledgeLibrary() {
         {t('knowledge.library.count', { count: data.totalCount })}
       </p>
       {data.explanations.map((explanation) => (
-        <ExplanationCard key={explanation.id ?? explanation.postId} explanation={explanation} />
+        <ExplanationCard
+          key={explanation.id ?? explanation.postId}
+          explanation={explanation}
+          showSource
+        />
       ))}
     </div>
   );

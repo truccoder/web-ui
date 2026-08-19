@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Badge, Card, EmptyState, Skeleton } from '@/shared/components';
+import { Badge, EmptyState, Skeleton } from '@/shared/components';
+import { cn } from '@/shared/lib/cn';
 import { getErrorMessage } from '@/shared/lib/api-error';
-import { formatCurrency, useIntlLocale } from '@/shared/lib/format';
+import { formatPriceParts, useIntlLocale } from '@/shared/lib/format';
 import { useT } from '@/core/i18n';
 import type { Book } from '../types/book';
 import { useLibrary } from '../hooks';
@@ -60,16 +61,13 @@ export interface BookLibraryProps {
   className?: string;
 }
 
+/**
+ * The skeleton is the SHAPE OF THE THING LOADING, so it is one cover-shaped block and nothing
+ * else. It used to be a card with a small rectangle and two text bars — which described the old
+ * row layout, and would now promise a shelf that does not arrive.
+ */
 function BookRowSkeleton() {
-  return (
-    <Card padding={12} className="flex items-start gap-3">
-      <Skeleton width={48} height={64} />
-      <div className="flex flex-1 flex-col gap-2">
-        <Skeleton width={200} height={14} />
-        <Skeleton width={120} height={12} />
-      </div>
-    </Card>
-  );
+  return <Skeleton className="aspect-[2/3] w-full rounded-nx-md" />;
 }
 
 export function BookLibrary({ className }: BookLibraryProps) {
@@ -96,7 +94,7 @@ export function BookLibrary({ className }: BookLibraryProps) {
   if (library.isLoading) {
     return (
       <div className={className}>
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-3">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-[var(--nx-space-element)]">
           {Array.from({ length: 4 }).map((_, i) => (
             <BookRowSkeleton key={i} />
           ))}
@@ -122,10 +120,10 @@ export function BookLibrary({ className }: BookLibraryProps) {
   return (
     <div className={className}>
       {/* 12 between cells — the kit's own grid gap, measured on its library screen. */}
-      <ul className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-3">
+      <ul className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-[var(--nx-space-element)]">
         {books.map((book) => (
           <li key={book.id}>
-            <BookRow book={book} localeTag={localeTag} />
+            <BookCell book={book} localeTag={localeTag} />
           </li>
         ))}
       </ul>
@@ -133,7 +131,7 @@ export function BookLibrary({ className }: BookLibraryProps) {
       <div ref={sentinelRef} />
 
       {isFetchingNextPage && (
-        <div className="mt-3 grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-3">
+        <div className="mt-3 grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-[var(--nx-space-element)]">
           <BookRowSkeleton />
         </div>
       )}
@@ -141,117 +139,137 @@ export function BookLibrary({ className }: BookLibraryProps) {
   );
 }
 
-function BookRow({ book, localeTag }: { book: Book; localeTag: string }) {
+/**
+ * ONE BOOK — THE COVER IS THE CARD.
+ *
+ * This was a 54×74 thumbnail pinned to the left of a text column inside a filled card. The
+ * owner's verdict was that it read as an unbalanced split, and they are right about why: a
+ * cover at that size is too small to be the subject and too large to be an icon, so the cell
+ * had two competing subjects and settled on neither.
+ *
+ * A book IS its cover — that is what the object is for, and it is how every shelf, every store
+ * and every reader recognises one. So the cover takes the whole cell at a real book ratio, and
+ * the words arrive on a veil over it when the reader points at one. The design system's own
+ * README (round 5.1) puts the book grid among its four "bare" sets — no fill, no border, hover
+ * only — and an image that fills its cell settles that argument by making the surrounding fill
+ * unnecessary rather than by choosing a side.
+ *
+ * NOTHING MOVES OR SCALES ON HOVER (§2.1). The veil changes opacity and nothing else: no lift,
+ * no zoom on the cover.
+ *
+ * THE VEIL IS NOT HOVER-ONLY, and that is not a nicety. A touch screen has no hover, so a
+ * title that only appears on pointer-over does not exist on a phone; `@media (hover: none)`
+ * pins it open. `focus-within` does the same for the keyboard, so tabbing through the shelf
+ * says which book has focus.
+ */
+function BookCell({ book, localeTag }: { book: Book; localeTag: string }) {
   const t = useT();
   const [coverFailed, setCoverFailed] = useState(false);
   const showCover = Boolean(book.coverImageUrl?.trim()) && !coverFailed;
 
   const price =
     book.isFree || book.price == null
-      ? t('post.book.free')
-      : formatCurrency(book.price, book.currency?.trim() || 'VND', localeTag);
+      ? { amount: t('post.book.free'), symbol: '' }
+      : formatPriceParts(book.price, book.currency?.trim() || 'VND', localeTag);
 
-  /**
-   * A FILLED CARD — reverting a `bare` I should never have shipped.
-   *
-   * The kit's README (round 5.1) says the book grid is one of four sets whose members become
-   * `Card variant="bare"`: no fill, no border, hover only, because a filled member inside a
-   * 12px-gap set is a padding-beats-gap inversion. I applied it. Measured afterwards, the kit's
-   * own book cell is `330 wide · background rgb(255,255,255) · padding 16px 20px · radius 8` —
-   * a plain filled card, in a grid with exactly the 12px gap the passage calls an inversion.
-   *
-   * So the kit ships the thing its README says it removed. That is now the FIFTH place where
-   * this README's prose and its render disagree (datum 28 vs 20, field 360 vs 320, the brand
-   * slot, the 24 padding, this) — and the rule stands: the render is the specimen, the prose is
-   * a draft note.
-   */
-  const body = (
-    <Card interactive={book.id != null} className="flex h-full items-start gap-3">
-      {/* Presigned at read time now, but a URL can still expire in a long-lived tab — the
-          placeholder beats a broken-image glyph. Plain <img>: the host is MinIO, which
-          next/image would need configured as a remote pattern for no benefit at this size. */}
-      {showCover ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={book.coverImageUrl ?? undefined}
-          alt=""
-          className="h-[74px] w-[54px] shrink-0 rounded-nx-sm object-cover"
-          onError={() => setCoverFailed(true)}
-        />
-      ) : (
-        /* A COVER PLACEHOLDER THAT SAYS "no cover", NOT "broken". It used to be an empty grey
-           rectangle, which reads as a failed image — the reader cannot tell a book with no cover
-           from one whose cover would not load. The title's first letter is the cheapest signal
-           that something is deliberately standing in for the artwork, and it doubles as a weak
-           identifier when scanning a list. `aria-hidden` because the title is right beside it;
-           announcing the letter would read the same word twice. */
-        <div
-          className="flex h-[74px] w-[54px] shrink-0 items-center justify-center rounded-nx-sm bg-nx-surface-sunken"
-          aria-hidden
-        >
-          <span className="text-nx-title font-semibold text-nx-text-faint">
-            {book.title?.trim()?.charAt(0)?.toUpperCase() || '?'}
-          </span>
-        </div>
-      )}
+  const cover = showCover ? (
+    // Plain <img>: the host is MinIO and the URL is presigned, so `next/image` would need a
+    // remote pattern for a URL that expires anyway.
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={book.coverImageUrl ?? undefined}
+      alt=""
+      className="size-full object-cover"
+      onError={() => setCoverFailed(true)}
+    />
+  ) : (
+    /* A placeholder that says "no cover", not "broken": an empty grey rectangle reads as a
+       failed image. The title's initial is the cheapest signal that something is deliberately
+       standing in for the artwork, and it doubles as an identifier when scanning a shelf. */
+    <div className="grid size-full place-items-center bg-nx-surface-sunken" aria-hidden>
+      <span className="text-nx-display font-semibold text-nx-text-faint">
+        {book.title?.trim()?.charAt(0)?.toUpperCase() || '?'}
+      </span>
+    </div>
+  );
 
-      {/* `gap-2` is the kit's 8 between the four readouts — the sub-scale's `tight`, because a
-          title and the facts about it are one reading, not four blocks. */}
-      <div className="flex min-w-0 flex-1 flex-col gap-2 self-stretch">
-        {/* TWO LINES MAX. At 222px of text column a long title runs to four lines and pushes the
-            price off the bottom of a card whose neighbour has none of that — the grid's cells
-            would end at different places for a reason nobody can see. The kit clamps at two and
-            so does this. `description` was dropped in the same move: it is the one field that
-            cannot be bounded usefully at this width, and the decision (what · how much · how
-            good) never needed it. */}
-        <p className="line-clamp-2 text-nx-heading font-semibold text-nx-text-primary">
-          {book.title}
-        </p>
+  const cell = (
+    <>
+      {/* 2/3 is the book ratio, not a guess — it is what a paperback cover measures, so a real
+          cover fills the frame instead of being letterboxed inside it. */}
+      <div className="aspect-[2/3] w-full overflow-hidden rounded-nx-md bg-nx-surface-sunken">
+        {cover}
+      </div>
 
-        {/* Only once rated: `avgRating` on an unrated book is 0, and a row of empty stars reads
-            as "rated badly" rather than "not rated". The kit pairs the stars with `4.3 · 27` —
-            the stars carry the shape, the numbers carry the precision and the sample size. */}
+      <div
+        className={cn(
+          // `inset-x-0 top-0` + the cover's own aspect: the veil covers the ARTWORK, not
+          // the title line that now sits below it.
+          'absolute inset-x-0 top-0 aspect-[2/3] flex flex-col justify-end gap-[var(--nx-space-pair)]',
+          'rounded-nx-md p-[var(--nx-space-element)]',
+          // The gradient, not a flat scrim: a flat one dims the artwork it is there to sit on.
+          'bg-gradient-to-t from-[rgba(16,24,32,0.94)] via-[rgba(16,24,32,0.72)] to-transparent',
+          'opacity-0 transition-opacity duration-[var(--nx-duration-fast)] ease-nx-out',
+          'group-hover:opacity-100 group-focus-within:opacity-100',
+          // No hover to give: show it. See the note above.
+          '[@media(hover:none)]:opacity-100'
+        )}
+      >
         {book.reviewCount && book.avgRating ? (
-          <span className="flex items-center gap-2">
-            <StarRating rating={book.avgRating} size={14} />
-            <span className="font-mono text-nx-micro tabular-nums text-nx-text-muted">
+          <span className="flex items-center gap-[var(--nx-space-pair)]">
+            <StarRating rating={book.avgRating} size={12} />
+            <span className="font-mono text-nx-micro tabular-nums text-nx-gray-300">
               {book.avgRating.toFixed(1)} · {book.reviewCount}
             </span>
           </span>
         ) : null}
 
-        {/* `mt-auto` pins the price row to the card's bottom edge, so a one-line title and a
-            two-line title still end on the same baseline across the row. */}
-        <div className="mt-auto flex flex-wrap items-center gap-2">
-          <span className="font-mono text-nx-caption tabular-nums text-nx-text-primary">
-            {price}
+        <span className="flex flex-wrap items-center gap-[var(--nx-space-tight)]">
+          {/* THE DIGITS ARE MONO, THE CURRENCY SYMBOL IS NOT. `₫` has no glyph in Geist Mono, so
+              the whole string in mono fell back mid-word to another face and the symbol sat a
+              few pixels above the baseline — visible on every priced book in the shelf. Mono is
+              for numbers (§6.5); a currency mark is not one. */}
+          <span className="font-mono text-nx-caption tabular-nums text-nx-gray-50">
+            {price.amount}
           </span>
-          {/**
-           * THE PILL IS GATED ON `isFree` FIRST, and the order is the whole point — trap 1 on the
-           * `Book` type is that the backend computes `purchased` as `!isFree && …`, so a free
-           * book reports `purchased: false` even to its own author. Testing `purchased` first
-           * would silently label every free book as not-yet-owned.
-           */}
-          {book.isFree ? (
-            <Badge variant="neutral">{t('post.book.free')}</Badge>
-          ) : book.purchased ? (
+          {price.symbol && <span className="text-nx-caption text-nx-gray-50">{price.symbol}</span>}
+
+          {/* `isFree` FIRST: the backend computes `purchased` as `!isFree && …`, so a free book
+              reports `purchased: false` even to its own author. And a free book already says
+              "Miễn phí" in the price slot, so the old duplicate pill is gone — it printed the
+              same word twice, half a centimetre apart. */}
+          {!book.isFree && book.purchased ? (
             <Badge variant="success">{t('library.owned')}</Badge>
           ) : null}
-        </div>
+        </span>
       </div>
-    </Card>
+
+      {/* THE TITLE IS PERMANENT, AND THAT IS A CORRECTION MADE BY LOOKING AT IT.
+          The brief was "title on hover", which is right when a cover is artwork — you recognise
+          a book by its art and the words would only cover it up. Screenshotted against the real
+          shelf, the covers here are flat colour fields with no lettering, so a hover-only title
+          turned the whole page into a grid of coloured rectangles: nothing on it could be read
+          without pointing at it one cell at a time, on the one surface whose entire job is
+          scanning. So the title sits under its cover where it can always be read, and the veil
+          keeps what it is genuinely good at — the facts you only want when you are considering
+          one book: what it costs, how it was rated, whether you already own it. */}
+      <p className="mt-[var(--nx-space-tight)] line-clamp-2 text-nx-body-sm font-medium text-nx-text-primary">
+        {book.title}
+      </p>
+    </>
   );
 
-  // The route is the cell's only interaction, so it takes the whole cell rather than the title
-  // alone. `h-full` on the anchor keeps the card stretching to the grid row's height.
+  // The route is the cell's only interaction, so it takes the whole cell. `group` is what the
+  // veil's hover and focus states hang off.
   return book.id != null ? (
     <Link
       href={`/books/${book.id}`}
-      className="block h-full rounded-nx-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
+      aria-label={book.title ?? undefined}
+      className="group relative block rounded-nx-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
     >
-      {body}
+      {cell}
     </Link>
   ) : (
-    body
+    <div className="group relative block">{cell}</div>
   );
 }

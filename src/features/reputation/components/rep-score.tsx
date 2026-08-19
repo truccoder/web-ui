@@ -53,7 +53,7 @@ export interface RepScoreProps extends React.HTMLAttributes<HTMLSpanElement> {
  * the kit shows padding legitimately using 6 and 7 where gaps never do.
  */
 const sizeStyles: Record<NonNullable<RepScoreProps['size']>, string> = {
-  sm: 'h-5 gap-1 px-1.5 text-nx-micro/none',
+  sm: 'h-5 gap-1 px-2 text-nx-micro/none',
   md: 'h-6 gap-1 px-2 text-nx-caption/none',
   lg: 'h-8 gap-2 px-2.5 text-nx-body/none',
 };

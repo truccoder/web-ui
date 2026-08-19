@@ -179,7 +179,7 @@ export const vi: Messages = {
       title: 'Chưa có bài viết nào',
       desc: 'Hãy là người đầu tiên đăng bài hoặc kết bạn thêm để xem tin tức mới!',
     },
-    allLoaded: 'Bạn đã xem hết bài viết rồi 🎉',
+    allLoaded: 'Bạn đã xem hết bài viết rồi',
   },
 
   notifications: {
@@ -428,7 +428,7 @@ export const vi: Messages = {
       title: 'Chưa có nội dung xu hướng',
       desc: 'Quay lại sau để xem những bài viết mới nhất.',
     },
-    allLoaded: 'Bạn đã xem hết nội dung xu hướng rồi 🎉',
+    allLoaded: 'Bạn đã xem hết nội dung xu hướng rồi',
     allCategories: 'Tất cả',
     errorTitle: 'Không tải được xu hướng',
     untitled: 'Không có tiêu đề',
@@ -679,12 +679,19 @@ export const vi: Messages = {
       deleteConfirm: 'Xoá bình luận này?',
       deleteWithReplies: 'Xoá bình luận này và ${count} câu trả lời của nó.',
     },
+    /* NHÃN ĐỔI GIỌNG, GIÁ TRỊ TRÊN DÂY GIỮ NGUYÊN.
+       UI kit round 15 thiết kế ba cảm xúc mang tính tri thức — Hữu ích · Sáng tỏ · Ghi nhận —
+       và đó là một phần lập luận "vì sao đây không phải mạng xã hội thường". Enum của backend
+       là bộ Facebook: LIKE · LOVE · HAHA · CRY · ANGRY, nên ba cảm xúc kia không gửi được.
+       Đổi nhãn là thứ gần nhất đạt được mà không đụng backend và không hỏng dữ liệu cũ.
+       CRY → "Khó hiểu" là chỗ gượng nhất, nhưng vẫn hơn "Buồn" đặt dưới một đoạn mã.
+       Bỏ đi bằng cách trả lại 5 dòng dưới đây. Xem docs/backend-plan.md · B5. */
     reaction: {
-      LIKE: 'Thích',
-      LOVE: 'Yêu thích',
-      HAHA: 'Haha',
-      CRY: 'Buồn',
-      ANGRY: 'Phẫn nộ',
+      LIKE: 'Hữu ích',
+      LOVE: 'Xuất sắc',
+      HAHA: 'Thú vị',
+      CRY: 'Khó hiểu',
+      ANGRY: 'Không đồng tình',
       count: '${count} cảm xúc',
     },
     body: {
@@ -806,6 +813,7 @@ export const vi: Messages = {
       revokeError: 'Không thu hồi được token',
     },
     explain: {
+      viewSource: 'Xem bài gốc',
       action: 'Giải thích bằng AI',
       working: 'Đang nhờ AI giải thích...',
       retry: 'Thử lại',
@@ -962,6 +970,12 @@ export const vi: Messages = {
     },
   },
   projects: {
+    matching: {
+      title: 'Đã có ${count} người mang kỹ năng vị trí này cần',
+      years: '${count} năm',
+      unnamedRole: 'Chưa đặt chức danh',
+      more: 'và ${count} người nữa',
+    },
     title: 'Dự án',
     subtitle: 'Tìm người cùng làm, hoặc tìm một chỗ để góp sức.',
     tabs: {
@@ -1170,7 +1184,7 @@ export const vi: Messages = {
     minimize: 'Thu nhỏ',
     close: 'Đóng',
     chats: 'Chats',
-    search: 'Tìm kiếm trong Messenger',
+    search: 'Tìm trong tin nhắn',
     noConversations: 'Chưa có cuộc trò chuyện nào',
     all: 'Tất cả',
     unread: 'Chưa đọc',

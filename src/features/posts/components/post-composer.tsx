@@ -397,7 +397,10 @@ export function PostComposer({ onPosted }: PostComposerProps) {
        * input shape was doing.
        */}
       <Card className="w-full">
-        <div className="flex items-center gap-[var(--nx-space-pair)]">
+        {/* `element`, not `pair`. The pair rung means "two elements that are one reading";
+            an avatar, a field and a type menu are three separate things you can act on.
+            The kit sets `gap: var(--nx-space-element)` on this row. */}
+        <div className="flex items-center gap-[var(--nx-space-element)]">
           <Avatar src={profile?.profilePictureUrl} name={profile?.fullName} size="md" />
 
           <button

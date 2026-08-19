@@ -54,7 +54,10 @@ export default function PostPermalinkPage() {
           <Skeleton lines={4} />
         </Card>
       ) : (
-        <FeedPost post={post} onChanged={() => refetch()} />
+        // Comments open on arrival: see `defaultCommentsOpen`. A permalink exists so that a
+        // notification, a shared link or a skill's cited evidence has somewhere to land, and
+        // in all three the discussion is what the reader came for.
+        <FeedPost post={post} onChanged={() => refetch()} defaultCommentsOpen />
       )}
     </div>
   );

@@ -101,7 +101,10 @@ export function ReactionBar({ postId, count, onChanged, className }: ReactionBar
               aria-pressed={active}
               onClick={() => pick(type)}
               className={cn(
-                'inline-flex h-7 items-center gap-2 rounded-nx-xs border px-2',
+                // Kit: height 28, `gap: var(--nx-space-pair)` between glyph and label,
+                // `padding: 0 10px` — the inset split. Was `gap-2 px-2`, which read the
+                // glyph and its label as two separate elements rather than one control.
+                'inline-flex h-7 items-center gap-1 rounded-nx-xs border px-2.5',
                 'text-nx-body-sm',
                 'transition-colors duration-[var(--nx-duration-fast)] ease-nx-out',
                 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring',

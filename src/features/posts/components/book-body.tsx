@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from 'react';
 import Link from 'next/link';
+import { Star } from 'lucide-react';
 import { Badge } from '@/shared/components';
 import { useT } from '@/core/i18n';
 import { cn } from '@/shared/lib/cn';
@@ -135,10 +136,15 @@ export function BookBody({ book, actions, className }: BookBodyProps) {
           {totalPages ? <span>{t('post.body.bookUnits', { count: totalPages })}</span> : null}
           {fileSizeBytes ? <span>{formatSize(fileSizeBytes)}</span> : null}
           {/* Only shown once someone has actually rated it: `avgRating` on a book with no
-              reviews is 0, and "0.0 ★" reads as a bad book rather than an unrated one. */}
+              reviews is 0, and a lone "0.0" beside a star reads as a bad book rather than
+              an unrated one. */}
           {reviewCount && avgRating ? (
-            <span>
-              {avgRating.toFixed(1)} ★ · {t('post.book.reviewCount', { count: reviewCount })}
+            <span className="inline-flex items-center gap-1">
+              {/* lucide, not a text star glyph: a glyph inherits the font's own metrics and
+                  sat a pixel high against tabular figures. `size-3` matches the 11px line. */}
+              {avgRating.toFixed(1)}
+              <Star className="size-3 shrink-0" aria-hidden />·{' '}
+              {t('post.book.reviewCount', { count: reviewCount })}
             </span>
           ) : null}
         </div>

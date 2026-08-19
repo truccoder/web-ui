@@ -45,6 +45,18 @@ import type { FeedPost as FeedPostData } from '../types/feed';
  */
 
 export interface FeedPostProps {
+  /**
+   * Mount the comment thread already open. The feed leaves it closed — a column of posts
+   * with every thread expanded is unreadable, and `CommentThread` fetches on mount, so it
+   * would also be one request per post on screen.
+   *
+   * A PERMALINK IS THE OPPOSITE CASE. Every route into `/posts/{id}` is someone going to
+   * read a specific discussion: a notification saying someone replied, a link a colleague
+   * sent, a post cited as evidence for a verified skill. Landing on a collapsed thread makes
+   * the reader press a button to see the thing they came for.
+   * @default false
+   */
+  defaultCommentsOpen?: boolean;
   post: FeedPostData;
   /** Refetch the feed — the payload's counts only move when it is re-fetched. */
   onChanged: () => void;
@@ -59,10 +71,11 @@ export interface FeedPostProps {
  * function cannot compile until each one has been considered — measured at P2.4'c-4, where a
  * partial map wiped a real post's `quiz_details` and its accepted answer.
  *
- * `images` and `taggedUserIds` are the two that cannot be preserved: `UpdatePostRequestDto`
- * accepts them but `FeedPostDataDto` never echoes them back, so there is nothing to send and
- * an edit nulls them. Harmless today (nothing in this app writes either field) and not
- * fixable here — the backend has to echo them.
+ * `images` and `taggedUserIds` USED to be the two that could not be preserved: the update DTO
+ * accepted them while `FeedPostDataDto` did not echo them, so there was nothing to send back
+ * and an edit nulled them. The backend echoes both now, with the exact types the update DTO
+ * wants, so they are mapped like every other key below. Left in the file as a record because
+ * the workaround outlived the gap and became the bug it was written to describe.
  */
 function toEditorState(post: FeedPostData): PostEditorState {
   return {
@@ -80,8 +93,21 @@ function toEditorState(post: FeedPostData): PostEditorState {
     pollDetails: post.pollDetails ?? undefined,
     linkDetails: post.linkDetails ?? undefined,
     quizDetails: post.quizDetails ?? undefined,
-    images: undefined,
-    taggedUserIds: undefined,
+    // ECHOED BACK, NOT DROPPED. These two were hardcoded to `undefined` because the feed
+    // payload genuinely did not carry them — and since `PostService.updatePost` runs
+    // `BeanUtils.copyProperties`, which copies nulls, sending `undefined` DELETES them. The
+    // backend has since added both to `FeedPostDataDto` with the exact types the update DTO
+    // wants (`string[]` / `number[]`), so the workaround became the bug: editing the text of
+    // a post with images silently destroyed the images.
+    //
+    // Not theoretical any more — the seeded feed serves posts with images, so this was one
+    // `Sửa` away on any of them.
+    // `?? undefined` for the same reason the other keys have it: the payload types these
+    // nullable, and the request type does not take null. The two mean the same thing to the
+    // server here — an absent key and an explicit null both end up null — so collapsing them
+    // loses nothing.
+    images: post.images ?? undefined,
+    taggedUserIds: post.taggedUserIds ?? undefined,
   };
 }
 
@@ -152,11 +178,11 @@ function PostBody({ post, onChanged }: { post: FeedPostData; onChanged: () => vo
   }
 }
 
-export function FeedPost({ post, onChanged }: FeedPostProps) {
+export function FeedPost({ post, onChanged, defaultCommentsOpen = false }: FeedPostProps) {
   const t = useT();
   const { data: profile } = useMyProfile();
 
-  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [commentsOpen, setCommentsOpen] = useState(defaultCommentsOpen);
   const [editing, setEditing] = useState(false);
 
   const isAuthor = profile?.id === post.authorId;

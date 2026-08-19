@@ -437,7 +437,7 @@ export const en = {
       title: 'No trending items',
       desc: 'Check back later for the latest stories.',
     },
-    allLoaded: "You've seen all trending items 🎉",
+    allLoaded: "You've seen all trending items",
     allCategories: 'All',
     errorTitle: 'Could not load trending',
     untitled: 'Untitled',
@@ -693,12 +693,15 @@ export const en = {
       deleteConfirm: 'Delete this comment?',
       deleteWithReplies: 'Deletes this comment and its ${count} replies.',
     },
+    /* Labels retuned to a technical register; the wire values are untouched. See the note
+       in vi.ts and docs/backend-plan.md B5 — the kit's three knowledge reactions do not
+       exist in the backend enum, so relabelling is the closest reachable thing. */
     reaction: {
-      LIKE: 'Like',
-      LOVE: 'Love',
-      HAHA: 'Haha',
-      CRY: 'Sad',
-      ANGRY: 'Angry',
+      LIKE: 'Useful',
+      LOVE: 'Excellent',
+      HAHA: 'Fun',
+      CRY: 'Confusing',
+      ANGRY: 'Disagree',
       count: '${count} reactions',
     },
     body: {
@@ -822,6 +825,7 @@ export const en = {
       revokeError: 'Could not revoke the token',
     },
     explain: {
+      viewSource: 'View source post',
       action: 'Explain with AI',
       working: 'Asking the AI...',
       retry: 'Try again',
@@ -984,6 +988,12 @@ export const en = {
     },
   },
   projects: {
+    matching: {
+      title: '${count} people already have the skills this position asks for',
+      years: '${count} yrs',
+      unnamedRole: 'No job title set',
+      more: 'and ${count} more',
+    },
     title: 'Projects',
     subtitle: 'Find people to build with, or a place to contribute.',
     tabs: {
@@ -1196,7 +1206,7 @@ export const en = {
     minimize: 'Minimize',
     close: 'Close',
     chats: 'Chats',
-    search: 'Search Messenger',
+    search: 'Search messages',
     noConversations: 'No conversations yet',
     all: 'All',
     unread: 'Unread',

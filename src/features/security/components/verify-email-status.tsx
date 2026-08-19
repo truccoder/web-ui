@@ -35,7 +35,7 @@ export function VerifyEmailStatus() {
         title={t('auth.verifyEmail.invalidTitle')}
         desc={t('auth.verifyEmail.invalidDesc')}
         action={
-          <Link href="/login" className="mt-6 block">
+          <Link href="/login" className="mt-5 block">
             <Button variant="secondary" className="w-full">
               {t('auth.verifyEmail.backToLogin')}
             </Button>
@@ -53,7 +53,7 @@ export function VerifyEmailStatus() {
         title={t('auth.verifyEmail.failedTitle')}
         desc={getErrorMessage(verify.error, t('auth.verifyEmail.failedDesc'))}
         action={
-          <Link href="/login" className="mt-6 block">
+          <Link href="/login" className="mt-5 block">
             <Button variant="secondary" className="w-full">
               {t('auth.verifyEmail.backToLogin')}
             </Button>
@@ -71,7 +71,7 @@ export function VerifyEmailStatus() {
         title={t('auth.verifyEmail.verifiedTitle')}
         desc={t('auth.verifyEmail.verifiedDesc')}
         action={
-          <Link href="/login" className="mt-6 block">
+          <Link href="/login" className="mt-5 block">
             <Button className="w-full">{t('auth.verifyEmail.continue')}</Button>
           </Link>
         }

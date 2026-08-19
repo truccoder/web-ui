@@ -70,7 +70,7 @@ export function OAuthCallback({ provider, onSuccess }: OAuthCallbackProps) {
             {message}
           </p>
         </div>
-        <Link href="/login" className="mt-6 block">
+        <Link href="/login" className="mt-5 block">
           <Button variant="secondary" className="w-full">
             {t('auth.oauth.backToLogin')}
           </Button>

@@ -211,7 +211,7 @@ function CommandPalettePanel({
           className="max-h-[50vh] overflow-y-auto p-1"
         >
           {visible.length === 0 ? (
-            <p className="px-3 py-6 text-center text-nx-body-sm text-nx-text-muted">{emptyLabel}</p>
+            <p className="px-3 py-5 text-center text-nx-body-sm text-nx-text-muted">{emptyLabel}</p>
           ) : (
             visible.map((action, index) => {
               const heading = action.section !== lastSection ? action.section : undefined;

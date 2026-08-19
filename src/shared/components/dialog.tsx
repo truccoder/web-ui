@@ -159,7 +159,7 @@ export function Dialog({
         )}
 
         {footer && (
-          <div className="flex shrink-0 items-center justify-end gap-2 px-[18px] pb-3 pt-3.5">
+          <div className="flex shrink-0 items-center justify-end gap-2 px-[18px] pb-3 pt-3">
             {footer}
           </div>
         )}
