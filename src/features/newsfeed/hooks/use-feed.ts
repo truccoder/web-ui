@@ -2,6 +2,7 @@
 
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import { newsfeedApi } from '../api/feed';
+import type { FeedApiScope } from '../types/feed';
 import { newsfeedKeys } from './keys';
 
 /** How many posts one request asks for. Matches the backend's own default. */
@@ -19,11 +20,13 @@ const PAGE_SIZE = 10;
  * refetch that returns a different page number cannot desynchronise the cursor from the
  * server's idea of where it is.
  */
-export function useNewsfeed(enabled = true) {
+export function useNewsfeed(enabled = true, scope: FeedApiScope = 'ALL') {
   return useInfiniteQuery({
     enabled,
-    queryKey: newsfeedKeys.feed(),
-    queryFn: ({ pageParam }) => newsfeedApi.getFeed(pageParam, PAGE_SIZE),
+    // `scope` IS PART OF THE KEY. Without it the two tabs share one cache entry and switching
+    // between them shows the other tab's posts until a refetch lands.
+    queryKey: newsfeedKeys.feed(scope),
+    queryFn: ({ pageParam }) => newsfeedApi.getFeed(pageParam, PAGE_SIZE, scope),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.page + 1 : undefined),
   });

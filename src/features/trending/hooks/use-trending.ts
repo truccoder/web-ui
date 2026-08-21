@@ -13,7 +13,12 @@ import { trendingApi, type TrendingParams } from '../api';
 export const trendingKeys = {
   all: ['trending'] as const,
   list: (params: Omit<TrendingParams, 'page'>) =>
-    [...trendingKeys.all, params.category ?? 'all', params.timeRange ?? 'week'] as const,
+    [
+      ...trendingKeys.all,
+      params.category ?? 'all',
+      params.source ?? 'all',
+      params.timeRange ?? 'week',
+    ] as const,
 };
 
 const PAGE_SIZE = 20;

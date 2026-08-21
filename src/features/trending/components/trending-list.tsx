@@ -6,7 +6,7 @@ import { Button, EmptyState, Skeleton } from '@/shared/components';
 import { useT } from '@/core/i18n';
 import { cn } from '@/shared/lib/cn';
 import { useTrending } from '../hooks';
-import type { TrendingCategory, TrendingTimeRange } from '../types/trending';
+import type { TrendingCategory, TrendingTimeRange, TrendingSource } from '../types/trending';
 import { TrendingCard } from './trending-card';
 import { TrendingFilters } from './trending-filters';
 
@@ -43,9 +43,10 @@ export function TrendingList({ className }: TrendingListProps) {
 
   const [timeRange, setTimeRange] = useState<TrendingTimeRange>('week');
   const [category, setCategory] = useState<TrendingCategory | undefined>(undefined);
+  const [source, setSource] = useState<TrendingSource | undefined>(undefined);
 
   const { data, status, fetchStatus, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useTrending({ category, timeRange });
+    useTrending({ category, source, timeRange });
 
   const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -85,6 +86,8 @@ export function TrendingList({ className }: TrendingListProps) {
       <TrendingFilters
         timeRange={timeRange}
         onTimeRangeChange={setTimeRange}
+        source={source}
+        onSourceChange={setSource}
         category={category}
         onCategoryChange={setCategory}
       />

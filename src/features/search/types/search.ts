@@ -5,10 +5,13 @@ type Schemas = components['schemas'];
 /**
  * Types for SearchController (`GET /v1/api/search`), derived from `schema.gen.ts`.
  *
- * ONE ENDPOINT, ONE CALL, TWO LISTS. The backend searches `t_users`, `t_posts` and `t_books`
- * directly in Postgres — there is no search index — and returns people and posts together. Books
- * are deliberately not a third list: a book that matches surfaces as the post it is attached to,
- * with its details inline (`SearchPost.book`).
+ * ONE ENDPOINT, ONE CALL, THREE LISTS. The backend searches `t_users`, `t_posts` and `t_books`
+ * directly in Postgres — there is no search index.
+ *
+ * BOOKS BECAME A LIST OF THEIR OWN IN B3. They used to reach the screen only as the post they
+ * were attached to, because `SearchResponse` had no `books` branch — so a title that matched but
+ * had no post behind it was unfindable, on a screen the product describes as searching "posts,
+ * people and books". The branch exists now and this type follows it.
  *
  * NO PAGING, NO RELEVANCE ORDER. The response carries no cursor and no total — `size` caps each
  * list and that is all. Matching is plain diacritics-insensitive substring (Postgres
@@ -72,6 +75,7 @@ export type SearchPost = {
 export type SearchResponse = {
   users: SearchUser[];
   posts: SearchPost[];
+  books: SearchBook[];
 };
 
 /**

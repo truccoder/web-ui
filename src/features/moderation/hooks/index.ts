@@ -1,5 +1,6 @@
 export { moderationKeys } from './keys';
 export {
+  useReportPost,
   useModerationPosts,
   useModerationLogs,
   useBannedUsers,

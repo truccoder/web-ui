@@ -13,7 +13,7 @@
  */
 export const newsfeedKeys = {
   all: ['newsfeed'] as const,
-  feed: () => ['newsfeed', 'feed'] as const,
+  feed: (scope: string = 'ALL') => ['newsfeed', 'feed', scope] as const,
 
   /**
    * The `Tất cả` tab. A SEPARATE BRANCH FROM `feed`, not a parameter on it: the two read

@@ -25,6 +25,28 @@ export const en = {
     // owned by the feature that renders it. This one key stays because the `(admin)` layout —
     // shell, not feature — uses it to label the nav link.
     moderation: {
+      report: {
+        title: 'Report post',
+        description: 'Pick the closest reason. Reports go to the moderators, not to the author.',
+        reasonLabel: 'Reason',
+        reason: {
+          SPAM: 'Spam or advertising',
+          HARASSMENT: 'Harassment or personal attacks',
+          HATE_SPEECH: 'Hate speech',
+          ADULT_CONTENT: 'Adult content',
+          VIOLENCE: 'Violence',
+          MISINFORMATION: 'Misinformation',
+          OTHER: 'Something else',
+        },
+        detailsLabel: 'Anything to add (optional)',
+        detailsPlaceholder: 'What made you report this post?',
+        submit: 'Send report',
+        cancel: 'Cancel',
+        failed: 'Could not send the report',
+        sentTitle: 'Report sent',
+        sentBody: 'Thank you. The report has been recorded and passed to the moderators.',
+        done: 'Close',
+      },
       title: 'Moderation',
     },
   },
@@ -168,6 +190,7 @@ export const en = {
 
   newsfeed: {
     tabs: {
+      skills: 'My skills',
       label: 'Filter the feed',
       all: 'All',
       friends: 'Friends',
@@ -228,6 +251,7 @@ export const en = {
   },
 
   search: {
+    booksSection: 'Books (${count})',
     placeholder: 'Search people, posts and books...',
     error: 'Search failed. Please try again.',
     empty: 'No results for "${query}"',
@@ -243,19 +267,26 @@ export const en = {
     unknownPerson: 'Unknown user',
     untitledBook: 'Untitled book',
     free: 'Free',
-    price: '${price} ₫',
+    price: '${price} đ',
     priceUnknown: 'Price unavailable',
   },
 
   github: {
+    link: {
+      action: 'Link GitHub',
+      linking: 'Linking your GitHub account…',
+      failed: 'Could not link the GitHub account',
+      cancelledTitle: 'You cancelled linking',
+      cancelledDesc: 'Nothing changed. Open your profile to try again.',
+      noCodeTitle: 'Authorisation code missing',
+      noCodeDesc: 'GitHub did not send a code. Start again from the link button on your profile.',
+    },
     title: 'GitHub',
     subtitle: 'Your linked GitHub account, as this app last saw it.',
     loadFailed: 'Could not load GitHub stats',
     notLinked: {
       title: 'No GitHub account linked',
-      // States the limitation instead of offering a button that cannot work — see the note in
-      // `github-stats-card.tsx` and B23.
-      desc: 'Linking is not available yet: the sign-in and linking flows currently share one callback, so the authorisation never reaches the linking step.',
+      desc: 'Link a GitHub account to show your contribution activity and pinned repositories on your profile.',
     },
     // The viewer's variant: it does not explain B23, because "how do I fix this?" is not a
     // question anyone asks about somebody else's account.
@@ -429,6 +460,8 @@ export const en = {
   },
 
   trending: {
+    sourceLabel: 'Filter by source',
+    allSources: 'All sources',
     title: 'Trending',
     subtitle: 'Popular stories in tech from around the web',
     error: 'Failed to load trending items. Please try again.',
@@ -698,8 +731,10 @@ export const en = {
        exist in the backend enum, so relabelling is the closest reachable thing. */
     reaction: {
       LIKE: 'Useful',
+      INSIGHT: 'Insightful',
+      CLAP: 'Respect',
       LOVE: 'Excellent',
-      HAHA: 'Fun',
+      HAHA: 'Funny',
       CRY: 'Confusing',
       ANGRY: 'Disagree',
       count: '${count} reactions',

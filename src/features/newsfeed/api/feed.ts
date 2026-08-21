@@ -1,5 +1,5 @@
 import api from '@/core/api/axios';
-import type { FeedPage, FeedPost, PublicFeedPage } from '../types/feed';
+import type { FeedPage, FeedPost, PublicFeedPage, FeedApiScope } from '../types/feed';
 
 /**
  * NewsfeedController (`com.socialapp.newsfeed`) — 1 endpoint. Bare responses, no wrapper.
@@ -32,8 +32,13 @@ export const newsfeedApi = {
    * until the cache entry goes. Two consequences worth carrying into any debugging: the feed
    * is not a query over posts, and "it is not in the feed" never proves "it was not saved".
    */
-  getFeed: (page = 1, size = 10) =>
-    api.get<FeedPage>('/v1/api/feed', { params: { page, size } }).then((r) => r.data),
+  /**
+   * `scope` narrows the SAME fan-out feed, it does not switch endpoints: `ALL` is everything
+   * Redis holds for this user, `SKILLS` keeps only the posts touching a skill they have verified.
+   * Both still come from the precomputed set, so neither can contain a stranger's post.
+   */
+  getFeed: (page = 1, size = 10, scope: FeedApiScope = 'ALL') =>
+    api.get<FeedPage>('/v1/api/feed', { params: { page, size, scope } }).then((r) => r.data),
 
   /**
    * GET /v1/api/posts/public — every post in the product, newest first. The `Tất cả` tab.

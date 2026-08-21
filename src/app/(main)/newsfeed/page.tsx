@@ -22,13 +22,11 @@ import { useT } from '@/core/i18n';
  * canvas's first block, so it — not the composer — sits on the 28px datum shared with the rail's
  * first group and the ledger's first section.
  *
- * THE FILTER HAS TWO TABS, NOT THE DESIGN'S THREE. `Kỹ năng của tôi` is specified and is not built:
- * no endpoint filters posts by the viewer's verified skills. `/feed` takes only `page`/`size`,
- * `/posts/public` only `cursor`/`limit`, and `/search` takes a free-text query — none of them can
- * express "posts touching skills I have". Rendering it anyway would either show an empty tab or
- * silently show something else, and the design system's own rule is that a control must reach what
- * it names. Recorded as a deviation and raised as a backend request; the day a skill filter exists
- * it is one more entry in `TABS` and one more `FeedScope`.
+ * THE THIRD TAB EXISTS NOW. It was specified by the design and could not be built: `/feed` took
+ * only `page`/`size`, `/posts/public` only a cursor, and `/search` a free-text query — none of
+ * them could express "posts touching skills I have". The omission was recorded here rather than
+ * papered over with a tab that showed something else. B7 added `scope` to `/feed`, so the tab is
+ * one more entry in `TABS` and one more `FeedScope`, exactly as this note predicted.
  *
  * THE TWO TABS ARE TWO ENDPOINTS, not one endpoint filtered — see `Newsfeed`'s `scope` prop.
  */
@@ -40,6 +38,7 @@ export default function NewsfeedPage() {
   const tabs = [
     { id: 'all', label: t('newsfeed.tabs.all') },
     { id: 'friends', label: t('newsfeed.tabs.friends') },
+    { id: 'skills', label: t('newsfeed.tabs.skills') },
   ];
 
   return (

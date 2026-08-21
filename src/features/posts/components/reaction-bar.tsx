@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Angry, Frown, Heart, Laugh, ThumbsUp } from 'lucide-react';
+import { Angry, Frown, HandHeart, Heart, Laugh, Lightbulb, ThumbsUp } from 'lucide-react';
 import { useT } from '@/core/i18n';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { cn } from '@/shared/lib/cn';
@@ -48,8 +48,26 @@ export interface ReactionBarProps {
  * Keys are written out rather than built as `post.reaction.${type}` so they stay greppable
  * in the translation files — an interpolated key looks unused to the next person tidying up.
  */
+/**
+ * THE THREE KNOWLEDGE REACTIONS THE DESIGN SYSTEM ASKED FOR, PLUS THE FOUR THAT PREDATE THEM.
+ *
+ * The kit's row is `Hữu ích · Sáng tỏ · Ghi nhận` — reactions that judge a technical contribution
+ * rather than perform a mood, and one of the reasons the product does not read as a generic
+ * social network. They could not be sent: `ReactionType` was the Facebook set. The backend added
+ * `INSIGHT` and `CLAP` (B5) as ADDITIONS, so every reaction already stored is still valid.
+ *
+ * ORDER PUTS THE KIT'S THREE FIRST, and that is the whole point of the change. `LIKE` carries the
+ * kit's `Hữu ích`; `INSIGHT` and `CLAP` are the two that were missing. The Facebook four follow,
+ * because deleting them would orphan rows that exist in the database today.
+ *
+ * The Vietnamese labels also revert here: they were retuned to a technical register as a stopgap
+ * while only five slots existed, and that workaround is over — `HAHA` can go back to meaning
+ * `Haha` now that `Sáng tỏ` has a slot of its own.
+ */
 const REACTIONS = [
   { type: 'LIKE', Icon: ThumbsUp, labelKey: 'post.reaction.LIKE' },
+  { type: 'INSIGHT', Icon: Lightbulb, labelKey: 'post.reaction.INSIGHT' },
+  { type: 'CLAP', Icon: HandHeart, labelKey: 'post.reaction.CLAP' },
   { type: 'LOVE', Icon: Heart, labelKey: 'post.reaction.LOVE' },
   { type: 'HAHA', Icon: Laugh, labelKey: 'post.reaction.HAHA' },
   { type: 'CRY', Icon: Frown, labelKey: 'post.reaction.CRY' },

@@ -23,6 +23,29 @@ export const vi: Messages = {
   admin: {
     title: 'Quản trị kiểm duyệt',
     moderation: {
+      report: {
+        title: 'Báo cáo bài viết',
+        description:
+          'Chọn lý do gần nhất. Báo cáo được gửi cho quản trị viên, không gửi cho tác giả.',
+        reasonLabel: 'Lý do',
+        reason: {
+          SPAM: 'Spam hoặc quảng cáo',
+          HARASSMENT: 'Quấy rối, công kích cá nhân',
+          HATE_SPEECH: 'Ngôn từ thù ghét',
+          ADULT_CONTENT: 'Nội dung người lớn',
+          VIOLENCE: 'Bạo lực',
+          MISINFORMATION: 'Thông tin sai lệch',
+          OTHER: 'Lý do khác',
+        },
+        detailsLabel: 'Mô tả thêm (không bắt buộc)',
+        detailsPlaceholder: 'Điều gì khiến bạn báo cáo bài này?',
+        submit: 'Gửi báo cáo',
+        cancel: 'Huỷ',
+        failed: 'Không gửi được báo cáo',
+        sentTitle: 'Đã gửi báo cáo',
+        sentBody: 'Cảm ơn bạn. Báo cáo đã được ghi nhận và chuyển tới quản trị viên.',
+        done: 'Đóng',
+      },
       title: 'Kiểm duyệt',
     },
   },
@@ -167,6 +190,7 @@ export const vi: Messages = {
 
   newsfeed: {
     tabs: {
+      skills: 'Kỹ năng của tôi',
       label: 'Lọc bảng tin',
       all: 'Tất cả',
       friends: 'Bạn bè',
@@ -227,6 +251,7 @@ export const vi: Messages = {
   },
 
   search: {
+    booksSection: 'Sách (${count})',
     placeholder: 'Tìm kiếm mọi người, bài viết và sách...',
     error: 'Tìm kiếm thất bại. Vui lòng thử lại.',
     empty: 'Không có kết quả cho "${query}"',
@@ -242,17 +267,26 @@ export const vi: Messages = {
     unknownPerson: 'Người dùng',
     untitledBook: 'Sách chưa có tiêu đề',
     free: 'Miễn phí',
-    price: '${price} ₫',
+    price: '${price} đ',
     priceUnknown: 'Chưa có giá',
   },
 
   github: {
+    link: {
+      action: 'Liên kết GitHub',
+      linking: 'Đang liên kết tài khoản GitHub…',
+      failed: 'Không liên kết được tài khoản GitHub',
+      cancelledTitle: 'Bạn đã huỷ việc liên kết',
+      cancelledDesc: 'Không có gì thay đổi. Mở lại trang cá nhân để thử lần nữa.',
+      noCodeTitle: 'Thiếu mã uỷ quyền',
+      noCodeDesc: 'GitHub không gửi kèm mã. Hãy bắt đầu lại từ nút liên kết trên trang cá nhân.',
+    },
     title: 'GitHub',
     subtitle: 'Tài khoản GitHub đã liên kết, theo lần app đọc gần nhất.',
     loadFailed: 'Không tải được dữ liệu GitHub',
     notLinked: {
       title: 'Chưa liên kết tài khoản GitHub',
-      desc: 'Chưa liên kết được: luồng đăng nhập và luồng liên kết đang dùng chung một callback, nên mã uỷ quyền không bao giờ tới được bước liên kết.',
+      desc: 'Nối tài khoản GitHub để hiện số liệu đóng góp và kho ghim trên hồ sơ của bạn.',
     },
     // Bản cho người xem hồ sơ người khác: không giải thích B23, vì "làm sao sửa" không phải câu
     // hỏi người ta đặt ra với tài khoản của người lạ.
@@ -420,6 +454,8 @@ export const vi: Messages = {
   },
 
   trending: {
+    sourceLabel: 'Lọc theo nguồn',
+    allSources: 'Tất cả nguồn',
     title: 'Xu hướng',
     subtitle: 'Những bài viết công nghệ nổi bật trên khắp mạng',
     error: 'Không thể tải nội dung xu hướng. Vui lòng thử lại.',
@@ -679,17 +715,15 @@ export const vi: Messages = {
       deleteConfirm: 'Xoá bình luận này?',
       deleteWithReplies: 'Xoá bình luận này và ${count} câu trả lời của nó.',
     },
-    /* NHÃN ĐỔI GIỌNG, GIÁ TRỊ TRÊN DÂY GIỮ NGUYÊN.
-       UI kit round 15 thiết kế ba cảm xúc mang tính tri thức — Hữu ích · Sáng tỏ · Ghi nhận —
-       và đó là một phần lập luận "vì sao đây không phải mạng xã hội thường". Enum của backend
-       là bộ Facebook: LIKE · LOVE · HAHA · CRY · ANGRY, nên ba cảm xúc kia không gửi được.
-       Đổi nhãn là thứ gần nhất đạt được mà không đụng backend và không hỏng dữ liệu cũ.
-       CRY → "Khó hiểu" là chỗ gượng nhất, nhưng vẫn hơn "Buồn" đặt dưới một đoạn mã.
-       Bỏ đi bằng cách trả lại 5 dòng dưới đây. Xem docs/backend-plan.md · B5. */
+    /* Ba nhãn đầu là bộ của design system — Hữu ích · Sáng tỏ · Ghi nhận — và từ B5 chúng có
+       giá trị enum thật ở backend (`INSIGHT`, `CLAP`), nên không còn là bản vá nhãn nữa. Bốn
+       nhãn sau giữ lại vì dữ liệu cũ đã dùng chúng; `HAHA` trả về đúng nghĩa của nó. */
     reaction: {
       LIKE: 'Hữu ích',
+      INSIGHT: 'Sáng tỏ',
+      CLAP: 'Ghi nhận',
       LOVE: 'Xuất sắc',
-      HAHA: 'Thú vị',
+      HAHA: 'Haha',
       CRY: 'Khó hiểu',
       ANGRY: 'Không đồng tình',
       count: '${count} cảm xúc',

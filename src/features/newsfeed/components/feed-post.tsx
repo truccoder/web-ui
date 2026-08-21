@@ -20,6 +20,8 @@ import {
   type PostEditorState,
 } from '@/features/posts';
 import { BookActions } from '@/features/bookstore';
+import { ReportPostDialog } from '@/features/moderation';
+import { ExplainPostAction } from '@/features/knowledge';
 import { useMyProfile } from '@/features/security';
 import { Button } from '@/shared/components';
 import { useT } from '@/core/i18n';
@@ -184,6 +186,7 @@ export function FeedPost({ post, onChanged, defaultCommentsOpen = false }: FeedP
 
   const [commentsOpen, setCommentsOpen] = useState(defaultCommentsOpen);
   const [editing, setEditing] = useState(false);
+  const [reporting, setReporting] = useState(false);
 
   const isAuthor = profile?.id === post.authorId;
 
@@ -192,6 +195,10 @@ export function FeedPost({ post, onChanged, defaultCommentsOpen = false }: FeedP
   // this same flag now gates both directions, and `CommentThread` decides which of the two it
   // is offering from `acceptedAnswerId`.
   const canAcceptAnswer = isAuthor && post.postType === 'QNA';
+
+  // 80 characters is roughly one full line of the 672 measure. Below that a post is a
+  // status, not something with an argument in it to explain.
+  const explainable = (post.content?.trim().length ?? 0) >= 80;
 
   // `googlePlaceId`/`locationType`/`locationDetails` travel together on the resolve response
   // and the card's `location` prop is that same shape, so it is only built when all three
@@ -219,6 +226,7 @@ export function FeedPost({ post, onChanged, defaultCommentsOpen = false }: FeedP
         levelName: post.authorLevelName,
       }}
       createdAt={post.createdAt}
+      updatedAt={post.updatedAt}
       // While editing, the stored text is inside the editor's textarea; showing it above as
       // static copy too would put the same sentence on screen twice.
       content={editing ? undefined : post.content}
@@ -235,9 +243,23 @@ export function FeedPost({ post, onChanged, defaultCommentsOpen = false }: FeedP
       // trust: a post carrying one real comment answers `"commentCount":1`.
       commentCount={post.commentCount}
       menu={
-        isAuthor ? (
-          <PostMenu postId={post.postId} onEdit={() => setEditing(true)} onDeleted={onChanged} />
-        ) : undefined
+        /**
+         * THE MENU RENDERS FOR EVERY POST NOW, and its contents are what differ.
+         *
+         * It used to appear only on your own posts, because edit and delete were the only two
+         * things it could offer. B11 added a user-facing report endpoint, so a stranger's post
+         * has an action too — and the design system's note on this menu is that the owner's
+         * version simply does not carry the report item, not that owners get a menu and other
+         * people get nothing.
+         */
+        <PostMenu
+          postId={post.postId}
+          canEdit={isAuthor}
+          canDelete={isAuthor}
+          onEdit={() => setEditing(true)}
+          onDeleted={onChanged}
+          onReport={isAuthor ? undefined : () => setReporting(true)}
+        />
       }
       body={
         <>
@@ -256,6 +278,34 @@ export function FeedPost({ post, onChanged, defaultCommentsOpen = false }: FeedP
               `quizDetails` regardless of `postType` — so it renders after whatever body the
               post has rather than as one of the cases above. */}
           {post.quizDetails && <QuizTaker postId={post.postId} quiz={post.quizDetails} />}
+
+          <ReportPostDialog
+            postId={post.postId}
+            open={reporting}
+            onClose={() => setReporting(false)}
+          />
+
+          {/**
+           * THE AI EXPLANATION HAD NO ENTRY POINT ANYWHERE IN THE PRODUCT.
+           *
+           * `ExplainPostAction` was written, exported from `features/knowledge`'s barrel, and
+           * rendered by nothing — so one of the app's four headline capabilities could not be
+           * reached by a user at all. Same shape as the matchmaking gap: a finished data layer
+           * with the last wire never run.
+           *
+           * IT LIVES UNDER THE BODY, NOT IN THE ACTION ROW. The action row is the P1 "what you
+           * can do about this post" strip — react, comment, save — and every control in it is
+           * one tap with an immediate result. Explaining is not that: it calls a model, takes
+           * seconds, and then puts a block of prose on the screen. That output belongs where
+           * the post's own content is, directly beneath what it explains.
+           *
+           * ONLY WHERE THERE IS SOMETHING TO EXPLAIN. `explainable` gates on real prose: a
+           * one-line status has nothing for a model to unpack, and offering the button there
+           * spends a paid call to be told so.
+           */}
+          {explainable && (
+            <ExplainPostAction postId={post.postId} postContent={post.content ?? ''} />
+          )}
         </>
       }
       actions={

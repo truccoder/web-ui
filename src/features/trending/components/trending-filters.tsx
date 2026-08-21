@@ -3,7 +3,7 @@
 import { Tabs } from '@/shared/components';
 import { useT } from '@/core/i18n';
 import { cn } from '@/shared/lib/cn';
-import type { TrendingCategory, TrendingTimeRange } from '../types/trending';
+import type { TrendingCategory, TrendingTimeRange, TrendingSource } from '../types/trending';
 
 /**
  * Time range and category pickers.
@@ -22,6 +22,16 @@ export interface TrendingFiltersProps {
   /** `undefined` means every category — the backend omits the parameter entirely. */
   category: TrendingCategory | undefined;
   onCategoryChange: (category: TrendingCategory | undefined) => void;
+  /**
+   * `undefined` means all three crawlers.
+   *
+   * SOURCE IS A `Tabs`, NOT CHIPS, and the asymmetry with category is deliberate: there are
+   * exactly four choices including "all", they never grow, and they answer a different question.
+   * Category asks WHAT a story is about; source asks WHO FOUND IT — and the second is the one
+   * that carries the product's claim to aggregate three feeds, so it gets the louder control.
+   */
+  source: TrendingSource | undefined;
+  onSourceChange: (source: TrendingSource | undefined) => void;
   className?: string;
 }
 
@@ -50,9 +60,15 @@ const CATEGORIES: TrendingCategory[] = [
 
 const TIME_RANGES: TrendingTimeRange[] = ['today', 'week', 'month'];
 
+// Backend enum order. `all` is prepended in the markup rather than listed here, because it is
+// the ABSENCE of the parameter, not a fourth value.
+const SOURCES: TrendingSource[] = ['GITHUB', 'HACKER_NEWS', 'DEV_TO'];
+
 export function TrendingFilters({
   timeRange,
   onTimeRangeChange,
+  source,
+  onSourceChange,
   category,
   onCategoryChange,
   className,
@@ -67,6 +83,17 @@ export function TrendingFilters({
         active={timeRange}
         onChange={(id) => onTimeRangeChange(id as TrendingTimeRange)}
         tabs={TIME_RANGES.map((range) => ({ id: range, label: t(`trending.timeRange.${range}`) }))}
+      />
+
+      <Tabs
+        size="sm"
+        aria-label={t('trending.sourceLabel')}
+        active={source ?? 'all'}
+        onChange={(id) => onSourceChange(id === 'all' ? undefined : (id as TrendingSource))}
+        tabs={[
+          { id: 'all', label: t('trending.allSources') },
+          ...SOURCES.map((s) => ({ id: s, label: t(`trending.sources.${s}`) })),
+        ]}
       />
 
       <div className="flex flex-wrap gap-2" role="group" aria-label={t('trending.categoryLabel')}>

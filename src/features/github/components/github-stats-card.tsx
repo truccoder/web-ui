@@ -3,6 +3,7 @@
 import { RefreshCw } from 'lucide-react';
 import { Button, Card, DeveloperMeta, EmptyState, Skeleton } from '@/shared/components';
 import { useT } from '@/core/i18n';
+import { LinkGithubButton } from './link-github-button';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { useRelativeTime } from '@/shared/lib/format';
 import { cn } from '@/shared/lib/cn';
@@ -78,6 +79,7 @@ export function GithubStatsCard({ userId, readOnly = false, className }: GithubS
         className={className}
         title={readOnly ? t('github.notLinkedOther.title') : t('github.notLinked.title')}
         description={readOnly ? t('github.notLinkedOther.desc') : t('github.notLinked.desc')}
+        {...(readOnly ? {} : { action: <LinkGithubButton /> })}
       />
     );
   }

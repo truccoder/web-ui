@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { Flag, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import { Button, Dialog, IconButton, Menu } from '@/shared/components';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { cn } from '@/shared/lib/cn';
@@ -37,6 +37,13 @@ import { useDeletePost } from '../hooks/use-post';
  * by comparing the post's author id with the signed-in user.
  */
 export interface PostMenuProps {
+  /**
+   * Whether the reader may delete. Split from `canEdit` because the two stopped being the
+   * same question once this menu started rendering on OTHER people's posts.
+   */
+  canDelete?: boolean;
+  /** Offer "report this post" — present exactly when the reader is not the author. */
+  onReport?: () => void;
   postId: number;
   /** Opens the caller's edit surface; the menu does not own the form. */
   onEdit?: () => void;
@@ -52,7 +59,15 @@ export interface PostMenuProps {
   className?: string;
 }
 
-export function PostMenu({ postId, onEdit, canEdit = true, onDeleted, className }: PostMenuProps) {
+export function PostMenu({
+  postId,
+  onEdit,
+  canEdit = true,
+  canDelete = true,
+  onReport,
+  onDeleted,
+  className,
+}: PostMenuProps) {
   const t = useT();
   const [confirming, setConfirming] = useState(false);
   const remove = useDeletePost({
@@ -76,17 +91,27 @@ export function PostMenu({ postId, onEdit, canEdit = true, onDeleted, className 
           ...(canEdit
             ? [{ label: t('post.edit.edit'), icon: <Pencil />, onSelect: () => onEdit?.() }]
             : []),
-          {
-            label: t('post.edit.delete'),
-            icon: <Trash2 />,
-            danger: true,
-            onSelect: () => {
-              // Clear a previous failure so the dialog never opens already showing an error from
-              // an attempt the reader has since forgotten about.
-              remove.reset();
-              setConfirming(true);
-            },
-          },
+          // REPORT IS PRESENT EXACTLY WHEN THE POST IS SOMEONE ELSE'S. The design system's note
+          // on this menu says the owner's version simply does not carry the item, and it is
+          // right: reporting your own post is not a thing anyone wants to do.
+          ...(onReport
+            ? [{ label: t('moderation.report.title'), icon: <Flag />, onSelect: onReport }]
+            : []),
+          ...(canDelete
+            ? [
+                {
+                  label: t('post.edit.delete'),
+                  icon: <Trash2 />,
+                  danger: true,
+                  onSelect: () => {
+                    // Clear a previous failure so the dialog never opens already showing an error
+                    // from an attempt the reader has since forgotten about.
+                    remove.reset();
+                    setConfirming(true);
+                  },
+                },
+              ]
+            : []),
         ]}
       />
 

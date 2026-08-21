@@ -69,6 +69,15 @@ export interface PostCardProps {
   author: PostCardAuthor;
   /** ISO timestamp; rendered as a relative label. */
   createdAt: string;
+  /**
+   * The post's last edit, when the backend reports one.
+   *
+   * B4 added `updatedAt` to the feed payload. It matters more than it looks: three things in
+   * this product point AT a post's contents — a verified skill's evidence, a saved AI
+   * explanation, and the reputation the post earned — so a post that changes without saying so
+   * quietly breaks all three.
+   */
+  updatedAt?: string | null;
   /** Free text body. Absent on posts that carry only a details block. */
   content?: string | null;
   /**
@@ -103,6 +112,7 @@ export function PostCard({
   postId,
   author,
   createdAt,
+  updatedAt,
   content,
   location,
   hashtags,
@@ -115,6 +125,12 @@ export function PostCard({
 }: PostCardProps) {
   const t = useT();
   const relativeTime = useRelativeTime();
+
+  /**
+   * A post that was never edited comes back with `updatedAt` equal to `createdAt` — measured on
+   * the live payload, the same shape comments have. So equality is the test, not presence.
+   */
+  const isEdited = updatedAt != null && updatedAt !== createdAt;
 
   // The feed can hand back a post whose author row was missing when the payload was built,
   // and an identity row with a blank name reads as a rendering bug. Name it as unknown
@@ -155,6 +171,11 @@ export function PostCard({
           time={
             <Link href={`/posts/${postId}`} className="hover:text-nx-text-primary hover:underline">
               {relativeTime(createdAt)}
+              {/* ON THE TIMESTAMP, NOT AS A BADGE. "Edited" is a fact about WHEN this text became
+                  what you are reading, so it belongs to the time, not beside the author's name
+                  where a badge would compete with the reputation chip. Comments already say it
+                  this way; posts could not until `updatedAt` existed. */}
+              {isEdited ? <> · {t('post.comments.edited')}</> : null}
             </Link>
           }
           rep={

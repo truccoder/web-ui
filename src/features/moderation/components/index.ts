@@ -4,3 +4,4 @@ export { ModerationLogsTab, type ModerationLogsTabProps } from './moderation-log
 export { BannedUsersTab, type BannedUsersTabProps } from './banned-users-tab';
 export { MyViolationsPanel } from './my-violations-panel';
 export { AppealsTab, type AppealsTabProps } from './appeals-tab';
+export { ReportPostDialog, type ReportPostDialogProps } from './report-post-dialog';

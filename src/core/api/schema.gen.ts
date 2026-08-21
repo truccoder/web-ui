@@ -116,6 +116,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/api/admin/moderation/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getReports"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/api/auth/forgot-password": {
         parameters: {
             query?: never;
@@ -980,6 +996,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/api/moderation/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["report"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/api/notifications": {
         parameters: {
             query?: never;
@@ -1022,6 +1054,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["markAllAsRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/api/notifications/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["stream"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1962,6 +2010,13 @@ export interface components {
             /** Format: int32 */
             parentId?: number;
         };
+        CreatePostReportRequestDto: {
+            details?: string;
+            /** Format: int32 */
+            postId: number;
+            /** @enum {string} */
+            reason: "SPAM" | "HARASSMENT" | "HATE_SPEECH" | "ADULT_CONTENT" | "VIOLENCE" | "MISINFORMATION" | "OTHER";
+        };
         CreatePostRequestDto: {
             articleDetails?: components["schemas"]["ArticleDetails"];
             bookDetails?: components["schemas"]["CreateBookRequestDto"];
@@ -2136,6 +2191,8 @@ export interface components {
             qnaDetails?: components["schemas"]["QnaDetails"];
             quizDetails?: components["schemas"]["PublicQuizDetailsDto"];
             taggedUserIds?: number[];
+            /** Format: date-time */
+            updatedAt?: string;
             /** @enum {string} */
             visibility?: "PUBLIC" | "FRIENDS" | "PRIVATE";
         };
@@ -2252,7 +2309,7 @@ export interface components {
         };
         MyReactionResponseDto: {
             /** @enum {string} */
-            reactionType?: "LIKE" | "LOVE" | "HAHA" | "CRY" | "ANGRY";
+            reactionType?: "LIKE" | "LOVE" | "HAHA" | "CRY" | "ANGRY" | "INSIGHT" | "CLAP";
         };
         NotificationPreferenceResponseDto: {
             emailEnabled?: boolean;
@@ -2281,7 +2338,7 @@ export interface components {
             referenceType?: string;
             title?: string;
             /** @enum {string} */
-            type?: "POST_LIKED" | "POST_COMMENTED" | "POST_TAGGED" | "FRIEND_REQUEST" | "FRIEND_ACCEPTED" | "EVENT_RSVP" | "EVENT_REMINDER" | "BOOK_REVIEW" | "BOOK_PURCHASED";
+            type?: "POST_LIKED" | "POST_COMMENTED" | "POST_TAGGED" | "FRIEND_REQUEST" | "FRIEND_ACCEPTED" | "EVENT_RSVP" | "EVENT_REMINDER" | "BOOK_REVIEW" | "BOOK_PURCHASED" | "SKILL_VERIFIED" | "SKILL_REJECTED";
         };
         OAuthUrlResponseDto: {
             oauthUrl?: string;
@@ -2360,6 +2417,24 @@ export interface components {
         };
         PagePostModerationDetailDto: {
             content?: components["schemas"]["PostModerationDetailDto"][];
+            empty?: boolean;
+            first?: boolean;
+            last?: boolean;
+            /** Format: int32 */
+            number?: number;
+            /** Format: int32 */
+            numberOfElements?: number;
+            pageable?: components["schemas"]["PageableObject"];
+            /** Format: int32 */
+            size?: number;
+            sort?: components["schemas"]["SortObject"][];
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+        };
+        PagePostReportDto: {
+            content?: components["schemas"]["PostReportDto"][];
             empty?: boolean;
             first?: boolean;
             last?: boolean;
@@ -2498,6 +2573,22 @@ export interface components {
             nextCursor?: number;
             posts?: components["schemas"]["FeedPostDataDto"][];
         };
+        PostReportDto: {
+            /** Format: date-time */
+            createdAt?: string;
+            details?: string;
+            /** Format: int32 */
+            id?: number;
+            /** Format: int32 */
+            postId?: number;
+            /** @enum {string} */
+            reason?: "SPAM" | "HARASSMENT" | "HATE_SPEECH" | "ADULT_CONTENT" | "VIOLENCE" | "MISINFORMATION" | "OTHER";
+            /** Format: int32 */
+            reporterId?: number;
+        };
+        PostReportReceiptDto: {
+            reported?: boolean;
+        };
         ProfessionalProfileResponseDto: {
             /** Format: date-time */
             createdAt?: string;
@@ -2585,6 +2676,25 @@ export interface components {
             /** @enum {string} */
             status?: "OPEN" | "CLOSED";
             title?: string;
+        };
+        PublicProfileResponse: {
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: int32 */
+            currentLevelMin?: number;
+            /** Format: int32 */
+            eliteScore?: number;
+            fullName?: string;
+            /** Format: int32 */
+            id?: number;
+            /** Format: int32 */
+            level?: number;
+            levelName?: string;
+            /** Format: int32 */
+            nextLevelMin?: number;
+            profilePictureUrl?: string;
+            username?: string;
+            verifiedSkills?: string[];
         };
         PublicQuizDetailsDto: {
             questions?: components["schemas"]["PublicQuizQuestionDto"][];
@@ -2719,6 +2829,7 @@ export interface components {
             prerequisites?: string[];
         };
         SearchResponse: {
+            books?: components["schemas"]["BookDto"][];
             posts?: components["schemas"]["PostDto"][];
             users?: components["schemas"]["UserDto"][];
         };
@@ -2748,6 +2859,10 @@ export interface components {
             ignoreCase?: boolean;
             nullHandling?: string;
             property?: string;
+        };
+        SseEmitter: {
+            /** Format: int64 */
+            timeout?: number;
         };
         SubmitQuizRequestDto: {
             selectedOptions?: number[];
@@ -2858,7 +2973,7 @@ export interface components {
         };
         UpsertPostReactionRequestDto: {
             /** @enum {string} */
-            reactionType: "LIKE" | "LOVE" | "HAHA" | "CRY" | "ANGRY";
+            reactionType: "LIKE" | "LOVE" | "HAHA" | "CRY" | "ANGRY" | "INSIGHT" | "CLAP";
         };
         UserDto: {
             /** Format: int32 */
@@ -3589,6 +3704,111 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Payload Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+        };
+    };
+    getReports: {
+        parameters: {
+            query?: {
+                postId?: number;
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PagePostReportDto"];
+                };
             };
             /** @description Bad Request */
             400: {
@@ -7279,6 +7499,7 @@ export interface operations {
     getFeed: {
         parameters: {
             query?: {
+                scope?: "ALL" | "SKILLS";
                 page?: number;
                 size?: number;
             };
@@ -9629,6 +9850,111 @@ export interface operations {
             };
         };
     };
+    report: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePostReportRequestDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PostReportReceiptDto"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Payload Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+        };
+    };
     getNotifications: {
         parameters: {
             query?: {
@@ -9954,6 +10280,107 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Payload Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+        };
+    };
+    stream: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": components["schemas"]["SseEmitter"];
+                };
             };
             /** @description Bad Request */
             400: {
@@ -12010,7 +12437,7 @@ export interface operations {
     getReactors: {
         parameters: {
             query?: {
-                type?: "LIKE" | "LOVE" | "HAHA" | "CRY" | "ANGRY";
+                type?: "LIKE" | "LOVE" | "HAHA" | "CRY" | "ANGRY" | "INSIGHT" | "CLAP";
                 cursor?: number;
                 limit?: number;
             };
@@ -15418,6 +15845,7 @@ export interface operations {
         parameters: {
             query?: {
                 category?: "OPENSOURCE" | "EVENT" | "NEW_TECH" | "REGULATION" | "MINDSET" | "TOOL" | "CAREER" | "OTHER";
+                source?: "HACKER_NEWS" | "DEV_TO" | "GITHUB";
                 timeRange?: string;
                 page?: number;
                 size?: number;
@@ -15849,7 +16277,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["PublicUserResponse"];
+                    "*/*": components["schemas"]["PublicProfileResponse"];
                 };
             };
             /** @description Bad Request */

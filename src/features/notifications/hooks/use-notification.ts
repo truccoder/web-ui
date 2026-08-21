@@ -33,7 +33,11 @@ const PAGE_SIZE = 10;
  * rather than tuning it. If this app ever carries real traffic, put the number back to 30_000
  * until that endpoint exists.
  */
-const UNREAD_POLL_MS = 5_000;
+// 60s, and it is now a SAFETY NET rather than the mechanism. `useNotificationStream` holds an
+// SSE connection open and invalidates this query the moment the server sends one, so the poll
+// only has to cover the gap while a dropped stream is reconnecting. It was 5s when polling was
+// the only way the badge could ever change.
+const UNREAD_POLL_MS = 60_000;
 
 /**
  * GET /v1/api/notifications, paged.

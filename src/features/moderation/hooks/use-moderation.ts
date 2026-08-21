@@ -7,7 +7,11 @@ import {
   type UseMutationOptions,
 } from '@tanstack/react-query';
 import { moderationApi } from '../api';
-import type { AdminReviewInput, ModerationSearchParams } from '../types/moderation';
+import type {
+  AdminReviewInput,
+  ModerationSearchParams,
+  CreateReportInput,
+} from '../types/moderation';
 import type { Appeal, AppealDecisionInput, AppealInput, AppealStatus } from '../types/moderation';
 import { moderationKeys } from './keys';
 
@@ -197,5 +201,20 @@ export function useSubmitAppeal() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: moderationKeys.mine });
     },
+  });
+}
+
+/**
+ * Report a post.
+ *
+ * NOTHING TO INVALIDATE. The reporter cannot read the moderation queue, and the post itself does
+ * not change — a report is a vote toward a threshold, and the threshold is the server's business.
+ * So this deliberately touches no cache: showing anything as "changed" would be inventing a
+ * consequence the reader has no way to observe.
+ */
+export function useReportPost(options?: { onSuccess?: () => void }) {
+  return useMutation({
+    mutationFn: (payload: CreateReportInput) => moderationApi.reportPost(payload),
+    onSuccess: () => options?.onSuccess?.(),
   });
 }

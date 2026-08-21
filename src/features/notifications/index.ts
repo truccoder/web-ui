@@ -19,6 +19,7 @@ export { notificationsApi } from './api';
 export {
   notificationKeys,
   useNotifications,
+  useNotificationStream,
   useUnreadNotificationCount,
   useMarkNotificationAsRead,
   useMarkAllNotificationsAsRead,

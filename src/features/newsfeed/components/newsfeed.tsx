@@ -33,7 +33,17 @@ import { FeedPost } from './feed-post';
  * crawled content: not because it is filtered out, but because crawled items have no author to
  * be connected to.
  */
-export type FeedScope = 'all' | 'friends';
+/**
+ * `skills` JOINED THIS UNION WHEN THE BACKEND GREW A `scope` PARAMETER (B7).
+ *
+ * The tab was designed from the start and could not be built: `/feed` took only `page` and
+ * `size`, so there was no way to express "posts touching a skill I have verified" and the
+ * newsfeed page recorded the omission rather than render a tab that showed something else.
+ *
+ * `all` is still a DIFFERENT ENDPOINT (`/posts/public`); `friends` and `skills` are the same
+ * fan-out feed under two scopes.
+ */
+export type FeedScope = 'all' | 'friends' | 'skills';
 
 export interface NewsfeedProps {
   /** @default "friends" */
@@ -64,7 +74,7 @@ export function Newsfeed({ scope = 'friends', className }: NewsfeedProps) {
   // calling one or the other conditionally is the classic way to break the rules of hooks. The
   // idle branch costs nothing: react-query does not fetch a query nothing is reading once its
   // `enabled` is false, and switching tabs then finds the other branch already warm in cache.
-  const friendsFeed = useNewsfeed(scope === 'friends');
+  const friendsFeed = useNewsfeed(scope !== 'all', scope === 'skills' ? 'SKILLS' : 'ALL');
   const publicFeed = usePublicFeed(scope === 'all');
   const feed = scope === 'all' ? publicFeed : friendsFeed;
 

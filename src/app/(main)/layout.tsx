@@ -32,6 +32,9 @@ import { cn } from '@/shared/lib/cn';
 import { ChatClientProvider } from '@/features/chat';
 import { usePendingRequests } from '@/features/friendships';
 import { NotificationBell } from '@/features/notifications';
+// Imported from the module rather than the barrel: the barrel's members were being
+// split into a chunk this route never loaded, so the hook silently never ran.
+import { useNotificationStream } from '@/features/notifications/hooks/use-notification-stream';
 import { SearchBar } from '@/features/search';
 import { Ledger } from './ledger';
 import { setRoleCookie, useLogout, useMyProfile } from '@/features/security';
@@ -439,6 +442,19 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const t = useT();
+
+  /**
+   * THE LIVE NOTIFICATION STREAM, mounted once for the whole signed-in shell.
+   *
+   * Here rather than inside `NotificationBell` because the stream is not the bell's: it
+   * refreshes the notifications LIST as well as the badge, and the list has its own route.
+   * One connection per session, held by the thing that outlives every page.
+   *
+   * IT WAS IN `NavLink` FIRST, which is a nav ITEM — so the app opened eight streams instead
+   * of one and each was torn down as the rail re-rendered. Caught by watching the network:
+   * repeated `/notifications/stream` requests where there should have been exactly one.
+   */
+  useNotificationStream();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();

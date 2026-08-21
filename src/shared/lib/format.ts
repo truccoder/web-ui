@@ -65,9 +65,25 @@ export function formatDate(iso: string | undefined, localeTag: string): string |
  * An unknown currency code makes `Intl` throw rather than degrade, so fall back to the plain
  * number plus the code.
  */
+/**
+ * `₫` (₫) HAS NO GLYPH IN GEIST, so every price fell back mid-string to whatever the system
+ * offered and the symbol sat off the baseline. Measured, not guessed: in the live document the
+ * character renders 20.51px wide in BOTH `Geist` and `Geist Mono` — identical widths for a
+ * proportional and a monospaced face is the signature of a shared fallback — while a real Geist
+ * glyph like `A` measures 26.72.
+ *
+ * `đ` (U+0111) is in the Vietnamese subset the product already loads, so it draws natively and
+ * sits where it should. It is also what Vietnamese interfaces overwhelmingly print.
+ */
+function withDongGlyph(value: string): string {
+  return value.replace(/₫/g, 'đ');
+}
+
 export function formatCurrency(price: number, currency: string, localeTag: string): string {
   try {
-    return new Intl.NumberFormat(localeTag, { style: 'currency', currency }).format(price);
+    return withDongGlyph(
+      new Intl.NumberFormat(localeTag, { style: 'currency', currency }).format(price)
+    );
   } catch {
     return `${price.toLocaleString(localeTag)} ${currency}`;
   }
@@ -95,10 +111,12 @@ export function formatPriceParts(
     const parts = new Intl.NumberFormat(localeTag, { style: 'currency', currency }).formatToParts(
       price
     );
-    const symbol = parts
-      .filter((part) => part.type === 'currency')
-      .map((part) => part.value)
-      .join('');
+    const symbol = withDongGlyph(
+      parts
+        .filter((part) => part.type === 'currency')
+        .map((part) => part.value)
+        .join('')
+    );
     const amount = parts
       .filter((part) => part.type !== 'currency')
       .map((part) => part.value)

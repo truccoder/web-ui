@@ -11,6 +11,8 @@ import type {
   ModerationLogPage,
   ModerationSearchParams,
   PostModerationPage,
+  CreateReportInput,
+  ReportReceipt,
 } from '../types/moderation';
 
 /**
@@ -143,6 +145,16 @@ export const moderationApi = {
     api.get<UserViolation[]>('/v1/api/moderation/my-violations').then((r) => r.data),
 
   /** GET /v1/api/moderation/appeals — the caller's own appeals and their decisions. */
+  /**
+   * POST /v1/api/moderation/reports — a reader flags a post.
+   *
+   * THE REPORTER'S HALF OF MODERATION, and until B11 it did not exist: the queue could only be
+   * filled by the AI classifier, so a human who saw something wrong had nowhere to put it. The
+   * appeal path ran the other way round the whole time.
+   */
+  reportPost: (payload: CreateReportInput) =>
+    api.post<ReportReceipt>('/v1/api/moderation/reports', payload).then((r) => r.data),
+
   getMyAppeals: () => api.get<Appeal[]>('/v1/api/moderation/appeals').then((r) => r.data),
 
   /** POST /v1/api/moderation/appeals — 201 with the created appeal. */

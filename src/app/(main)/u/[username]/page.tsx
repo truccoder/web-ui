@@ -8,7 +8,7 @@ import { MyBooksList } from '@/features/bookstore';
 import { GithubStatsCard } from '@/features/github';
 import { UserPosts } from '@/features/newsfeed';
 import { MySkillsCard } from '@/features/roadmap';
-import { ReputationCard, RepScore, useReputation } from '@/features/reputation';
+import { ReputationCard, RepScore } from '@/features/reputation';
 import { usePublicProfile } from '@/features/security';
 import { useT } from '@/core/i18n';
 
@@ -43,19 +43,9 @@ export default function PublicProfilePage() {
 
   const { data: profile, isPending, isError } = usePublicProfile(username);
 
-  /**
-   * THE LEVEL NEEDS A SECOND REQUEST, and that is a backend shape, not a choice.
-   * `PublicUserResponse` carries `eliteScore` but not `levelName`, and the design system
-   * forbids deriving the level from the score in the client. So the number can be drawn from
-   * the profile payload while the name it belongs to has to be fetched.
-   *
-   * Called before the early returns below — hooks cannot sit behind a branch. The hook is a
-   * no-op until `profile.id` exists, so the loading pass costs nothing.
-   *
-   * `docs/backend-plan.md` B2 asks for a `PublicProfileResponse` that carries the level, at
-   * which point this hook and the `levelName` prop below both go away.
-   */
-  const { data: reputation } = useReputation(profile?.id ?? undefined);
+  // The level used to need a second request: `PublicUserResponse` carried the score without the
+  // name, and the design system forbids deriving one from the other. B2 gave this endpoint its own
+  // DTO, so `levelName` arrives with the profile and the extra round trip is gone.
 
   if (isPending) {
     return (
@@ -101,8 +91,8 @@ export default function PublicProfilePage() {
             {profile.eliteScore != null && (
               <RepScore
                 score={profile.eliteScore}
-                showLevel={reputation?.levelName != null}
-                levelName={reputation?.levelName}
+                showLevel={profile.levelName != null}
+                levelName={profile.levelName ?? undefined}
               />
             )}
           </div>

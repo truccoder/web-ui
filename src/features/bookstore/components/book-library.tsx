@@ -225,10 +225,10 @@ function BookCell({ book, localeTag }: { book: Book; localeTag: string }) {
         ) : null}
 
         <span className="flex flex-wrap items-center gap-[var(--nx-space-tight)]">
-          {/* THE DIGITS ARE MONO, THE CURRENCY SYMBOL IS NOT. `₫` has no glyph in Geist Mono, so
-              the whole string in mono fell back mid-word to another face and the symbol sat a
-              few pixels above the baseline — visible on every priced book in the shelf. Mono is
-              for numbers (§6.5); a currency mark is not one. */}
+          {/* THE DIGITS ARE MONO, THE CURRENCY SYMBOL IS NOT — mono is for numbers (§6.5) and a
+              currency mark is not one. The symbol itself is `đ` rather than `₫`: measured in the
+              live document, `₫` has no glyph in EITHER Geist face and fell back, which is why
+              splitting the spans alone did not fix it. See `withDongGlyph` in `shared/lib`. */}
           <span className="font-mono text-nx-caption tabular-nums text-nx-gray-50">
             {price.amount}
           </span>

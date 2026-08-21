@@ -2,14 +2,16 @@
 
 import Link from 'next/link';
 import {
+  AtSign,
+  BadgeCheck,
   Bell,
   Heart,
   MessageSquare,
+  ShieldX,
   ShoppingBag,
   Star,
   UserCheck,
   UserPlus,
-  AtSign,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useRelativeTime } from '@/shared/lib/format';
@@ -53,6 +55,13 @@ const TYPE_ICON: Record<NotificationType, LucideIcon> = {
   EVENT_REMINDER: Bell,
   BOOK_REVIEW: Star,
   BOOK_PURCHASED: ShoppingBag,
+  // Added by the backend alongside `SKILL_VERIFIED`/`SKILL_REJECTED`, and the exhaustive
+  // `Record` did its job: regenerating the schema turned the new members into a compile error
+  // here rather than letting them render a generic bell. `BadgeCheck` for the approval because
+  // reputation is what it grants; `ShieldX` for the refusal, because a rejection is a decision
+  // about a claim rather than an error the reader made.
+  SKILL_VERIFIED: BadgeCheck,
+  SKILL_REJECTED: ShieldX,
 };
 
 /**
@@ -83,6 +92,23 @@ const TYPE_ICON: Record<NotificationType, LucideIcon> = {
 function hrefFor(notification: AppNotification): string | null {
   if (notification.type === 'FRIEND_REQUEST') return '/friends/requests';
   if (notification.type === 'FRIEND_ACCEPTED') return '/friends/all';
+
+  /**
+   * SKILL DECISIONS LAND ON THE PROFILE, NOT ON THE NODE THEY NAME.
+   *
+   * The backend sends `referenceType: "ROADMAP_NODE"` with the node's id, and its own comment
+   * explains the choice — the node is the linkable thing, the progress row is an internal key.
+   * But this app's roadmap route is keyed by ROADMAP (`/roadmap?id=<roadmapId>`), not by node,
+   * and a notification carries no roadmap id to resolve one with.
+   *
+   * The profile is the better destination anyway: it is where a verified skill actually appears,
+   * next to the Elite Score the verification just moved. That is what the reader came to see.
+   * Sending them to a track to hunt for one node would be technically closer to the reference and
+   * further from the point.
+   */
+  if (notification.type === 'SKILL_VERIFIED' || notification.type === 'SKILL_REJECTED') {
+    return '/profile';
+  }
 
   const { referenceType, referenceId } = notification;
   if (referenceId == null) return null;

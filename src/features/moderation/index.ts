@@ -24,6 +24,8 @@
 export { moderationApi } from './api';
 
 export {
+  ReportPostDialog,
+  type ReportPostDialogProps,
   ModerationFilters,
   type ModerationFiltersProps,
   ModerationPostsTab,
@@ -52,6 +54,7 @@ export {
   useMyViolations,
   useMyAppeals,
   useSubmitAppeal,
+  useReportPost,
 } from './hooks';
 
 export type {

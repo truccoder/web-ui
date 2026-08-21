@@ -1,4 +1,4 @@
-import type { components } from '@/core/api/schema.gen';
+import type { components, paths } from '@/core/api/schema.gen';
 
 type Schemas = components['schemas'];
 
@@ -111,3 +111,11 @@ export type PublicFeedPage = {
   nextCursor: number | null;
   hasMore: boolean;
 };
+
+/**
+ * The backend's own scope enum for `/feed`. Distinct from the UI's `FeedScope`, which also has
+ * an `all` meaning "the public timeline" — a different endpoint entirely.
+ */
+export type FeedApiScope = NonNullable<
+  NonNullable<paths['/v1/api/feed']['get']['parameters']['query']>['scope']
+>;

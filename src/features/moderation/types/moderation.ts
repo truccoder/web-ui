@@ -194,3 +194,24 @@ export type AppealPage = Required<
  * optional and the UI must not demand one.
  */
 export type AppealDecisionInput = Schemas['AppealDecisionRequestDto'];
+
+/**
+ * Why someone is reporting a post. The backend's own enum, in its order.
+ */
+export type ReportReason = NonNullable<Schemas['CreatePostReportRequestDto']['reason']>;
+
+/** Body for `POST /v1/api/moderation/reports`. `details` is optional free text. */
+export type CreateReportInput = Schemas['CreatePostReportRequestDto'];
+
+/**
+ * What the server answers.
+ *
+ * ONE FIELD, AND IT IS NOT A CONFIRMATION OF ACTION. `reported: true` means the report was
+ * recorded, not that anything happened to the post — moderation runs on a threshold the
+ * reporter cannot see. The UI must not promise a removal it has no way to know about.
+ */
+export type ReportReceipt = {
+  [K in keyof Required<Schemas['PostReportReceiptDto']>]:
+    | Required<Schemas['PostReportReceiptDto']>[K]
+    | null;
+};

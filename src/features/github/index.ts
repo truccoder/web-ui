@@ -33,6 +33,8 @@ export { githubApi } from './api';
 
 export {
   GithubStatsCard,
+  LinkGithubButton,
+  type LinkGithubButtonProps,
   type GithubStatsCardProps,
   PinnedRepoList,
   type PinnedRepoListProps,

@@ -53,8 +53,16 @@ export type ProfilePictureResponse = Required<Schemas['ProfilePictureResponseDto
  * Deliberately THIN compared to `/profile/me`: no email, no role, no verification state. What is
  * absent is absent on purpose — the endpoint is open to signed-out visitors.
  */
+/**
+ * `PublicProfileResponse`, NOT `PublicUserResponse` — and the two are different objects now.
+ *
+ * `PublicUserResponse` is the THIN record shared by seven call sites, including the reactor list,
+ * where adding a reputation lookup per row would be an N+1. B2 asked the backend to leave it
+ * alone and give the public-profile endpoint its own richer DTO instead; it did. This type
+ * follows that split, which is why the page can stop making a second request for the level name.
+ */
 export type PublicProfile = {
-  [K in keyof Required<Schemas['PublicUserResponse']>]:
-    | Required<Schemas['PublicUserResponse']>[K]
+  [K in keyof Required<Schemas['PublicProfileResponse']>]:
+    | Required<Schemas['PublicProfileResponse']>[K]
     | null;
 };
