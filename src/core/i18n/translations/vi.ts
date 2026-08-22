@@ -18,6 +18,25 @@ export const vi: Messages = {
     digest: 'Mã lỗi: ${digest}',
   },
 
+  /* Tiêu đề tab trình duyệt, cho những route mà chữ trên trang không dùng làm tiêu đề được.
+     Chỉ `core/i18n/server.ts` đọc, không component nào đọc — xem ghi chú ở đó về lý do đây là
+     danh từ chứ không phải tiêu đề trang. */
+  meta: {
+    login: 'Đăng nhập',
+    register: 'Đăng ký',
+    forgotPassword: 'Đặt lại mật khẩu',
+    resetPassword: 'Mật khẩu mới',
+    magicLink: 'Magic link',
+    verifyEmail: 'Xác minh email',
+    /* Cố ý là LOẠI, không phải tên món. Muốn in tên bài hay tên sách thì phải gọi API lúc server
+       render, trên route mà dữ liệu do client tải bằng phiên của chính người đọc. */
+    post: 'Bài viết',
+    book: 'Sách',
+    project: 'Dự án',
+    developer: 'Hồ sơ lập trình viên',
+    payment: 'Kết quả thanh toán',
+  },
+
   notFound: {
     title: 'Trang này không tồn tại',
     description: 'Có thể liên kết đã cũ, hoặc mục nó trỏ tới đã bị gỡ.',

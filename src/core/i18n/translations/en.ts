@@ -18,6 +18,28 @@ export const en = {
     digest: 'Error code: ${digest}',
   },
 
+  /* Browser-tab titles, for the routes whose own copy makes a poor one. Read only by
+     `core/i18n/server.ts`, never by a component — see the note there on why these are nouns
+     rather than the page's heading: `auth.forgotPassword.title` is the question "Forgot
+     password?", which is a fine heading and a strange tab, and a dynamic route's heading is a
+     book or a person this layer never fetches. */
+  meta: {
+    login: 'Sign in',
+    register: 'Sign up',
+    forgotPassword: 'Reset your password',
+    resetPassword: 'New password',
+    magicLink: 'Magic link',
+    verifyEmail: 'Verify email',
+    /* Deliberately the KIND, not the item. Naming the post or the book would mean fetching it
+       during server render, on a route whose data the client loads with the reader's own session;
+       "Post · Elite Nexus" is honest and still tells the tabs apart from the feed. */
+    post: 'Post',
+    book: 'Book',
+    project: 'Project',
+    developer: 'Developer profile',
+    payment: 'Payment result',
+  },
+
   notFound: {
     title: 'This page does not exist',
     description: 'The link may be out of date, or the item it pointed at has been removed.',
