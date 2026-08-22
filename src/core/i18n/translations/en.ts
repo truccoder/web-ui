@@ -108,7 +108,6 @@ export const en = {
     chats: 'Chats',
     projects: 'Projects',
     profile: 'Profile',
-    dashboard: 'Dashboard',
     logout: 'Logout',
     primary: 'Main navigation',
     groupCommunity: 'Community',
@@ -1032,32 +1031,6 @@ export const en = {
     },
   },
 
-  dashboard: {
-    welcome: 'Welcome back',
-    // `${name}`, not `${fullname}`: the page passes `name`, and the old placeholder never
-    // matched it, so this line rendered the literal `${fullname}` for every signed-in user.
-    welcomeName: 'Welcome back, ${name}',
-    subtitle: "Here's what's happening on your network",
-    viewAll: 'View all',
-    stats: {
-      friends: 'Friends',
-      friendsDesc: 'Total connections',
-      pending: 'Pending',
-      pendingDesc: 'Friend requests',
-    },
-    // The row-level strings (empty state, accept/reject, add) live with `features/friendships`;
-    // only the section headings belong to the page. `followers`/`following` were removed at P3.3
-    // with the follow feature — no `SocialController` exists.
-    requests: {
-      title: 'Friend Requests',
-      desc: 'People who want to connect',
-    },
-    suggestions: {
-      title: 'People You May Know',
-      desc: 'Expand your network',
-    },
-  },
-
   ledger: {
     label: 'Summary',
     evidence: 'Capability',
@@ -1233,6 +1206,17 @@ export const en = {
     network: {
       title: 'Your network',
       viewAll: 'All friends',
+    },
+    /* WAS `dashboard.stats.*`, MOVED HERE WHEN `/dashboard` WAS DELETED. The route was absorbed
+       into `/profile` at P5.2 and the redirect stub that kept its URL alive is gone now, so a
+       top-level `dashboard` block was a heading for a page that no longer exists — the rest of
+       that block (a greeting, a subtitle, two section titles) had had no reader since P5.2 and
+       went with the route. These four are the only keys that still had one. */
+    stats: {
+      friends: 'Friends',
+      friendsDesc: 'Total connections',
+      pending: 'Pending',
+      pendingDesc: 'Friend requests',
     },
     // Grouped by SURFACE rather than by owning feature, which is the convention already in force:
     // `features/bookstore` reads `post.book.*` on the feed card and `payment.*` on the result page.

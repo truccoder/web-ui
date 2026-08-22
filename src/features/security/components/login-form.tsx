@@ -3,7 +3,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
-import { Button, Card, Input } from '@/shared/components';
+import { BrandMark, Button, Card, Input } from '@/shared/components';
 import { getErrorMessage } from '@/shared/lib/api-error';
 // i18n is app-wide infrastructure still living in lib/. It is the one edge out of this
 // feature; when it moves to core/ (recommended infra checkpoint) this import updates and
@@ -11,7 +11,6 @@ import { getErrorMessage } from '@/shared/lib/api-error';
 import { useT } from '@/core/i18n';
 import { useLogin } from '../hooks/use-auth';
 import { loginSchema, type LoginFormValues } from '../lib/validation';
-import { BrandMark } from './brand-mark';
 import { OAuthButtons } from './oauth-buttons';
 
 export interface LoginFormProps {
@@ -50,7 +49,16 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
   return (
     <Card padding={24} className="w-full">
       <div className="flex flex-col items-center gap-2 text-center">
-        <BrandMark />
+        {/* THE REAL MARK, NOT THE PLACEHOLDER THIS FILE USED TO IMPORT. `features/security` carried
+            its own `brand-mark.tsx` — an ink tile with a mono "N", whose own header called itself
+            an APPROXIMATION and said to "swap for the real mark when the app has a shared logo
+            asset". `shared/components/BrandMark` is that asset: the DS's chevron, drawn in two
+            forms so it sits correctly on light and dark. The placeholder outlived the condition
+            for its own removal, which is how a stand-in becomes a second brand.
+
+            `size={44}` keeps the auth card's header exactly the height it was — the placeholder
+            rendered `size-11`. A px prop, not a spacing rung, so no ladder applies. */}
+        <BrandMark size={44} />
         <h1 className="text-nx-title font-semibold text-nx-text-primary">
           {t('auth.login.title')}
         </h1>

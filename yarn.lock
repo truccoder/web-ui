@@ -508,11 +508,6 @@
     "@jridgewell/resolve-uri" "^3.1.0"
     "@jridgewell/sourcemap-codec" "^1.4.14"
 
-"@msgpack/msgpack@^2.8.0":
-  version "2.8.0"
-  resolved "https://registry.yarnpkg.com/@msgpack/msgpack/-/msgpack-2.8.0.tgz#4210deb771ee3912964f14a15ddfb5ff877e70b9"
-  integrity sha512-h9u4u/jiIRKbq25PM+zymTyW6bhTzELvOoUd+AvYriWOAKpLGnIamaET3pnHYoI5iYphAHBI4ayx0MehR+VVPQ==
-
 "@napi-rs/canvas-android-arm64@0.1.100":
   version "0.1.100"
   resolved "https://registry.yarnpkg.com/@napi-rs/canvas-android-arm64/-/canvas-android-arm64-0.1.100.tgz#b7c68b91d57702a5fc523fa82de72ea741e6766e"
@@ -871,11 +866,6 @@
     "@types/express-serve-static-core" "^4.17.33"
     "@types/qs" "*"
     "@types/serve-static" "^1"
-
-"@types/google.maps@^3.64.1":
-  version "3.64.1"
-  resolved "https://registry.yarnpkg.com/@types/google.maps/-/google.maps-3.64.1.tgz#95bd9b53e7598232f78b9132f2c41f8970ccd809"
-  integrity sha512-nEBoa6iDNipICtxJ5VlrOgPNZQ6ixIg5nuv8iryFj0Z/1NLgxyg3pQCVegPuCzGCyTQwQI/N3uZvLUysqAzaaw==
 
 "@types/http-errors@*":
   version "2.0.5"
@@ -1690,11 +1680,6 @@ data-view-byte-offset@^1.0.1:
     es-errors "^1.3.0"
     is-data-view "^1.0.1"
 
-date-fns-tz@^3.2.0:
-  version "3.2.0"
-  resolved "https://registry.yarnpkg.com/date-fns-tz/-/date-fns-tz-3.2.0.tgz#647dc56d38ac33a3e37b65e9d5c4cda5af5e58e6"
-  integrity sha512-sg8HqoTEulcbbbVXeg84u5UnlsQa8GS5QXMqjjYIhS4abEVVKIUwe0/l/UhrZdKaL/W5eWZNlbTeEIiOXTcsBQ==
-
 debug@2.6.9:
   version "2.6.9"
   resolved "https://registry.yarnpkg.com/debug/-/debug-2.6.9.tgz#5d128515df134ff327e90a4c93f4e077a536341f"
@@ -2195,11 +2180,6 @@ etag@~1.8.1:
   version "1.8.1"
   resolved "https://registry.yarnpkg.com/etag/-/etag-1.8.1.tgz#41ae2eeb65efa62268aebfea83ac7d79299b0887"
   integrity sha512-aIL5Fx7mawVa300al2BnEE4iNvo1qETxLrPI/o05L7z6go7fCw1J6EQmbK4FmJ2AS7kgVF/KEZWufBfdClMcPg==
-
-eventemitter3@^4.0.7:
-  version "4.0.7"
-  resolved "https://registry.yarnpkg.com/eventemitter3/-/eventemitter3-4.0.7.tgz#2de9b68f6528d5644ef5c59526a1b4a07306169f"
-  integrity sha512-8guHBZCwKnFhYdHr2ysuRWErTwhoN2X8XELRlrRwpmfeY2jjuUN4taQMsULKUVo1K4DvZl+0pgfyoysHxvmvEw==
 
 eventemitter3@^5.0.1:
   version "5.0.4"
@@ -3511,21 +3491,6 @@ peer@^1.0.2:
     ws "^7.2.3 || ^8.0.0"
     yargs "^17.6.2"
 
-peerjs-js-binarypack@^2.1.0:
-  version "2.1.0"
-  resolved "https://registry.yarnpkg.com/peerjs-js-binarypack/-/peerjs-js-binarypack-2.1.0.tgz#f0fc822d3cb54ab1022f4bd580308475e8f77b70"
-  integrity sha512-YIwCC+pTzp3Bi8jPI9UFKO0t0SLo6xALnHkiNt/iUFmUUZG0fEEmEyFKvjsDKweiFitzHRyhuh6NvyJZ4nNxMg==
-
-peerjs@^1.5.5:
-  version "1.5.5"
-  resolved "https://registry.yarnpkg.com/peerjs/-/peerjs-1.5.5.tgz#71095595151961566688b9b79eafcb0ab93bcfc2"
-  integrity sha512-viMUCPDL6CSfOu0ZqVcFqbWRXNHIbv2lPqNbrBIjbFYrflebOjItJ4hPfhjnuUCstqciHVu9vVJ7jFqqKi/EuQ==
-  dependencies:
-    "@msgpack/msgpack" "^2.8.0"
-    eventemitter3 "^4.0.7"
-    peerjs-js-binarypack "^2.1.0"
-    webrtc-adapter "^9.0.0"
-
 picocolors@^1.0.0, picocolors@^1.1.1:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/picocolors/-/picocolors-1.1.1.tgz#3d321af3eab939b083c8f929a1d12cda81c26b6b"
@@ -3600,11 +3565,6 @@ punycode@^2.1.0:
   version "2.3.1"
   resolved "https://registry.yarnpkg.com/punycode/-/punycode-2.3.1.tgz#027422e2faec0b25e1549c3e1bd8309b9133b6e5"
   integrity sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==
-
-qrcode.react@^4.2.0:
-  version "4.2.0"
-  resolved "https://registry.yarnpkg.com/qrcode.react/-/qrcode.react-4.2.0.tgz#1bce8363f348197d145c0da640929a24c83cbca3"
-  integrity sha512-QpgqWi8rD9DsS9EP3z7BT+5lY5SFhsqGjpgW5DY/i3mK4M9DTBNz3ErMi8BWYEfI3L0d8GIbGmcdFAS1uIRGjA==
 
 qs@~6.15.1:
   version "6.15.2"
@@ -3812,11 +3772,6 @@ scheduler@^0.27.0:
   version "0.27.0"
   resolved "https://registry.yarnpkg.com/scheduler/-/scheduler-0.27.0.tgz#0c4ef82d67d1e5c1e359e8fc76d3a87f045fe5bd"
   integrity sha512-eNv+WrVbKu1f3vbYJT/xtiF5syA5HPIMtf9IgY/nKg0sWqzAUEvqY/xm7OcZc/qafLx/iO9FgOmeSAp4v5ti/Q==
-
-sdp@^3.2.0:
-  version "3.2.2"
-  resolved "https://registry.yarnpkg.com/sdp/-/sdp-3.2.2.tgz#fdef97433fd61d8950cac8987803a84b11fc0aba"
-  integrity sha512-xZocWwfyp4hkbN4hLWxMjmv2Q8aNa9MhmOZ7L9aCZPT+dZsgRr6wZRrSYE3HTdyk/2pZKPSgqI7ns7Een1xMSA==
 
 semver@^6.3.1:
   version "6.3.1"
@@ -4416,13 +4371,6 @@ web-streams-polyfill@^3.0.3:
   version "3.3.3"
   resolved "https://registry.yarnpkg.com/web-streams-polyfill/-/web-streams-polyfill-3.3.3.tgz#2073b91a2fdb1fbfbd401e7de0ac9f8214cecb4b"
   integrity sha512-d2JWLCivmZYTSIoge9MsgFCZrt571BikcWGYkjC1khllbTeDlGqZ2D8vD8E/lJa8WGWbb7Plm8/XJYV7IJHZZw==
-
-webrtc-adapter@^9.0.0:
-  version "9.0.5"
-  resolved "https://registry.yarnpkg.com/webrtc-adapter/-/webrtc-adapter-9.0.5.tgz#fb036c3db06e1a0d86c264da649e130187783b3f"
-  integrity sha512-U9vjByy/sK2OMXu5mmfuZFKTMIUQe34c0JXRO+oDrxJTsntdYT2iIFwYMOV7HhMTuktcZLGf2W1N/OcSf9ssWg==
-  dependencies:
-    sdp "^3.2.0"
 
 which-boxed-primitive@^1.1.0, which-boxed-primitive@^1.1.1:
   version "1.1.1"

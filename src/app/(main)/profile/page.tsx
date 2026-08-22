@@ -96,15 +96,15 @@ export default function ProfilePage() {
             briefly sat here belonged to the bare-set reading, which the kit does not ship. */}
         <div className="grid gap-[var(--nx-space-element)] sm:grid-cols-2">
           <StatTile
-            label={t('dashboard.stats.friends')}
+            label={t('profile.stats.friends')}
             value={friends?.totalCount}
-            description={t('dashboard.stats.friendsDesc')}
+            description={t('profile.stats.friendsDesc')}
             icon={<Users size={16} />}
           />
           <StatTile
-            label={t('dashboard.stats.pending')}
+            label={t('profile.stats.pending')}
             value={pendingRequests?.length}
-            description={t('dashboard.stats.pendingDesc')}
+            description={t('profile.stats.pendingDesc')}
             icon={<Clock size={16} />}
           />
         </div>

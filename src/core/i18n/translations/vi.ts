@@ -102,7 +102,6 @@ export const vi: Messages = {
     chats: 'Chats',
     projects: 'Dự án',
     profile: 'Trang cá nhân',
-    dashboard: 'Dashboard',
     logout: 'Đăng xuất',
     primary: 'Điều hướng chính',
     // R15 rail: hai nhóm — người khác, rồi bạn. `groupStream`/`groupNetwork` giữ lại vì
@@ -1014,27 +1013,6 @@ export const vi: Messages = {
     },
   },
 
-  dashboard: {
-    welcome: 'Chào mừng trở lại',
-    welcomeName: 'Chào mừng trở lại, ${name}',
-    subtitle: 'Đây là những gì đang xảy ra trong mạng lưới của bạn',
-    viewAll: 'Xem tất cả',
-    stats: {
-      friends: 'Bạn bè',
-      friendsDesc: 'Tổng kết nối',
-      pending: 'Đang chờ',
-      pendingDesc: 'Lời mời kết bạn',
-    },
-    requests: {
-      title: 'Lời mời kết bạn',
-      desc: 'Những người muốn kết nối với bạn',
-    },
-    suggestions: {
-      title: 'Người bạn có thể biết',
-      desc: 'Mở rộng mạng lưới của bạn',
-    },
-  },
-
   ledger: {
     label: 'Tóm lược',
     evidence: 'Năng lực',
@@ -1209,6 +1187,15 @@ export const vi: Messages = {
     network: {
       title: 'Mạng lưới của bạn',
       viewAll: 'Tất cả bạn bè',
+    },
+    /* Vốn là `dashboard.stats.*`, chuyển sang đây khi xoá `/dashboard`. Route đó đã bị `/profile`
+       hấp thụ từ P5.2 và bản redirect giữ URL cũ nay cũng đã gỡ, nên một khối `dashboard` ở cấp
+       cao nhất là tiêu đề cho một trang không còn tồn tại. */
+    stats: {
+      friends: 'Bạn bè',
+      friendsDesc: 'Tổng kết nối',
+      pending: 'Đang chờ',
+      pendingDesc: 'Lời mời kết bạn',
     },
     books: {
       title: 'Sách của bạn',
