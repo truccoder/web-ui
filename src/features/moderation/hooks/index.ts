@@ -4,6 +4,7 @@ export {
   useModerationPosts,
   useModerationLogs,
   useBannedUsers,
+  useReports,
   useReviewPost,
   type ModerationMutationOptions,
   type ReviewPostVariables,

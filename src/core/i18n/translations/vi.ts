@@ -5,6 +5,25 @@ export const vi: Messages = {
     name: 'Elite Nexus',
   },
 
+  /* Các lớp chặn lỗi theo route: `app/error.tsx`, `app/(main)/error.tsx`, `app/not-found.tsx`.
+     `global-error.tsx` KHÔNG nằm ở đây và không thể nằm ở đây — nó dựng khi provider đã mất, nên
+     chữ của nó viết thẳng trong file đó. */
+  error: {
+    title: 'Màn hình này gặp lỗi',
+    description: 'Trang không dựng xong được. Thử lại thường là đủ — dữ liệu của bạn vẫn an toàn.',
+    retry: 'Thử lại',
+    goHome: 'Về bảng tin',
+    /* Chỉ hiện khi React có gửi mã, tức là trên bản build. Đây là đầu mối duy nhất nối màn hình
+       này với một dòng trong log máy chủ. */
+    digest: 'Mã lỗi: ${digest}',
+  },
+
+  notFound: {
+    title: 'Trang này không tồn tại',
+    description: 'Có thể liên kết đã cũ, hoặc mục nó trỏ tới đã bị gỡ.',
+    goHome: 'Về bảng tin',
+  },
+
   payment: {
     invalidTitle: 'Liên kết thanh toán không hợp lệ',
     invalidDesc: 'Liên kết này thiếu thông tin đơn hàng.',
@@ -317,9 +336,21 @@ export const vi: Messages = {
     pageOf: 'Trang ${page} / ${totalPages}',
     tabs: {
       posts: 'Hàng chờ',
+      reports: 'Báo cáo',
       logs: 'Nhật ký quyết định',
       banned: 'Người bị cấm',
       appeals: 'Khiếu nại',
+    },
+    /* Hàng chờ báo cáo từ người đọc. Chỉ đọc, do chính hình dạng của API — không có endpoint nào
+       đánh dấu một báo cáo là đã xử lý — nên `readOnly` phải nói thẳng điều đó. */
+    reports: {
+      readOnly:
+        'Báo cáo là tín hiệu, không phải danh sách việc: không đánh dấu xử lý được ở đây. Mở bài viết ra để quyết định.',
+      total: '${count} báo cáo',
+      empty: 'Chưa ai báo cáo điều gì',
+      emptyForPost: 'Không có báo cáo nào cho bài #${postId}',
+      viewPost: 'Mở bài #${postId}',
+      reporter: 'Người báo cáo #${reporterId}',
     },
     appeals: {
       filter: 'Lọc theo trạng thái',
@@ -698,6 +729,18 @@ export const vi: Messages = {
       delete: 'Xoá',
       deleteConfirm: 'Xoá bài này?',
       pendingReview: 'Lưu xong bài sẽ qua kiểm duyệt lại — có thể tạm biến khỏi bảng tin một lúc.',
+      /* `UpdatePostRequestDto` không có `eventDetails` lẫn `bookDetails`, nên hai loại này giữ
+         nguyên những gì đã đặt lúc đăng. Nói thẳng ra, thay vì để tác giả đi tìm một ô ngày
+         tháng không tồn tại. */
+      immutable: {
+        EVENT:
+          'Chi tiết sự kiện không sửa được sau khi đăng. Chỉ sửa được nội dung và phạm vi xem.',
+        BOOK: 'Thông tin sách và tệp đã tải lên không sửa được sau khi đăng. Chỉ sửa được nội dung và phạm vi xem.',
+      },
+      /* Server không trả đáp án về — bảng tin chỉ mang bản dành cho người đọc — nên lưu là ghi
+         đè đáp án bằng những gì đang có trên màn hình. Xem `post-editor.tsx`. */
+      quizKeyLost:
+        'Đáp án đúng không được gửi về màn hình này, nên lưu sẽ xoá mất chúng. Hãy đánh dấu lại đáp án đúng cho từng câu trước khi lưu.',
     },
     comments: {
       show: 'Bình luận',

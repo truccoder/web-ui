@@ -215,3 +215,31 @@ export type ReportReceipt = {
     | Required<Schemas['PostReportReceiptDto']>[K]
     | null;
 };
+
+/**
+ * One reader's report, as the ADMIN queue serves it back.
+ *
+ * THE READ SIDE OF `reportPost`, AND IT HAD NO SCREEN AT ALL until now. `POST /moderation/reports`
+ * shipped with B11 and `ReportPostDialog` has been writing into this table since; the matching
+ * `GET /admin/moderation/reports` was the one endpoint in the entire generated spec with no
+ * caller. So the product accepted reports and gave no one any way to read them — the same shape
+ * of gap that appeals had before their tab existed, and a worse one, because a report is a
+ * promise made to a reader who took the trouble to file it.
+ *
+ * WHAT IT DOES NOT CARRY IS THE POINT OF THE SCREEN'S DESIGN: `postId` and `reporterId`, no post
+ * content, no author, no reporter name. `PostReportDto` is a copy of the row and nothing more, so
+ * a report is only ever a POINTER at a post — which is why the tab's row is built around a jump
+ * into the post queue rather than trying to render a post it was never given.
+ *
+ * There is also no status on the row. Nothing marks a report handled, so this list only grows and
+ * a post decided in the queue keeps its reports here. The screen must not imply otherwise.
+ */
+export type PostReport = Schemas['PostReportDto'];
+
+/** One page of reports. Same envelope, same 1-based-in / 0-based-out asymmetry. */
+export type PostReportPage = Required<
+  Pick<
+    Schemas['PagePostReportDto'],
+    'number' | 'size' | 'totalElements' | 'totalPages' | 'first' | 'last' | 'empty'
+  >
+> & { content: PostReport[] };

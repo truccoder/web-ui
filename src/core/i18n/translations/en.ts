@@ -3,6 +3,27 @@ export const en = {
     name: 'Elite Nexus',
   },
 
+  /* The route-level boundaries: `app/error.tsx`, `app/(main)/error.tsx` and `app/not-found.tsx`.
+     `global-error.tsx` is NOT here and cannot be — it renders with the provider gone, so its
+     copy is inlined there. Kept at the top of the bundle beside `app`, because these belong to
+     the shell rather than to any one domain. */
+  error: {
+    title: 'Something broke on this screen',
+    description:
+      'The page could not finish rendering. Trying again usually works — your data is safe.',
+    retry: 'Try again',
+    goHome: 'Back to newsfeed',
+    /* Printed only when React supplies one, which in practice means a production build. It is
+       the only handle that ties this screen to a line in the server log. */
+    digest: 'Error code: ${digest}',
+  },
+
+  notFound: {
+    title: 'This page does not exist',
+    description: 'The link may be out of date, or the item it pointed at has been removed.',
+    goHome: 'Back to newsfeed',
+  },
+
   payment: {
     invalidTitle: 'Invalid payment link',
     invalidDesc: 'This link is missing order information.',
@@ -318,9 +339,21 @@ export const en = {
     pageOf: 'Page ${page} / ${totalPages}',
     tabs: {
       posts: 'Queue',
+      reports: 'Reports',
       logs: 'Decision log',
       banned: 'Banned users',
       appeals: 'Appeals',
+    },
+    /* The reader-report queue. Read-only by the shape of the API — there is no endpoint that
+       marks a report handled — which is what `readOnly` has to say out loud. */
+    reports: {
+      readOnly:
+        'Reports are a signal, not a task list: nothing here can be marked handled. Open the post to decide it.',
+      total: '${count} reports',
+      empty: 'No one has reported anything',
+      emptyForPost: 'No reports on post #${postId}',
+      viewPost: 'Open post #${postId}',
+      reporter: 'Reported by #${reporterId}',
     },
     appeals: {
       filter: 'Filter by status',
@@ -707,6 +740,17 @@ export const en = {
       deleteConfirm: 'Delete this post?',
       pendingReview:
         'Saving sends the post back through review — it may briefly disappear from the feed.',
+      /* `UpdatePostRequestDto` carries no `eventDetails` and no `bookDetails`, so these two
+         kinds keep whatever they were created with. Stated rather than left to be discovered
+         by an author hunting for a date field that is not there. */
+      immutable: {
+        EVENT: 'Event details cannot be changed after posting. Only the text and who can see it.',
+        BOOK: 'Book details and the uploaded file cannot be changed after posting. Only the text and who can see it.',
+      },
+      /* The server never sends the answer key back — the feed carries the reader's copy of the
+         quiz — so saving rewrites it from whatever is on screen. See `post-editor.tsx`. */
+      quizKeyLost:
+        'The correct answers are not sent back to this screen, so saving would clear them. Mark the right answer on each question again before saving.',
     },
     comments: {
       // The feed's toggle, not the thread's: `CommentThread` fetches on mount, so the feed

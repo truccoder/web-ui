@@ -266,6 +266,10 @@ export function FeedPost({ post, onChanged, defaultCommentsOpen = false }: FeedP
           {editing ? (
             <PostEditor
               postId={post.postId}
+              // `?? 'REGULAR'`: the payload types every field optional, and a post with no kind
+              // is a plain post everywhere else in this file (`PostBody`'s switch falls through
+              // to the same place). The editor uses it only to choose which panel to open.
+              postType={post.postType ?? 'REGULAR'}
               current={toEditorState(post)}
               onDone={() => setEditing(false)}
               onSaved={onChanged}

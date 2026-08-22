@@ -19,3 +19,4 @@ export type {
   ViolationSeverity,
 } from './moderation';
 export type { AppealPage, AppealDecisionInput } from './moderation';
+export type { PostReport, PostReportPage } from './moderation';

@@ -70,6 +70,22 @@ export function useBannedUsers(page = 1, size = 10, enabled = true) {
   });
 }
 
+/**
+ * GET /reports — what readers have flagged.
+ *
+ * READ-ONLY, SO THERE IS NO MUTATION BESIDE IT. Nothing marks a report handled server-side; see
+ * the type note on `PostReport`. `enabled` matches the other tab hooks so the admin screen only
+ * fetches the list it is showing.
+ */
+export function useReports(postId?: number, page = 1, size = 10, enabled = true) {
+  return useQuery({
+    queryKey: moderationKeys.reports(postId, page, size),
+    queryFn: () => moderationApi.getReports(postId, page, size),
+    enabled,
+    placeholderData: (previous) => previous,
+  });
+}
+
 export interface ReviewPostVariables {
   postId: number;
   payload: AdminReviewInput;

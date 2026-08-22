@@ -11,19 +11,20 @@ import type {
   ModerationLogPage,
   ModerationSearchParams,
   PostModerationPage,
+  PostReportPage,
   CreateReportInput,
   ReportReceipt,
 } from '../types/moderation';
 
 /**
- * `AdminModerationController` (`/v1/api/admin/moderation`) — 4 endpoints, 4 functions.
+ * `AdminModerationController` (`/v1/api/admin/moderation`) — 5 endpoints, 5 functions.
  *
  * EVERY PATH HERE IS GENUINELY ADMIN-ONLY. `SecurityConfig` matches `/v1/api/admin/**` and
  * requires `hasRole("ADMIN")`, and URL-level rules are the half of Spring Security this backend
  * actually enables. So unlike `features/roadmap` (B20), the client-side gate on these screens is
  * a convenience, not the only thing standing between a user and the data.
  *
- * PAGINATION IS 1-BASED ON THE WAY IN AND 0-BASED ON THE WAY BACK, on all three list endpoints.
+ * PAGINATION IS 1-BASED ON THE WAY IN AND 0-BASED ON THE WAY BACK, on every list endpoint here.
  * `@RequestParam(defaultValue = "1") @Positive int page` then `PageRequest.of(page - 1, size)`,
  * so `page=0` is a **400**, not the first page, while the response's `number` is Spring's 0-based
  * index. Anything computing "the next page" from `number` adds 2.
@@ -96,6 +97,22 @@ export const moderationApi = {
    */
   reviewPost: (postId: number, payload: AdminReviewInput) =>
     api.post<void>(`/v1/api/admin/moderation/posts/${postId}/review`, payload).then((r) => r.data),
+
+  /**
+   * GET /v1/api/admin/moderation/reports — what readers have flagged.
+   *
+   * `postId` NARROWS TO ONE POST and is the parameter that makes this useful beside the queue:
+   * a moderator looking at post #5055 can ask what was actually reported about it, rather than
+   * reading the classifier's score and guessing. Omitted, it is every report, newest page first.
+   *
+   * NO STATUS, NO DECISION, NOTHING TO POST BACK. Unlike appeals, a report is not a workflow item
+   * server-side — the row is written, counted towards moderation, and never marked handled. This
+   * is a read-only surface by the shape of the API, not by a choice made here.
+   */
+  getReports: (postId?: number, page = 1, size = 10) =>
+    api
+      .get<PostReportPage>('/v1/api/admin/moderation/reports', { params: { postId, page, size } })
+      .then((r) => r.data),
 
   /**
    * GET /v1/api/admin/moderation/appeals — the appeal queue.

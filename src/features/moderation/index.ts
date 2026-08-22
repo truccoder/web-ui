@@ -1,8 +1,8 @@
 /**
  * `features/moderation` — public surface. BE package `com.socialapp.moderation`.
  *
- * One controller, four endpoints: the review queue, the raw log search, the banned-user list, and
- * the decision itself.
+ * One controller, five endpoints: the review queue, the raw log search, the banned-user list, the
+ * reader-report list, and the decision itself.
  *
  * THE ONLY ADMIN DOMAIN IN THIS PROJECT WHOSE BACKEND GATE ACTUALLY HOLDS. `/v1/api/admin/**` is
  * matched by `SecurityConfig` and requires `hasRole("ADMIN")` — URL-level rules being the half of
@@ -37,6 +37,8 @@ export {
   MyViolationsPanel,
   AppealsTab,
   type AppealsTabProps,
+  ModerationReportsTab,
+  type ModerationReportsTabProps,
 } from './components';
 
 export {
@@ -44,6 +46,7 @@ export {
   useModerationPosts,
   useModerationLogs,
   useBannedUsers,
+  useReports,
   useReviewPost,
   type ModerationMutationOptions,
   type ReviewPostVariables,
@@ -69,4 +72,6 @@ export type {
   PostModerationPage,
   ModerationLogPage,
   BannedUserPage,
+  PostReport,
+  PostReportPage,
 } from './types';

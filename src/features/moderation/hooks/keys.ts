@@ -19,6 +19,10 @@ export const moderationKeys = {
   bannedUsers: (page: number, size: number) => ['moderation', 'banned-users', page, size] as const,
   appeals: (status: string, page: number, size: number) =>
     ['moderation', 'appeals', status, page, size] as const,
+  // `postId` is in the key for the reason at the top of this file — it is a server-applied
+  // filter, so the unfiltered list and a single post's reports are different responses.
+  reports: (postId: number | undefined, page: number, size: number) =>
+    ['moderation', 'reports', postId ?? null, page, size] as const,
 
   // The user side. Separate from `all` on purpose: an admin decision invalidates the queue, and a
   // user appealing invalidates only their own two lists — sharing a prefix would make every
