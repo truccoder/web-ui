@@ -15,19 +15,26 @@ export const DEMO_USER = {
 } as const;
 
 /**
- * THE ADMIN ACCOUNT IS NOT HERE, AND ITS ABSENCE IS A FINDING.
+ * The moderator account, for the admin surfaces of Act 4. Verified working on 22/08 — the seven
+ * `admin.spec.ts` tests sign in with this and pass.
  *
- * `docs/demo-script.md` lists `admin_one@seed.test` / `12345678` as the moderator login. Against
- * the database this suite was written on, that pair answers **401 Invalid credentials** — checked
- * 22/08 straight against `POST /v1/api/auth/login`, so it is not a frontend problem.
+ * THE PASSWORD IS NOT THE ONE `docs/demo-script.md` USED TO PRINT. The script's table said
+ * `admin_one@seed.test` / `12345678`, which answers 401; `12345678a` does too. The working
+ * password is below, and the doc is corrected to match. A presenter trusting the old table would
+ * have lost Act 4 — the whole of which is admin work — to a login screen, so the value being right
+ * here is not only about the tests.
  *
- * Two things follow. The admin specs cannot be written until someone supplies a working pair —
- * add it here and they can be. And more urgently: the demo script's Act 4 is entirely admin work
- * (the moderation queue, the appeal, the skill approval that closes the loop), so if that
- * credential does not work on the day, the strongest three minutes of the presentation do not
- * happen. Worth checking before the room, not in it.
+ * It is a seed credential for a local dev database, not a secret, so it lives in source like
+ * `DEMO_USER` above. If you point this suite at anything that is not a local seeded database, stop
+ * and read the read-only rule in `playwright.config.ts` first.
  */
+export const ADMIN_USER = {
+  email: 'admin_one@seed.test',
+  password: 'SocialApp@Admin2026',
+} as const;
+
 export const USER_STATE = 'e2e/.auth/user.json';
+export const ADMIN_STATE = 'e2e/.auth/admin.json';
 
 /**
  * How long a saved session is reused before the setup signs in again.

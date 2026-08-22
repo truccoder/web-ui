@@ -66,17 +66,46 @@ export default defineConfig({
 
   projects: [
     /**
-     * Signs in once and writes the session to `e2e/.auth/user.json`. Playwright's `storageState`
+     * Signs in once per role and writes each session to `e2e/.auth/`. Playwright's `storageState`
      * captures cookies AND localStorage, which is exactly the pair a session here consists of:
      * `session`/`role` cookies for the edge middleware, and the token pair in localStorage where
      * the axios interceptor reads it. Capturing only one would produce a browser the middleware
      * lets through and the API rejects.
+     *
+     * TWO SETUP PROJECTS, ONE PER ROLE, AND THE SPLIT IS LOAD-BEARING. A dependent project is
+     * skipped when its dependency project has ANY failing test — so a single `setup` project
+     * holding both logins would take the entire user suite down with it the day the admin
+     * credential is wrong (which is exactly the state `accounts.ts` warns about). Splitting them
+     * means a broken admin password fails only `chromium-admin`, and the 30-odd user tests still
+     * run and still mean something.
      */
-    { name: 'setup', testMatch: /.*\.setup\.ts/ },
+    { name: 'setup-user', testMatch: /auth\.setup\.ts/, grep: /demo user/ },
+    { name: 'setup-admin', testMatch: /auth\.setup\.ts/, grep: /as the admin/ },
+
+    /**
+     * The signed-in USER. Everything except the admin surfaces, which need the other shell — so
+     * `admin.spec.ts` is excluded here rather than being run under a user session it would only
+     * ever get bounced out of by the middleware.
+     */
     {
       name: 'chromium',
+      testIgnore: /admin\.spec\.ts/,
       use: { ...devices['Desktop Chrome'], storageState: 'e2e/.auth/user.json' },
-      dependencies: ['setup'],
+      dependencies: ['setup-user'],
+    },
+
+    /**
+     * The ADMIN, for `/admin/**` only. A SEPARATE PROJECT RATHER THAN A SECOND `storageState` ON
+     * THE SAME ONE, because the two sessions cannot share a browser: `middleware.ts` redirects an
+     * `ADMIN` session away from every path outside `/admin/**` AND a `USER` session away from
+     * every path inside it, so a test that switched roles mid-file would spend its time being
+     * redirected. One project per role keeps each session on the routes it is allowed to see.
+     */
+    {
+      name: 'chromium-admin',
+      testMatch: /admin\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'], storageState: 'e2e/.auth/admin.json' },
+      dependencies: ['setup-admin'],
     },
   ],
 

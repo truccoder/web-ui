@@ -428,7 +428,12 @@ export function PostComposer({ onPosted }: PostComposerProps) {
           <Menu
             width={220}
             trigger={
-              <Button size="sm" variant="secondary" icon={TYPE_ICONS[postType]}>
+              <Button
+                className="h-[34px]"
+                size="sm"
+                variant="secondary"
+                icon={TYPE_ICONS[postType]}
+              >
                 {typeLabel}
               </Button>
             }
