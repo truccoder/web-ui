@@ -40,5 +40,13 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# Artifacts
+.claude
 CLAUDE.md
 AGENTS.md
+
+# ide
+.idea
+e2e/.auth/
+test-results/
+playwright-report/
