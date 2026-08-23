@@ -24,6 +24,17 @@ import { cn } from '@/shared/lib/cn';
  * that a card on the ground is raised; one that is raised *and* fixed while everything behind it
  * moves needs the cue more, not less.
  *
+ * THE SHADOW STEPS TO `nx-2` — the owner's call, seen in a real window, which is the one thing
+ * R10's note said was still outstanding. `nx-1` is a hairline: at 672 wide with a feed sliding
+ * beneath it, it was not carrying the separation the paragraph above asks it to carry.
+ *
+ * THE BOTTOM CORNERS STAY ROUNDED, and they were squared for one round before being put back —
+ * recorded because the reverted version is the argument for the current one. Squaring all four
+ * made the block a full-width band, which is R9's shape and R10's complaint: a 672 band is a
+ * second chrome bar of the wrong width. Only the TOP corners touch anything, so only they have a
+ * reason to be square; the bottom edge is where the feed slides past, and that is the edge R10
+ * gives the shadow to rather than a corner.
+ *
  * WHY A SENTINEL RATHER THAN READING `scrollY`. The block restyles on stick, so watching the block
  * itself would be watching an effect of the thing being detected. A near-invisible element directly
  * above it crosses the chrome line at exactly the moment the block latches, and never changes its
@@ -80,7 +91,7 @@ export function StickyBlock({ children, className }: StickyBlockProps) {
       <div
         className={cn(
           'sticky top-nx-topbar z-20 overflow-hidden bg-nx-surface-card [transition:none]',
-          stuck ? 'rounded-t-none rounded-b-nx-md shadow-nx-1' : 'rounded-nx-md',
+          stuck ? 'rounded-t-none rounded-b-nx-md shadow-nx-2' : 'rounded-nx-md',
           className
         )}
       >
