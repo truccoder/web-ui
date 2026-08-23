@@ -1204,8 +1204,15 @@ export const vi: Messages = {
   },
 
   publicProfile: {
+    /* Ba tab, và cố ý KHÔNG trùng ba tab của `profile.tabs`: ở đây không có tài khoản nào để
+       quản trị, còn thứ người lạ vào xem — người này đã làm ra cái gì — đáng một tab riêng chứ
+       không phải một phần ba tab. */
+    tabs: {
+      overview: 'Tổng quan',
+      work: 'Công trình',
+      posts: 'Bài viết',
+    },
     skillsTitle: 'Kỹ năng đã xác minh',
-    postsTitle: 'Bài viết',
     postsEmpty: 'Không có bài viết nào bạn xem được',
     postsError: 'Không tải được bài viết',
     notFoundTitle: 'Không tìm thấy người này',
@@ -1269,13 +1276,21 @@ export const vi: Messages = {
     },
     professionalHint: 'Trình giải thích dùng hồ sơ này để nói vừa tầm bạn.',
     professionalHintLink: 'Sang mục Kiến thức',
+    /* `title` vẫn còn hai nơi đọc — tiêu đề tab trình duyệt trong `profile/layout.tsx` và
+       `aria-label` của dải tab — nhưng không còn là tiêu đề hiển thị: `<h1>` của hero là tên
+       người dùng. `subtitle` đi theo tiêu đề mà nó thuộc về; "quản lý cài đặt tài khoản" giờ chỉ
+       mô tả một trong ba tab. */
     title: 'Trang cá nhân',
-    subtitle: 'Quản lý cài đặt tài khoản của bạn',
     uploadHint: 'Nhấp để tải ảnh mới lên (JPG, PNG, WebP, tối đa 5MB)',
     id: 'ID: ${id}',
+    /* Trang chia làm ba tab, và đây không phải hai khoá cũ. `info` / `password` đặt tên cho một
+       cặp tab chưa bao giờ dựng — hai biểu mẫu vẫn xếp chồng lên nhau và không nơi nào đọc hai
+       khoá đó. Cách chia thay thế đúng với những gì trang có: hệ thống chấm bạn bao nhiêu · bạn
+       chứng minh được mình làm gì · và bản thân tài khoản. */
     tabs: {
-      info: 'Thông tin cá nhân',
-      password: 'Đổi mật khẩu',
+      overview: 'Tổng quan',
+      professional: 'Chuyên môn',
+      account: 'Tài khoản',
     },
     info: {
       title: 'Thông tin cá nhân',

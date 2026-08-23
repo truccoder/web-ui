@@ -1228,8 +1228,15 @@ export const en = {
   },
 
   publicProfile: {
+    /* Three tabs, deliberately NOT the same three as `profile.tabs`: there is no account here to
+       administer, and what a stranger came to see — what this person has made — is worth a tab of
+       its own rather than a third of one. */
+    tabs: {
+      overview: 'Overview',
+      work: 'Work',
+      posts: 'Posts',
+    },
     skillsTitle: 'Verified skills',
-    postsTitle: 'Posts',
     postsEmpty: 'No posts you can see',
     postsError: 'Could not load posts',
     notFoundTitle: 'No such person',
@@ -1298,13 +1305,22 @@ export const en = {
     },
     professionalHint: 'Your explainer uses this profile to pitch answers at your level.',
     professionalHintLink: 'Go to Knowledge',
+    /* `title` is still read twice — the browser-tab title in `profile/layout.tsx` and the tab
+       strip's `aria-label` — but NOT as a heading any more: the hero's `<h1>` is the person's
+       name. `subtitle` went with the heading it belonged to; "manage your account settings"
+       described what is now one tab of three. */
     title: 'Profile',
-    subtitle: 'Manage your account settings',
     uploadHint: 'Click to upload new photo (JPG, PNG, WebP, max 5MB)',
     id: 'ID: ${id}',
+    /* THE PAGE IS THREE TABS NOW, and these are not the two keys that used to sit here.
+       `info` / `password` named a tab pair that never shipped — both forms were rendered one
+       under the other and nothing ever read the keys. The split that replaced them is the one
+       the page actually has: what the app scores you at · what you can prove you do · the
+       account itself. */
     tabs: {
-      info: 'Profile Info',
-      password: 'Change Password',
+      overview: 'Overview',
+      professional: 'Professional',
+      account: 'Account',
     },
     info: {
       title: 'Profile Information',

@@ -1,14 +1,16 @@
 'use client';
 
+import { Suspense, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { Clock, Users } from 'lucide-react';
-import { StatTile } from '@/shared/components';
+import { StatTile, Tabs } from '@/shared/components';
 import { BlockedUsersList } from '@/features/blocks';
 import { GithubStatsCard } from '@/features/github';
 import { FriendRequests, useFriends, usePendingRequests } from '@/features/friendships';
 import { ProfessionalProfileForm } from '@/features/knowledge';
 import { MyViolationsPanel } from '@/features/moderation';
-import { MyReputationCard } from '@/features/reputation';
+import { MyReputationCard, RepScore, useReputation } from '@/features/reputation';
 import { MySkillsCard } from '@/features/roadmap';
 import {
   ChangePasswordForm,
@@ -27,56 +29,157 @@ import { useT } from '@/core/i18n';
  * credentials. No boundary existed that a person could predict, so every visit started with
  * "which one has the thing I want". One page, one answer.
  *
- * FIVE DOMAINS, ORDERED BY WHOSE ACCOUNT THIS IS RATHER THAN BY SIZE. `security` owns the shell
- * and everything that is literally the account; `reputation`, `friendships`, `knowledge` and
- * `github` each contribute through their barrels — no domain reaches into another's internals and
- * this page mediates nothing between them.
+ * ONE PAGE IS NOT ONE COLUMN, WHICH IS WHAT THE MERGE LEFT BEHIND. Everything the two routes had
+ * ended up stacked: title, identity, Elite Score, two stat tiles, incoming requests, the
+ * professional form, skills, GitHub, violations, the block list, the name form, the password form
+ * — ten blocks down a 672 measure, and the two things a person visits this page to DO (change a
+ * name, change a password) sat at the very bottom of it. The length was never the symptom of a
+ * page holding too much; it was the symptom of a page refusing to say what belongs with what.
  *
- * The order is: who you are → what the app scores you at → what your network is doing → what you
- * do professionally → what your code says → your credentials. Credentials go last because changing
- * a password is a task, not a fact about you, and putting a task first makes a page of facts read
- * like a form.
+ * SO: A HERO AND THREE TABS. The hero is who you are and is always on screen — name, handle,
+ * email, avatar, and the Elite Score chip beside the name, which is where `/u/{username}` has
+ * always put it. The three tabs are the three questions the rest of the page answers:
  *
- * WHAT THE MERGE DROPPED, deliberately:
+ * | tab | what it holds | why together |
+ * | --- | --- | --- |
+ * | Tổng quan | Elite Score progress, friend counts, incoming requests | what the app makes of you, and the one thing here that is waiting on you |
+ * | Chuyên môn | professional profile, verified skills, GitHub | ordered by how hard the claim is to make: what you say you do → what the app has verified → what your code shows |
+ * | Tài khoản | name, password, violations, blocked people | the account as an object you administer, including the two decisions made *about* it |
+ *
+ * THE PAGE TITLE IS GONE, and it is the second thing the restructure removed. `<h1>Trang cá
+ * nhân</h1>` repeated the rail's active item, and its subtitle ("Quản lý cài đặt tài khoản của
+ * bạn") described what is now one tab of three. `ProfileIdentityCard` carries the `<h1>` instead:
+ * on a page about one person, that person's name is the title. The browser-tab title is unchanged
+ * — it lives in `layout.tsx` and never depended on this heading.
+ *
+ * THE TAB LIVES IN THE URL (`?tab=professional`), because two places link here for one section:
+ * `/knowledge` sends people to the professional form, and the GitHub OAuth callback lands here
+ * after linking an account. A default-tab landing would have made both links miss what they
+ * promised. Written with `history.replaceState` rather than `router.replace`: switching a tab
+ * swaps an already-mounted panel and must not cost an RSC round trip, and it must not push a
+ * history entry either — Back belongs to the page you came from, not to the tab you left.
+ *
+ * WHAT THE MERGE DROPPED, deliberately, and what the tabs did not bring back:
  *  - THE GREETING. "Chào mừng trở lại, X" sat directly above an identity card showing the same
  *    name and face. Saying it twice is not warmth, it is noise.
  *  - FRIEND SUGGESTIONS. They were on the dashboard, and they are about *other* people — this page
  *    is about you. They live one click away on the friends tabs, which is where someone who wants
  *    to grow their network is already heading.
- * Incoming requests stayed, because they are addressed to you and are actionable where they sit.
+ * Incoming requests stayed, because they are addressed to you and are actionable where they sit —
+ * and their count now rides on the `Tổng quan` tab itself, so a hidden panel can still say that
+ * something is waiting.
  *
- * NOTHING IS KNOWINGLY MISSING ANY MORE. The two gaps this header used to list both closed on
- * 2026-08-09, and neither was blocked on what the old note claimed:
+ * SEVEN DOMAINS, and the tabs moved no boundary: `security` owns the shell and everything that is
+ * literally the account; `reputation`, `friendships`, `knowledge`, `roadmap`, `moderation`,
+ * `blocks` and `github` each contribute through their barrels — no domain reaches into another's
+ * internals and this page mediates nothing between them.
  *
- * "MY SKILLS" LANDED AT M3. The note said a skills card "would have to invent the one thing it
- * exists to show", which was true while B21 was open — `findByUserId()` existed with no controller
- * in front of it. `GET /users/{userId}/roadmap-progress` shipped, so the card shows real rows. It
- * is the one section here whose contents depend on WHO IS LOOKING: the backend returns pending and
- * rejected claims only to the owner, which on this page is always the viewer.
- *
- * "MY BOOKS" LANDED AT M2, and the note it replaces was wrong about why it was absent: it said
- * "goes in with backend D2", but `GET /books/author/{id}` and `DELETE /books/{id}` were never
- * blocked on anything — both work today. What was missing was a page with a reason to list books
- * by author, which is what this page became when it absorbed `/dashboard`. It closes the last gap
- * in bookstore's endpoint coverage (9/11 → 11/11).
+ * THE BOOKS SECTION LEFT THIS PAGE at M2. It used to sit here on the argument that "what you have
+ * published is another thing your account *is*" — true, but the kit puts an author's shelf in
+ * `/library` beside the catalogue, and a shelf next to other shelves beats a shelf filed under
+ * account settings. Same component, same endpoint, one home: `/library`'s `Sách tôi viết` tab.
+ * Moved rather than duplicated, so there is still exactly one place a book can be deleted from.
  */
+const TAB_IDS = ['overview', 'professional', 'account'] as const;
+type TabId = (typeof TAB_IDS)[number];
+
+const isTabId = (value: string | null): value is TabId =>
+  value !== null && (TAB_IDS as readonly string[]).includes(value);
+
 export default function ProfilePage() {
+  // `useSearchParams` needs a Suspense boundary in the App Router — same shape as `/search`.
+  return (
+    <Suspense>
+      <ProfileContent />
+    </Suspense>
+  );
+}
+
+function ProfileContent() {
   const t = useT();
+  const searchParams = useSearchParams();
   const { data: profile } = useMyProfile();
+  /**
+   * The same query `MyReputationCard` runs one tab down, so this costs no second request — React
+   * Query dedupes on the key and the card reads the entry this call filled. The ROUTE resolves it
+   * rather than the identity card, because `features/reputation` already imports
+   * `features/security` and the reverse edge would close a cycle between two barrels.
+   */
+  const { data: reputation } = useReputation(profile?.id);
+  /**
+   * THE ONE PANEL QUERY THAT STILL RUNS WHILE ITS PANEL IS CLOSED, and it earns it: the count on
+   * the `Tổng quan` tab is how a collapsed panel says somebody is waiting on you. Everything else
+   * a panel needs is fetched by the panel, which is the point of the split.
+   */
+  const { data: pendingRequests } = usePendingRequests();
+
+  const initialTab = searchParams.get('tab');
+  const [tab, setTab] = useState<TabId>(isTabId(initialTab) ? initialTab : 'overview');
+
+  const onTabChange = (next: string) => {
+    if (!isTabId(next)) return;
+    setTab(next);
+    // The default tab writes a bare `/profile`, so the page's canonical URL is not a query string
+    // somebody would then copy and pass around.
+    window.history.replaceState(
+      null,
+      '',
+      next === 'overview' ? '/profile' : `/profile?tab=${next}`
+    );
+  };
+
+  return (
+    <div className="flex flex-col gap-[var(--nx-space-section)]">
+      <ProfileIdentityCard
+        badge={
+          reputation && (
+            <RepScore
+              score={reputation.eliteScore}
+              showLevel={Boolean(reputation.levelName)}
+              levelName={reputation.levelName}
+            />
+          )
+        }
+      />
+
+      <Tabs
+        aria-label={t('profile.title')}
+        active={tab}
+        onChange={onTabChange}
+        tabs={[
+          {
+            id: 'overview',
+            label: t('profile.tabs.overview'),
+            // `|| undefined` rather than the raw length: `Tabs` prints any number it is handed,
+            // and a "0" pill beside a tab is a notification that nothing happened.
+            count: pendingRequests?.length || undefined,
+          },
+          { id: 'professional', label: t('profile.tabs.professional') },
+          { id: 'account', label: t('profile.tabs.account') },
+        ]}
+      />
+
+      {/* THREE COMPONENTS RATHER THAN THREE BLOCKS OF JSX, so that a closed panel is UNMOUNTED and
+          its queries never fire. The page used to ask for everything on every visit — reputation,
+          friends, pending requests, the professional profile, roadmap progress, GitHub stats,
+          violations, the block list — to fill three screens nobody had scrolled to. Inline
+          `{tab === … && <div>…}` would have rendered the same thing but kept every `use*` call at
+          the top of this function, where React runs it regardless of which branch is taken. */}
+      {tab === 'overview' && <OverviewPanel />}
+      {tab === 'professional' && <ProfessionalPanel userId={profile?.id} />}
+      {tab === 'account' && <AccountPanel />}
+    </div>
+  );
+}
+
+/** What the app makes of you, and the one thing on this page that is waiting on you. */
+function OverviewPanel() {
+  const t = useT();
   const { data: friends } = useFriends();
   const { data: pendingRequests } = usePendingRequests();
 
   return (
     <div className="flex flex-col gap-[var(--nx-space-section)]">
-      <div>
-        <h1 className="text-nx-title font-semibold tracking-tight text-nx-text-primary">
-          {t('profile.title')}
-        </h1>
-        <p className="mt-1 text-nx-body-sm text-nx-text-muted">{t('profile.subtitle')}</p>
-      </div>
-
-      <ProfileIdentityCard />
-
       <MyReputationCard />
 
       <section className="flex flex-col gap-3">
@@ -92,8 +195,6 @@ export default function ProfilePage() {
 
         {/* `StatTile` takes the raw value: while the queries are in flight both read "—" rather
             than a zero that would be indistinguishable from "you have no friends". */}
-        {/* 12 between filled tiles, matching the kit's own card grid. The `p-20` wrapper that
-            briefly sat here belonged to the bare-set reading, which the kit does not ship. */}
         <div className="grid gap-[var(--nx-space-element)] sm:grid-cols-2">
           <StatTile
             label={t('profile.stats.friends')}
@@ -111,7 +212,19 @@ export default function ProfilePage() {
 
         <FriendRequests />
       </section>
+    </div>
+  );
+}
 
+/**
+ * Ordered by how hard the claim is to make: what you say you do → what the app has verified you
+ * can do → what your code shows.
+ */
+function ProfessionalPanel({ userId }: { userId?: number }) {
+  const t = useT();
+
+  return (
+    <div className="flex flex-col gap-[var(--nx-space-section)]">
       <section className="flex flex-col gap-3">
         <h2 className="text-nx-title-sm text-nx-text-primary">{t('knowledge.profile.title')}</h2>
         <ProfessionalProfileForm />
@@ -128,10 +241,8 @@ export default function ProfilePage() {
         </p>
       </section>
 
-      {/* Sits between the professional profile and GitHub because that is the order of how hard
-          the claim is to make: what you say you do → what the app has verified you can do → what
-          your code shows. Linking to /roadmap rather than embedding the claim form: claiming a
-          skill needs a roadmap and a node picked from it, which is a whole surface, not a card. */}
+      {/* Linking to /roadmap rather than embedding the claim form: claiming a skill needs a
+          roadmap and a node picked out of it, which is a whole surface, not a card. */}
       <section className="flex flex-col gap-3">
         <div className="flex items-baseline justify-between gap-3">
           <h2 className="text-nx-title-sm text-nx-text-primary">{t('profile.skills.title')}</h2>
@@ -142,28 +253,41 @@ export default function ProfilePage() {
             {t('profile.skills.browseRoadmaps')}
           </Link>
         </div>
-        <MySkillsCard userId={profile?.id} />
+        {/* The one section on this page whose contents depend on WHO IS LOOKING: the backend
+            returns pending and rejected claims only to the owner, who here is always the viewer. */}
+        <MySkillsCard userId={userId} />
       </section>
 
       <section className="flex flex-col gap-3">
         <h2 className="text-nx-title-sm text-nx-text-primary">{t('github.title')}</h2>
         {/* `undefined` until the profile resolves, which keeps the stats query idle rather than
             firing it for a user id nobody has yet. */}
-        <GithubStatsCard userId={profile?.id} />
+        <GithubStatsCard userId={userId} />
       </section>
+    </div>
+  );
+}
 
-      {/* THE BOOKS SECTION LEFT THIS PAGE. It used to sit here on the argument that "what you have
-          published is another thing your account *is*" — true, but the kit puts an author's shelf
-          in `/library` beside the catalogue, and a shelf next to other shelves beats a shelf
-          filed under account settings. Same component, same endpoint, one home: `/library`'s
-          `Sách tôi viết` tab. Moved rather than duplicated, so there is still exactly one place a
-          book can be deleted from. */}
+/** The account as an object you administer, including the two decisions made *about* it. */
+function AccountPanel() {
+  const t = useT();
+
+  return (
+    <div className="flex flex-col gap-[var(--nx-space-section)]">
+      {/* THE TWO FORMS COME FIRST NOW, and that inversion is most of the reason this tab exists.
+          They are the only things on the whole page a person arrives intending to DO, and the
+          single column had them below three screens of facts. The old order put them last on the
+          grounds that "changing a password is a task, not a fact about you, and putting a task
+          first makes a page of facts read like a form" — which was right about a page of facts.
+          This is not one: it is the tab of tasks, so the tasks lead it. */}
+      <ProfileInfoForm />
+
+      <ChangePasswordForm />
 
       {/* MODERATION, FROM THE RECEIVING END. `AppealController` shipped with the 2026-08-09 batch
           and had no surface: a post could be removed and an account banned for seven days with
           nothing on screen explaining it and no way to contest it. It sits above the block list
-          because both answer "what has been decided about me", and below the sections that are
-          about what you have made. */}
+          because both answer "what has been decided about me". */}
       <section className="flex flex-col gap-3">
         <h2 className="text-nx-title-sm text-nx-text-primary">{t('moderationMine.title')}</h2>
         <MyViolationsPanel />
@@ -177,10 +301,6 @@ export default function ProfilePage() {
         <h2 className="text-nx-title-sm text-nx-text-primary">{t('blocks.title')}</h2>
         <BlockedUsersList />
       </section>
-
-      <ProfileInfoForm />
-
-      <ChangePasswordForm />
     </div>
   );
 }

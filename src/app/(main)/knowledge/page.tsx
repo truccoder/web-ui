@@ -40,7 +40,7 @@ export default function KnowledgePage() {
       <p className="text-nx-body-sm text-nx-text-secondary">
         {t('knowledge.profileMoved')}{' '}
         <Link
-          href="/profile"
+          href="/profile?tab=professional"
           className="text-nx-text-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
         >
           {t('knowledge.profileMovedLink')}

@@ -36,6 +36,13 @@ test.describe('reputation', () => {
   test('verified skills are listed as evidence, not claimed', async ({ page }) => {
     await page.goto('/profile');
 
+    // THE SECTION IS ONE TAB IN NOW. `/profile` is a hero plus three tabs — `Tổng quan` ·
+    // `Chuyên môn` · `Tài khoản` — and skills sit with the professional profile and GitHub, the
+    // three things that answer "what can this person demonstrate". Clicking rather than going
+    // straight to `?tab=professional` keeps the assertion on the reader's own path, and proves
+    // the panel actually mounts rather than that the URL is accepted.
+    await page.getByRole('tab', { name: /chuyên môn/i }).click();
+
     // "Những kỹ năng đã được quản trị viên xác minh." The section exists whether or not this
     // account has any — an empty state is still the honest answer, and a missing section is not.
     await expect(page.getByRole('heading', { name: /kỹ năng/i }).first()).toBeVisible({

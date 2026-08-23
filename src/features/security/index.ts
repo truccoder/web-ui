@@ -51,6 +51,7 @@ export {
   type MagicLoginCallbackProps,
   ResetPasswordForm,
   ProfileIdentityCard,
+  type ProfileIdentityCardProps,
   ProfileInfoForm,
   ChangePasswordForm,
   SessionPresenceProvider,
