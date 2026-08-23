@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
     "prepare": "husky"
   },
   "dependencies": {
@@ -14,29 +16,20 @@
     "@hookform/resolvers": "^5.2.2",
     "@reduxjs/toolkit": "^2.12.0",
     "@tanstack/react-query": "^5.100.10",
-    "@twilio/conversations": "^3.0.0",
-    "@types/google.maps": "^3.64.1",
     "axios": "^1.16.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "date-fns-tz": "^3.2.0",
     "lucide-react": "^1.16.0",
     "next": "16.2.6",
     "next-themes": "^0.4.6",
     "peer": "^1.0.2",
-    "peerjs": "^1.5.5",
-    "qrcode.react": "^4.2.0",
     "react": "19.2.4",
-    "react-datepicker": "^9.1.0",
     "react-dom": "19.2.4",
     "react-hook-form": "^7.76.0",
     "react-pdf": "^10.4.1",
     "react-redux": "^9.3.0",
-    "shadcn": "^4.7.0",
-    "sonner": "^2.0.7",
+    "stream-chat": "^9.50.2",
     "tailwind-merge": "^3.6.0",
-    "tw-animate-css": "^1.4.0",
-    "twilio": "^6.0.2",
     "zod": "^4.4.3"
   },
   "lint-staged": {
@@ -59,6 +52,7 @@
     "tabWidth": 2
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
