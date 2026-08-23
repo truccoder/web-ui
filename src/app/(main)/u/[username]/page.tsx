@@ -1,7 +1,8 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { Avatar, Card, EmptyState, Skeleton } from '@/shared/components';
+import Link from 'next/link';
+import { Avatar, Button, Card, EmptyState, Skeleton } from '@/shared/components';
 import { BlockUserButton } from '@/features/blocks';
 import { MessageUserButton } from '@/features/chat';
 import { MyBooksList } from '@/features/bookstore';
@@ -9,7 +10,7 @@ import { GithubStatsCard } from '@/features/github';
 import { UserPosts } from '@/features/newsfeed';
 import { MySkillsCard } from '@/features/roadmap';
 import { ReputationCard, RepScore } from '@/features/reputation';
-import { usePublicProfile } from '@/features/security';
+import { useAuthHref, useIsGuest, usePublicProfile } from '@/features/security';
 import { useT } from '@/core/i18n';
 
 /**
@@ -42,6 +43,16 @@ export default function PublicProfilePage() {
   const username = params?.username ?? '';
 
   const { data: profile, isPending, isError } = usePublicProfile(username);
+
+  /**
+   * THIS PAGE IS THE REASON THE GUEST SURFACE EXISTS. A link to a developer's profile is what
+   * gets shared, and until now it answered a redirect to `/login` — the stranger it was sent to
+   * saw a sign-in form instead of the person. Everything above the actions is public on the
+   * backend (`profile`, `posts`, `reputation`, `roadmap-progress`, `github/stats`,
+   * `books/author`), so the page renders whole.
+   */
+  const isGuest = useIsGuest();
+  const registerHref = useAuthHref('/register');
 
   // The level used to need a second request: `PublicUserResponse` carried the score without the
   // name, and the design system forbids deriving one from the other. B2 gave this endpoint its own
@@ -110,14 +121,25 @@ export default function PublicProfilePage() {
         {/* Two actions, and they are the only two: message and block. Ordered by how often they
             are wanted, with the destructive one last and `ghost` so a misclick lands on the
             harmless one. */}
-        {profile.id != null && <MessageUserButton userId={profile.id} className="shrink-0" />}
-
-        {profile.id != null && (
-          <BlockUserButton
-            userId={profile.id}
-            name={profile.fullName?.trim() || username}
-            className="shrink-0"
-          />
+        {/* BOTH ACTIONS ARE RELATIONSHIPS, and a guest is not one end of one: messaging opens a
+            conversation between two accounts, blocking records an edge from yours. Neither has a
+            read-only form to show, so for a signed-out reader the pair is replaced by the one
+            thing that would make them available. */}
+        {isGuest ? (
+          <Link href={registerHref} className="shrink-0">
+            <Button variant="secondary">{t('guest.profile.join')}</Button>
+          </Link>
+        ) : (
+          profile.id != null && (
+            <>
+              <MessageUserButton userId={profile.id} className="shrink-0" />
+              <BlockUserButton
+                userId={profile.id}
+                name={profile.fullName?.trim() || username}
+                className="shrink-0"
+              />
+            </>
+          )
         )}
       </Card>
 

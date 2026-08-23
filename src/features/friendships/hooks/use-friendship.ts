@@ -38,10 +38,17 @@ export function useFriendSuggestions(limit = 10) {
   });
 }
 
-export function usePendingRequests() {
+/**
+ * `enabled` exists for ONE caller: the app shell, which now also renders for signed-out readers
+ * (see `src/middleware.ts`'s guest surface). A guest has no friend requests and no session to ask
+ * with, so the count is not merely empty — the question cannot be put. Defaulted so every other
+ * caller is unchanged.
+ */
+export function usePendingRequests(enabled = true) {
   return useQuery({
     queryKey: friendshipKeys.pending,
     queryFn: () => friendshipApi.getPendingRequests(),
+    enabled,
   });
 }
 

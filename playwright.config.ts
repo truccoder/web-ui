@@ -89,9 +89,32 @@ export default defineConfig({
      */
     {
       name: 'chromium',
-      testIgnore: /admin\.spec\.ts/,
+      // `guest.spec.ts` is excluded for the same reason `admin.spec.ts` is: it asserts a shell
+      // this project's session can never see. Under a signed-in state the middleware would send
+      // it straight past every screen it is about to check.
+      testIgnore: /(admin|guest)\.spec\.ts/,
       use: { ...devices['Desktop Chrome'], storageState: 'e2e/.auth/user.json' },
       dependencies: ['setup-user'],
+    },
+
+    /**
+     * THE SIGNED-OUT READER. No `storageState` and no `dependencies`, and both are the test.
+     *
+     * Every other project starts from a saved session — cookies AND localStorage, which is
+     * precisely the pair the guest surface is defined by the absence of. Giving this project
+     * `storageState: undefined` would inherit nothing from `use` above, so it starts from an
+     * empty browser: no `session` cookie for the middleware, no token pair for the axios
+     * interceptor. That is a real first visit.
+     *
+     * NO DEPENDENCY ON A SETUP PROJECT EITHER. A guest needs no login, so this suite still runs —
+     * and still means something — on a day the seeded credentials are wrong or the login endpoint
+     * is answering 429 (see `accounts.ts`). It is the one project in this file that cannot be
+     * taken down by an authentication problem.
+     */
+    {
+      name: 'chromium-guest',
+      testMatch: /guest\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'] },
     },
 
     /**

@@ -4,7 +4,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { Trash2 } from 'lucide-react';
 import { Badge, Button, Card, Dialog, EmptyState, Skeleton } from '@/shared/components';
-import { getErrorMessage } from '@/shared/lib/api-error';
+import { getErrorMessage, getErrorStatus } from '@/shared/lib/api-error';
 import { formatCurrency, useIntlLocale } from '@/shared/lib/format';
 import { useT } from '@/core/i18n';
 import type { Book } from '../types/book';
@@ -88,11 +88,14 @@ export function MyBooksList({ authorId, readOnly = false }: MyBooksListProps) {
   }
 
   if (isError) {
-    return (
-      <p className="text-nx-caption text-nx-status-danger-fg">
-        {getErrorMessage(error, t('profile.books.loadError'))}
-      </p>
-    );
+    // Same storage failure, same translation — `GET /books/author/{id}` presigns per book too, so
+    // this tab goes down with the catalogue. See `BookLibrary` for the full note.
+    const message =
+      getErrorStatus(error) === 503
+        ? t('library.storageError')
+        : getErrorMessage(error, t('profile.books.loadError'));
+
+    return <p className="text-nx-caption text-nx-status-danger-fg">{message}</p>;
   }
 
   if (books.length === 0) {

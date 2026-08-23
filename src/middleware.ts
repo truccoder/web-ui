@@ -23,6 +23,29 @@ const publicPaths = [
 // the offline key. Either way the worker never came up.
 const alwaysAccessiblePaths = ['/verify-email', '/magic-link', '/magic-login', '/offline'];
 
+/**
+ * READABLE WITHOUT A SESSION — the guest surface, opened at P6.
+ *
+ * IT IS THE MIRROR OF A LIST IN THE BACKEND, NOT A PRODUCT WISH. `SecurityConfig` permits exactly
+ * nine anonymous GETs (`/posts/public`, `/posts/{id}`, `/users/{username}/profile|posts|reputation|
+ * roadmap-progress`, `/github/stats/*`, `/books/author/*`, `/trending`), and these four route
+ * prefixes are the screens that can be built out of only those. A fifth entry here would be a
+ * screen that renders its shell and then 401s on its own data, which is worse than a redirect to
+ * `/login`: the reader gets a broken page instead of an answer.
+ *
+ * WHAT IS DELIBERATELY ABSENT, because each is a whole screen with no anonymous endpoint behind
+ * it: `/search`, `/friends`, `/chats`, `/roadmap`, `/knowledge`, `/library`, `/projects`,
+ * `/notifications`, `/profile`, `/settings`. A guest who follows a link to one of them is sent to
+ * `/login?next=<where they were going>` and lands there once signed in.
+ *
+ * MATCHED ON SEGMENT BOUNDARIES (`/u` must not open a future `/users`), for the same reason the
+ * backend pins its matchers to one path segment.
+ */
+const guestPaths = ['/', '/newsfeed', '/posts', '/u', '/trending'];
+
+const matchesPath = (pathname: string, prefix: string) =>
+  prefix === '/' ? pathname === '/' : pathname === prefix || pathname.startsWith(`${prefix}/`);
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -34,8 +57,16 @@ export function middleware(request: NextRequest) {
 
   const isPublicPath = publicPaths.some((p) => pathname.startsWith(p));
 
-  if (!hasSession && !isPublicPath) {
-    return NextResponse.redirect(new URL('/login', request.url));
+  const isGuestPath = guestPaths.some((p) => matchesPath(pathname, p));
+
+  if (!hasSession && !isPublicPath && !isGuestPath) {
+    // `next` so the sign-in that this redirect forces returns the reader to what they clicked,
+    // rather than dumping them on the feed having lost their destination. Read back by
+    // `app/(auth)/post-auth-redirect.ts`, which validates it before navigating — a redirect
+    // target taken from a query string is an open-redirect if anyone trusts it blindly.
+    const login = new URL('/login', request.url);
+    login.searchParams.set('next', `${pathname}${request.nextUrl.search}`);
+    return NextResponse.redirect(login);
   }
 
   // Role isn't known from the JWT (no role claim, no /me endpoint) — the client

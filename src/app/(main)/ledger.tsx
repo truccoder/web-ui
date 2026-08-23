@@ -1,14 +1,15 @@
 'use client';
 
 import { useMemo } from 'react';
+import Link from 'next/link';
 import { Check } from 'lucide-react';
-import { Card, Skeleton } from '@/shared/components';
+import { Button, Card, Skeleton } from '@/shared/components';
 import { useT } from '@/core/i18n';
 import { useIntlLocale, useRelativeTime } from '@/shared/lib/format';
 import { ContributionGraph, useGithubStats, isNotLinked } from '@/features/github';
 import { RepProgress, useReputation } from '@/features/reputation';
 import { useRoadmapProgress } from '@/features/roadmap';
-import { useMyProfile } from '@/features/security';
+import { useAuthHref, useMyProfile } from '@/features/security';
 import { useTrending } from '@/features/trending';
 
 /**
@@ -85,6 +86,50 @@ export function Ledger() {
       className="sticky top-nx-topbar hidden h-[calc(100dvh-var(--spacing-nx-topbar))] w-[var(--spacing-nx-ledger-sm)] shrink-0 flex-col gap-[var(--nx-space-block)] overflow-y-auto px-5 pt-5 pb-12 xl:flex min-[1440px]:w-nx-ledger"
     >
       <EvidenceSection userId={profile?.id} />
+      <ExternalSection />
+    </aside>
+  );
+}
+
+/**
+ * The ledger a signed-out reader gets: the pitch, and the two ways out of being a guest.
+ *
+ * SAME COLUMN, SAME GEOMETRY, DIFFERENT CONTENT. It reuses `Ledger`'s exact `aside` — width,
+ * datum, the 1280/1440 steps — because the canvas next to it is measured against that column and
+ * a narrower flank would move the feed. What changes is only what stands in it.
+ *
+ * IT REPLACES A SUMMARY OF YOU WITH THE REASON TO BE SOMEBODY. `Bằng chứng` reads reputation,
+ * contributions and verified skills off an account; with no account those three cards would be
+ * three empty boxes, and the file's own rule is that a section with no data renders nothing at
+ * all. So the guest column keeps `Từ bên ngoài` — crawled sources are public and just as
+ * interesting to a stranger — and puts the invitation where the evidence would have been.
+ */
+export function GuestLedger() {
+  const t = useT();
+  const loginHref = useAuthHref('/login');
+  const registerHref = useAuthHref('/register');
+
+  return (
+    <aside
+      aria-label={t('ledger.label')}
+      className="sticky top-nx-topbar hidden h-[calc(100dvh-var(--spacing-nx-topbar))] w-[var(--spacing-nx-ledger-sm)] shrink-0 flex-col gap-[var(--nx-space-block)] overflow-y-auto px-5 pt-5 pb-12 xl:flex min-[1440px]:w-nx-ledger"
+    >
+      <Card className="flex flex-col gap-3">
+        <SectionHeading>{t('guest.ledger.overline')}</SectionHeading>
+        <p className="text-nx-body-sm text-nx-text-secondary">{t('guest.ledger.body')}</p>
+        <div className="flex flex-col gap-2">
+          <Link href={registerHref}>
+            <Button className="w-full">{t('guest.register')}</Button>
+          </Link>
+          <Link href={loginHref}>
+            <Button variant="secondary" className="w-full">
+              {t('guest.signIn')}
+            </Button>
+          </Link>
+        </div>
+      </Card>
+
+      {/* Public either way — a crawled article has no reader-specific half to withhold. */}
       <ExternalSection />
     </aside>
   );

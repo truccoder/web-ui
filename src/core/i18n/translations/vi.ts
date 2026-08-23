@@ -122,12 +122,45 @@ export const vi: Messages = {
     shortcutHint: 'Ctrl K',
   },
 
+  /* Người đọc chưa đăng nhập. Đặt cạnh `nav` và `palette` vì đây là chrome chứ không thuộc domain
+     nào: các chuỗi này xuất hiện ở thanh trên, rail, ledger và một hộp thoại có thể bật lên từ bất
+     kỳ màn hình nào trong `(main)`.
+     Giọng văn không xin lỗi thay cho bức tường: "Đăng nhập để thả cảm xúc" nói cho người ta biết
+     phải làm gì, còn "bạn không có quyền" nói rằng họ đã làm sai. Khách chưa làm gì sai cả — họ
+     vừa ghé vào, và đó chính là điều bề mặt này được mở ra để đón. */
+  guest: {
+    signIn: 'Đăng nhập',
+    register: 'Đăng ký',
+    locked: 'Cần đăng nhập',
+    prompt: {
+      title: 'Đăng nhập để tham gia',
+      description:
+        'Bạn đang xem với tư cách khách. Đọc thì ai cũng được; thả cảm xúc, bình luận và kết nối thì cần một tài khoản.',
+      dismiss: 'Đọc tiếp',
+    },
+    ledger: {
+      overline: 'Tham gia Elite Nexus',
+      body: 'Dựng một hồ sơ chứng minh được năng lực: kỹ năng đã xác minh, điểm uy tín, và những bài viết đứng sau cả hai.',
+    },
+    profile: {
+      join: 'Tham gia để kết nối',
+    },
+  },
+
   auth: {
     email: 'Email',
     emailPlaceholder: 'ten@example.com',
     password: 'Mật khẩu',
     fullname: 'Họ và tên',
     fullNamePlaceholder: 'Nguyễn Văn A',
+    brand: {
+      tagline: 'Nơi năng lực được chứng minh, không phải được kể lại',
+      command: 'nexus init',
+      pointProfile: 'Hồ sơ năng lực có xác minh',
+      pointRoadmap: 'Lộ trình kỹ năng theo từng bước',
+      pointLibrary: 'Kho sách do cộng đồng xuất bản',
+      footer: 'Elite Nexus — mạng lưới của người làm nghề.',
+    },
     login: {
       title: 'Chào mừng trở lại',
       subtitle: 'Đăng nhập vào tài khoản Elite Nexus của bạn',

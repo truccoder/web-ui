@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Badge, EmptyState, Skeleton } from '@/shared/components';
 import { cn } from '@/shared/lib/cn';
-import { getErrorMessage } from '@/shared/lib/api-error';
+import { getErrorMessage, getErrorStatus } from '@/shared/lib/api-error';
 import { formatPriceParts, useIntlLocale } from '@/shared/lib/format';
 import { useT } from '@/core/i18n';
 import type { Book } from '../types/book';
@@ -104,11 +104,25 @@ export function BookLibrary({ className }: BookLibraryProps) {
   }
 
   if (library.isError) {
-    return (
-      <p className="text-nx-caption text-nx-status-danger-fg">
-        {getErrorMessage(library.error, t('library.loadError'))}
-      </p>
-    );
+    /**
+     * THE 503 GETS ITS OWN SENTENCE, IN THE READER'S LANGUAGE.
+     *
+     * `getErrorMessage` returns whatever the backend wrote, and for this endpoint that is
+     * `Failed to generate download URL` — English, in a Vietnamese product, on the one screen a
+     * reader hits when the book storage is misconfigured. The cause is known and documented on
+     * `bookApi.getBook`: building the DTO presigns a URL per book, so a single unreachable object
+     * store fails the whole catalogue.
+     *
+     * MATCHED ON STATUS, NOT ON THE MESSAGE TEXT — see `getErrorStatus`. Everything that is not a
+     * 503 still shows the backend's own words, because those are the ones that carry the specifics
+     * and inventing copy for failures we have not seen would be guessing.
+     */
+    const message =
+      getErrorStatus(library.error) === 503
+        ? t('library.storageError')
+        : getErrorMessage(library.error, t('library.loadError'));
+
+    return <p className="text-nx-caption text-nx-status-danger-fg">{message}</p>;
   }
 
   const books = library.data?.pages.flatMap((page) => page.items) ?? [];

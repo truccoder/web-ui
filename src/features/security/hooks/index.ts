@@ -1,6 +1,7 @@
 export { securityKeys } from './keys';
 export { useEstablishSession, useClearSession, useSession } from './session';
 export { useLogin, useRegister, useLogout } from './use-auth';
+export { useAuthGate } from './use-auth-gate';
 export { useOAuthUrl, useOAuthCallback } from './use-oauth';
 export {
   useForgotPassword,

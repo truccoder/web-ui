@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { StickyBlock, Tabs } from '@/shared/components';
 import { Newsfeed, useRefreshFeed, type FeedScope } from '@/features/newsfeed';
 import { PostComposer } from '@/features/posts';
+import { useIsGuest } from '@/features/security';
 import { useT } from '@/core/i18n';
 
 /**
@@ -35,6 +36,18 @@ export default function NewsfeedPage() {
   const refreshFeed = useRefreshFeed();
   const [scope, setScope] = useState<FeedScope>('all');
 
+  /**
+   * THE SIGNED-OUT FEED IS ONE ENDPOINT, NOT A REDUCED VERSION OF THE OTHER TWO.
+   *
+   * `Tất cả` is `GET /posts/public` — a query over the posts table, which the backend permits
+   * anonymously. `Bạn bè` and `Kỹ năng` are both `GET /feed`, a fan-out precomputed per user in
+   * Redis: a guest does not have an empty one, they have none, and there is no user for the
+   * `SKILLS` scope to intersect with. Rendering the tabs and letting them fail would offer a
+   * reader a choice the product cannot honour, so `scope` stays at its `all` default and the
+   * strip that would switch it is not rendered.
+   */
+  const isGuest = useIsGuest();
+
   const tabs = [
     { id: 'all', label: t('newsfeed.tabs.all') },
     { id: 'friends', label: t('newsfeed.tabs.friends') },
@@ -65,17 +78,32 @@ export default function NewsfeedPage() {
        * `px-2.5` on the tablist is the kit's `0 10px`: the inset split (§5.1) — the bar insets 10
        * and each tab's own 12 completes the line to its label.
        */}
-      <StickyBlock>
-        <Tabs
-          tabs={tabs}
-          active={scope}
-          onChange={(id) => setScope(id as FeedScope)}
-          aria-label={t('newsfeed.tabs.label')}
-          className="px-2.5"
-        />
-      </StickyBlock>
+      {/* THE WHOLE STRIP GOES, NOT JUST THE TWO TABS IT CANNOT SERVE. A tablist holding a single
+          tab is a control that answers nothing: it takes the datum block, parks itself under the
+          chrome and offers a choice of one. With `scope` fixed at `all`, the guest canvas simply
+          opens on the public feed, which is the only thing it was ever going to show. */}
+      {!isGuest && (
+        <StickyBlock>
+          {/* THE ONE CALLER THAT IS NOT A PILL. `Tabs` defaults to the pill variant now — a control
+            dropped onto a page, occupying as little as it can. This strip is not that: it IS the
+            block, a full-measure card parked under the chrome, and a pill group inside it would
+            leave the rest of the bar empty. `Tabs`' own header carries the full argument. */}
+          <Tabs
+            tabs={tabs}
+            active={scope}
+            onChange={(id) => setScope(id as FeedScope)}
+            aria-label={t('newsfeed.tabs.label')}
+            variant="underline"
+            className="px-2.5"
+          />
+        </StickyBlock>
+      )}
 
-      <PostComposer onPosted={refreshFeed} />
+      {/* The composer is the one block on this page with no read-only form. Everything it does is
+          a write, and a guest pressing publish would meet the sign-in prompt with a paragraph
+          already typed — the invitation belongs before the effort, not after it. `GuestLedger`
+          and the top bar carry it. */}
+      {!isGuest && <PostComposer onPosted={refreshFeed} />}
 
       <Newsfeed scope={scope} />
     </div>

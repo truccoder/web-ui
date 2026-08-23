@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useSyncRoleFromProfile } from '@/features/security';
 
 /**
@@ -29,12 +29,54 @@ import { useSyncRoleFromProfile } from '@/features/security';
  * `useSyncRoleFromProfile`, so nothing in `src/app` touches the data layer — which is exactly what
  * P3.6 exists to confirm.
  */
+/**
+ * Whether `next` may be navigated to.
+ *
+ * A REDIRECT TARGET OUT OF A QUERY STRING IS AN OPEN REDIRECT IF ANYONE TRUSTS IT. `?next=https://
+ * evil.example/login` on a link that looks like this app's own sign-in page is the classic
+ * phishing shape, and `//evil.example` is the same attack spelled as a protocol-relative URL — so
+ * the test is not "does it start with `/`" but "does it start with exactly one `/`".
+ *
+ * The auth routes are excluded as well: `next=/login` after a successful sign-in bounces the
+ * reader straight back into the form they just completed (the middleware would then send them to
+ * the feed, so it is a loop that resolves — badly — rather than one that hangs).
+ */
+function safeNext(next: string | null) {
+  if (!next) return null;
+  if (!next.startsWith('/') || next.startsWith('//')) return null;
+  const path = next.split('?')[0];
+  if (['/login', '/register', '/forgot-password', '/reset-password', '/oauth'].includes(path)) {
+    return null;
+  }
+  return next;
+}
+
 export function usePostAuthRedirect() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const syncRole = useSyncRoleFromProfile();
 
   return async function redirectAfterAuth() {
     const role = await syncRole();
+
+    /**
+     * `next` IS WHERE A GUEST WAS GOING, and honouring it is the other half of the guest surface
+     * (`src/middleware.ts`). Someone reading a post who is asked to sign in to comment must come
+     * back to that post; landing them on the feed loses the thing they were doing and is the
+     * reason "sign in to continue" flows feel like a punishment.
+     *
+     * IGNORED FOR AN ADMIN, deliberately. The middleware redirects every admin session out of
+     * `(main)` on the next navigation anyway, so following `next` there would flash a page they
+     * are about to be bounced from.
+     */
+    if (role !== 'ADMIN') {
+      const next = safeNext(searchParams.get('next'));
+      if (next) {
+        router.replace(next);
+        return;
+      }
+    }
+
     router.replace(role === 'ADMIN' ? '/admin/moderation' : '/newsfeed');
   };
 }

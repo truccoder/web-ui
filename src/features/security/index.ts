@@ -33,6 +33,7 @@ export {
   useChangeProfilePicture,
   setRoleCookie,
   useSyncRoleFromProfile,
+  useAuthGate,
 } from './hooks';
 
 export {
@@ -52,6 +53,12 @@ export {
   ProfileIdentityCard,
   ProfileInfoForm,
   ChangePasswordForm,
+  SessionPresenceProvider,
+  useIsGuest,
+  useIsSignedIn,
+  useAuthHref,
+  SignInPrompt,
+  AuthRequiredPrompt,
 } from './components';
 
 export type {

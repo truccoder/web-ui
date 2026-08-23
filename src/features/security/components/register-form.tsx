@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { ArrowLeft, Camera, Mail } from 'lucide-react';
 import { Avatar, Button, Card, Input } from '@/shared/components';
 import { getErrorMessage } from '@/shared/lib/api-error';
@@ -19,6 +20,19 @@ import { OAuthButtons } from './oauth-buttons';
 
 export function RegisterForm() {
   const t = useT();
+
+  /**
+   * `next` IS FORWARDED TO SIGN-IN, and without this the guest surface leaks the destination
+   * exactly halfway through the flow.
+   *
+   * Registration does not establish a session — it returns void and sends a verification email —
+   * so the reader arrives here from `/register?next=/posts/123`, fills the form, and then follows
+   * one of the two links below to sign in. A bare `/login` at that point has forgotten the post
+   * they were reading, and `post-auth-redirect` has nothing left to honour.
+   */
+  const searchParams = useSearchParams();
+  const next = searchParams.get('next');
+  const loginHref = next ? `/login?next=${encodeURIComponent(next)}` : '/login';
   const register = useRegister();
 
   const [picture, setPicture] = useState<File | null>(null);
@@ -75,7 +89,7 @@ export function RegisterForm() {
             {t('auth.register.checkEmailDesc', { email: submittedEmail })}
           </p>
         </div>
-        <Link href="/login" className="mt-5 block">
+        <Link href={loginHref} className="mt-5 block">
           <Button variant="secondary" icon={<ArrowLeft />} className="w-full">
             {t('auth.register.backToLogin')}
           </Button>
@@ -165,7 +179,10 @@ export function RegisterForm() {
 
       <p className="mt-4 text-center text-nx-body-sm text-nx-text-muted">
         {t('auth.register.alreadyHaveAccount')}{' '}
-        <Link href="/login" className="font-medium text-nx-text-link hover:text-nx-text-link-hover">
+        <Link
+          href={loginHref}
+          className="font-medium text-nx-text-link hover:text-nx-text-link-hover"
+        >
           {t('auth.register.signIn')}
         </Link>
       </p>

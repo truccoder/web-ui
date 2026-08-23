@@ -128,12 +128,50 @@ export const en = {
     shortcutHint: 'Ctrl K',
   },
 
+  /**
+   * THE SIGNED-OUT READER. Sits beside `nav` and `palette` because it is chrome, not a domain:
+   * these strings appear in the top bar, the rail, the ledger and one dialog that can be raised
+   * from any screen under `(main)`.
+   *
+   * THE COPY NEVER APOLOGISES FOR THE WALL. "Sign in to react" tells someone what to do; "you do
+   * not have permission" tells them they did something wrong. A guest has done nothing wrong —
+   * they arrived, which is what the whole surface is for.
+   */
+  guest: {
+    signIn: 'Sign in',
+    register: 'Sign up',
+    /* Read out for the padlock on a rail row a guest cannot open — an icon alone is silent. */
+    locked: 'Sign in required',
+    prompt: {
+      title: 'Sign in to join in',
+      description:
+        'You are browsing as a guest. Reading is open to everyone; reacting, commenting and connecting need an account.',
+      dismiss: 'Keep reading',
+    },
+    ledger: {
+      overline: 'Join Elite Nexus',
+      body: 'Build a profile that proves what you can do: verified skills, a reputation score, and the posts behind both.',
+    },
+    profile: {
+      /* On someone else's profile, where the message/block pair would be. */
+      join: 'Join to connect',
+    },
+  },
+
   auth: {
     email: 'Email',
     emailPlaceholder: 'name@example.com',
     password: 'Password',
     fullname: 'Full Name',
     fullNamePlaceholder: 'John Doe',
+    brand: {
+      tagline: 'Where ability is proven, not claimed',
+      command: 'nexus init',
+      pointProfile: 'A reputation backed by verification',
+      pointRoadmap: 'Skill roadmaps, one step at a time',
+      pointLibrary: 'A library the community publishes',
+      footer: 'Elite Nexus — a network for people who build.',
+    },
     login: {
       title: 'Welcome back',
       subtitle: 'Sign in to your Elite Nexus account',

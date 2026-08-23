@@ -23,6 +23,22 @@ export function getErrorMessage(error: unknown, fallback = 'Something went wrong
 }
 
 /**
+ * The HTTP status a rejected request came back with, or `undefined` if it never got a response.
+ *
+ * IT EXISTS SO A CALLER CAN TRANSLATE. `getErrorMessage` returns the backend's own `message`,
+ * which is written in English by a Spring exception handler and is shown to a Vietnamese reader
+ * exactly as it was written — "Failed to generate download URL" on `/library` being the case that
+ * prompted this. A surface that knows which status means what can put its own copy in front of the
+ * one class of failure it understands, and still fall back to `getErrorMessage` for the rest.
+ *
+ * Deliberately NOT a "translate the message" helper: matching on message TEXT would break the day
+ * the backend rephrases a sentence, and silently. A status is a contract.
+ */
+export function getErrorStatus(error: unknown): number | undefined {
+  return error instanceof AxiosError ? error.response?.status : undefined;
+}
+
+/**
  * Pull the backend's per-field validation messages out of a rejected request.
  *
  * WHY THIS IS SEPARATE FROM `getErrorMessage`. A bean-validation failure comes back as a **422**

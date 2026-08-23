@@ -22,7 +22,7 @@ import {
 import { BookActions } from '@/features/bookstore';
 import { ReportPostDialog } from '@/features/moderation';
 import { ExplainPostAction } from '@/features/knowledge';
-import { useMyProfile } from '@/features/security';
+import { useAuthGate, useMyProfile } from '@/features/security';
 import { Button } from '@/shared/components';
 import { useT } from '@/core/i18n';
 import type { FeedPost as FeedPostData } from '../types/feed';
@@ -183,8 +183,20 @@ function PostBody({ post, onChanged }: { post: FeedPostData; onChanged: () => vo
 export function FeedPost({ post, onChanged, defaultCommentsOpen = false }: FeedPostProps) {
   const t = useT();
   const { data: profile } = useMyProfile();
+  /**
+   * THE CARD RENDERS IN FULL FOR A SIGNED-OUT READER — that is the point of the guest surface —
+   * and only the controls whose FIRST effect is visible are gated here. Everything else is left
+   * to `core/api/axios`, which refuses a guest's writes and raises the same prompt: a reaction
+   * toggle, an RSVP, a poll vote and a quiz answer all reach it without this component knowing
+   * they exist. What cannot be left to it is a control that opens something before it calls
+   * anything, because the reader then sits in front of a panel that will never fill.
+   */
+  const { isGuest, guard } = useAuthGate();
 
-  const [commentsOpen, setCommentsOpen] = useState(defaultCommentsOpen);
+  // `&& !isGuest`: the permalink page opens the thread on arrival, and for a signed-out reader
+  // that would mount a panel whose endpoint is not open to them — the one case where the gate has
+  // to reach the initial state rather than the click.
+  const [commentsOpen, setCommentsOpen] = useState(defaultCommentsOpen && !isGuest);
   const [editing, setEditing] = useState(false);
   const [reporting, setReporting] = useState(false);
 
@@ -258,7 +270,9 @@ export function FeedPost({ post, onChanged, defaultCommentsOpen = false }: FeedP
           canDelete={isAuthor}
           onEdit={() => setEditing(true)}
           onDeleted={onChanged}
-          onReport={isAuthor ? undefined : () => setReporting(true)}
+          // Reporting opens a form with a reason to choose before anything is sent, so a guest
+          // would fill it in and only then be asked to sign in. `guard` asks first.
+          onReport={isAuthor ? undefined : guard(() => setReporting(true))}
         />
       }
       body={
@@ -307,7 +321,10 @@ export function FeedPost({ post, onChanged, defaultCommentsOpen = false }: FeedP
            * one-line status has nothing for a model to unpack, and offering the button there
            * spends a paid call to be told so.
            */}
-          {explainable && (
+          {/* Hidden rather than gated for a guest: the backend has no anonymous route to the
+              model, and unlike the controls above there is nothing here to preview — the button
+              IS the request. */}
+          {explainable && !isGuest && (
             <ExplainPostAction postId={post.postId} postContent={post.content ?? ''} />
           )}
         </>
@@ -316,11 +333,16 @@ export function FeedPost({ post, onChanged, defaultCommentsOpen = false }: FeedP
         <>
           <div className="flex flex-wrap items-center gap-2">
             <ReactionBar postId={post.postId} count={post.likeCount} onChanged={onChanged} />
+            {/* THE THREAD IS NOT PART OF THE GUEST SURFACE. `GET /posts/{id}/comments` is not one
+                of the endpoints the backend opens anonymously, so expanding it for a signed-out
+                reader would swap the button for a panel that loads nothing. The count stays
+                visible on the card — it comes from the feed payload — and the button asks them
+                to sign in to read the discussion. */}
             <Button
               size="sm"
               variant="ghost"
-              aria-expanded={commentsOpen}
-              onClick={() => setCommentsOpen((open) => !open)}
+              aria-expanded={isGuest ? undefined : commentsOpen}
+              onClick={guard(() => setCommentsOpen((open) => !open))}
             >
               {commentsOpen ? t('post.comments.hide') : t('post.comments.show')}
             </Button>

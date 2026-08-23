@@ -13,3 +13,10 @@ export { ResetPasswordForm } from './reset-password-form';
 export { ProfileIdentityCard } from './profile-identity-card';
 export { ProfileInfoForm } from './profile-info-form';
 export { ChangePasswordForm } from './change-password-form';
+export {
+  SessionPresenceProvider,
+  useIsGuest,
+  useIsSignedIn,
+  useAuthHref,
+} from './session-presence';
+export { SignInPrompt, AuthRequiredPrompt } from './sign-in-prompt';
