@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import {
   AppealsTab,
   BannedUsersTab,
@@ -9,6 +9,7 @@ import {
   ModerationReportsTab,
 } from '@/features/moderation';
 import { Tabs } from '@/shared/components';
+import { useTabParam } from '@/shared/lib/use-tab-param';
 import { useT } from '@/core/i18n';
 
 /**
@@ -25,13 +26,32 @@ import { useT } from '@/core/i18n';
  * jumps to the same post would not be swallowed — which is a lot of machinery to avoid a remount
  * costing one request.
  *
- * Tab state is deliberately NOT in the URL, unlike `/roadmap`'s `?id=`. A roadmap is a thing you
- * send someone a link to; which of five admin tabs you had open is not.
+ * TAB STATE IS NOW IN THE URL, REVERSING WHAT THIS COMMENT USED TO SAY. The old ruling was that
+ * "which of five admin tabs you had open" is not a thing you send someone a link to, unlike
+ * `/roadmap`'s `?id=`. That is still true about LINKS and it was the wrong test: the parameter is
+ * not carrying a link, it is carrying the tab across a RELOAD. A moderator working the appeals
+ * queue who refreshes — or follows a link out to a post and comes back — was being dropped onto
+ * the posts queue every time, with the page number reset underneath them. Five tabs is exactly
+ * the count at which that stops being a shrug.
+ *
+ * It replaces rather than pushes, so Back still leaves the admin area in one press instead of
+ * walking backwards through every tab that was opened.
  */
+const TAB_IDS = ['posts', 'reports', 'logs', 'banned', 'appeals'] as const;
+
 export default function AdminModerationPage() {
+  // `useTabParam` reads the query string, which needs a Suspense boundary in the App Router.
+  return (
+    <Suspense>
+      <AdminModerationContent />
+    </Suspense>
+  );
+}
+
+function AdminModerationContent() {
   const t = useT();
 
-  const [tab, setTab] = useState('posts');
+  const [tab, setTab] = useTabParam(TAB_IDS, 'posts');
   const [jumpToPostId, setJumpToPostId] = useState<number | undefined>();
 
   const viewPost = (postId: number) => {
@@ -48,36 +68,42 @@ export default function AdminModerationPage() {
         <p className="mt-0.5 text-nx-body-sm text-nx-text-secondary">{t('moderation.subtitle')}</p>
       </div>
 
-      <Tabs
-        active={tab}
-        onChange={setTab}
-        aria-label={t('moderation.title')}
-        tabs={[
-          { id: 'posts', label: t('moderation.tabs.posts') },
-          // Second, right after the queue it feeds. A report is the human input to the same
-          // decision the queue makes, and until this tab existed it was the only signal in the
-          // system that reached nobody — `POST /moderation/reports` wrote rows that
-          // `GET /admin/moderation/reports` was never called to read.
-          { id: 'reports', label: t('moderation.tabs.reports') },
-          { id: 'logs', label: t('moderation.tabs.logs') },
-          { id: 'banned', label: t('moderation.tabs.banned') },
-          // Added once users could appeal at all. Without it the product accepts appeals and
-          // gives nobody the ability to decide them — a promise of review no screen can keep.
-          { id: 'appeals', label: t('moderation.tabs.appeals') },
-        ]}
-      />
+      {/* THE STRIP BINDS DOWN TO THE PANEL, and on this page the step is 20 above → 12 below
+          rather than 40 → 16. What makes the group read is the RATIO, not the number: the admin
+          canvas is deliberately denser than `/profile` or `/library`, and 16 under a 20 would have
+          been the same symmetric float the wide pages had, just tighter. */}
+      <div className="flex flex-col gap-[var(--nx-space-element)]">
+        <Tabs
+          active={tab}
+          onChange={setTab}
+          aria-label={t('moderation.title')}
+          tabs={[
+            { id: 'posts', label: t('moderation.tabs.posts') },
+            // Second, right after the queue it feeds. A report is the human input to the same
+            // decision the queue makes, and until this tab existed it was the only signal in the
+            // system that reached nobody — `POST /moderation/reports` wrote rows that
+            // `GET /admin/moderation/reports` was never called to read.
+            { id: 'reports', label: t('moderation.tabs.reports') },
+            { id: 'logs', label: t('moderation.tabs.logs') },
+            { id: 'banned', label: t('moderation.tabs.banned') },
+            // Added once users could appeal at all. Without it the product accepts appeals and
+            // gives nobody the ability to decide them — a promise of review no screen can keep.
+            { id: 'appeals', label: t('moderation.tabs.appeals') },
+          ]}
+        />
 
-      {/* Only the active tab is mounted, so switching does not leave three lists alive and the
+        {/* Only the active tab is mounted, so switching does not leave three lists alive and the
           page does not fetch all three on load. */}
-      {tab === 'posts' && (
-        <ModerationPostsTab key={jumpToPostId ?? 'all'} initialPostId={jumpToPostId} />
-      )}
-      {/* Same jump as the banned-users tab: a report names a post id and nothing else, so the
+        {tab === 'posts' && (
+          <ModerationPostsTab key={jumpToPostId ?? 'all'} initialPostId={jumpToPostId} />
+        )}
+        {/* Same jump as the banned-users tab: a report names a post id and nothing else, so the
           way to act on one is to open it where the post and its history are. */}
-      {tab === 'reports' && <ModerationReportsTab onViewPost={viewPost} />}
-      {tab === 'logs' && <ModerationLogsTab />}
-      {tab === 'banned' && <BannedUsersTab onViewPost={viewPost} />}
-      {tab === 'appeals' && <AppealsTab />}
+        {tab === 'reports' && <ModerationReportsTab onViewPost={viewPost} />}
+        {tab === 'logs' && <ModerationLogsTab />}
+        {tab === 'banned' && <BannedUsersTab onViewPost={viewPost} />}
+        {tab === 'appeals' && <AppealsTab />}
+      </div>
     </div>
   );
 }

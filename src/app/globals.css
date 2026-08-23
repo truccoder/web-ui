@@ -141,7 +141,31 @@
   --nx-surface-overlay: rgba(16, 24, 32, 0.55);
   --nx-surface-hover: rgba(16, 24, 32, 0.04);
   --nx-surface-pressed: rgba(16, 24, 32, 0.08);
-  --nx-surface-selected: var(--nx-blue-50);
+  /* AN ALPHA BLUE, NOT A STEP OFF THE RAMP — the light twin of the dark value below, which was
+     already an alpha and had been right all along.
+
+     blue-50 (#eef4fb) WAS UNUSABLE ON THE GROUND. Against `surface-page` (gray-100, #eceef0) the
+     step is (+2, +6, +11) — a hue shift at the same lightness, which is the one difference a
+     glance does not register. `Card`'s selected state was therefore legible only because a
+     `border-nx-accent` sat beside it doing the work; the fill itself said nothing on any screen
+     where a card sits on the ground rather than on another card.
+
+     IT ALSO LOST TO ITS OWN HOVER. `--nx-surface-hover` (4% black) over gray-100 lands on #e5e7e9
+     — a step of ~7 per channel, i.e. MORE visible than the selected fill it is supposed to sit
+     beneath.
+
+     0.12 OF THE ACCENT FIXES BOTH AT ONCE because an alpha composites against whatever is under
+     it: #e6eef8 on a white card (a touch stronger than blue-50 was, still soft) and #d5dfea on the
+     ground (an unmistakable step, and now clearly ahead of hover's #e5e7e9). One value, every
+     plane — the same reason `--nx-tint` is an alpha two blocks up.
+
+     `Tabs` DROVE THIS CHANGE AND THEN STOPPED USING IT, which is worth saying rather than
+     quietly leaving the token looking unmotivated. The tab strip was the caller that exposed how
+     little blue-50 carried on the ground; the fix that round was this token, and the round after
+     that the strip dropped its fill entirely for an accent bar. The token change survives on its
+     own merits — `Card` still selects with it, and it was wrong before for the same reason it is
+     right now. */
+  --nx-surface-selected: rgba(46, 111, 194, 0.12);
 
   --nx-text-primary: var(--nx-gray-950);
   --nx-text-secondary: var(--nx-gray-600);

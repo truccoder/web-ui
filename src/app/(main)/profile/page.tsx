@@ -1,10 +1,10 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
 import { Clock, Users } from 'lucide-react';
 import { StatTile, Tabs } from '@/shared/components';
+import { useTabParam } from '@/shared/lib/use-tab-param';
 import { BlockedUsersList } from '@/features/blocks';
 import { GithubStatsCard } from '@/features/github';
 import { FriendRequests, useFriends, usePendingRequests } from '@/features/friendships';
@@ -83,9 +83,6 @@ import { useT } from '@/core/i18n';
 const TAB_IDS = ['overview', 'professional', 'account'] as const;
 type TabId = (typeof TAB_IDS)[number];
 
-const isTabId = (value: string | null): value is TabId =>
-  value !== null && (TAB_IDS as readonly string[]).includes(value);
-
 export default function ProfilePage() {
   // `useSearchParams` needs a Suspense boundary in the App Router — same shape as `/search`.
   return (
@@ -97,7 +94,6 @@ export default function ProfilePage() {
 
 function ProfileContent() {
   const t = useT();
-  const searchParams = useSearchParams();
   const { data: profile } = useMyProfile();
   /**
    * The same query `MyReputationCard` runs one tab down, so this costs no second request — React
@@ -113,20 +109,10 @@ function ProfileContent() {
    */
   const { data: pendingRequests } = usePendingRequests();
 
-  const initialTab = searchParams.get('tab');
-  const [tab, setTab] = useState<TabId>(isTabId(initialTab) ? initialTab : 'overview');
-
-  const onTabChange = (next: string) => {
-    if (!isTabId(next)) return;
-    setTab(next);
-    // The default tab writes a bare `/profile`, so the page's canonical URL is not a query string
-    // somebody would then copy and pass around.
-    window.history.replaceState(
-      null,
-      '',
-      next === 'overview' ? '/profile' : `/profile?tab=${next}`
-    );
-  };
+  // Was fifteen lines of `useSearchParams` + `useState` + `history.replaceState` here, duplicated
+  // almost verbatim on `/u/[username]` and simply absent on the three pages that needed it too.
+  // The hook's own header carries the reasoning that used to live in this comment.
+  const [tab, onTabChange] = useTabParam<TabId>(TAB_IDS, 'overview');
 
   return (
     <div className="flex flex-col gap-[var(--nx-space-section)]">
@@ -142,32 +128,40 @@ function ProfileContent() {
         }
       />
 
-      <Tabs
-        aria-label={t('profile.title')}
-        active={tab}
-        onChange={onTabChange}
-        tabs={[
-          {
-            id: 'overview',
-            label: t('profile.tabs.overview'),
-            // `|| undefined` rather than the raw length: `Tabs` prints any number it is handed,
-            // and a "0" pill beside a tab is a notification that nothing happened.
-            count: pendingRequests?.length || undefined,
-          },
-          { id: 'professional', label: t('profile.tabs.professional') },
-          { id: 'account', label: t('profile.tabs.account') },
-        ]}
-      />
+      {/* TABS BIND DOWN TO THE PANEL THEY NAME. This wrapper is the whole of that rule: the strip
+          used to be a plain child of the page's `gap-section` column, so it sat 40 below the
+          identity card and 40 above the panel — equidistant from the thing it belongs to and the
+          thing it does not, which reads as a control floating between two sections rather than as
+          the label of the one underneath. 16 down, 40 up, and the group is unambiguous. */}
+      <div className="flex flex-col gap-[var(--nx-space-group)]">
+        <Tabs
+          aria-label={t('profile.title')}
+          active={tab}
+          onChange={onTabChange}
+          tabs={[
+            {
+              id: 'overview',
+              label: t('profile.tabs.overview'),
+              // `|| undefined` rather than the raw length: `Tabs` prints any number it is handed,
+              // and a "0" pill beside a tab is a notification that nothing happened.
+              count: pendingRequests?.length || undefined,
+            },
+            { id: 'professional', label: t('profile.tabs.professional') },
+            { id: 'account', label: t('profile.tabs.account') },
+          ]}
+        />
 
-      {/* THREE COMPONENTS RATHER THAN THREE BLOCKS OF JSX, so that a closed panel is UNMOUNTED and
-          its queries never fire. The page used to ask for everything on every visit — reputation,
-          friends, pending requests, the professional profile, roadmap progress, GitHub stats,
-          violations, the block list — to fill three screens nobody had scrolled to. Inline
-          `{tab === … && <div>…}` would have rendered the same thing but kept every `use*` call at
-          the top of this function, where React runs it regardless of which branch is taken. */}
-      {tab === 'overview' && <OverviewPanel />}
-      {tab === 'professional' && <ProfessionalPanel userId={profile?.id} />}
-      {tab === 'account' && <AccountPanel />}
+        {/* THREE COMPONENTS RATHER THAN THREE BLOCKS OF JSX, so that a closed panel is UNMOUNTED
+            and its queries never fire. The page used to ask for everything on every visit —
+            reputation, friends, pending requests, the professional profile, roadmap progress,
+            GitHub stats, violations, the block list — to fill three screens nobody had scrolled
+            to. Inline `{tab === … && <div>…}` would have rendered the same thing but kept every
+            `use*` call at the top of this function, where React runs it regardless of which
+            branch is taken. */}
+        {tab === 'overview' && <OverviewPanel />}
+        {tab === 'professional' && <ProfessionalPanel userId={profile?.id} />}
+        {tab === 'account' && <AccountPanel />}
+      </div>
     </div>
   );
 }
@@ -210,7 +204,12 @@ function OverviewPanel() {
           />
         </div>
 
-        <FriendRequests />
+        {/* `sm` BECAUSE THIS STRIP IS NESTED UNDER ANOTHER ONE. `Đã nhận · Đã gửi` sits inside
+            the `Tổng quan` panel, so the page shows two tab strips at once — and at the same size
+            they read as two peers rather than as a filter inside a tab. `/friends/requests`
+            already passed `sm` for exactly this reason; this call site was the one that did not,
+            and it is the page where both strips are visible together. */}
+        <FriendRequests tabSize="sm" />
       </section>
     </div>
   );

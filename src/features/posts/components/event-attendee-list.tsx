@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { DeveloperIdentity, EmptyState, Skeleton, Tabs } from '@/shared/components';
+import { DeveloperIdentity, EmptyState, Select, Skeleton } from '@/shared/components';
 import { useT } from '@/core/i18n';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { cn } from '@/shared/lib/cn';
@@ -56,12 +56,23 @@ export function EventAttendeeList({ postId, className }: EventAttendeeListProps)
 
   return (
     <div className={cn('flex flex-col gap-3', className)}>
-      <Tabs
+      {/* A `Select`, NOT A TAB STRIP, and the deciding fact is where this list lives: INSIDE a
+          post card, in the feed's 672 column, often below another card's own controls. A tab strip
+          is a page-level device — it says "these are the sections of this surface" — and four of
+          them nested in a card claim a level of structure the card does not have. `Đang quan tâm`
+          and `Không tham gia` are also long enough that the four labels overflow the card on a
+          phone, so the strip scrolled sideways inside something that already scrolls vertically.
+
+          `w-44` because the field should be as wide as its longest label and no wider; left at the
+          wrapper's default it would stretch the full card and read as the card's subject rather
+          than as a filter on the names below it. */}
+      <Select
         size="sm"
-        active={filterId}
-        onChange={setFilterId}
+        wrapperClassName="w-44"
         aria-label={t('post.event.attendees.title')}
-        tabs={FILTERS.map((f) => ({ id: f.id, label: t(f.labelKey) }))}
+        value={filterId}
+        onChange={(event) => setFilterId(event.target.value)}
+        options={FILTERS.map((f) => ({ value: f.id, label: t(f.labelKey) }))}
       />
 
       {attendees.isLoading ? (

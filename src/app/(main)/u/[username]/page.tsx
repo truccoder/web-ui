@@ -1,9 +1,10 @@
 'use client';
 
-import { Suspense, useState } from 'react';
-import { useParams, useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Avatar, Button, Card, EmptyState, Skeleton, Tabs } from '@/shared/components';
+import { useTabParam } from '@/shared/lib/use-tab-param';
 import { BlockUserButton } from '@/features/blocks';
 import { MessageUserButton } from '@/features/chat';
 import { MyBooksList } from '@/features/bookstore';
@@ -61,9 +62,6 @@ import { useT } from '@/core/i18n';
 const TAB_IDS = ['overview', 'work', 'posts'] as const;
 type TabId = (typeof TAB_IDS)[number];
 
-const isTabId = (value: string | null): value is TabId =>
-  value !== null && (TAB_IDS as readonly string[]).includes(value);
-
 export default function PublicProfilePage() {
   // `useSearchParams` needs a Suspense boundary in the App Router — same shape as `/search`.
   return (
@@ -76,23 +74,14 @@ export default function PublicProfilePage() {
 function PublicProfileContent() {
   const t = useT();
   const params = useParams<{ username: string }>();
-  const searchParams = useSearchParams();
   const username = params?.username ?? '';
 
   const { data: profile, isPending, isError } = usePublicProfile(username);
 
-  const initialTab = searchParams.get('tab');
-  const [tab, setTab] = useState<TabId>(isTabId(initialTab) ? initialTab : 'overview');
-
-  const onTabChange = (next: string) => {
-    if (!isTabId(next)) return;
-    setTab(next);
-    window.history.replaceState(
-      null,
-      '',
-      next === 'overview' ? `/u/${username}` : `/u/${username}?tab=${next}`
-    );
-  };
+  // The hook rebuilds the path from `usePathname`, so it writes `/u/<handle>` without being told
+  // the handle — the hand-rolled version here interpolated `username` into a template and would
+  // have silently rewritten the URL to the RAW param if the route ever normalised the handle.
+  const [tab, onTabChange] = useTabParam<TabId>(TAB_IDS, 'overview');
 
   /**
    * THIS PAGE IS THE REASON THE GUEST SURFACE EXISTS. A link to a developer's profile is what
@@ -199,7 +188,10 @@ function PublicProfileContent() {
           is gated on it, which is why the tabs live inside this guard rather than around it: a
           tab strip over three panels that can none of them render is a control for nothing. */}
       {profile.id != null && (
-        <>
+        // Tabs bind DOWN to the panel they name — 16 to the content, the page's own 40 to the hero
+        // above. This was a bare fragment, so the strip inherited the canvas's `gap-section` on
+        // both sides and sat equidistant from the identity card and the panel it labels.
+        <div className="flex flex-col gap-[var(--nx-space-group)]">
           <Tabs
             aria-label={profile.fullName?.trim() || username}
             active={tab}
@@ -282,7 +274,7 @@ function PublicProfileContent() {
               would print the same word twice, twenty pixels apart. The key stays in the bundle
               because `UserPosts` reads its sibling error and empty strings. */}
           {tab === 'posts' && <UserPosts userId={profile.id} />}
-        </>
+        </div>
       )}
     </div>
   );

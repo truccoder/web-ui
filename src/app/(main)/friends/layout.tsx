@@ -59,42 +59,48 @@ export default function FriendsLayout({ children }: { children: React.ReactNode 
         {t('friends.title')}
       </h1>
 
-      <Tabs
-        aria-label={t('friends.title')}
-        active={active}
-        onChange={(id) => {
-          const tab = TABS.find((candidate) => candidate.id === id);
-          if (tab) router.push(tab.href);
-        }}
-        tabs={TABS.map((tab) => ({
-          id: tab.id,
-          label: t(tab.labelKey),
-          /**
-           * TWO TABS CARRY A COUNT, and the third deliberately does not.
-           *
-           * `Lời mời` counts a queue — it is the number that decides whether to open the tab at
-           * all. `Bạn bè` counts the collection, which the kit shows as `128`; it comes from the
-           * SAME query the list itself runs (`useInfiniteFriends`), so this is a cache read and
-           * not a second request.
-           *
-           * `Gợi ý` has no count because a suggestion count means nothing: the endpoint returns
-           * whatever page you ask for out of a ranked stream, so any number here would be
-           * describing the page size, not a quantity of suggestions.
-           */
-          count:
-            tab.id === 'requests'
-              ? pendingCount > 0
-                ? pendingCount
-                : undefined
-              : tab.id === 'all'
-                ? friendCount > 0
-                  ? friendCount
+      {/* Tabs bind DOWN to the panel they name: 16 to the list, the canvas's own 40 to the
+          heading. The strip used to sit 40 from both, which on the one screen where the tabs ARE
+          the navigation left them looking like a third thing between the title and the content
+          rather than the control that chose it. */}
+      <div className="flex flex-col gap-[var(--nx-space-group)]">
+        <Tabs
+          aria-label={t('friends.title')}
+          active={active}
+          onChange={(id) => {
+            const tab = TABS.find((candidate) => candidate.id === id);
+            if (tab) router.push(tab.href);
+          }}
+          tabs={TABS.map((tab) => ({
+            id: tab.id,
+            label: t(tab.labelKey),
+            /**
+             * TWO TABS CARRY A COUNT, and the third deliberately does not.
+             *
+             * `Lời mời` counts a queue — it is the number that decides whether to open the tab at
+             * all. `Bạn bè` counts the collection, which the kit shows as `128`; it comes from the
+             * SAME query the list itself runs (`useInfiniteFriends`), so this is a cache read and
+             * not a second request.
+             *
+             * `Gợi ý` has no count because a suggestion count means nothing: the endpoint returns
+             * whatever page you ask for out of a ranked stream, so any number here would be
+             * describing the page size, not a quantity of suggestions.
+             */
+            count:
+              tab.id === 'requests'
+                ? pendingCount > 0
+                  ? pendingCount
                   : undefined
-                : undefined,
-        }))}
-      />
+                : tab.id === 'all'
+                  ? friendCount > 0
+                    ? friendCount
+                    : undefined
+                  : undefined,
+          }))}
+        />
 
-      {children}
+        {children}
+      </div>
     </div>
   );
 }

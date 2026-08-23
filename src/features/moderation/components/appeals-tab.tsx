@@ -8,9 +8,10 @@ import {
   EmptyState,
   Input,
   Pagination,
+  Select,
   Skeleton,
-  Tabs,
 } from '@/shared/components';
+import { cn } from '@/shared/lib/cn';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { formatDateTime, useIntlLocale } from '@/shared/lib/format';
 import { useT } from '@/core/i18n';
@@ -33,6 +34,17 @@ import { useAppeals, useApproveAppeal, useRejectAppeal } from '../hooks/use-mode
  * THE STATUS FILTER IS EXPLICIT even though the server defaults to `PENDING`. A queue that only
  * ever shows one status without saying so is a queue whose filter nobody can find, and decided
  * appeals have to be reachable — an admin asked "why was this approved?" needs to answer it.
+ *
+ * IT IS A `Select`, AND IT WAS A TAB STRIP — the clearest case in the app of a control wearing the
+ * wrong shape. This component IS a tab: it renders inside the panel that `/admin/moderation`'s
+ * five-tab strip opens. So the screen drew a strip, and then drew a second strip of the same
+ * shape at the same size inside the first one's panel, with no visual step between the two
+ * levels. Nothing said which was the page and which was the filter.
+ *
+ * A LABELLED SELECT SAYS BOTH AT ONCE. It reads as a filter rather than as navigation, and it is
+ * the SAME `size="sm"` labelled `Trạng thái` select at the same `w-52` that `ModerationFilters`
+ * already puts on the `Hàng chờ` tab — so the two queues are now filtered by the same control
+ * instead of by two different idioms one tab apart.
  */
 export interface AppealsTabProps {
   className?: string;
@@ -50,23 +62,27 @@ export function AppealsTab({ className }: AppealsTabProps) {
   const query = useAppeals(status, page, PAGE_SIZE);
 
   return (
-    <div className={className}>
-      <Tabs
-        aria-label={t('moderation.appeals.filter')}
-        active={status}
-        onChange={(id) => {
-          setStatus(id as AppealStatus);
+    // 12 between the filter and the queue: the admin canvas's step, the same one the page puts
+    // between its tab strip and this panel.
+    <div className={cn('flex flex-col gap-[var(--nx-space-element)]', className)}>
+      <Select
+        size="sm"
+        wrapperClassName="w-52"
+        label={t('moderation.filters.status')}
+        value={status}
+        onChange={(event) => {
+          setStatus(event.target.value as AppealStatus);
           // Page 3 of PENDING is not page 3 of APPROVED — keeping the number would show an empty
           // page for a filter that has results.
           setPage(1);
         }}
-        tabs={STATUSES.map((value) => ({
-          id: value,
+        options={STATUSES.map((value) => ({
+          value,
           label: t(`moderationMine.status.${value}`),
         }))}
       />
 
-      <div className="mt-4 flex flex-col gap-3">
+      <div className="flex flex-col gap-3">
         {query.isLoading ? (
           <Skeleton lines={5} />
         ) : query.isError ? (

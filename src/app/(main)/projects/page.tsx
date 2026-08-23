@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus } from 'lucide-react';
 import { Button, Tabs } from '@/shared/components';
+import { useTabParam } from '@/shared/lib/use-tab-param';
 import { CreateProjectDialog, MyApplications, ProjectList } from '@/features/matchmaking';
 import { useT } from '@/core/i18n';
 
@@ -24,10 +25,21 @@ import { useT } from '@/core/i18n';
  * with its id now; while it answered `void`, a creator had no way to reach their own project and
  * the honest UI would have been a form that says "sent" and stops.
  */
+const TAB_IDS = ['board', 'mine'] as const;
+
 export default function ProjectsPage() {
+  // `useTabParam` reads the query string, which needs a Suspense boundary in the App Router.
+  return (
+    <Suspense>
+      <ProjectsContent />
+    </Suspense>
+  );
+}
+
+function ProjectsContent() {
   const t = useT();
   const router = useRouter();
-  const [tab, setTab] = useState('board');
+  const [tab, setTab] = useTabParam(TAB_IDS, 'board');
   const [creating, setCreating] = useState(false);
 
   return (
@@ -44,17 +56,25 @@ export default function ProjectsPage() {
         </Button>
       </div>
 
-      <Tabs
-        aria-label={t('projects.title')}
-        active={tab}
-        onChange={setTab}
-        tabs={[
-          { id: 'board', label: t('projects.tabs.board') },
-          { id: 'mine', label: t('projects.tabs.mine') },
-        ]}
-      />
+      {/* `?tab=mine` rather than state alone. The paragraph above says these two never had URLs of
+          their own, and that stays true of ROUTES — but a reader who submits an application and
+          refreshes was being put back on the board, which is the one tab they were not looking at.
 
-      {tab === 'board' ? <ProjectList /> : <MyApplications />}
+          Grouped with its panel: 16 down, the page's own 40 up. It used to be 40 on both sides,
+          which left the strip stranded between the heading and the list it filters. */}
+      <div className="flex flex-col gap-[var(--nx-space-group)]">
+        <Tabs
+          aria-label={t('projects.title')}
+          active={tab}
+          onChange={setTab}
+          tabs={[
+            { id: 'board', label: t('projects.tabs.board') },
+            { id: 'mine', label: t('projects.tabs.mine') },
+          ]}
+        />
+
+        {tab === 'board' ? <ProjectList /> : <MyApplications />}
+      </div>
 
       <CreateProjectDialog
         open={creating}

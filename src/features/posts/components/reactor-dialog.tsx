@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Avatar, Dialog, EmptyState, Skeleton, Tabs } from '@/shared/components';
+import { Avatar, Dialog, EmptyState, Select, Skeleton } from '@/shared/components';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { useT } from '@/core/i18n';
 import type { ReactionType } from '../types/reaction';
@@ -17,12 +17,23 @@ import { REACTION_ORDER } from './reaction-bar';
  * of credibility, *who* found a post useful is most of the information. `GET /posts/{id}/reactions`
  * existed with no caller, so the count was a dead end.
  *
- * ONE TAB PER TYPE, driven by the endpoint's own `type` parameter rather than by filtering a list
- * on this side. Client-side filtering could only narrow the page already fetched, so a tab would
- * silently under-report as soon as a post had more reactors than one page.
+ * ONE OPTION PER TYPE, driven by the endpoint's own `type` parameter rather than by filtering a
+ * list on this side. Client-side filtering could only narrow the page already fetched, so the
+ * filter would silently under-report as soon as a post had more reactors than one page.
  *
- * THE COUNT ON EACH TAB IS THE FILTER'S TOTAL, not the post's. `totalCount` changes with `type`,
- * which is exactly why the `Tất cả` tab is where the post's real total is read.
+ * A `Select`, AND IT WAS A TAB STRIP UNTIL IT WAS COUNTED. Eight choices — `Tất cả` plus seven
+ * reaction types — inside a dialog that is 480 wide at most. Even in Vietnamese, where the labels
+ * are short, that is a strip which overflows and scrolls sideways ON DESKTOP, and the reader has
+ * to drag through it to discover that `Phẫn nộ` exists at all. A tab strip is a control you can
+ * take in at a glance; past three or four options it stops being one, and this had eight.
+ *
+ * IT IS ALSO NOT NAVIGATION, WHICH IS THE PART THE SHAPE WAS GETTING WRONG. The dialog is about
+ * one thing — who reacted — and the type only narrows that list. Tabs claim the panels are
+ * different subjects; a select says the subject is fixed and this is which slice of it you want,
+ * which is the truth here.
+ *
+ * `totalCount` CHANGES WITH THE FILTER, not with the post, which is exactly why the dialog's own
+ * description reads the total while `ALL` is selected and the list below is what narrows.
  *
  * REACTORS LINK, AND POST AUTHORS STILL DO NOT — the rows are `PublicUserResponse` and carry a
  * `username`, while `FeedPostDataDto` does not (B28). Someone who liked a post is more reachable
@@ -55,14 +66,19 @@ export function ReactorDialog({ postId, open, onClose }: ReactorDialogProps) {
       maxHeight="70vh"
     >
       <div className="flex flex-col gap-3">
-        <Tabs
+        {/* `sm:w-56` RATHER THAN THE WRAPPER'S DEFAULT `w-full`. A filter stretched to the dialog's
+            full measure reads as the dialog's subject; the subject is the list under it. On a
+            phone it goes full width anyway, because a native picker's tap target should be. */}
+        <Select
+          size="sm"
+          wrapperClassName="sm:w-56"
           aria-label={t('post.reactors.title')}
-          active={tab}
-          onChange={(id) => setTab(id as 'ALL' | ReactionType)}
-          tabs={[
-            { id: 'ALL', label: t('post.reactors.all') },
+          value={tab}
+          onChange={(event) => setTab(event.target.value as 'ALL' | ReactionType)}
+          options={[
+            { value: 'ALL', label: t('post.reactors.all') },
             ...REACTION_ORDER.map((value) => ({
-              id: value,
+              value,
               label: t(`post.reaction.${value}`),
             })),
           ]}

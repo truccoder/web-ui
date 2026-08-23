@@ -27,9 +27,10 @@ const SOURCES = ['GitHub', 'Hacker News', 'DEV Community'] as const;
  * so the test passes while filtering is broken. Worse than failing. Both had to be found the hard
  * way, one after the other:
  *
- *  - the FILTER ROW itself. `Tabs` renders `<button role="tab">` where `Badge` renders a
- *    `<span>`, so intersecting on the element separates a label on a card from the control that
- *    chose it.
+ *  - the FILTER ROW itself. It is a `<select>` now rather than a tab strip, so the three names
+ *    are `<option>` elements; `Badge` renders a `<span>`, so intersecting on the element still
+ *    separates a label on a card from the control that chose it. The intersection is what makes
+ *    this robust to the control changing shape — it did, and this helper did not have to.
  *  - the LEDGER's "Từ bên ngoài" section, which lists each source with a count — that is the
  *    flank, an `<aside>` beside `<main>` rather than inside it, so scoping to `main` drops it.
  *
@@ -53,27 +54,25 @@ test.describe('trending', () => {
   test('offers all three sources as filters', async ({ page }) => {
     await openTrending(page);
 
-    // A `tablist`, not a row of buttons — the filter is one choice among four, and the DS models
-    // that as tabs. Asking for `button` here is the mistake this comment exists to prevent.
-    const sources = page.getByRole('tablist', { name: 'Lọc theo nguồn' });
-    await expect(sources.getByRole('tab', { name: 'Tất cả nguồn' })).toBeVisible();
-    for (const source of SOURCES) {
-      await expect(sources.getByRole('tab', { name: source, exact: true })).toBeVisible();
-    }
+    // A `combobox`, not a `tablist`. The filter was a tab strip until the round that collapsed
+    // trending's two stacked strips into one row of selects; the assertion is deliberately on the
+    // ROLE rather than on the tag, so it says what the control is for a reader rather than how it
+    // is built. Its accessible name is unchanged, which is why only these two lines moved.
+    const sources = page.getByRole('combobox', { name: 'Lọc theo nguồn' });
+    await expect(sources).toBeVisible();
 
     // Three sources AND an unfiltered default — the script switches between them to show the
-    // sources are real, which needs a way back.
-    await expect(sources.getByRole('tab')).toHaveCount(SOURCES.length + 1);
+    // sources are real, which needs a way back. Read off the options rather than off four
+    // separate locators: a `<select>` states its whole choice set in one place, which is the
+    // point of using one.
+    await expect(sources.locator('option')).toHaveText(['Tất cả nguồn', ...SOURCES]);
   });
 
   test('filtering by a source narrows the list to that source', async ({ page }) => {
     await openTrending(page);
 
     for (const source of SOURCES) {
-      await page
-        .getByRole('tablist', { name: 'Lọc theo nguồn' })
-        .getByRole('tab', { name: source, exact: true })
-        .click();
+      await page.getByRole('combobox', { name: 'Lọc theo nguồn' }).selectOption({ label: source });
 
       // Wait for the list to come back before reading it: the filter is a server round trip, and
       // asserting immediately reads the previous source's cards and passes for the wrong reason.
