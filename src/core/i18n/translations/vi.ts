@@ -151,14 +151,20 @@ export const vi: Messages = {
     email: 'Email',
     emailPlaceholder: 'ten@example.com',
     password: 'Mật khẩu',
+    passwordShow: 'Hiện mật khẩu',
+    passwordHide: 'Ẩn mật khẩu',
     fullname: 'Họ và tên',
     fullNamePlaceholder: 'Nguyễn Văn A',
     brand: {
       tagline: 'Nơi năng lực được chứng minh, không phải được kể lại',
+      subtagline:
+        'Hồ sơ dựng từ kỹ năng đã qua xác minh, sách bạn viết và dự án bạn góp mặt — không phải từ dòng tự mô tả.',
       command: 'nexus init',
       pointProfile: 'Hồ sơ năng lực có xác minh',
       pointRoadmap: 'Lộ trình kỹ năng theo từng bước',
       pointLibrary: 'Kho sách do cộng đồng xuất bản',
+      pointProjects: 'Dự án đang tìm người cùng làm',
+      pointChat: 'Trao đổi trực tiếp trong ứng dụng',
       footer: 'Elite Nexus — mạng lưới của người làm nghề.',
     },
     login: {
@@ -1178,6 +1184,7 @@ export const vi: Messages = {
     subtitle: 'Sách do cộng đồng xuất bản',
     owned: 'Đã sở hữu',
     loadError: 'Không thể tải thư viện',
+    storageError: 'Không tải được sách: kho lưu trữ tệp đang không truy cập được.',
     emptyTitle: 'Thư viện còn trống',
     emptyDesc: 'Khi có người đăng sách, sách sẽ xuất hiện ở đây.',
   },

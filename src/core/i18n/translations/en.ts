@@ -162,14 +162,20 @@ export const en = {
     email: 'Email',
     emailPlaceholder: 'name@example.com',
     password: 'Password',
+    passwordShow: 'Show password',
+    passwordHide: 'Hide password',
     fullname: 'Full Name',
     fullNamePlaceholder: 'John Doe',
     brand: {
       tagline: 'Where ability is proven, not claimed',
+      subtagline:
+        'A profile built from verified skills, the books you wrote and the projects you shipped — not from a paragraph about yourself.',
       command: 'nexus init',
       pointProfile: 'A reputation backed by verification',
       pointRoadmap: 'Skill roadmaps, one step at a time',
       pointLibrary: 'A library the community publishes',
+      pointProjects: 'Projects looking for people to build with',
+      pointChat: 'Talk it through without leaving the app',
       footer: 'Elite Nexus — a network for people who build.',
     },
     login: {
@@ -1201,6 +1207,7 @@ export const en = {
     subtitle: 'Books published by the community',
     owned: 'Owned',
     loadError: 'Could not load the library',
+    storageError: 'Books are unavailable: the file storage cannot be reached.',
     emptyTitle: 'The library is empty',
     emptyDesc: 'Books show up here as people publish them.',
   },

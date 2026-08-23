@@ -29,10 +29,49 @@ import { cn } from '@/shared/lib/cn';
 export interface BrandMarkProps {
   /** Rendered size in px (square). @default 32 */
   size?: number;
+  /**
+   * WHICH SURFACE THE MARK IS SITTING ON, not which theme the app is in — and the two stopped
+   * being the same thing when the auth screens grew a permanently-ink brand panel.
+   *
+   * `auto` (the default, and what every caller in the shell wants) follows the theme: the filled
+   * form on a light page, the outlined form on a dark one. That is right for chrome, which is
+   * always on the ground.
+   *
+   * `dark` pins the outlined form. Without it the mark on the auth panel renders its LIGHT form —
+   * an ink square — on ink, in light mode: the square vanishes into the panel and all that is left
+   * is a floating amber cursor. `light` is the mirror of that, for a light surface held open in
+   * dark mode.
+   *
+   * @default "auto"
+   */
+  on?: 'auto' | 'light' | 'dark';
   className?: string;
 }
 
-export function BrandMark({ size = 32, className }: BrandMarkProps) {
+export function BrandMark({ size = 32, on = 'auto', className }: BrandMarkProps) {
+  // Which of the two forms is drawn, as a pair of visibility classes. `auto` keeps the original
+  // `dark:` pair; the pinned values drop the variant entirely so no theme can override them.
+  const filled = on === 'auto' ? 'dark:hidden' : on === 'light' ? '' : 'hidden';
+  const outlined = on === 'auto' ? 'hidden dark:block' : on === 'dark' ? '' : 'hidden';
+
+  /**
+   * PINNING THE FORM IS NOT ENOUGH — THE INK INSIDE IT HAS TO BE PINNED TOO, and the first
+   * attempt at `on` shipped without this and drew a mark with no chevron in it.
+   *
+   * The outlined form's strokes are `border-default` and `text-primary`, which are THEME tokens:
+   * correct when the form is chosen because the theme is dark, wrong the moment it is chosen
+   * because the SURFACE is dark. On the auth panel in light mode `text-primary` resolves to
+   * gray-950 — an ink chevron on ink — so all that reached the screen was the outline of the
+   * square and the amber cursor floating inside it.
+   *
+   * So `auto` keeps the semantic tokens (the theme and the surface agree, by definition) and the
+   * pinned modes take fixed ramp values, which is the one case in this file where a raw ramp
+   * reference is right rather than lazy: the value must NOT follow the theme.
+   */
+  const squareStroke = on === 'dark' ? 'stroke-[var(--nx-gray-700)]' : 'stroke-nx-border-default';
+  const chevronStroke = on === 'dark' ? 'stroke-[var(--nx-gray-50)]' : 'stroke-nx-text-primary';
+  const squareFill = on === 'light' ? 'fill-[var(--nx-gray-950)]' : 'fill-nx-surface-inverse';
+
   return (
     <svg
       viewBox="0 0 256 256"
@@ -45,7 +84,7 @@ export function BrandMark({ size = 32, className }: BrandMarkProps) {
       className={cn('shrink-0', className)}
     >
       {/* Light: ink square, chevron cut out of it so the page shows through the stroke. */}
-      <g className="dark:hidden">
+      <g className={filled}>
         <defs>
           <mask id="nx-brand-chevron">
             {/* eslint-disable-next-line no-restricted-syntax -- mask channel, not a colour:
@@ -69,13 +108,13 @@ export function BrandMark({ size = 32, className }: BrandMarkProps) {
           width="240"
           height="240"
           rx="52"
-          className="fill-nx-surface-inverse"
+          className={squareFill}
           mask="url(#nx-brand-chevron)"
         />
       </g>
 
       {/* Dark: outlined square, chevron drawn rather than knocked out. */}
-      <g className="hidden dark:block">
+      <g className={outlined}>
         <rect
           x="8"
           y="8"
@@ -84,7 +123,7 @@ export function BrandMark({ size = 32, className }: BrandMarkProps) {
           rx="52"
           fill="none"
           strokeWidth="10"
-          className="stroke-nx-border-default"
+          className={squareStroke}
         />
         <path
           d="M83.36 81.64 L129.73 128 L83.36 174.36"
@@ -92,7 +131,7 @@ export function BrandMark({ size = 32, className }: BrandMarkProps) {
           strokeWidth="17"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="stroke-nx-text-primary"
+          className={chevronStroke}
         />
       </g>
 

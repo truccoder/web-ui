@@ -52,8 +52,21 @@ export interface InputProps extends Omit<
   size?: 'sm' | 'md' | 'lg';
   /** Leading adornment (icon). */
   prefix?: React.ReactNode;
-  /** Trailing adornment (icon). */
+  /** Trailing adornment (icon). DECORATIVE — it is rendered `aria-hidden`. */
   suffix?: React.ReactNode;
+  /**
+   * Trailing slot for something you can OPERATE — a reveal toggle, a clear button, a unit picker.
+   *
+   * IT EXISTS BECAUSE `suffix` IS `aria-hidden` AND MUST STAY THAT WAY. Every current caller puts
+   * an icon there, and an icon beside a labelled field is decoration a screen reader should not
+   * read. But `aria-hidden` on a subtree containing a focusable control is an actual violation
+   * rather than a preference: the control keeps its place in the tab order and is announced as
+   * nothing when it gets there. So the two cases get two slots instead of one slot with a flag,
+   * and the wrapper here carries no `aria-hidden` at all.
+   *
+   * Renders after `suffix` when both are given.
+   */
+  suffixAction?: React.ReactNode;
   /** Render the value in Geist Mono (tokens, handles, URLs). @default false */
   mono?: boolean;
   /**
@@ -79,6 +92,7 @@ export function Input({
   size = 'md',
   prefix,
   suffix,
+  suffixAction,
   mono = false,
   className,
   wrapperClassName,
@@ -144,6 +158,8 @@ export function Input({
             {suffix}
           </span>
         )}
+
+        {suffixAction && <span className="flex shrink-0 items-center">{suffixAction}</span>}
       </div>
 
       {description && (

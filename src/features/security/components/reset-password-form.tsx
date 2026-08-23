@@ -5,7 +5,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { CheckCircle2, ShieldCheck, XCircle } from 'lucide-react';
-import { Button, Card, Input } from '@/shared/components';
+import { Button, Input } from '@/shared/components';
+import { AuthCard } from './auth-card';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { useT } from '@/core/i18n';
 import { useResetPassword } from '../hooks/use-recovery';
@@ -34,7 +35,7 @@ export function ResetPasswordForm() {
 
   if (!token) {
     return (
-      <Card padding={24} className="w-full">
+      <AuthCard>
         <div className="flex flex-col items-center gap-3 text-center">
           <span className="flex size-12 items-center justify-center rounded-nx-full bg-nx-status-danger-bg">
             <XCircle className="size-6 text-nx-status-danger-fg" aria-hidden />
@@ -51,13 +52,13 @@ export function ResetPasswordForm() {
             {t('auth.resetPassword.requestNewLink')}
           </Button>
         </Link>
-      </Card>
+      </AuthCard>
     );
   }
 
   if (reset.isSuccess) {
     return (
-      <Card padding={24} className="w-full">
+      <AuthCard>
         <div className="flex flex-col items-center gap-3 text-center">
           <span className="flex size-12 items-center justify-center rounded-nx-full bg-nx-status-success-bg">
             <CheckCircle2 className="size-6 text-nx-status-success-fg" aria-hidden />
@@ -72,12 +73,12 @@ export function ResetPasswordForm() {
         <Link href="/login" className="mt-5 block">
           <Button className="w-full">{t('auth.resetPassword.continue')}</Button>
         </Link>
-      </Card>
+      </AuthCard>
     );
   }
 
   return (
-    <Card padding={24} className="w-full">
+    <AuthCard>
       <div className="flex flex-col items-center gap-2 text-center">
         <span
           className="flex size-11 items-center justify-center rounded-nx-md bg-nx-surface-sunken text-nx-text-secondary"
@@ -131,6 +132,6 @@ export function ResetPasswordForm() {
       >
         {t('auth.resetPassword.backToLogin')}
       </Link>
-    </Card>
+    </AuthCard>
   );
 }

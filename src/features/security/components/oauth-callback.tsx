@@ -4,7 +4,8 @@ import { useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { AlertCircle, Loader2 } from 'lucide-react';
-import { Button, Card } from '@/shared/components';
+import { Button } from '@/shared/components';
+import { AuthCard } from './auth-card';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { useT } from '@/core/i18n';
 import type { OAuthProvider } from '../types/auth';
@@ -58,7 +59,7 @@ export function OAuthCallback({ provider, onSuccess }: OAuthCallbackProps) {
         : getErrorMessage(callback.error, t('auth.oauth.failed'));
 
     return (
-      <Card padding={24} className="w-full">
+      <AuthCard>
         <div className="flex flex-col items-center gap-3 text-center">
           <span className="flex size-12 items-center justify-center rounded-nx-full bg-nx-status-danger-bg">
             <AlertCircle className="size-6 text-nx-status-danger-fg" aria-hidden />
@@ -75,18 +76,18 @@ export function OAuthCallback({ provider, onSuccess }: OAuthCallbackProps) {
             {t('auth.oauth.backToLogin')}
           </Button>
         </Link>
-      </Card>
+      </AuthCard>
     );
   }
 
   // Pending / success: the redirect happens in onSuccess, so success briefly shows the
   // same spinner rather than flashing a separate state.
   return (
-    <Card padding={24} className="w-full">
+    <AuthCard>
       <div className="flex flex-col items-center gap-3 py-4 text-center">
         <Loader2 className="size-8 animate-spin text-nx-accent" aria-hidden />
         <p className="text-nx-body-sm text-nx-text-secondary">{t('auth.oauth.exchanging')}</p>
       </div>
-    </Card>
+    </AuthCard>
   );
 }

@@ -4,7 +4,8 @@ import { useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { CheckCircle2, Loader2, XCircle } from 'lucide-react';
-import { Button, Card } from '@/shared/components';
+import { Button } from '@/shared/components';
+import { AuthCard } from './auth-card';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { useT } from '@/core/i18n';
 import { useVerifyEmail } from '../hooks/use-recovery';
@@ -81,12 +82,12 @@ export function VerifyEmailStatus() {
 
   // idle (pre-mutation) or pending
   return (
-    <Card padding={24} className="w-full">
+    <AuthCard>
       <div className="flex flex-col items-center gap-3 py-4 text-center">
         <Loader2 className="size-8 animate-spin text-nx-accent" aria-hidden />
         <p className="text-nx-body-sm text-nx-text-secondary">{t('auth.verifyEmail.verifying')}</p>
       </div>
-    </Card>
+    </AuthCard>
   );
 }
 
@@ -113,7 +114,7 @@ function StatusCard({
       ? 'bg-nx-status-success-bg text-nx-status-success-fg'
       : 'bg-nx-status-danger-bg text-nx-status-danger-fg';
   return (
-    <Card padding={24} className="w-full">
+    <AuthCard>
       <div className="flex flex-col items-center gap-3 text-center">
         <span className={`flex size-12 items-center justify-center rounded-nx-full ${toneCls}`}>
           {icon}
@@ -122,6 +123,6 @@ function StatusCard({
         <p className="text-nx-body-sm text-nx-text-secondary">{desc}</p>
       </div>
       {action}
-    </Card>
+    </AuthCard>
   );
 }

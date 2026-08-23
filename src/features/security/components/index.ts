@@ -1,3 +1,5 @@
+export { AuthCard, type AuthCardProps } from './auth-card';
+export { PasswordInput, type PasswordInputProps } from './password-input';
 export { LoginForm, type LoginFormProps } from './login-form';
 export { RegisterForm } from './register-form';
 export { OAuthButtons } from './oauth-buttons';

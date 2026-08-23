@@ -3,7 +3,9 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
-import { BrandMark, Button, Card, Input } from '@/shared/components';
+import { BrandMark, Button, Input } from '@/shared/components';
+import { AuthCard } from './auth-card';
+import { PasswordInput } from './password-input';
 import { getErrorMessage } from '@/shared/lib/api-error';
 // i18n is app-wide infrastructure still living in lib/. It is the one edge out of this
 // feature; when it moves to core/ (recommended infra checkpoint) this import updates and
@@ -47,8 +49,12 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
    * Left at 24 with the reason written down instead.
    */
   return (
-    <Card padding={24} className="w-full">
-      <div className="flex flex-col items-center gap-2 text-center">
+    <AuthCard>
+      {/* CENTRED ON A PHONE, LEFT-ALIGNED BESIDE THE PANEL. The centring belonged to the card:
+          a 448 box alone on a viewport reads as a poster and a centred header suits it. With the
+          card dissolved above `lg` the header sits directly over left-aligned labels and fields,
+          and a centred title over a left-aligned column has no edge to agree with. */}
+      <div className="flex flex-col items-center gap-2 text-center lg:items-start lg:text-left">
         {/* THE REAL MARK, NOT THE PLACEHOLDER THIS FILE USED TO IMPORT. `features/security` carried
             its own `brand-mark.tsx` — an ink tile with a mono "N", whose own header called itself
             an APPROXIMATION and said to "swap for the real mark when the app has a shared logo
@@ -58,7 +64,12 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
 
             `size={44}` keeps the auth card's header exactly the height it was — the placeholder
             rendered `size-11`. A px prop, not a spacing rung, so no ladder applies. */}
-        <BrandMark size={44} />
+        {/* `lg:hidden` — THE MARK IS ONLY HERE WHEN THE BRAND PANEL IS NOT.
+            Measured on the split layout: two copies of the mark rendered on one 1440 screen, one
+            in the panel and one 300px away at the top of this card. Below `lg` the panel does not
+            render at all, and a sign-in screen with no mark anywhere is a form from nobody — so
+            this is a fallback, not a duplicate. */}
+        <BrandMark size={44} className="lg:hidden" />
         <h1 className="text-nx-title font-semibold text-nx-text-primary">
           {t('auth.login.title')}
         </h1>
@@ -109,9 +120,8 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
               {t('auth.login.forgotPassword')}
             </Link>
           </div>
-          <Input
+          <PasswordInput
             id="login-password"
-            type="password"
             autoComplete="current-password"
             placeholder={t('auth.login.passwordPlaceholder')}
             error={errors.password?.message}
@@ -152,6 +162,6 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
           </Link>
         </p>
       </div>
-    </Card>
+    </AuthCard>
   );
 }

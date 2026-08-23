@@ -6,7 +6,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { ArrowLeft, Camera, Mail } from 'lucide-react';
-import { Avatar, Button, Card, Input } from '@/shared/components';
+import { Avatar, Button, Input } from '@/shared/components';
+import { AuthCard } from './auth-card';
+import { PasswordInput } from './password-input';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { useT } from '@/core/i18n';
 import { useRegister } from '../hooks/use-auth';
@@ -77,7 +79,7 @@ export function RegisterForm() {
   // email, so the next step is "check your inbox", not a signed-in app.
   if (submittedEmail) {
     return (
-      <Card padding={24} className="w-full">
+      <AuthCard>
         <div className="flex flex-col items-center gap-3 text-center">
           <span className="flex size-12 items-center justify-center rounded-nx-full bg-nx-status-success-bg">
             <Mail className="size-6 text-nx-status-success-fg" aria-hidden />
@@ -94,14 +96,37 @@ export function RegisterForm() {
             {t('auth.register.backToLogin')}
           </Button>
         </Link>
-      </Card>
+      </AuthCard>
     );
   }
 
   return (
-    <Card padding={24} className="w-full">
-      <div className="flex flex-col items-center gap-2 text-center">
-        <div className="group relative">
+    <AuthCard>
+      {/* CENTRED ON A PHONE, LEFT-ALIGNED BESIDE THE PANEL. The centring belonged to the card:
+          a 448 box alone on a viewport reads as a poster. With the card dissolved above `lg` the
+          heading sits over left-aligned labels, and a centred column has no edge to agree with. */}
+      <div className="flex flex-col items-center gap-2 text-center lg:items-start lg:text-left">
+        <h1 className="text-nx-title font-semibold text-nx-text-primary">
+          {t('auth.register.title')}
+        </h1>
+        <p className="text-nx-body-sm text-nx-text-secondary">{t('auth.register.subtitle')}</p>
+      </div>
+
+      {/* THE PICTURE PICKER, UNDER THE HEADING AND LAID OUT AS A ROW.
+          It has been in three places across as many rounds, so the current one is written down
+          rather than left to be re-derived: above the heading (where this file shipped), below the
+          password (tried, reverted), and here — first thing after the sentence that says what the
+          screen is, which is the owner's call.
+
+          A ROW, NOT THE CENTRED STACK IT USED TO BE. Stacked, the avatar + two caption lines cost
+          about 130px of vertical run before the first real field; side by side they cost 64 and
+          the label sits beside the thing it labels. It is also the one optional control on the
+          screen, and a row reads as an aside where a centred column read as the subject.
+
+          `justify-center lg:justify-start` follows the heading above it — centred while the card
+          exists on a phone, left-aligned once the card dissolves. */}
+      <div className="mt-5 flex items-center justify-center gap-4 lg:justify-start">
+        <div className="group relative shrink-0">
           <Avatar src={preview ?? undefined} name={fullname} size="xl" />
           <button
             type="button"
@@ -119,19 +144,33 @@ export function RegisterForm() {
             onChange={onPickFile}
           />
         </div>
-        <p className="text-nx-caption text-nx-text-muted">
-          {preview ? t('auth.register.changePhoto') : t('auth.register.uploadPhoto')}
-          <span className="mx-1">·</span>
-          {t('auth.register.optional')}
-        </p>
-        <p className="text-nx-micro text-nx-text-faint">
-          {pictureError ?? t('auth.register.photoFormats')}
-        </p>
 
-        <h1 className="mt-1 text-nx-title font-semibold text-nx-text-primary">
-          {t('auth.register.title')}
-        </h1>
-        <p className="text-nx-body-sm text-nx-text-secondary">{t('auth.register.subtitle')}</p>
+        <div className="flex min-w-0 flex-col gap-1">
+          {/* A second control onto the same file input as the avatar overlay. The overlay only
+              appears on hover, which does not exist on a touch screen; this is the affordance that
+              always does. */}
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="w-fit text-nx-body-sm font-medium text-nx-text-link hover:text-nx-text-link-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
+          >
+            {preview ? t('auth.register.changePhoto') : t('auth.register.uploadPhoto')}
+            <span className="mx-1 text-nx-text-muted">·</span>
+            <span className="font-normal text-nx-text-muted">{t('auth.register.optional')}</span>
+          </button>
+          <p
+            className={
+              pictureError
+                ? 'text-nx-caption text-nx-status-danger-fg'
+                : 'text-nx-caption text-nx-text-muted'
+            }
+            // The picture error is a validation result, so it is announced; the format rule it
+            // replaces is static help text and is not.
+            role={pictureError ? 'alert' : undefined}
+          >
+            {pictureError ?? t('auth.register.photoFormats')}
+          </p>
+        </div>
       </div>
 
       {/* `method="post"` for the reason spelled out in `LoginForm`: without it a form defaults to
@@ -152,9 +191,8 @@ export function RegisterForm() {
           error={errors.email?.message}
           {...field('email')}
         />
-        <Input
+        <PasswordInput
           label={t('auth.password')}
-          type="password"
           autoComplete="new-password"
           placeholder={t('auth.register.passwordPlaceholder')}
           error={errors.password?.message}
@@ -186,6 +224,6 @@ export function RegisterForm() {
           {t('auth.register.signIn')}
         </Link>
       </p>
-    </Card>
+    </AuthCard>
   );
 }

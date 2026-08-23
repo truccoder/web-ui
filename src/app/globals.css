@@ -117,6 +117,27 @@
   --nx-tint: rgba(16, 24, 32, 0.08);
   --nx-surface-raised: var(--nx-gray-0);
   --nx-surface-inverse: var(--nx-gray-950);
+  /* ── The brand ink, for the auth screens' panel ──────────────────────────────────────────
+     A SURFACE THAT DOES NOT FLIP WITH THE THEME, which is the whole reason it cannot be
+     `--nx-surface-inverse`. That token means "the opposite of the current ground", so in dark
+     it resolves to gray-50 — a WHITE panel, in dark mode, carrying the wordmark. The brand
+     panel is not an inverse of anything; it is ink in both themes, the same ink the mark's own
+     square is drawn in.
+
+     NOTHING HERE STEPS BETWEEN THEMES, AND IT USED TO. The dark block carried `ink: gray-900`
+     because the panel then sat beside a `surface-page` column, which in dark is gray-950 — a 950
+     panel would have dissolved into it. Since the form column became `surface-card` above `lg`
+     the neighbour is gray-0 in light and gray-800 in dark, and 950 contrasts with both. Keeping
+     the step made the panel LIGHTER than the form beside it in dark, inverting the one
+     relationship the split is built on: ink brand, lit form.
+
+     The text values never stepped either. They sit on ink in both themes and would fail contrast
+     the moment they followed the theme instead of the surface under them. */
+  --nx-brand-ink: var(--nx-gray-950);
+  --nx-brand-ink-block: var(--nx-gray-900);
+  --nx-brand-ink-line: var(--nx-gray-800);
+  --nx-brand-ink-text: var(--nx-gray-50);
+  --nx-brand-ink-muted: var(--nx-gray-400);
   --nx-surface-overlay: rgba(16, 24, 32, 0.55);
   --nx-surface-hover: rgba(16, 24, 32, 0.04);
   --nx-surface-pressed: rgba(16, 24, 32, 0.08);
@@ -267,6 +288,11 @@
   --color-nx-surface-sunken: var(--nx-surface-sunken);
   --color-nx-surface-raised: var(--nx-surface-raised);
   --color-nx-surface-inverse: var(--nx-surface-inverse);
+  --color-nx-brand-ink: var(--nx-brand-ink);
+  --color-nx-brand-ink-block: var(--nx-brand-ink-block);
+  --color-nx-brand-ink-line: var(--nx-brand-ink-line);
+  --color-nx-brand-ink-text: var(--nx-brand-ink-text);
+  --color-nx-brand-ink-muted: var(--nx-brand-ink-muted);
   --color-nx-surface-overlay: var(--nx-surface-overlay);
   --color-nx-surface-hover: var(--nx-surface-hover);
   --color-nx-surface-pressed: var(--nx-surface-pressed);

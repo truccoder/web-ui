@@ -41,22 +41,33 @@ export function OAuthButtons() {
         <span className="h-px flex-1 bg-nx-border-subtle" />
       </div>
 
-      {providers.map(({ provider, query, label, icon }) => (
-        <Button
-          key={provider}
-          type="button"
-          variant="secondary"
-          className="w-full"
-          icon={icon}
-          // Disabled only on hard error (the URL endpoint failed); while loading, the
-          // button shows a spinner via `loading`.
-          loading={query.isPending}
-          disabled={query.isError}
-          onClick={() => redirect(query.data?.oauthUrl)}
-        >
-          {label}
-        </Button>
-      ))}
+      {/* ONE ROW FROM `sm` UP, STACKED BELOW IT.
+          Two full-width secondary buttons stacked cost 96px of the card and, being the tallest
+          pair of controls on the screen, read as heavier than the primary submit above them —
+          which inverts the one-primary-action rule this component's header already cites. Side by
+          side they cost 40 and sit clearly below the submit in weight.
+          It stays stacked below `sm` because the labels are `Tiếp tục với GitHub`-length: at 390
+          the card's inner width is ~310, and two of those in a row would truncate. */}
+      <div className="flex flex-col gap-3 sm:flex-row">
+        {providers.map(({ provider, query, label, icon }) => (
+          <Button
+            key={provider}
+            type="button"
+            variant="secondary"
+            // `min-w-0` lets the pair actually share the row: without it a flex item refuses to
+            // shrink below its content and the longer label pushes the shorter button off.
+            className="w-full min-w-0 sm:flex-1"
+            icon={icon}
+            // Disabled only on hard error (the URL endpoint failed); while loading, the
+            // button shows a spinner via `loading`.
+            loading={query.isPending}
+            disabled={query.isError}
+            onClick={() => redirect(query.data?.oauthUrl)}
+          >
+            {label}
+          </Button>
+        ))}
+      </div>
     </div>
   );
 }
