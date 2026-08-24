@@ -43,8 +43,14 @@ import { CommentItem } from './comment-item';
  * level, it is a shape the backend accepts.
  *
  * WHAT MAKES THE TAG REAL RATHER THAN DECORATION is that `CommentItem` renders `@handle` as a
- * link to that profile — see `withMentions` there. What is NOT real: nothing is stored as a
- * mention and nobody is notified. See B20 in `docs/backend-plan.md`.
+ * link to that profile — see `withMentions` there — and that the person named actually hears
+ * about it. That second half was missing when this was built and is not any more: B20 shipped
+ * `MentionScanner` + `USER_MENTIONED` (BE `ee89d77`, 24/08), scanning `content` for handles, so
+ * the tag this box inserts is the notification. Nothing had to change on the wire for that —
+ * which is why the backend was asked for the scanner rather than for a `mentionedUserIds` field.
+ *
+ * THE ONE THING THE READER STILL CANNOT DO IS FOLLOW THAT NOTIFICATION BACK HERE. It carries the
+ * comment's id, and no route in this app takes one — filed as B22.
  *
  * NOTHING IS SPLICED INTO THE CACHED LIST. Every mutation returns void, and deleting a root
  * takes its replies with it via a Postgres cascade that is invisible in the Java. The hooks

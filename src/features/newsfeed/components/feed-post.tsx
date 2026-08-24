@@ -15,6 +15,7 @@ import {
   PollBody,
   PostCard,
   PostEditor,
+  PostImages,
   PostMenu,
   QnaBody,
   QuizTaker,
@@ -124,13 +125,19 @@ function toEditorState(post: FeedPostData): PostEditorState {
     // wants (`string[]` / `number[]`), so the workaround became the bug: editing the text of
     // a post with images silently destroyed the images.
     //
-    // THE LINE THAT USED TO STAND HERE — "not theoretical any more, the seeded feed serves posts
-    // with images" — DOES NOT HOLD ON TODAY'S SEED. Measured 24/08 against the running backend
-    // over `GET /users/{id}/posts` for ids 9000–9030: 80 posts, 29 authors, and not one of them
-    // carries `images`, `articleDetails.coverImage` or `linkDetails.thumbnailUrl` (see S10 in
-    // `docs/backend-plan.md`). The mapping below is right regardless — it is the round-trip the
-    // update DTO requires, and the day a post does have images this is what stops an edit from
-    // destroying them. What changed is that nobody can currently SEE that it works.
+    // THIS NOTE HAS BEEN WRONG IN BOTH DIRECTIONS AND IS KEPT AS A LEDGER OF WHY. It first said
+    // the seeded feed served posts with images; measuring on 24/08 (`GET /users/{id}/posts`, ids
+    // 9000–9030) found 80 posts, 29 authors, and not one carrying `images`,
+    // `articleDetails.coverImage` or `linkDetails.thumbnailUrl` — filed as S10. That is paid:
+    // `V69` seeds the 1 / 2 / 5-image cases plus a deliberately broken URL.
+    //
+    // BUT V69 LIVES IN `db/seed-dev`, AND A RE-MEASURE ON THE SAME 31 IDS AFTER THE BACKEND
+    // SHIPPED STILL ANSWERED ZERO — the contract is new (`POST /v1/api/media` is live) while this
+    // instance's seed-dev data is not applied. So `PostImages` below renders nothing here yet,
+    // and that is an environment fact rather than a missing feature.
+    //
+    // The mapping is right in every one of those states: it is the round-trip the update DTO
+    // requires, and it is what stops an edit from destroying a post's pictures.
     // `?? undefined` for the same reason the other keys have it: the payload types these
     // nullable, and the request type does not take null. The two mean the same thing to the
     // server here — an absent key and an explicit null both end up null — so collapsing them
@@ -367,6 +374,17 @@ export function FeedPost({
             <PostBody post={post} onChanged={onChanged} expanded={expanded} />
           )}
 
+          {/* PICTURES BELONG TO THE POST, NOT TO ONE OF ITS KINDS, which is why they render here
+              rather than inside `PostBody`'s switch. `images` sits on `FeedPostDataDto` beside
+              `content`, not inside any of the six details blocks, so an ARTICLE and a REGULAR
+              post can both carry them — and an ARTICLE with a cover would otherwise have had two
+              unrelated places to look for a picture.
+
+              AFTER THE BODY, BEFORE THE QUIZ. The prose is what the pictures illustrate, so they
+              follow it; a quiz is a control the reader operates and belongs last. Hidden while
+              editing for the same reason the body is: the editor already holds these URLs. */}
+          {!editing && <PostImages images={post.images} />}
+
           {/* A quiz is an attachment, not a post type — `buildAndSavePost` accepts
               `quizDetails` regardless of `postType` — so it renders after whatever body the
               post has rather than as one of the cases above. */}
@@ -409,6 +427,9 @@ export function FeedPost({
           <ReactionBar
             postId={post.postId}
             count={post.likeCount}
+            // B19, paid 24/08: the breakdown rides on the feed payload now, so the glyph strip
+            // beside the total costs nothing. Null on any entry written before the field existed.
+            summary={post.reactionSummary}
             onChanged={onChanged}
             /**
              * PASSED IN RATHER THAN RENDERED BESIDE — see `ReactionBar`'s `actions` note. It used

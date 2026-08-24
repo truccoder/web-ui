@@ -7,6 +7,7 @@ import { getErrorMessage } from '@/shared/lib/api-error';
 import { cn } from '@/shared/lib/cn';
 import { useMyReaction, useRemoveReaction, useUpsertReaction } from '../hooks/use-reaction';
 import type { ReactionType } from '../types/reaction';
+import { ReactionSummary } from './reaction-summary';
 import { ReactionTray } from './reaction-tray';
 import { ReactorDialog } from './reactor-dialog';
 
@@ -56,15 +57,21 @@ import { ReactorDialog } from './reactor-dialog';
  * one of the seven and keeps the features legible. If a filled icon set is ever added to the
  * project, this is the line that becomes a solid.
  *
- * THE COUNT DOES NOT MOVE WHEN YOU CLICK, and the reason has changed since this note was
- * written. It used to be that `PostReactionController` had no endpoint for a post's totals at
- * all; `/reactions/summary` exists now and `reactionsApi.getSummary` wraps it. What has not
- * changed is that the summary is PER POST, while `count` arrives embedded in the feed/search
- * payload the caller already holds — so buying a live number costs one extra request per card,
- * which is the trade B19 in `docs/backend-plan.md` asks the backend to remove by putting the
- * breakdown in the list response. Until then `onChanged` is the honest lever: the composing
- * screen decides whether a reaction is worth re-fetching the feed for. Do not fake the increment
- * locally — the highlight is honest, an invented total is not.
+ * THE COUNT DOES NOT MOVE WHEN YOU CLICK, and this note has now been rewritten twice as the
+ * backend moved under it. Version one: `PostReactionController` had no endpoint for a post's
+ * totals at all. Version two: `/reactions/summary` existed but was per post, so a live number
+ * cost one request per card — filed as B19. **B19 is paid** (BE `ee89d77`, 24/08):
+ * `reactionSummary` now rides on `FeedPostDataDto`, `PostDto` and `CommentResponseDto` out of one
+ * `GROUP BY` for the whole page, which is what `summary` below renders.
+ *
+ * WHAT STILL DOES NOT MOVE IS THE NUMBER ITSELF, and that is now a cache fact rather than a
+ * missing endpoint. `count` and `summary` both arrive inside the feed/search payload the caller
+ * is holding, so neither changes until that payload is re-fetched. The backend keeps its Redis
+ * entry current — `updateCachedReactions` writes the total and the breakdown together, on
+ * purpose, so a feed read can never show a number that disagrees with its own glyphs — but a page
+ * already rendered is a page already read. `onChanged` remains the honest lever: the composing
+ * screen decides whether a reaction is worth re-fetching for. Do not fake the increment locally —
+ * the highlight is honest, an invented total is not.
  */
 export interface ReactionBarProps {
   postId: number;
@@ -73,6 +80,19 @@ export interface ReactionBarProps {
    * rather than showing 0 for "not supplied".
    */
   count?: number;
+  /**
+   * `reactionSummary` from the same payload — WHICH reactions make up `count`.
+   *
+   * IT ARRIVED WITH B19, AND THIS COMPONENT IS WHY IT WAS ASKED FOR. The header's note on the
+   * count records the problem: once the labels came off, a bare `1` beside a thumb could not say
+   * that the one reaction was `Sáng tỏ` rather than a like — on a product whose reaction set is
+   * its argument, that is the interesting half of the number. The only breakdown available then
+   * was one request per post; the map rides on the list payload now.
+   *
+   * Undefined or null renders no glyphs and leaves the bare number, which is what any payload
+   * predating the field does.
+   */
+  summary?: { [key: string]: number } | null;
   /**
    * Controls that belong beside the reaction trigger — the comment glyph and its count, today.
    *
@@ -200,7 +220,14 @@ export const ACTION_GROUP = 'flex items-center';
  */
 export const ACTION_COUNT = 'font-mono text-nx-body-sm tabular-nums text-nx-text-muted';
 
-export function ReactionBar({ postId, count, actions, onChanged, className }: ReactionBarProps) {
+export function ReactionBar({
+  postId,
+  count,
+  summary,
+  actions,
+  onChanged,
+  className,
+}: ReactionBarProps) {
   const t = useT();
 
   const [reactorsOpen, setReactorsOpen] = useState(false);
@@ -409,10 +436,16 @@ export function ReactionBar({ postId, count, actions, onChanged, className }: Re
               aria-label={t('post.reaction.count', { count })}
               className={cn(
                 ACTION_COUNT,
+                'flex items-center gap-1',
                 'hover:text-nx-text-primary hover:underline',
                 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring'
               )}
             >
+              {/* THE GLYPHS GO INSIDE THE BUTTON, not beside it. They answer the same question
+                  the number answers and they lead to the same place — the list of who reacted.
+                  Two adjacent controls where one is a picture of the other is a click target
+                  that has to be explained. */}
+              <ReactionSummary summary={summary} />
               {count}
             </button>
           )}

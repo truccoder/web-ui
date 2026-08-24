@@ -13,6 +13,7 @@ import type { PostComment } from '../types/comment';
 import type { ReactionType } from '../types/reaction';
 import { CommentComposer } from './comment-composer';
 import { REACTIONS } from './reaction-bar';
+import { ReactionSummary } from './reaction-summary';
 
 /**
  * One comment: identity row, body, and the author's own controls.
@@ -80,20 +81,29 @@ const GUTTER_CONTROLS = 'ms-8';
  * it is the only thing saying who a flat reply is for — so leaving it as grey prose would be
  * shipping the mechanism without the signal.
  *
- * THE PATTERN IS DELIBERATELY NARROW, and each restriction pays for itself:
- *  - `(^|\s)` — an `@` must open the string or follow whitespace, so `someone@example.com` does
- *    not turn its domain into a profile link.
- *  - the handle may contain dots but may not END on one, so `@minh.tran.` links `@minh.tran` and
- *    leaves the full stop in the sentence.
- *  - no length cap beyond a first character, because usernames are the backend's business and a
- *    guess here would silently stop linking the day someone registers a long one.
+ * THE PATTERN MUST MATCH `MentionScanner`, AND IT WAS WIDER THAN IT UNTIL 24/08. This started as
+ * `[A-Za-z0-9_.]` — capitals and dots — written before the backend had any mention support at
+ * all. B20 shipped one (BE `ee89d77`), and the scanner it shipped works from `USERNAME_PATTERN`,
+ * which is `[a-z0-9-]`, widened by exactly one character (`_`) to match seed handles like
+ * `backend_truc_anh`. Leaving the two out of step is the worst available outcome: the frontend
+ * would paint `@Minh.Tran` blue and link it, the backend would never recognise it, and nobody
+ * would be notified — a feature that looks like it works and silently does not. So the classes
+ * are the same class now, and this note is the reason to change them together.
+ *
+ * The rest of the shape is the backend's too:
+ *  - `(^|\s)` — an `@` must open the string or follow whitespace. `MentionScanner` requires the
+ *    same, and its own reason is the sharper one: without it, every comment quoting an email
+ *    address notifies whoever happens to hold that handle.
+ *  - no length cap, because usernames are the backend's business and a guess here would stop
+ *    linking the day someone registers a long one.
  *
  * AN UNKNOWN HANDLE IS NOT A BROKEN LINK. Nothing validates this text — it is prose, and a reader
  * can type `@nobody` — so the destination may not exist. `/u/[username]` answers a bad handle with
  * its own empty state (`isError || !profile`), which is a truthful "no such person" rather than a
- * crash, and is the same thing that happens when someone edits the URL by hand.
+ * crash, and is the same thing that happens when someone edits the URL by hand. The backend makes
+ * the same split: it notifies only handles that resolve, and leaves the rest as prose.
  */
-const MENTION = /(^|\s)@([A-Za-z0-9_](?:[A-Za-z0-9_.]*[A-Za-z0-9_])?)/g;
+const MENTION = /(^|\s)@([a-z0-9_-]+)/g;
 
 function withMentions(content: string): React.ReactNode {
   const nodes: React.ReactNode[] = [];
@@ -467,6 +477,10 @@ export function CommentItem({
                   the accessible name reading `Hữu ích 5` — the reaction AND its total — which is
                   exactly what a sighted reader gets from the glyph and the number. */}
               <span className="sr-only">{t(reactionLabelKey)}</span>
+              {/* The same glyph strip the post's row carries, from the same field — B19 put
+                  `reactionSummary` on `CommentResponseDto` too, so a comment can say WHICH
+                  reactions make up its number instead of only how many. */}
+              <ReactionSummary summary={comment.reactionSummary} max={3} />
               {comment.likeCount > 0 && (
                 <span className="font-mono tabular-nums">{comment.likeCount}</span>
               )}
