@@ -1,5 +1,24 @@
 # Kế hoạch backend — Elite Nexus
 
+> **TRẠNG THÁI 24/08/2026 — TOÀN BỘ ĐÃ ĐÓNG.** Backend báo đã trả xong **B1–B21 và S1–S10**
+> (biên bản trả nợ, nhánh `task/Iq7tLIt0`, commit `ee89d77`: 72 file đổi, 163 test mới,
+> line coverage 91,50%). Từ đây tài liệu này là **hồ sơ lịch sử** — nó ghi lại các khoảng
+> trống đã từng tồn tại và lý lẽ đằng sau từng đề nghị, **không còn là danh sách việc cần làm**.
+> Đừng đọc nó như một hàng chờ.
+>
+> **Việc còn lại thuộc về frontend:** contract OpenAPI đã đổi, nên phải **regenerate
+> `src/core/api/schema.gen.ts`** trước khi dựng tiếp. Những gì thay đổi: ba endpoint mới
+> (`POST /v1/api/media`, `POST /v1/api/link-preview`, `GET …/comments/{id}/reactions`),
+> `reactionSummary` trên `FeedPostDataDto`/`PostDto`/`CommentResponseDto` (null = _chưa biết_,
+> không phải bằng 0), `coverImageUrl` trên `UserResponse`/`UpdateProfileRequest`/
+> `PublicProfileResponse` (chuỗi rỗng là tín hiệu **gỡ**, null là _giữ nguyên_),
+> `TrendingItemDto.imageUrl`, `ExplainRequestDto.language` (BCP-47), và giá trị enum
+> `USER_MENTIONED` trong `NotificationType`.
+>
+> Mỗi mục bên dưới giữ nguyên như lúc viết. Chỗ nào ghi "FE trong lúc chờ" thì đường vòng đó
+> **đã hết cần thiết** — nhưng đừng gỡ trước khi `schema.gen.ts` được sinh lại và màn tương ứng
+> được đối chiếu với dữ liệu thật.
+
 Viết ngày 19/08/2026 từ phía frontend, sau khi đối chiếu `schema.gen.ts`, UI kit round 15
 và mã nguồn backend. **Chỉ đọc backend, không sửa** — đây là đề nghị, không phải thay đổi.
 
@@ -271,6 +290,20 @@ luận gốc đầu tiên và nói thẳng trong `comment-preview.tsx` rằng th
 
 Phần 1 là một cột cộng vào một truy vấn đã chạy. Phần 2 là một bảng và một controller.
 
+**Cập nhật 24/08 — đã xong, cả hai phần.** Đo trên máy chủ đang chạy: `CommentResponseDto` giờ trả
+`likeCount` và `myReaction` (`{"id":8005,…,"likeCount":5,"myReaction":"INSIGHT"}`), và đường thả
+cảm xúc đã có. **Động từ là `PUT`, không phải `POST`** như mục này đề xuất — nghĩa là upsert trên
+cặp (user, bình luận), đổi LIKE → CLAP là đúng một lần gọi:
+
+```
+PUT | DELETE   /v1/api/posts/{postId}/comments/{commentId}/reactions
+```
+
+FE đã nối: nút cảm xúc trong `comment-item.tsx` không còn `disabled`, có optimistic + rollback, và
+con số bên cạnh nhúc nhích thật. Một điểm cần biết khi đọc `myReaction`: nó là **enum đủ bảy giá
+trị**, không phải cờ boolean — seed đang có `INSIGHT` trên bình luận — nên client không được giả
+định người đọc đã thả `LIKE`. Phần đọc còn thiếu (`GET` để biết 5 đó gồm những gì) là **B19**.
+
 ### B15 · Giải thích AI không chọn được ngôn ngữ
 
 Bản giải thích trả về **nửa tiếng Việt nửa tiếng Anh**: bài gốc tiếng Việt, phần giải thích tiếng
@@ -485,9 +518,19 @@ không có cái nào — đúng kiểu bất đối xứng B14 đã ghi, chỉ l
 
 **FE đang xoay xở ra sao.** Bài viết: in `likeCount` như cũ, **không** gọi `/summary` cho từng
 thẻ — một request mỗi bài để suy lại con số mà chính danh sách đã đưa xuống là cái giá không đáng.
-Bình luận: in `likeCount` rồi dừng. Ở cả hai chỗ con số vẫn **không nhúc nhích khi bấm**, và
-`reaction-bar.tsx` ghi rõ là không được cộng giả ở client — highlight thì trung thực, một con số
-bịa thì không.
+Con số trên thẻ bài **vẫn không nhúc nhích khi bấm**, và `reaction-bar.tsx` ghi rõ là không được
+cộng giả ở client — highlight thì trung thực, một con số bịa thì không.
+
+_Sửa lại 24/08, sau khi nối nút cảm xúc cho bình luận._ **Bình luận thì con số ĐÃ nhúc nhích**, và
+lý do khác hẳn bài viết chứ không phải vì đổi ý về việc bịa số. `likeCount` của một bình luận nằm
+ngay trên hàng mà lệnh ghi tác động, trong đúng cache mà FE đang giữ — nên delta suy ra được chắc
+chắn (`+1` khi chưa thả, `0` khi upsert thay loại cũ, `-1` khi gỡ), ghi optimistic rồi
+`invalidate` để máy chủ nói tiếng cuối. Thẻ bài không có được điều đó vì `likeCount` của nó sống
+trong payload của feed, tức cache của domain khác. Ranh giới vẫn nguyên: optimistic là trung thực
+khi client suy ra đúng câu trả lời máy chủ sẽ đưa, và là bịa khi không.
+
+Ba mục đề xuất ở trên **vẫn còn nguyên giá trị** — cụm icon chồng và hộp thoại "ai đã thả gì" cho
+bình luận vẫn chưa dựng được.
 
 ### B20 · Nhắc tên trong bình luận chỉ là chữ, không ai được báo
 
@@ -535,6 +578,95 @@ kết thúc bằng dấu chấm) để không biến `ai@example.com` thành li�
 **FE đang xoay xở ra sao:** tag hiện là chữ thường trong `content`, được FE tô màu và biến thành
 liên kết tới `/u/{handle}` lúc hiển thị. Bấm vào đi đúng hồ sơ; handle sai thì rơi vào trạng thái
 rỗng của trang hồ sơ, không vỡ. Cái duy nhất thiếu là thông báo.
+
+### B21 · Hồ sơ công khai không có dòng nghề nghiệp
+
+_Ghi ngày 24/08, khi kéo dài khối tên trong hero hồ sơ._
+
+**UI kit chờ sẵn một dòng mà backend không trả được cho người lạ.** `NX_USER` trong
+`templates/app-shell/data.js` mang `role: 'Backend Engineer · Fintech'` bên cạnh tên và handle;
+`components/display/DeveloperIdentity.d.ts:10` khai kiểu cho nó (_"Role line, e.g. …"_);
+`DeveloperIdentity.prompt.md` xếp nó vào một thứ tự mà chính nó gọi là **doctrine** —
+`avatar → name → reputation → time / role → handle` — và liệt kê "profile hero" vào những mặt mà
+thứ tự đó cai quản. Hero hồ sơ của kit (`templates/app-shell/Screens.jsx:538`) in nó thật.
+
+**Cái chặn là phạm vi của endpoint, không phải thiếu dữ liệu.** Dữ liệu có đủ và đã chạy:
+`t_user_professional_profiles` mang `job_title`, `primary_role`, `seniority_level`,
+`years_of_experience`, và `/profile` đang hiện chúng. Nhưng:
+
+```java
+// knowledge/controller/ProfessionalProfileController.java
+@GetMapping
+public ProfessionalProfileResponseDto getProfile() {
+  return profileService.getProfile(SecurityUtils.getCurrentUserId());
+}
+```
+
+Không có biến thể nhận `userId`, và `ProfessionalProfileResponseDto` tự ghi trong javadoc:
+_"Owner-facing view of the professional profile — the caller only ever reads their own."_ Nên
+`/u/{username}` **không có đường nào** lấy được chức danh của người khác, kể cả vòng.
+
+**Đề xuất: thêm trường vào `PublicProfileResponse`, đừng mở endpoint kia ra.** Cùng lối B2 đã chọn
+và vì cùng một lý do — `PublicProfileResponse` là DTO riêng của đúng một endpoint, mỗi request dựng
+đúng một hồ sơ, nên nó được phép đắt. Bốn trường: `jobTitle`, `primaryRole`, `seniorityLevel`,
+`yearsOfExperience`. Một `findById` thêm vào `ProfileService.getPublicProfile`, không đụng
+`PublicUserResponse` đang dùng chung ở 7 nơi.
+
+**Và đây là chỗ cần cân nhắc chứ không chép cả DTO sang.** `ProfessionalProfileResponseDto` còn
+mang `workHistory`, `interestedDomains`, `knownTechStack` và `explanationStyle`. Ba cái đầu là hồ
+sơ nghề nghiệp thật của một người và **không nên công khai theo mặc định** — người dùng khai chúng
+cho AI đọc, không phải để dán lên một trang ai cũng mở được. `explanationStyle` thì thuần tuý là
+tuỳ chọn cá nhân, công khai nó vừa vô nghĩa vừa lộ thói quen. Bốn trường ở trên là bộ tối thiểu đủ
+dựng một dòng chức danh.
+
+**FE đã dựng sẵn chỗ.** `ProfileHero` có slot `subtitle` đúng vị trí doctrine (trên `@handle`),
+`/profile` đang truyền vào từ `useProfessionalProfile()`, còn `/u/{username}` **không truyền gì** —
+slot vắng thì không chiếm chỗ, nên hồ sơ người lạ hiện ít hơn hồ sơ của chính mình đúng một dòng.
+Ngày backend trả bốn trường kia thì FE thêm một prop, không phải dựng lại gì.
+
+**Cái `/u` có mà không cần chờ ai:** dòng meta dưới handle — `Tham gia tháng … · N kỹ năng đã xác
+minh` — dựng từ `createdAt` và `verifiedSkills` vốn đã nằm sẵn trong cùng payload, không tốn thêm
+request nào.
+
+### B22 · `CommentResponseDto` không có điểm và cấp độ của người bình luận
+
+_Ghi ngày 24/08, sau khi thêm chip Elite Score vào hàng danh tính của bình luận._
+
+Bài viết và bình luận là **cùng một hàng danh tính** — mặt, tên, chip điểm, thời gian — nằm cách
+nhau bốn dòng trên cùng một màn hình. Nhưng chỉ một trong hai có dữ liệu để vẽ chip.
+
+`FeedPostDataDto` mang sẵn `authorEliteScore` và `authorLevelName` (B13 ghi lại chính danh sách
+đó), và `SearchResponse` cũng vậy — nên thẻ bài dựng chip từ dữ liệu nó đã cầm, không gọi
+`ReputationController` lần nào. `CommentResponseDto` có mười trường:
+
+```
+id · postId · authorId · authorUsername · authorFullName · authorProfilePictureUrl
+content · parentId · createdAt/updatedAt · likeCount · myReaction
+```
+
+**Không có `authorEliteScore`, không có `authorLevelName`.** Nên hàng danh tính của bình luận
+không có cách nào vẽ chip từ dữ liệu sẵn có — không có dữ liệu nào cả.
+
+**Đường vòng của FE có, và nó tốn N request.** `ReputationController` chỉ có đúng một đường,
+`GET /v1/api/users/{userId}/reputation`, không có biến thể nhận danh sách id. FE thêm
+`useReputations` trong `features/reputation`: gom mọi `authorId` sắp render, khử trùng lặp, rồi
+bắn song song. Thread 6 bình luận của 4 người là 4 request. Đo trên máy: mỗi request ~9ms, và
+`staleTime` 60s toàn app khiến 4 người đó miễn phí trong cả phút sau, kể cả ở bài khác.
+
+Chi phí thật, nhưng có chặn trên và **cố ý dồn vào một chỗ**: `CommentThread` hỏi một lần cho cả
+thread và truyền xuống làm props, `CommentItem` không fetch gì — đúng luật mà `PostCard` đang
+theo. Đặt hook vào từng hàng cũng chạy (React Query tự khử trùng lặp) nhưng khi đó chi phí vô
+hình, rải khắp bao nhiêu hàng tình cờ render.
+
+**Đề xuất: thêm hai cột vào `CommentResponseDto`, đúng cái join mà mapper của bài đã chạy.**
+`FeedPostDataMapper` đang join sang bảng người dùng để lấy `authorLevelName` — B13 nói thẳng điều
+đó khi thêm `authorUsername`. `CommentService.toResponseDto` cần cùng một join. Rẻ hơn nhiều so
+với N lượt gọi `ReputationService.getReputation`, mà chính backend cũng đang chạy lại query đó N
+lần cho cùng một màn hình.
+
+Đây là mục rẻ nhất trong đợt này: hai cột, một join đã có tiền lệ trong cùng codebase. Ngày nó
+lên, `useReputations` mất caller duy nhất và xoá được — `features/reputation/index.ts` đã ghi sẵn
+dòng đó trong javadoc.
 
 ---
 
@@ -641,22 +773,24 @@ có ảnh" là an toàn.
 
 ## Bảng tổng
 
-|     | Mục                           | Ảnh hưởng demo | FE có đường vòng?    |
-| --- | ----------------------------- | -------------- | -------------------- |
-| B1  | Seed dev                      | Chặn mọi thứ   | Không                |
-| B2  | Hồ sơ công khai đủ trường     | Cao            | Có — thêm 1 request  |
-| B3  | Tìm kiếm có sách              | Vừa            | Không — ship 2 tab   |
-| B4  | `updatedAt` cho bài           | Vừa            | Không                |
-| B5  | Thêm 2 cảm xúc                | Thấp           | Có — đổi nhãn        |
-| B6  | SSE thông báo                 | Thấp           | Có — poll            |
-| B7  | Lọc feed theo kỹ năng         | Thấp           | Không — ẩn tab       |
-| B8  | Báo cáo bài viết              | Thấp           | Không                |
-| B12 | Sửa bài xoá đáp án quiz       | Hỏng dữ liệu   | Không — chỉ báo rõ   |
-| B13 | Feed thiếu `authorUsername`   | Vừa            | Không                |
-| B14 | Bình luận không có like       | Vừa            | Không                |
-| B15 | AI không chọn được ngôn ngữ   | Cao            | Không                |
-| B16 | Không có đường tải ảnh lên    | Vừa            | Có — dán URL         |
-| B17 | Không unfurl được liên kết    | Vừa            | Không — CORS         |
-| B18 | Hồ sơ chưa có ảnh bìa         | Thấp           | Có — dải trống       |
-| B19 | Cảm xúc: không có breakdown   | Vừa            | Không — bình luận    |
-| B20 | Tag trong bình luận không báo | Vừa            | Một nửa — tag là chữ |
+|     | Mục                           | Ảnh hưởng demo | FE có đường vòng?     |
+| --- | ----------------------------- | -------------- | --------------------- |
+| B1  | Seed dev                      | Chặn mọi thứ   | Không                 |
+| B2  | Hồ sơ công khai đủ trường     | Cao            | Có — thêm 1 request   |
+| B3  | Tìm kiếm có sách              | Vừa            | Không — ship 2 tab    |
+| B4  | `updatedAt` cho bài           | Vừa            | Không                 |
+| B5  | Thêm 2 cảm xúc                | Thấp           | Có — đổi nhãn         |
+| B6  | SSE thông báo                 | Thấp           | Có — poll             |
+| B7  | Lọc feed theo kỹ năng         | Thấp           | Không — ẩn tab        |
+| B8  | Báo cáo bài viết              | Thấp           | Không                 |
+| B12 | Sửa bài xoá đáp án quiz       | Hỏng dữ liệu   | Không — chỉ báo rõ    |
+| B13 | Feed thiếu `authorUsername`   | Vừa            | Không                 |
+| B14 | Bình luận không có like       | Vừa            | Không                 |
+| B15 | AI không chọn được ngôn ngữ   | Cao            | Không                 |
+| B16 | Không có đường tải ảnh lên    | Vừa            | Có — dán URL          |
+| B17 | Không unfurl được liên kết    | Vừa            | Không — CORS          |
+| B18 | Hồ sơ chưa có ảnh bìa         | Thấp           | Có — dải trống        |
+| B19 | Cảm xúc: không có breakdown   | Vừa            | Không — bình luận     |
+| B20 | Tag trong bình luận không báo | Vừa            | Một nửa — tag là chữ  |
+| B21 | Hồ sơ lạ không có chức danh   | Thấp           | Không — owner-only    |
+| B22 | Bình luận không có điểm/cấp   | Vừa            | Có — N request/thread |
