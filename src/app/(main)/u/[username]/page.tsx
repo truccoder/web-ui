@@ -13,6 +13,7 @@ import {
   Tabs,
 } from '@/shared/components';
 import { useTabParam } from '@/shared/lib/use-tab-param';
+import { formatMonthYear, useIntlLocale } from '@/shared/lib/format';
 import { BlockUserButton } from '@/features/blocks';
 import { MessageUserButton } from '@/features/chat';
 import { MyBooksList } from '@/features/bookstore';
@@ -20,6 +21,7 @@ import { GithubStatsCard } from '@/features/github';
 import { UserPosts } from '@/features/newsfeed';
 import { MySkillsCard } from '@/features/roadmap';
 import { ReputationCard, RepScore } from '@/features/reputation';
+import { useRoleLine } from '@/features/knowledge';
 import { useAuthHref, useIsGuest, usePublicProfile } from '@/features/security';
 import { useT } from '@/core/i18n';
 
@@ -85,6 +87,23 @@ function PublicProfileContent() {
   const username = params?.username ?? '';
 
   const { data: profile, isPending, isError } = usePublicProfile(username);
+  const localeTag = useIntlLocale();
+
+  /**
+   * The role line, composed by the domain that owns the enum labels and shared with `/profile`'s
+   * hero so the "title, else role, then level" rule has exactly one definition. B21 is what gave
+   * this route the three fields to feed it — they arrive on `PublicProfileResponse` now.
+   *
+   * ABOVE THE TWO EARLY RETURNS BECAUSE IT IS A HOOK, hence the optional chaining: `profile` is
+   * undefined while the query is in flight and when the handle does not exist, and calling this
+   * after the guards would make the hook order depend on the request. It answers the empty string
+   * for an absent profile, which is the same answer it gives for one that never filled the form in.
+   */
+  const roleLine = useRoleLine({
+    jobTitle: profile?.jobTitle,
+    primaryRole: profile?.primaryRole,
+    seniorityLevel: profile?.seniorityLevel,
+  });
 
   // The hook rebuilds the path from `usePathname`, so it writes `/u/<handle>` without being told
   // the handle — the hand-rolled version here interpolated `username` into a template and would
@@ -126,6 +145,25 @@ function PublicProfileContent() {
     );
   }
 
+  /**
+   * The hero's meta line, and BOTH HALVES COME OUT OF THE PROFILE PAYLOAD — no second request for
+   * either. `createdAt` and `verifiedSkills` are on `PublicProfileResponse` already; the backend's
+   * own note calls the skill list "the summary strip", which is exactly the weight it is given
+   * here — a count, not the names. The names are the section below, with their tiers and dates.
+   *
+   * BUILT AS A FILTERED JOIN rather than a chain of `&&` in the JSX, because either half can be
+   * missing and the `·` between them must not survive on its own. A profile with no verified skill
+   * gets one fact and no separator; a payload with neither renders no line at all.
+   */
+  const joined = formatMonthYear(profile.createdAt ?? undefined, localeTag);
+  const verifiedCount = profile.verifiedSkills?.length ?? 0;
+  const meta = [
+    joined && t('profile.hero.joined', { date: joined }),
+    verifiedCount > 0 && t('profile.hero.verifiedSkills', { count: verifiedCount }),
+  ]
+    .filter(Boolean)
+    .join(' · ');
+
   return (
     <div className="flex flex-col gap-[var(--nx-space-section)]">
       {/* THE SAME HERO `/profile` OPENS WITH, which it was a near-copy of until the two were
@@ -136,6 +174,19 @@ function PublicProfileContent() {
         name={profile.fullName?.trim() || username}
         username={profile.username}
         avatarUrl={profile.profilePictureUrl}
+        coverUrl={profile.coverImageUrl}
+        /* B21 CLOSED THE GAP THIS SLOT WAS LEFT EMPTY FOR. The note that stood here said a
+           stranger's job title was not fetchable at all — `GET /v1/api/profile/professional`
+           resolves the caller with `SecurityUtils.getCurrentUserId()` and has no by-id form — so
+           this hero rendered one line shorter than `/profile`'s. The backend put four fields on
+           `PublicProfileResponse` instead of opening that endpoint, which is the right half of the
+           trade: `workHistory`, `interestedDomains` and `knownTechStack` stay owner-only, and the
+           backend has a test asserting they do not leak.
+
+           `useRoleLine` IS THE SAME COMPOSITION `/profile` USES, not a second copy — it takes the
+           three fields rather than either payload's DTO for exactly this reason. */
+        subtitle={roleLine || undefined}
+        meta={meta || undefined}
         badge={
           profile.eliteScore != null && (
             <RepScore

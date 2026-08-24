@@ -14,16 +14,36 @@ type RawUser = Schemas['UserResponse'];
  * - `username` is nullable: OAuth sign-up generates one, but password registration
  *   (`AuthService.register`) never sets it.
  * - `profilePictureUrl` is nullable: a user may have no picture.
+ * - `coverImageUrl` is nullable for the same reason, and it is the one this shape gets WRONG BY
+ *   DEFAULT. `Required<Omit<…>>` sweeps in whatever the generated DTO grows, so the day B18 added
+ *   a cover to `UserResponse` this type silently began promising a `string` for a column that is
+ *   `NULL` on most rows — measured, not assumed: `GET /users/backend_truc_anh/profile` answers
+ *   `"coverImageUrl": null`. Nothing crashed because no caller narrows on it, which is exactly why
+ *   it is worth naming: the omit list is not a formality, it is the record of which fields the
+ *   backend may leave empty, and a new nullable field has to be added to it by hand.
  */
-export type UserProfile = Required<Omit<RawUser, 'username' | 'profilePictureUrl'>> & {
+export type UserProfile = Required<
+  Omit<RawUser, 'username' | 'profilePictureUrl' | 'coverImageUrl'>
+> & {
   username?: string;
   profilePictureUrl?: string;
+  coverImageUrl?: string;
 };
 
 /** The user's role, as it appears on `UserProfile.role`. */
 export type UserRole = NonNullable<RawUser['role']>;
 
-/** `PUT /profile` — only the display name is editable. */
+/**
+ * `PUT /profile` — the display name and the cover.
+ *
+ * `fullName` IS REQUIRED AND `coverImageUrl` IS NOT, and the asymmetry is the endpoint's whole
+ * contract rather than a generator artefact. The name is `@NotBlank` and replaced outright; the
+ * cover is three-valued — **absent leaves it alone, a URL sets it, the empty string removes it**.
+ * The backend's javadoc ties that rule to B12: this endpoint predates the field and every existing
+ * caller sends `fullName` alone, so a copy-nulls rule would have let the first rename after
+ * setting a cover wipe it. `ProfileInfoForm` still sends only the name and is safe for exactly
+ * that reason; `ProfileCoverControl` sends both, and sends `''` to remove.
+ */
 export type UpdateProfileRequest = Schemas['UpdateProfileRequest'];
 
 /** `PUT /profile/password` — both fields `@NotBlank`, newPassword `@Size(min = 6)`. */

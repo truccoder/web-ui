@@ -61,6 +61,21 @@ export function formatDate(iso: string | undefined, localeTag: string): string |
 }
 
 /**
+ * Month and year only — for facts whose day is noise.
+ *
+ * "Joined" is the case this exists for: nobody reads a profile to learn that somebody signed up on
+ * a Tuesday, and `formatDate` would print `24 thg 8, 2026` where `tháng 8 năm 2026` is the whole
+ * fact. `month: 'long'` rather than `'short'` because at this length the abbreviation saves three
+ * characters and costs the reader a pause.
+ */
+export function formatMonthYear(iso: string | undefined, localeTag: string): string | null {
+  if (!iso) return null;
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleDateString(localeTag, { year: 'numeric', month: 'long' });
+}
+
+/**
  * `price` is a whole-currency amount (`Long`, backend default VND — no minor units).
  * An unknown currency code makes `Intl` throw rather than degrade, so fall back to the plain
  * number plus the code.

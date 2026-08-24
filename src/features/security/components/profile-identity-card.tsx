@@ -3,8 +3,16 @@
 import { useRef, useState } from 'react';
 import { Camera, Loader2 } from 'lucide-react';
 import { ProfileHero } from '@/shared/components';
+import { formatMonthYear, useIntlLocale } from '@/shared/lib/format';
+/* `features/knowledge` OWNS THE PROFESSIONAL PROFILE, path notwithstanding: the endpoint is
+   `/v1/api/profile/professional` but the controller lives in the backend's `knowledge` package,
+   and features mirror packages 1:1 (CLAUDE.md §4) — that barrel's own note explains the trap.
+   IMPORTING IT FROM HERE IS SAFE, unlike the reputation case below: `features/knowledge` imports
+   no other feature at all, so there is no barrel-to-barrel cycle to close. */
+import { useProfessionalProfile, useRoleLine } from '@/features/knowledge';
 import { useT } from '@/core/i18n';
 import { useChangeProfilePicture, useMyProfile } from '../hooks/use-profile';
+import { ProfileCoverControl } from './profile-cover-control';
 import { ACCEPTED_PICTURE_TYPES, MAX_PROFILE_PICTURE_BYTES } from '../lib/validation';
 
 /**
@@ -55,6 +63,41 @@ export function ProfileIdentityCard({ badge }: ProfileIdentityCardProps) {
   // the patched cache on success.
   const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const localeTag = useIntlLocale();
+
+  /**
+   * The role line the kit's hero has and this one never did — `Backend Engineer · Senior`.
+   *
+   * ONE EXTRA REQUEST ON `/profile`, KNOWINGLY. The professional profile is otherwise fetched only
+   * when the `Nghề nghiệp` tab is open, so putting its job title in the hero means asking for it on
+   * every visit to the route. It is the owner's own small record and the query is shared by key
+   * with the tab, so opening that tab afterwards costs nothing.
+   *
+   * A 404 NEEDS NO BRANCH HERE. `useProfessionalProfile` deliberately does not retry that status —
+   * `findById().orElseThrow` with no get-or-create means "never filled the form in" is a 404 every
+   * time — and `isProfileMissing` exists for surfaces that must tell that apart from a real
+   * failure. This one renders nothing either way, so `data` being undefined is the whole answer.
+   *
+   * THE COMPOSITION MOVED TO `useRoleLine` WHEN B21 SHIPPED, and the move is what that endpoint
+   * made necessary rather than merely tidy: `/u/{username}` now prints the same line from
+   * `PublicProfileResponse`'s new fields, so the "title, else role, then level" rule had two
+   * callers the moment the backend landed. It reads three fields rather than a DTO precisely so
+   * the two payloads can both feed it — see its note.
+   */
+  const { data: work } = useProfessionalProfile();
+  const subtitle = useRoleLine({
+    jobTitle: work?.jobTitle,
+    primaryRole: work?.primaryRole,
+    seniorityLevel: work?.seniorityLevel,
+  });
+
+  /**
+   * ONLY THE JOINED DATE, where `/u/{username}` also counts verified skills — and the asymmetry is
+   * the payloads, not a decision. `PublicProfileResponse` carries `verifiedSkills`; `UserResponse`
+   * does not carry anything like it, so the count would cost a second request to
+   * `/users/{id}/roadmap-progress` for a number the reader already knows about themselves.
+   */
+  const joined = formatMonthYear(profile?.createdAt, localeTag);
 
   const onPickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -81,6 +124,12 @@ export function ProfileIdentityCard({ badge }: ProfileIdentityCardProps) {
       username={profile?.username}
       avatarUrl={preview ?? profile?.profilePictureUrl}
       badge={badge}
+      coverUrl={profile?.coverImageUrl}
+      /* The picker is a slot, not a prop on the hero: `ProfileHero` is shared with
+         `/u/{username}`, which must never grow the ability to change somebody else's cover. */
+      coverOverlay={<ProfileCoverControl />}
+      subtitle={subtitle || undefined}
+      meta={joined ? t('profile.hero.joined', { date: joined }) : undefined}
       avatarOverlay={
         <>
           <button

@@ -7,6 +7,7 @@ import {
   Bell,
   Heart,
   MessageSquare,
+  MessageSquareQuote,
   ShieldX,
   ShoppingBag,
   Star,
@@ -55,6 +56,17 @@ const TYPE_ICON: Record<NotificationType, LucideIcon> = {
   COMMENT_LIKED: ThumbsUp,
   POST_COMMENTED: MessageSquare,
   POST_TAGGED: AtSign,
+  /**
+   * NOT A SECOND `AtSign`, even though a mention is literally an `@`. `POST_TAGGED` already
+   * wears it, the two arrive in the same list, and this file's rule is that the icon is what
+   * separates near-identical rows at a glance — the same reason `COMMENT_LIKED` is a thumb
+   * rather than a second heart.
+   *
+   * The pair splits by SURFACE, which is the only thing that actually differs: `POST_TAGGED` is
+   * the structured `taggedUserIds` on a post; this one is someone writing `@you` inside a
+   * comment (`MentionScanner`, B20), and `referenceType` is `COMMENT` accordingly.
+   */
+  USER_MENTIONED: MessageSquareQuote,
   FRIEND_REQUEST: UserPlus,
   FRIEND_ACCEPTED: UserCheck,
   EVENT_RSVP: Bell,

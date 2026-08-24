@@ -12,3 +12,5 @@ export {
   useSaveExplanation,
   useUpdateProfessionalProfile,
 } from './use-knowledge';
+
+export { useRoleLine, type RoleLineInput } from './use-role-line';

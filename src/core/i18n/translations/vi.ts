@@ -1292,6 +1292,13 @@ export const vi: Messages = {
       title: 'Mạng lưới của bạn',
       viewAll: 'Tất cả bạn bè',
     },
+    /* Khối chữ trong hero, dùng chung cho `/profile` và `/u/{username}` vì hai route dựng cùng một
+       `ProfileHero`. Nằm dưới `profile` chứ không phải `publicProfile`: `publicProfile` là không
+       gian của riêng màn người lạ, mà mấy chuỗi này thì cả hai màn đều in. */
+    hero: {
+      joined: 'Tham gia ${date}',
+      verifiedSkills: '${count} kỹ năng đã xác minh',
+    },
     /* Vốn là `dashboard.stats.*`, chuyển sang đây khi xoá `/dashboard`. Route đó đã bị `/profile`
        hấp thụ từ P5.2 và bản redirect giữ URL cũ nay cũng đã gỡ, nên một khối `dashboard` ở cấp
        cao nhất là tiêu đề cho một trang không còn tồn tại. */
@@ -1346,6 +1353,16 @@ export const vi: Messages = {
        mô tả một trong ba tab. */
     title: 'Trang cá nhân',
     uploadHint: 'Nhấp để tải ảnh mới lên (JPG, PNG, WebP, tối đa 5MB)',
+    /* Ảnh bìa đi qua `POST /v1/api/media` chứ không phải endpoint ảnh đại diện, nên trần là 20MB
+       chứ không phải 5MB — hai con số khác nhau vì hai endpoint khác nhau. Không nhắc GIF: kho
+       media nhận GIF, nhưng ô chọn ảnh bìa thì không, lý do ghi trong `ProfileCoverControl`. */
+    cover: {
+      add: 'Thêm ảnh bìa',
+      change: 'Đổi ảnh bìa',
+      remove: 'Gỡ ảnh bìa',
+      hint: 'JPG, PNG hoặc WebP, tối đa 20MB',
+      error: 'Không đặt được ảnh bìa. Vui lòng thử lại.',
+    },
     id: 'ID: ${id}',
     /* Trang chia làm ba tab, và đây không phải hai khoá cũ. `info` / `password` đặt tên cho một
        cặp tab chưa bao giờ dựng — hai biểu mẫu vẫn xếp chồng lên nhau và không nơi nào đọc hai

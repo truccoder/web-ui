@@ -42,9 +42,14 @@ export {
   usePersonalAccessTokens,
   useProfessionalProfile,
   useRevokeToken,
+  useRoleLine,
   useSaveExplanation,
   useUpdateProfessionalProfile,
 } from './hooks';
+
+/* Beside its hook rather than in the type block below, because it is the hook's argument shape
+   and not a domain concept — `./types` mirrors the backend DTOs. */
+export type { RoleLineInput } from './hooks';
 
 export type {
   CreatedToken,

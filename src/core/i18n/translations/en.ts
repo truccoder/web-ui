@@ -1317,6 +1317,14 @@ export const en = {
       title: 'Your network',
       viewAll: 'All friends',
     },
+    // The hero's text block, shared by `/profile` and `/u/{username}` because both routes build the
+    // same `ProfileHero`. Under `profile` rather than `publicProfile`, which is the namespace of
+    // the stranger's screen alone — these two strings are printed by both.
+    // `verifiedSkills` does not inflect at 1, following `github.repos` and `notifications.unreadCount`.
+    hero: {
+      joined: 'Joined ${date}',
+      verifiedSkills: '${count} verified skills',
+    },
     /* WAS `dashboard.stats.*`, MOVED HERE WHEN `/dashboard` WAS DELETED. The route was absorbed
        into `/profile` at P5.2 and the redirect stub that kept its URL alive is gone now, so a
        top-level `dashboard` block was a heading for a page that no longer exists — the rest of
@@ -1376,6 +1384,16 @@ export const en = {
        described what is now one tab of three. */
     title: 'Profile',
     uploadHint: 'Click to upload new photo (JPG, PNG, WebP, max 5MB)',
+    /* The cover goes through `POST /v1/api/media`, not the avatar endpoint, so the ceiling is 20MB
+       rather than 5MB — two numbers because two endpoints. GIF goes unmentioned: the media store
+       takes it, this picker does not, and `ProfileCoverControl` carries the reason. */
+    cover: {
+      add: 'Add cover',
+      change: 'Change cover',
+      remove: 'Remove cover',
+      hint: 'JPG, PNG or WebP, max 20MB',
+      error: 'Could not set the cover. Please try again.',
+    },
     id: 'ID: ${id}',
     /* THE PAGE IS THREE TABS NOW, and these are not the two keys that used to sit here.
        `info` / `password` named a tab pair that never shipped — both forms were rendered one

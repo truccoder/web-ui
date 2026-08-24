@@ -980,6 +980,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/api/link-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["preview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/api/media": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["upload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/api/moderation/appeals": {
         parameters: {
             query?: never;
@@ -1291,7 +1323,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["getReactors_1"];
         put: operations["upsertReaction_1"];
         post?: never;
         delete: operations["removeReaction_1"];
@@ -2047,6 +2079,9 @@ export interface components {
             parentId?: number;
             /** Format: int32 */
             postId?: number;
+            reactionSummary?: {
+                [key: string]: number;
+            };
             /** Format: date-time */
             updatedAt?: string;
         };
@@ -2150,6 +2185,7 @@ export interface components {
         };
         ExplainRequestDto: {
             feedbackNote?: string;
+            language?: string;
         };
         ExplanationResponseDto: {
             /** Format: int32 */
@@ -2244,6 +2280,9 @@ export interface components {
             postType?: "REGULAR" | "EVENT" | "BOOK" | "CODE_SNIPPET" | "ARTICLE" | "QNA" | "POLL" | "LINK";
             qnaDetails?: components["schemas"]["QnaDetails"];
             quizDetails?: components["schemas"]["PublicQuizDetailsDto"];
+            reactionSummary?: {
+                [key: string]: number;
+            };
             taggedUserIds?: number[];
             /** Format: date-time */
             updatedAt?: string;
@@ -2315,6 +2354,15 @@ export interface components {
             title?: string;
             url?: string;
         };
+        LinkPreviewRequestDto: {
+            url: string;
+        };
+        LinkPreviewResponseDto: {
+            description?: string;
+            siteName?: string;
+            thumbnailUrl?: string;
+            title?: string;
+        };
         LocationDetails: {
             city?: string;
             country?: string;
@@ -2347,6 +2395,9 @@ export interface components {
         };
         MagicLinkRequestDto: {
             email: string;
+        };
+        MediaUploadResponseDto: {
+            urls?: string[];
         };
         ModerationLogDto: {
             /** Format: date-time */
@@ -2398,7 +2449,7 @@ export interface components {
             referenceType?: string;
             title?: string;
             /** @enum {string} */
-            type?: "POST_LIKED" | "COMMENT_LIKED" | "POST_COMMENTED" | "POST_TAGGED" | "FRIEND_REQUEST" | "FRIEND_ACCEPTED" | "EVENT_RSVP" | "EVENT_REMINDER" | "BOOK_REVIEW" | "BOOK_PURCHASED" | "SKILL_VERIFIED" | "SKILL_REJECTED";
+            type?: "POST_LIKED" | "COMMENT_LIKED" | "POST_COMMENTED" | "POST_TAGGED" | "USER_MENTIONED" | "FRIEND_REQUEST" | "FRIEND_ACCEPTED" | "EVENT_RSVP" | "EVENT_REMINDER" | "BOOK_REVIEW" | "BOOK_PURCHASED" | "SKILL_VERIFIED" | "SKILL_REJECTED";
         };
         OAuthUrlResponseDto: {
             oauthUrl?: string;
@@ -2610,6 +2661,9 @@ export interface components {
             pollDetails?: components["schemas"]["PollDetails"];
             qnaDetails?: components["schemas"]["QnaDetails"];
             quizDetails?: components["schemas"]["PublicQuizDetailsDto"];
+            reactionSummary?: {
+                [key: string]: number;
+            };
             visibility?: string;
         };
         PostModerationDetailDto: {
@@ -2739,6 +2793,7 @@ export interface components {
             title?: string;
         };
         PublicProfileResponse: {
+            coverImageUrl?: string;
             /** Format: date-time */
             createdAt?: string;
             /** Format: int32 */
@@ -2748,14 +2803,21 @@ export interface components {
             fullName?: string;
             /** Format: int32 */
             id?: number;
+            jobTitle?: string;
             /** Format: int32 */
             level?: number;
             levelName?: string;
             /** Format: int32 */
             nextLevelMin?: number;
+            /** @enum {string} */
+            primaryRole?: "BACKEND" | "FRONTEND" | "FULLSTACK" | "MOBILE" | "DEVOPS" | "DATA_ML" | "SECURITY" | "QA" | "OTHER";
             profilePictureUrl?: string;
+            /** @enum {string} */
+            seniorityLevel?: "JUNIOR" | "MID" | "SENIOR" | "LEAD" | "PRINCIPAL";
             username?: string;
             verifiedSkills?: string[];
+            /** Format: int32 */
+            yearsOfExperience?: number;
         };
         PublicQuizDetailsDto: {
             questions?: components["schemas"]["PublicQuizQuestionDto"][];
@@ -2960,6 +3022,7 @@ export interface components {
             category?: "OPENSOURCE" | "EVENT" | "NEW_TECH" | "REGULATION" | "MINDSET" | "TOOL" | "CAREER" | "OTHER";
             /** Format: int32 */
             id?: number;
+            imageUrl?: string;
             /** Format: date-time */
             publishedAt?: string;
             /** Format: int32 */
@@ -3030,6 +3093,7 @@ export interface components {
             yearsOfExperience?: number;
         };
         UpdateProfileRequest: {
+            coverImageUrl?: string;
             fullName: string;
         };
         UpsertPostReactionRequestDto: {
@@ -3053,6 +3117,7 @@ export interface components {
             username?: string;
         };
         UserResponse: {
+            coverImageUrl?: string;
             /** Format: date-time */
             createdAt?: string;
             email?: string;
@@ -9705,6 +9770,218 @@ export interface operations {
             };
         };
     };
+    preview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkPreviewRequestDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LinkPreviewResponseDto"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Payload Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+        };
+    };
+    upload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    files: string[];
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MediaUploadResponseDto"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Payload Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+        };
+    };
     getMyAppeals: {
         parameters: {
             query?: never;
@@ -12202,6 +12479,114 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Payload Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+        };
+    };
+    getReactors_1: {
+        parameters: {
+            query?: {
+                type?: "LIKE" | "LOVE" | "HAHA" | "CRY" | "ANGRY" | "INSIGHT" | "CLAP";
+                cursor?: number;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                postId: number;
+                commentId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReactorPageResponseDto"];
+                };
             };
             /** @description Bad Request */
             400: {
