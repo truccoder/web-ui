@@ -86,16 +86,34 @@ export function Dialog({
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
-    // Focus moves into the panel so the keyboard is inside the modal rather than on whatever was
-    // behind it. Returning focus to the trigger on close is the caller's job — it owns the
-    // element, and stashing it here breaks when the trigger unmounts.
-    panelRef.current?.focus();
-
     return () => {
       document.removeEventListener('keydown', onKeyDown);
       document.body.style.overflow = previousOverflow;
     };
   }, [open, onClose]);
+
+  /**
+   * FOCUSING THE PANEL IS ITS OWN EFFECT, KEYED ON `open` ALONE — and this split is a bug fix,
+   * not tidying.
+   *
+   * It used to live in the effect above, which also depends on `onClose`. Almost every caller
+   * writes `onClose={() => setOpen(false)}` inline, so that prop is a NEW FUNCTION on every
+   * render of the parent. Any dialog holding a controlled field therefore did this: type a
+   * character → parent state changes → parent re-renders → `onClose` identity changes → the
+   * effect re-runs → `panel.focus()` → the field you were typing in loses focus.
+   *
+   * Reported on the composer as "I type one letter and cannot type any more", and it was every
+   * dialog with an input in it, not just that one. Moving focus into the panel is a thing that
+   * should happen exactly ONCE per opening, which is what `[open]` says and what `[open, onClose]`
+   * did not.
+   *
+   * Returning focus to the trigger on close is still the caller's job — it owns the element, and
+   * stashing it here breaks when the trigger unmounts.
+   */
+  React.useEffect(() => {
+    if (!open) return;
+    panelRef.current?.focus();
+  }, [open]);
 
   if (!isClient || !open) return null;
 
