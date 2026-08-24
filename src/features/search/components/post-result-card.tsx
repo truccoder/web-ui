@@ -179,7 +179,9 @@ export function PostResultCard({ post, className }: PostResultCardProps) {
           The quiz is deliberately not among them. `QuizTaker` is an interactive surface that
           submits an attempt, and a search result is a place to recognise a post, not to sit an
           exam in a 3-line card. */}
-      {post.codeSnippetDetails && <CodeSnippetBody details={post.codeSnippetDetails} />}
+      {post.codeSnippetDetails && (
+        <CodeSnippetBody details={post.codeSnippetDetails} href={`/posts/${post.id}`} />
+      )}
       {post.articleDetails && <ArticleBody details={post.articleDetails} />}
       {post.qnaDetails && <QnaBody details={post.qnaDetails} />}
       {post.pollDetails && <PollBody details={post.pollDetails} />}

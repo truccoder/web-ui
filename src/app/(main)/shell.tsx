@@ -338,12 +338,17 @@ function MeMenu() {
           // generic label, so the control is never announced as an unnamed button.
           aria-label={profile?.fullName ?? t('nav.profile')}
           className={cn(
-            'grid size-[34px] shrink-0 place-items-center rounded-nx-sm',
+            // 40, UP FROM 34, AND THE AVATAR INSIDE IT FROM 24 TO 32 — the owner's call.
+            // This is the only picture of YOU that is on screen on every route, and at 24 it was
+            // the smallest thing in the bar: smaller than the bell beside it reads as, and small
+            // enough that a real photograph was unrecognisable. The hit area grows with it rather
+            // than leaving a 32px glyph in a 34px box with no room around it.
+            'grid size-10 shrink-0 place-items-center rounded-nx-sm',
             'hover:bg-nx-surface-hover',
             'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-nx-focus-ring'
           )}
         >
-          <Avatar src={profile?.profilePictureUrl} name={profile?.fullName} size="sm" />
+          <Avatar src={profile?.profilePictureUrl} name={profile?.fullName} size="md" />
         </button>
       }
       items={[

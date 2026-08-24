@@ -46,7 +46,10 @@ async function signIn(
   await page.goto('/login');
 
   await page.getByLabel('Email').fill(account.email);
-  await page.getByLabel('Mật khẩu').fill(account.password);
+  // `exact` MATTERS HERE AND NOWHERE ELSE ON THIS FORM. `getByLabel` matches substrings, and the
+  // password field now carries a show/hide toggle whose `aria-label` is "Hiện mật khẩu" — which
+  // contains "Mật khẩu", so the loose locator resolved to two elements and failed strict mode.
+  await page.getByLabel('Mật khẩu', { exact: true }).fill(account.password);
   await page.getByRole('button', { name: 'Đăng nhập' }).click();
 
   // A 429 (or a wrong password) renders as an alert INSIDE the form rather than a redirect, so

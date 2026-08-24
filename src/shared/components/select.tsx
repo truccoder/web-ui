@@ -108,7 +108,13 @@ export function Select({
             ))}
         </select>
 
-        {/* Chevron sits on top of the native control; clicks must fall through to it. */}
+        {/* CHEVRON SITS ON TOP OF THE NATIVE CONTROL; clicks must fall through to it.
+            IT IS POSITIONED AGAINST THIS WRAPPER, WHICH IS WHY WIDTH MUST NOT BE SET THROUGH
+            `className`. `className` lands on the `<select>`; the wrapper stays as wide as its
+            column. A caller that shrinks the field with `className="w-auto"` therefore leaves the
+            arrow floating at the far right of the row with nothing under it — reported on the
+            composer's language and visibility pickers, where the arrow sat outside the box. Size
+            the WRAPPER (`wrapperClassName`) and the two move together. */}
         <svg
           width="14"
           height="14"

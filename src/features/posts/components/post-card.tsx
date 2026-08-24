@@ -8,6 +8,7 @@ import { useT } from '@/core/i18n';
 import { cn } from '@/shared/lib/cn';
 import { useRelativeTime } from '@/shared/lib/format';
 import type { LocationResolution } from '../types/location';
+import { ExpandableBlock } from './expandable-block';
 import { LocationBadge } from './location-badge';
 
 /**
@@ -153,6 +154,8 @@ export function PostCard({
       <div className="flex items-start gap-2">
         <DeveloperIdentity
           className="min-w-0 flex-1"
+          // Under the name, not beside the `⋯`. See the prop's own note.
+          timeBelow
           name={authorName}
           src={author.profilePictureUrl ?? undefined}
           /**
@@ -252,12 +255,29 @@ export function PostCard({
             </div>
           ) : null}
           {content && (
-            // `whitespace-pre-wrap` because the composer's textarea keeps the author's line
-            // breaks and the backend stores them verbatim; collapsing them here would silently
-            // reflow every multi-paragraph post.
-            <p className="whitespace-pre-wrap break-words text-nx-body text-nx-text-primary">
-              {content}
-            </p>
+            /**
+             * CAPPED AT 280 AND OPENED IN A DIALOG — the same device the code block uses, and for
+             * the same reason: a nine-paragraph post is fine on its own permalink and ruins the
+             * column it is sitting in. `ExpandableBlock` measures rather than counting characters,
+             * so a post that fits at 672 stays uncut and the same post on a phone does not.
+             *
+             * 280 rather than the code block's 320: prose at `--text-nx-body` 15/1.6 gives about
+             * eleven lines, which is a paragraph and the start of the next — enough to decide
+             * whether to open it. Code needs the extra because a snippet's first lines are usually
+             * imports and a signature, which say less per line than a sentence does.
+             *
+             * "Xem thêm" GOES TO THE POST, not to a modal — the timestamp above already links to
+             * the same place, so the card now has two ways to the full view and no second copy of
+             * it. See `ExpandableBlock`.
+             */
+            <ExpandableBlock maxHeight={280} href={`/posts/${postId}`}>
+              {/* `whitespace-pre-wrap` because the composer's textarea keeps the author's line
+                  breaks and the backend stores them verbatim; collapsing them here would silently
+                  reflow every multi-paragraph post. */}
+              <p className="whitespace-pre-wrap break-words text-nx-body text-nx-text-primary">
+                {content}
+              </p>
+            </ExpandableBlock>
           )}
 
           {body}
@@ -294,7 +314,12 @@ export function PostCard({
               `16px 20px` default. */}
           <div className="-mx-5 border-t border-nx-border-subtle" aria-hidden />
           <div className="flex flex-col gap-[var(--nx-space-tight)] pt-2">
-            {!!commentCount && (
+            {/* ONLY WHEN THERE IS NO ACTION STRIP. Where one exists — the feed, a permalink —
+                `ReactionBar` prints both counts on one row at its right edge, which is what the
+                owner asked for; printing this line too would put "5 bình luận" twice on one card.
+                Search results and other read-only surfaces render no strip, and there this is the
+                only place the count appears at all. */}
+            {!!commentCount && !actions && (
               <DeveloperMeta>{t('post.commentCount', { count: commentCount })}</DeveloperMeta>
             )}
             {actions}

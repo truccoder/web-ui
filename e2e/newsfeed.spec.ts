@@ -98,12 +98,21 @@ test.describe('newsfeed', () => {
   test('reactions read as appraisal, not approval', async ({ page }) => {
     await openFeed(page);
 
-    // The whole set is rendered inline on every post rather than hidden behind a hover picker, so
-    // the vocabulary is readable without touching anything — which is also why the presenter can
-    // simply point at it. `LIKE` still travels on the wire as `LIKE`; what must never come back
-    // is presenting it as "Thích".
+    // THE SET MOVED BEHIND A HOVER TRAY, AND THE CLAIM DID NOT CHANGE. This test used to assert
+    // the seven were rendered inline, and cited that as why the vocabulary is readable without
+    // touching anything. The owner replaced the inline row with one button plus a tray, so the
+    // assertion is now "all seven are REACHABLE, and they still read as appraisal" — which is the
+    // part the demo script actually promises. What must never come back is `LIKE` presented as
+    // "Thích", and that is checked below exactly as before.
+    //
+    // `Hữu ích` is the trigger's own label, so hovering it is what opens the tray holding the
+    // other six.
+    await page.getByRole('button', { name: 'Hữu ích', exact: true }).first().hover();
+
     for (const label of REACTIONS) {
-      await expect(page.getByRole('button', { name: label, exact: true }).first()).toBeVisible();
+      await expect(page.getByRole('button', { name: label, exact: true }).first()).toBeVisible({
+        timeout: 5_000,
+      });
     }
 
     // The negative half of the claim, and the one a redesign would break silently.

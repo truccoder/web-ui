@@ -5,6 +5,7 @@ import {
   ArticleBody,
   BookBody,
   CodeSnippetBody,
+  CommentPreview,
   CommentThread,
   EventBody,
   EventCalendarActions,
@@ -130,7 +131,9 @@ function toEditorState(post: FeedPostData): PostEditorState {
 function PostBody({ post, onChanged }: { post: FeedPostData; onChanged: () => void }) {
   switch (post.postType) {
     case 'CODE_SNIPPET':
-      return post.codeSnippetDetails ? <CodeSnippetBody details={post.codeSnippetDetails} /> : null;
+      return post.codeSnippetDetails ? (
+        <CodeSnippetBody details={post.codeSnippetDetails} href={`/posts/${post.postId}`} />
+      ) : null;
     case 'ARTICLE':
       return post.articleDetails ? <ArticleBody details={post.articleDetails} /> : null;
     case 'QNA':
@@ -331,25 +334,61 @@ export function FeedPost({ post, onChanged, defaultCommentsOpen = false }: FeedP
       }
       actions={
         <>
-          <div className="flex flex-wrap items-center gap-2">
-            <ReactionBar postId={post.postId} count={post.likeCount} onChanged={onChanged} />
-            {/* THE THREAD IS NOT PART OF THE GUEST SURFACE. `GET /posts/{id}/comments` is not one
-                of the endpoints the backend opens anonymously, so expanding it for a signed-out
-                reader would swap the button for a panel that loads nothing. The count stays
-                visible on the card — it comes from the feed payload — and the button asks them
-                to sign in to read the discussion. */}
-            <Button
-              size="sm"
-              variant="ghost"
-              aria-expanded={isGuest ? undefined : commentsOpen}
-              onClick={guard(() => setCommentsOpen((open) => !open))}
-            >
-              {commentsOpen ? t('post.comments.hide') : t('post.comments.show')}
-            </Button>
-          </div>
+          <ReactionBar
+            postId={post.postId}
+            count={post.likeCount}
+            commentCount={post.commentCount}
+            onChanged={onChanged}
+            /**
+             * PASSED IN RATHER THAN RENDERED BESIDE — see `ReactionBar`'s `actions` note. It used
+             * to sit next to the bar in a row of this file's own, which capped the bar's width and
+             * left the counts stranded mid-card instead of at its right edge.
+             *
+             * THE BUTTON IS THE GUEST'S PATH AND THE EMPTY-THREAD PATH ONLY. A signed-out reader
+             * gets it because `GET /posts/{id}/comments` is not one of the anonymous endpoints, so
+             * a preview would render a skeleton that never resolves; a post with no comments gets
+             * it because there is nothing to preview and the composer still has to be reachable.
+             * Everyone else gets `CommentPreview` below, which carries its own way in.
+             */
+            actions={
+              (isGuest || (!post.commentCount && !defaultCommentsOpen)) && (
+                <Button size="sm" variant="ghost" onClick={guard(() => setCommentsOpen(true))}>
+                  {t('post.comments.show')}
+                </Button>
+              )
+            }
+          />
 
-          {/* Mounted only when open: see the note at the top of this file. */}
-          {commentsOpen && (
+          {/**
+           * TWO SHAPES, AND WHICH ONE YOU GET IS THE SAME `defaultCommentsOpen` SPLIT THIS FILE
+           * ALREADY HAD — the preview did not replace the thread, it replaced the FEED's copy of
+           * it.
+           *
+           * THE PERMALINK STILL OPENS ITS DISCUSSION IN FULL. `/posts/{id}` exists because someone
+           * followed a link to one specific conversation; showing them two comments and a button
+           * to see the rest would be asking them to arrive twice. `e2e/newsfeed.spec.ts` asserts
+           * this out loud, and swapping in the preview broke it — which is how the regression was
+           * caught rather than shipped.
+           *
+           * THE FEED GETS THE PREVIEW: two comments and a way in, instead of a button that grew
+           * the card by an unbounded thread. See `CommentPreview`, and note there that the
+           * "most-liked" ordering has no backing data on the comment DTO.
+           */}
+          {!isGuest &&
+            (defaultCommentsOpen ? (
+              <CommentThread
+                postId={post.postId}
+                onChanged={onChanged}
+                canAcceptAnswer={canAcceptAnswer}
+                acceptedAnswerId={post.qnaDetails?.acceptedAnswerId}
+              />
+            ) : (
+              <CommentPreview postId={post.postId} commentCount={post.commentCount} />
+            ))}
+
+          {/* The empty-thread case: nothing to preview, so the button above is the only way to
+              reach the composer. Mounted only once it is pressed. */}
+          {commentsOpen && !defaultCommentsOpen && !post.commentCount && (
             <CommentThread
               postId={post.postId}
               onChanged={onChanged}

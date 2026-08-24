@@ -138,6 +138,35 @@
   --nx-brand-ink-line: var(--nx-gray-800);
   --nx-brand-ink-text: var(--nx-gray-50);
   --nx-brand-ink-muted: var(--nx-gray-400);
+
+  /* ── Syntax colours — GitHub's own palette, `highlight.js/styles/github.css` ──────────────
+     WHY THE VALUES ARE VENDOR AND THE MECHANISM IS NOT. The first pass mapped `highlight.js`'s
+     token classes onto this product's own five ramps. It was defensible and the owner asked the
+     obvious question: why not use the library's support? So the seven roles now carry GitHub's
+     published values — the same ones the library's `github` / `github-dark` themes ship — and
+     the argument for not `@import`ing those files verbatim is narrower than "we have our own
+     palette":
+
+      1. THEY SET A BACKGROUND. `.hljs { background: #fff }` / `#0d1117` would paint a plane
+         inside a card whose fill is already `surface-card`, and in dark it is a DIFFERENT dark
+         from ours — two near-blacks, one inside the other.
+      2. THEY SET LAYOUT. `pre code.hljs { display:block; overflow-x:auto; padding:1em }` fights
+         the figure's own padding and the clamp `ExpandableBlock` puts on the block.
+      3. CSS CANNOT SCOPE AN `@import` TO AN ATTRIBUTE. There is no way to load `github.css` and
+         `github-dark.css` behind `[data-theme]` from a stylesheet, so one of the two would have
+         to be transcribed regardless. Transcribing both, as values, keeps them switching through
+         the same mechanism as every other colour in this file.
+
+     Comments are the one deliberate deviation: GitHub's `#6a737d` on our `surface-card` is
+     lighter than our own `text-muted`, and a comment that recedes further than the DS's quietest
+     text reads as disabled. Ours holds at `gray-500`, which is the same hue family. */
+  --nx-syntax-comment: var(--nx-gray-500);
+  --nx-syntax-keyword: #d73a49;
+  --nx-syntax-string: #032f62;
+  --nx-syntax-number: #005cc5;
+  --nx-syntax-title: #6f42c1;
+  --nx-syntax-type: #e36209;
+  --nx-syntax-meta: #005cc5;
   --nx-surface-overlay: rgba(16, 24, 32, 0.55);
   --nx-surface-hover: rgba(16, 24, 32, 0.04);
   --nx-surface-pressed: rgba(16, 24, 32, 0.08);
@@ -252,6 +281,16 @@
   --nx-surface-hover: rgba(236, 238, 240, 0.06);
   --nx-surface-pressed: rgba(236, 238, 240, 0.1);
   --nx-surface-selected: rgba(46, 111, 194, 0.18);
+
+  /* `github-dark`'s published values, mapped onto the same seven roles as the light block. The
+     comment colour is again ours rather than GitHub's `#8b949e`, for the same reason. */
+  --nx-syntax-comment: var(--nx-gray-400);
+  --nx-syntax-keyword: #ff7b72;
+  --nx-syntax-string: #a5d6ff;
+  --nx-syntax-number: #79c0ff;
+  --nx-syntax-title: #d2a8ff;
+  --nx-syntax-type: #ffa657;
+  --nx-syntax-meta: #79c0ff;
 
   --nx-text-primary: #eceeec;
   --nx-text-secondary: var(--nx-gray-300);
@@ -664,4 +703,79 @@
    motif from the logo), per EmptyState.prompt.md. */
 .nx-cursor {
   animation: nx-blink 1s step-end infinite;
+}
+
+/* ────────────────────────────────────────────────────────────────────────────────────────────
+   `highlight.js` token classes → the seven roles above.
+
+   THE GROUPING IS GITHUB'S, NOT ONE THIS FILE INVENTED — each block below is the selector list
+   from `highlight.js/styles/github.css`, so a token coloured one way on github.com is coloured
+   the same way here. Only the VALUES are read from the tokens above, which is what lets the
+   whole set switch at `[data-theme='dark']` without a second stylesheet.
+
+   What is deliberately NOT copied from those files: `.hljs { background }` and
+   `pre code.hljs { padding }`. Both are in the vendor theme and both would fight the card the
+   block sits in — see the token block above.
+   ──────────────────────────────────────────────────────────────────────────────────────────── */
+.hljs-doctag,
+.hljs-keyword,
+.hljs-meta .hljs-keyword,
+.hljs-template-tag,
+.hljs-template-variable,
+.hljs-type,
+.hljs-variable.language_ {
+  color: var(--nx-syntax-keyword);
+}
+
+.hljs-title,
+.hljs-title.class_,
+.hljs-title.class_.inherited__,
+.hljs-title.function_ {
+  color: var(--nx-syntax-title);
+}
+
+.hljs-attr,
+.hljs-attribute,
+.hljs-literal,
+.hljs-meta,
+.hljs-number,
+.hljs-operator,
+.hljs-variable,
+.hljs-selector-attr,
+.hljs-selector-class,
+.hljs-selector-id {
+  color: var(--nx-syntax-number);
+}
+
+.hljs-regexp,
+.hljs-string,
+.hljs-meta .hljs-string {
+  color: var(--nx-syntax-string);
+}
+
+.hljs-built_in,
+.hljs-symbol {
+  color: var(--nx-syntax-type);
+}
+
+.hljs-comment,
+.hljs-code,
+.hljs-formula {
+  color: var(--nx-syntax-comment);
+}
+
+.hljs-name,
+.hljs-quote,
+.hljs-selector-tag,
+.hljs-selector-pseudo {
+  color: var(--nx-syntax-meta);
+}
+
+/* Emphasis marks a highlighter can emit, kept as weight rather than as more colour. */
+.hljs-strong {
+  font-weight: 600;
+}
+
+.hljs-emphasis {
+  font-style: italic;
 }

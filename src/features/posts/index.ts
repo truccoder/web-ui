@@ -65,6 +65,7 @@ export {
   type EventCalendarActionsProps,
   ReactionBar,
   type ReactionBarProps,
+  CommentPreview,
   CommentThread,
   type CommentThreadProps,
   CommentItem,

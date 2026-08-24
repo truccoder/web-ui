@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { cn } from '@/shared/lib/cn';
-import { Avatar } from './avatar';
+import { Avatar, type AvatarProps } from './avatar';
 
 /**
  * Hand-written from the design system's `DeveloperIdentity.d.ts` + `.prompt.md` contract.
@@ -49,6 +49,32 @@ export interface DeveloperIdentityProps extends React.HTMLAttributes<HTMLDivElem
   meta?: string;
   /** md = feed/article header · sm = compact rows (comments, panels). @default "md" */
   size?: 'sm' | 'md';
+  /**
+   * Overrides the picture size `size` would pick, WITHOUT touching the two text lines.
+   *
+   * IT EXISTED BRIEFLY FOR THE FEED AND WAS REMOVED WITH IT; it is back because comments need
+   * exactly the thing it does. `size` is a type-scale switch — it moves the name from `body-sm` to
+   * `ui` and the picture with it — so asking for a bigger face through `size` also grows the name,
+   * and a comment's name is already the right size. One prop, one axis.
+   *
+   * Left undefined everywhere else, so every other caller keeps the picture it had.
+   */
+  avatarSize?: AvatarProps['size'];
+  /**
+   * Puts `time` on the SECOND line, under the name, instead of pinned to the right of it.
+   *
+   * WHY IT IS A CHOICE AND NOT THE ONLY LAYOUT. On a comment the row is `name … time`, and the
+   * right edge is empty, so the timestamp has the line to itself and reads as an attribute of the
+   * row. On a post card the same right edge already holds the `⋯` menu, and the timestamp ends up
+   * pressed against it — two unrelated things at the same weight in the same corner, which is what
+   * the owner reported. Under the name it belongs to the byline it describes.
+   *
+   * The second line also drops it to `caption` from the name row's `micro` mono — smaller, and no
+   * longer competing with the name it sits below.
+   *
+   * @default false
+   */
+  timeBelow?: boolean;
   /** Avatar image url. */
   src?: string;
   /** Presence dot on the avatar. */
@@ -75,6 +101,8 @@ export function DeveloperIdentity({
   time,
   meta,
   size = 'md',
+  avatarSize,
+  timeBelow = false,
   src,
   status,
   className,
@@ -83,10 +111,18 @@ export function DeveloperIdentity({
   // `meta` replaces role + handle entirely (the article-byline form), so the second line is
   // one branch, never both.
   const secondLine = meta ?? [role, handle].filter(Boolean).join(' · ');
+  // `timeBelow` only moves the timestamp when the second line is otherwise free. A caller that
+  // supplies both gets the original layout rather than one silently dropped.
+  const timeUnderName = timeBelow && !secondLine ? time : undefined;
 
   return (
     <div className={cn('flex items-start gap-2.5', className)} {...props}>
-      <Avatar src={src} name={name} size={size === 'sm' ? 'sm' : 'lg'} status={status} />
+      <Avatar
+        src={src}
+        name={name}
+        size={avatarSize ?? (size === 'sm' ? 'sm' : 'lg')}
+        status={status}
+      />
 
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
@@ -103,8 +139,14 @@ export function DeveloperIdentity({
 
           {/* Pushed right on its own rather than with a spacer element: the name may be long
               enough to truncate, and `ml-auto` keeps the timestamp pinned either way. */}
-          {time && <DeveloperMeta className="ml-auto shrink-0">{time}</DeveloperMeta>}
+          {time && !timeUnderName && (
+            <DeveloperMeta className="ml-auto shrink-0">{time}</DeveloperMeta>
+          )}
         </div>
+
+        {timeUnderName && (
+          <div className="mt-0.5 text-nx-caption text-nx-text-muted">{timeUnderName}</div>
+        )}
 
         {secondLine && (
           <div

@@ -36,8 +36,15 @@ export default function PostPermalinkPage() {
 
   return (
     <div className="flex flex-col gap-[var(--nx-space-section)]">
+      {/* `scroll={false}` HANDS SCROLL TO `useScrollRestoration`.
+          Next scrolls a forward navigation to the top, and it does so AFTER the destination has
+          rendered — so the feed's restore ran, put the reader back at 2713, and the router then
+          reset it to 0 a beat later. Measured. Telling the router not to scroll for this one link
+          leaves exactly one thing setting the position, which is the hook that knows where the
+          reader was. Every other link into the feed keeps the default. */}
       <Link
         href="/newsfeed"
+        scroll={false}
         className="inline-flex w-fit items-center gap-2 text-nx-body-sm text-nx-text-muted hover:text-nx-text-primary"
       >
         <ArrowLeft className="size-4" aria-hidden />

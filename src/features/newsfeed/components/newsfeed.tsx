@@ -8,6 +8,7 @@ import { useT } from '@/core/i18n';
 import { cn } from '@/shared/lib/cn';
 import { newsfeedKeys } from '../hooks/keys';
 import { useNewsfeed, usePublicFeed } from '../hooks/use-feed';
+import { useScrollRestoration } from '../hooks/use-scroll-restoration';
 import { TrendingCard, useTrending } from '@/features/trending';
 import { FeedPost } from './feed-post';
 
@@ -77,6 +78,14 @@ export function Newsfeed({ scope = 'friends', className }: NewsfeedProps) {
   const friendsFeed = useNewsfeed(scope !== 'all', scope === 'skills' ? 'SKILLS' : 'ALL');
   const publicFeed = usePublicFeed(scope === 'all');
   const feed = scope === 'all' ? publicFeed : friendsFeed;
+
+  /**
+   * KEYED PER TAB. `Tất cả`, `Bạn bè` and `Kỹ năng của tôi` are three different columns of
+   * different lengths; one shared position would drop the reader into the middle of a list they
+   * were never scrolled through. `ready` waits for data because restoring against an empty feed
+   * would clamp to zero and throw the saved position away.
+   */
+  useScrollRestoration(`newsfeed:${scope}`, Boolean(feed.data));
 
   /**
    * CRAWLED CONTENT IS MIXED INTO `Tất cả`, AND ONLY INTO IT. This is the design's central claim

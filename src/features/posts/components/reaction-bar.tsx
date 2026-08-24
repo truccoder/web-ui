@@ -7,16 +7,27 @@ import { getErrorMessage } from '@/shared/lib/api-error';
 import { cn } from '@/shared/lib/cn';
 import { useMyReaction, useRemoveReaction, useUpsertReaction } from '../hooks/use-reaction';
 import type { ReactionType } from '../types/reaction';
+import { ReactionTray } from './reaction-tray';
 import { ReactorDialog } from './reactor-dialog';
 
 /**
  * The reaction row for a post — fills `PostCard`'s `actions` slot.
  *
- * FIVE INLINE TOGGLES, NOT A HOVER PICKER. The familiar social pattern is one button with a
- * floating tray of emoji, but the design system has no popover/floating-panel spec at all
- * (only Dialog, Menu, Tooltip, Toast), and inventing one for this would be a new primitive
- * built from a guess — the same reasoning that made `LocationPicker` an inline panel. Five
- * toggles need no floating layer and make the current state visible without hovering.
+ * ONE BUTTON PLUS A HOVER TRAY, AND THIS FILE ARGUED THE OTHER WAY UNTIL THE OWNER CALLED IT.
+ * The note that stood here said seven inline toggles were right because the design system has no
+ * popover spec (only Dialog, Menu, Tooltip, Toast) and inventing one would be a primitive built
+ * from a guess. The objection was real and is answered rather than dropped: the primitive is
+ * `ReactionTray`, it lives in this feature rather than in `shared/`, and its own header says why
+ * it is not a sanctioned DS component.
+ *
+ * WHAT THE INLINE ROW ACTUALLY COST, measured on a 672 card: seven labelled toggles wrapped onto
+ * two lines and took 64px of every post — more vertical space than the post's own byline — to
+ * offer six things almost nobody picks. The row also put `Không đồng tình` at the same weight as
+ * `Hữu ích`, which reads as an invitation to use it.
+ *
+ * WHAT IS NOT LOST. All seven types are still reachable, from three inputs (hover, keyboard,
+ * long-press) rather than one, and the current pick is still on screen without hovering — it is
+ * what the single button shows. `aria-pressed` still carries the state.
  *
  * MONOCHROME ICONS, NOT EMOJI. Reaction sets are usually colour emoji; nothing else in this
  * product renders one, and the palette is deliberately ink + one blue + amber-for-reputation
@@ -37,6 +48,26 @@ export interface ReactionBarProps {
    * rather than showing 0 for "not supplied".
    */
   count?: number;
+  /**
+   * Comment total from the same payload, printed beside the reaction total.
+   *
+   * IT IS HERE RATHER THAN ON ITS OWN LINE because the two numbers answer the same question —
+   * how much has happened to this post — and stacking them put one at the card's left edge and
+   * the other at its right, two rows apart. Undefined or zero prints nothing, so a post with no
+   * discussion does not carry a "0 bình luận".
+   */
+  commentCount?: number;
+  /**
+   * Controls that belong beside the reaction trigger — the comment button, today.
+   *
+   * A SLOT RATHER THAN A SIBLING, AND THE REASON IS THE COUNTS. They are pinned right with
+   * `ml-auto`, and `ml-auto` reaches the right edge of whatever box it is inside. While the
+   * comment button sat next to this component in the CALLER's row, this component was only as
+   * wide as its own content, so "1 bình luận · 0 cảm xúc" stopped in the middle of the card with
+   * the button after it. Taking the full row and accepting the neighbour here is what lets the
+   * numbers reach the card's edge.
+   */
+  actions?: React.ReactNode;
   /** Fired after a successful add/change/remove, so the caller can refresh its own payload. */
   onChanged?: () => void;
   className?: string;
@@ -81,7 +112,14 @@ const REACTIONS = [
  */
 export const REACTION_ORDER = REACTIONS.map((reaction) => reaction.type);
 
-export function ReactionBar({ postId, count, onChanged, className }: ReactionBarProps) {
+export function ReactionBar({
+  postId,
+  count,
+  commentCount,
+  actions,
+  onChanged,
+  className,
+}: ReactionBarProps) {
   const t = useT();
 
   const [reactorsOpen, setReactorsOpen] = useState(false);
@@ -93,6 +131,14 @@ export function ReactionBar({ postId, count, onChanged, className }: ReactionBar
   const current = myReaction.data?.reactionType ?? null;
   const error = upsert.error ?? remove.error;
 
+  /**
+   * What the single button wears. Falls back to `LIKE` — the DS's `Hữu ích` — when nothing is
+   * picked, which is both the default action and the reaction this product is built around.
+   */
+  const active = REACTIONS.find((reaction) => reaction.type === current);
+  const TriggerIcon = active?.Icon ?? ThumbsUp;
+  const triggerLabelKey = active?.labelKey ?? 'post.reaction.LIKE';
+
   const pick = (type: ReactionType) => {
     // GATE, not a convenience: `removeReaction` throws 404 when there is no reaction to
     // remove, so it may only fire for the one that is currently active. Everything else is
@@ -102,44 +148,68 @@ export function ReactionBar({ postId, count, onChanged, className }: ReactionBar
   };
 
   return (
-    <div className={cn('flex flex-col gap-1', className)}>
+    // `w-full`: see `actions`. Without it the row shrinks to its content and the counts never
+    // reach the card's edge.
+    <div className={cn('flex w-full flex-col gap-1', className)}>
       {/* ONE ROW: verbs left, counts right. The DS's acting row reads as a sentence — what you can
           do, then what has already been done — and pushing the counts to the far end is what makes
           the two halves legible as different kinds of thing rather than a run of six chips. */}
       <div className="flex flex-wrap items-center gap-[var(--nx-space-pair)]">
-        {REACTIONS.map(({ type, Icon, labelKey }) => {
-          const active = current === type;
-          return (
+        {/**
+         * THE TRIGGER SHOWS WHAT YOU PICKED, not a generic "Like". A single button that always
+         * reads `Hữu ích` would hide the one piece of state the seven-toggle row made obvious —
+         * which of them is yours — and a reader would have to open the tray to find out.
+         *
+         * CLICKING IT IS THE SHORTCUT, not a second menu: with nothing picked it sends `LIKE`,
+         * which is the DS's `Hữu ích` and the reaction this product is actually about; with
+         * something picked it removes that one. Everything else is one hover away.
+         */}
+        <ReactionTray
+          label={t('post.reaction.pick')}
+          trigger={
             <button
-              key={type}
               type="button"
-              // `aria-pressed` is what makes these toggles rather than five separate
-              // actions, and it is the part a screen reader uses to announce the state
-              // the border communicates visually.
-              aria-pressed={active}
-              onClick={() => pick(type)}
+              aria-pressed={current !== null}
+              onClick={() => pick(current ?? 'LIKE')}
               className={cn(
-                // Kit: height 28, `gap: var(--nx-space-pair)` between glyph and label,
-                // `padding: 0 10px` — the inset split. Was `gap-2 px-2`, which read the
-                // glyph and its label as two separate elements rather than one control.
-                'inline-flex h-7 items-center gap-1 rounded-nx-xs border px-2.5',
-                'text-nx-body-sm',
+                'inline-flex h-7 items-center gap-1 rounded-nx-xs border px-2.5 text-nx-body-sm',
                 'transition-colors duration-[var(--nx-duration-fast)] ease-nx-out',
                 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring',
-                active
+                current
                   ? 'border-nx-accent bg-nx-accent-soft text-nx-text-accent'
                   : 'border-transparent text-nx-text-muted hover:bg-nx-surface-hover hover:text-nx-text-primary'
               )}
             >
-              <Icon aria-hidden className="size-4 shrink-0" />
-              {/* THE LABEL IS VISIBLE NOW, not just an `aria-label`. Five unlabelled glyphs made
-                  the reader guess which face meant what, and the guess is not obvious for `CRY`
-                  versus `ANGRY` at 16px. With the word present the icon stops carrying meaning on
-                  its own, which is what the DS's `Hữu ích · Sáng tỏ · Ghi nhận` row does too. */}
-              <span>{t(labelKey)}</span>
+              <TriggerIcon aria-hidden className="size-4 shrink-0" />
+              <span>{t(triggerLabelKey)}</span>
             </button>
-          );
-        })}
+          }
+        >
+          {REACTIONS.map(({ type, Icon, labelKey }) => (
+            <button
+              key={type}
+              type="button"
+              aria-pressed={current === type}
+              // The label is the accessible name here: the tray is a row of glyphs, and at 16px
+              // `CRY` and `ANGRY` are not distinguishable without one. `title` gives the same
+              // string to a mouse as a native tooltip, which is what the DS's Tooltip would
+              // have done if this row were not already a floating layer.
+              aria-label={t(labelKey)}
+              title={t(labelKey)}
+              onClick={() => pick(type)}
+              className={cn(
+                'grid size-8 place-items-center rounded-nx-full',
+                'transition-colors duration-[var(--nx-duration-fast)] ease-nx-out',
+                'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-nx-focus-ring',
+                current === type
+                  ? 'bg-nx-accent-soft text-nx-text-accent'
+                  : 'text-nx-text-muted hover:bg-nx-surface-hover hover:text-nx-text-primary'
+              )}
+            >
+              <Icon aria-hidden className="size-4 shrink-0" />
+            </button>
+          ))}
+        </ReactionTray>
 
         {/* THE COUNT IS A BUTTON NOW. It used to be a dead number: it said something had happened
             and not who it happened with, which on a product whose reactions are meant to be
@@ -148,24 +218,43 @@ export function ReactionBar({ postId, count, onChanged, className }: ReactionBar
 
             IT STAYS A COUNT AT ZERO AND STOPS BEING A CONTROL — opening a list of nobody is a
             worse answer than the number already given. */}
-        {count !== undefined &&
-          (count > 0 ? (
-            <button
-              type="button"
-              onClick={() => setReactorsOpen(true)}
-              className={cn(
-                'ml-auto pl-[var(--nx-space-element)] font-mono text-nx-micro text-nx-text-muted',
-                'hover:text-nx-text-primary hover:underline',
-                'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring'
+        {actions}
+
+        {/* BOTH TOTALS, ONE ROW, PINNED RIGHT. `ml-auto` on the group rather than on each number
+            so the separator between them cannot drift apart from the pair. */}
+        <div className="ml-auto flex items-center gap-2 pl-[var(--nx-space-element)]">
+          {!!commentCount && (
+            <>
+              <span className="font-mono text-nx-micro text-nx-text-muted">
+                {t('post.commentCount', { count: commentCount })}
+              </span>
+              {count !== undefined && (
+                <span className="text-nx-micro text-nx-text-faint" aria-hidden>
+                  ·
+                </span>
               )}
-            >
-              {t('post.reaction.count', { count })}
-            </button>
-          ) : (
-            <span className="ml-auto pl-[var(--nx-space-element)] font-mono text-nx-micro text-nx-text-muted">
-              {t('post.reaction.count', { count })}
-            </span>
-          ))}
+            </>
+          )}
+
+          {count !== undefined &&
+            (count > 0 ? (
+              <button
+                type="button"
+                onClick={() => setReactorsOpen(true)}
+                className={cn(
+                  'font-mono text-nx-micro text-nx-text-muted',
+                  'hover:text-nx-text-primary hover:underline',
+                  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring'
+                )}
+              >
+                {t('post.reaction.count', { count })}
+              </button>
+            ) : (
+              <span className="font-mono text-nx-micro text-nx-text-muted">
+                {t('post.reaction.count', { count })}
+              </span>
+            ))}
+        </div>
       </div>
 
       {/* The optimistic highlight has already rolled back by the time this renders, so the

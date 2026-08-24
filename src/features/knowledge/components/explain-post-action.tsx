@@ -87,6 +87,19 @@ export function ExplainPostAction({ postId, postContent }: ExplainPostActionProp
     <div className="space-y-2">
       <ExplanationCard
         explanation={explanation}
+        /**
+         * IT STAYS ON SCREEN ONCE GENERATED — the owner's call, and it is what the component
+         * already did; what was missing was a way to get it out of the way without losing it.
+         * The chevron folds it, the `X` throws it away.
+         *
+         * `explain.reset()` IS THE HONEST DISMISS. The backend persisted nothing (see the header
+         * note), so there is no server state to undo: clearing the mutation puts the screen back
+         * exactly where it was before the button was pressed, generate button and all. Hiding the
+         * card while keeping the result would leave quota already spent and no way to see what it
+         * bought.
+         */
+        collapsible
+        onDismiss={() => explain.reset()}
         actions={
           <>
             <Button size="sm" variant="ghost" onClick={run} disabled={save.isPending}>

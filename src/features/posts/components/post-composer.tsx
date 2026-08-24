@@ -5,6 +5,7 @@ import {
   BarChart3,
   BookOpen,
   Calendar,
+  ChevronDown,
   Code2,
   FileText,
   HelpCircle,
@@ -435,6 +436,15 @@ export function PostComposer({ onPosted }: PostComposerProps) {
                 icon={TYPE_ICONS[postType]}
               >
                 {typeLabel}
+                {/* THE CHEVRON IS WHAT SAYS "THERE IS A LIST BEHIND THIS".
+                    Without it the control is an icon and a word inside a bordered box — the same
+                    shape as the composer's own field to its left and as any secondary button, so
+                    nothing on it distinguished "this opens a menu" from "this submits something".
+                    A trailing chevron is the one convention every reader already has for it.
+
+                    `aria-hidden` because `Menu` already gives the trigger its `aria-haspopup` and
+                    `aria-expanded`; announcing a glyph on top of that says it twice. */}
+                <ChevronDown className="size-4 shrink-0 text-nx-text-muted" aria-hidden />
               </Button>
             }
             items={[
@@ -568,7 +578,9 @@ export function PostComposer({ onPosted }: PostComposerProps) {
                 for committing it. The kit's footer holds only `Huỷ` and `Đăng bài`. */}
             <Select
               size="sm"
-              className="w-auto"
+              // `wrapperClassName`, not `className` — sizing the field left the chevron outside
+              // the box. See `Select`'s own note.
+              wrapperClassName="w-fit"
               value={visibility}
               onChange={(event) => setVisibility(event.target.value as PostVisibility)}
               aria-label={t('createPost.visibilityLabel')}

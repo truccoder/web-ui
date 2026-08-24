@@ -1,3 +1,4 @@
+export { ExplanationMarkdown } from './explanation-markdown';
 export { CreateTokenDialog, type CreateTokenDialogProps } from './create-token-dialog';
 export { ExplainPostAction, type ExplainPostActionProps } from './explain-post-action';
 export { ExplanationCard, type ExplanationCardProps } from './explanation-card';
