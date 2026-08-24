@@ -66,8 +66,19 @@ export function GithubStatsCard({ userId, readOnly = false, className }: GithubS
   const sync = useSyncGithub();
   const unlink = useUnlinkGithub();
 
+  // EVERY STATE OF THIS COMPONENT IS A CARD, INCLUDING THE THREE THAT USED NOT TO BE. Loading,
+  // not-linked and failed each returned a bare block onto the page ground, so a section that is a
+  // card once the data lands was a hole in the column until then — and on `/profile`'s `Chuyên
+  // môn` tab, where `MySkillsCard` sits directly above wrapping its own empty state in a `Card`,
+  // the unlinked case (the common one — B23 means nobody CAN link) left the tab ending in a
+  // 96px-tall gap. `compact` for the same reason `MySkillsCard` passes it: `py-12` is the padding
+  // of an empty state that owns a screen, not one filling a card.
   if (stats.isPending) {
-    return <Skeleton lines={4} className={className} />;
+    return (
+      <Card className={className}>
+        <Skeleton lines={4} />
+      </Card>
+    );
   }
 
   if (isNotLinked(stats.error)) {
@@ -75,22 +86,26 @@ export function GithubStatsCard({ userId, readOnly = false, className }: GithubS
     // completed (B23) — which is an answer to "how do I fix this?", a question nobody asks about
     // somebody else's account.
     return (
-      <EmptyState
-        className={className}
-        title={readOnly ? t('github.notLinkedOther.title') : t('github.notLinked.title')}
-        description={readOnly ? t('github.notLinkedOther.desc') : t('github.notLinked.desc')}
-        {...(readOnly ? {} : { action: <LinkGithubButton /> })}
-      />
+      <Card className={className}>
+        <EmptyState
+          compact
+          title={readOnly ? t('github.notLinkedOther.title') : t('github.notLinked.title')}
+          description={readOnly ? t('github.notLinkedOther.desc') : t('github.notLinked.desc')}
+          {...(readOnly ? {} : { action: <LinkGithubButton /> })}
+        />
+      </Card>
     );
   }
 
   if (stats.isError) {
     return (
-      <EmptyState
-        className={className}
-        title={t('github.loadFailed')}
-        description={getErrorMessage(stats.error)}
-      />
+      <Card className={className}>
+        <EmptyState
+          compact
+          title={t('github.loadFailed')}
+          description={getErrorMessage(stats.error)}
+        />
+      </Card>
     );
   }
 

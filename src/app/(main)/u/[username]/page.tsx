@@ -3,7 +3,15 @@
 import { Suspense } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { Avatar, Button, Card, EmptyState, Skeleton, Tabs } from '@/shared/components';
+import {
+  Button,
+  Card,
+  EmptyState,
+  ProfileHero,
+  Section,
+  Skeleton,
+  Tabs,
+} from '@/shared/components';
 import { useTabParam } from '@/shared/lib/use-tab-param';
 import { BlockUserButton } from '@/features/blocks';
 import { MessageUserButton } from '@/features/chat';
@@ -120,69 +128,51 @@ function PublicProfileContent() {
 
   return (
     <div className="flex flex-col gap-[var(--nx-space-section)]">
-      {/* `gap-5` and `items-start`: the kit's profile hero sets `gap: var(--nx-space-pad)`
-          (20) and aligns to the top, so a wrapped Vietnamese name grows downward instead of
-          dragging the avatar off centre. Was `gap-4 items-center`. */}
-      <Card className="flex items-start gap-5">
-        {/* `inset` for the same reason as `/profile`'s hero — see the prop's note on `Avatar`. */}
-        <Avatar
-          src={profile.profilePictureUrl ?? undefined}
-          name={profile.fullName ?? undefined}
-          size="xl"
-          inset
-        />
-        <div className="min-w-0 flex-1">
-          {/* The score sits BESIDE THE NAME, as the kit's profile hero does — reputation is the
-              product's central claim, so it is part of the identity line rather than a fact you
-              scroll to. `ReputationCard` in the first tab still owns the progress to the next
-              level; this is the readout, that is the apparatus. */}
-          <div className="flex flex-wrap items-center gap-[var(--nx-space-tight)]">
-            <h1 className="truncate text-nx-title font-semibold tracking-tight text-nx-text-primary">
-              {profile.fullName?.trim() || username}
-            </h1>
-            {profile.eliteScore != null && (
-              <RepScore
-                score={profile.eliteScore}
-                showLevel={profile.levelName != null}
-                levelName={profile.levelName ?? undefined}
-              />
-            )}
-          </div>
-          {profile.username && (
-            <p className="truncate font-mono text-nx-body-sm text-nx-text-muted">
-              @{profile.username}
-            </p>
-          )}
-        </div>
-
-        {/* THE ONLY ACTIONS ON THIS PAGE, and they are in the hero rather than in a menu because
-            there is nothing else to put in one. `blocks` shipped in the same backend batch as this
-            route and had no surface at all until now — the product could block and could not be
-            asked to. They stay OUT of the tabs deliberately: an action about this person must not
-            be reachable only from one of three panels. */}
-        {/* Ordered by how often they are wanted, with the destructive one last and `ghost` so a
-            misclick lands on the harmless one. */}
-        {/* BOTH ACTIONS ARE RELATIONSHIPS, and a guest is not one end of one: messaging opens a
-            conversation between two accounts, blocking records an edge from yours. Neither has a
-            read-only form to show, so for a signed-out reader the pair is replaced by the one
-            thing that would make them available. */}
-        {isGuest ? (
-          <Link href={registerHref} className="shrink-0">
-            <Button variant="secondary">{t('guest.profile.join')}</Button>
-          </Link>
-        ) : (
-          profile.id != null && (
-            <>
-              <MessageUserButton userId={profile.id} className="shrink-0" />
-              <BlockUserButton
-                userId={profile.id}
-                name={profile.fullName?.trim() || username}
-                className="shrink-0"
-              />
-            </>
+      {/* THE SAME HERO `/profile` OPENS WITH, which it was a near-copy of until the two were
+          merged: card, 96 avatar, the name as this page's `<h1>`, the handle, the score chip
+          beside the name. `ProfileHero` carries the record of where the two copies had drifted
+          apart and which side of each disagreement won. */}
+      <ProfileHero
+        name={profile.fullName?.trim() || username}
+        username={profile.username}
+        avatarUrl={profile.profilePictureUrl}
+        badge={
+          profile.eliteScore != null && (
+            <RepScore
+              score={profile.eliteScore}
+              showLevel={profile.levelName != null}
+              levelName={profile.levelName ?? undefined}
+            />
           )
-        )}
-      </Card>
+        }
+        /* THE ONLY ACTIONS ON THIS PAGE, and they are in the hero rather than in a menu because
+           there is nothing else to put in one. `blocks` shipped in the same backend batch as this
+           route and had no surface at all until now — the product could block and could not be
+           asked to. They stay OUT of the tabs deliberately: an action about this person must not
+           be reachable only from one of three panels.
+
+           Ordered by how often they are wanted, with the destructive one last and `ghost` so a
+           misclick lands on the harmless one.
+
+           BOTH ACTIONS ARE RELATIONSHIPS, and a guest is not one end of one: messaging opens a
+           conversation between two accounts, blocking records an edge from yours. Neither has a
+           read-only form to show, so for a signed-out reader the pair is replaced by the one thing
+           that would make them available. */
+        actions={
+          isGuest ? (
+            <Link href={registerHref}>
+              <Button variant="secondary">{t('guest.profile.join')}</Button>
+            </Link>
+          ) : (
+            profile.id != null && (
+              <>
+                <MessageUserButton userId={profile.id} />
+                <BlockUserButton userId={profile.id} name={profile.fullName?.trim() || username} />
+              </>
+            )
+          )
+        }
+      />
 
       {/* EVERY SECTION BELOW TAKES THE ID RESOLVED ABOVE, not the handle — and every one of them
           is gated on it, which is why the tabs live inside this guard rather than around it: a
@@ -206,27 +196,27 @@ function PublicProfileContent() {
           {tab === 'overview' && (
             <div className="flex flex-col gap-[var(--nx-space-section)]">
               {/**
-               * NO `<h2>` OVER THE REPUTATION CARD — it printed "Elite Score" twice, once as this
-               * page's section heading and once as the card's own `<h3>`. `/profile` never had the
-               * duplicate because it renders the card bare; this page added a heading to a
-               * component that already names itself.
+               * THE REPUTATION CARD TAKES AN `<h2>` LIKE ITS NEIGHBOURS NOW. It could not before:
+               * the card printed its own `Elite Score` heading, so labelling the section printed
+               * the words twice twenty pixels apart, and the workaround — leaving this one section
+               * unlabelled — is why the panel's outline used to run `<h1>` → `<h3>` → `<h2>`. The
+               * card is headless now; `Section` carries the whole account.
                *
-               * `readOnly` fixes a sentence that was not merely impersonal but wrong: the card's
-               * subtitle said the score came from "**your** contributions" while showing somebody
-               * else's number.
+               * `descOther` rather than `desc` fixes a sentence that was not merely impersonal but
+               * wrong: it said the score came from "**your** contributions" while showing somebody
+               * else's number. It used to be the card's `readOnly` prop, whose only job this was.
                */}
-              <ReputationCard userId={profile.id} readOnly />
+              <Section title={t('reputation.title')} description={t('reputation.descOther')}>
+                <ReputationCard userId={profile.id} />
+              </Section>
 
-              <section className="flex flex-col gap-3">
-                <h2 className="text-nx-title-sm text-nx-text-primary">
-                  {t('publicProfile.skillsTitle')}
-                </h2>
+              <Section title={t('publicProfile.skillsTitle')}>
                 {/* `MySkillsCard` needs no "my" variant because the backend already decides what
                     a viewer may see — a stranger gets VERIFIED rows only. `readOnly` changes only
                     the empty state, which told the reader to claim a skill from a roadmap, an
                     action they cannot take on another person's behalf. */}
                 <MySkillsCard userId={profile.id} readOnly />
-              </section>
+              </Section>
             </div>
           )}
 
@@ -243,10 +233,9 @@ function PublicProfileContent() {
                * no user id and act on the CALLER, so the card's two buttons under a stranger's
                * name would unlink the viewer's own account.
                */}
-              <section className="flex flex-col gap-3">
-                <h2 className="text-nx-title-sm text-nx-text-primary">{t('github.title')}</h2>
+              <Section title={t('github.title')}>
                 <GithubStatsCard userId={profile.id} readOnly />
-              </section>
+              </Section>
 
               {/**
                * BOOKS, SAME STORY AS GITHUB. `GET /books/author/{authorId}` takes any author id
@@ -257,12 +246,9 @@ function PublicProfileContent() {
                * `readOnly` drops the per-row delete. It is author-only server-side, so it would
                * 403 rather than destroy anything, but a button that always fails is still a lie.
                */}
-              <section className="flex flex-col gap-3">
-                <h2 className="text-nx-title-sm text-nx-text-primary">
-                  {t('profile.books.titleOther')}
-                </h2>
+              <Section title={t('profile.books.titleOther')}>
                 <MyBooksList authorId={profile.id} readOnly />
-              </section>
+              </Section>
             </div>
           )}
 

@@ -4,7 +4,17 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tansta
 import { friendshipApi } from '../api/friendship';
 import { friendshipKeys } from './keys';
 
-const PREVIEW_LIMIT = 100;
+/**
+ * 50, NOT 100, BECAUSE 100 IS A 400 AND ALWAYS HAS BEEN. `GET /v1/api/friendships` declares
+ * `limit` as `maximum: 50` (checked against `/v3/api-docs`), so every call this hook has ever made
+ * was rejected by validation before it reached a query — which is why `/profile`'s `Bạn bè` tile
+ * read `—` forever rather than a count, and why the chat picker's friend list opened empty. Found
+ * while reworking the profile page, where the tile is the symptom you can see.
+ *
+ * It is the cap rather than something under it because this hook exists to fill previews in one
+ * shot; anything that needs more than the cap wants `useInfiniteFriends`.
+ */
+const PREVIEW_LIMIT = 50;
 const PAGE_SIZE = 20;
 
 /**

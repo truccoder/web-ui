@@ -8,7 +8,11 @@ import { useT } from '@/core/i18n';
 import { useChangePassword } from '../hooks/use-profile';
 import { changePasswordSchema, type ChangePasswordFormValues } from '../lib/validation';
 
-/** Change the account password (`PUT /profile/password`). */
+/**
+ * Change the account password (`PUT /profile/password`).
+ *
+ * HEADLESS, like `ProfileInfoForm` beside it: the `Section` around it owns the title and subtitle.
+ */
 export function ChangePasswordForm() {
   const t = useT();
   const change = useChangePassword();
@@ -29,13 +33,6 @@ export function ChangePasswordForm() {
 
   return (
     <Card className="w-full">
-      <div className="mb-4">
-        <h3 className="text-nx-heading font-semibold text-nx-text-primary">
-          {t('profile.password.title')}
-        </h3>
-        <p className="text-nx-body-sm text-nx-text-muted">{t('profile.password.desc')}</p>
-      </div>
-
       {/* `method="post"` — see `LoginForm`. Two passwords on this one. */}
       <form onSubmit={submit} method="post" className="flex flex-col gap-4" noValidate>
         <Input

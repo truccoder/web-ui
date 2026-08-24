@@ -8,7 +8,13 @@ import { useT } from '@/core/i18n';
 import { useMyProfile, useUpdateProfile } from '../hooks/use-profile';
 import { updateProfileSchema, type UpdateProfileFormValues } from '../lib/validation';
 
-/** Edit the display name (`PUT /profile`). The only editable profile field. */
+/**
+ * Edit the display name (`PUT /profile`). The only editable profile field.
+ *
+ * HEADLESS: the caller wraps this in a `Section`, which owns the `Thông tin cá nhân` title and its
+ * subtitle. It used to print them itself as an `<h3>` inside the card — see `Section` for what
+ * that cost the `Tài khoản` tab's heading order.
+ */
 export function ProfileInfoForm() {
   const t = useT();
   const { data: profile } = useMyProfile();
@@ -28,13 +34,6 @@ export function ProfileInfoForm() {
 
   return (
     <Card className="w-full">
-      <div className="mb-4">
-        <h3 className="text-nx-heading font-semibold text-nx-text-primary">
-          {t('profile.info.title')}
-        </h3>
-        <p className="text-nx-body-sm text-nx-text-muted">{t('profile.info.desc')}</p>
-      </div>
-
       {/* `method="post"` — see `LoginForm`. */}
       <form onSubmit={submit} method="post" className="flex flex-col gap-4" noValidate>
         <Input

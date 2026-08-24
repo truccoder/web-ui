@@ -967,18 +967,28 @@ export const en = {
       title: 'Professional profile',
       notSetUp:
         "You haven't set up a professional profile yet. Fill this in and save to create one.",
+      /* The form's two questions. Seven equidistant fields could not say which field belonged
+         with which; these two titles are what the rule between them divides. */
+      groupRole: 'Current role',
+      groupStyle: 'Your explainer',
       jobTitle: 'Job title',
+      jobTitlePlaceholder: 'Backend engineer',
       seniority: 'Seniority',
       primaryRole: 'Primary role',
       years: 'Years of experience',
       explanationStyle: 'Explanation style',
       explanationStyleHint: 'Shapes how the AI phrases its explanations of posts.',
       techStack: 'Tech stack',
+      /* Placeholders REPLACED the `Comma separated` hint (deleted): the comma is in the example,
+         and the chips under the field show what the typed string parsed to. */
+      techStackPlaceholder: 'React, TypeScript, PostgreSQL',
       domains: 'Interested domains',
-      commaSeparated: 'Comma separated',
+      domainsPlaceholder: 'Fintech, Distributed systems',
       unset: 'Not set',
       save: 'Save profile',
       discard: 'Discard changes',
+      unsaved: 'Unsaved changes',
+      saved: 'Saved',
       loadError: 'Could not load your professional profile',
       saveError: 'Could not save your profile',
     },
@@ -1334,6 +1344,10 @@ export const en = {
     },
     skills: {
       title: 'Your skills',
+      /* The `Chuyên môn` tab's three sections are ordered by how hard the claim is to make: what
+         you say you do → what the app has verified → what your code shows. That order used to
+         live only in a source comment; these two lines (with `professionalHint`) say it aloud. */
+      desc: 'What has been verified, including claims still waiting on a reviewer.',
       loadError: 'Could not load your skills',
       emptyTitle: 'No skills claimed yet',
       emptyDesc: 'Claim a skill from a roadmap and it shows up here.',
@@ -1345,6 +1359,9 @@ export const en = {
         pending: 'Awaiting review',
         rejected: 'Rejected',
       },
+    },
+    github: {
+      desc: 'What your public code shows.',
     },
     professionalHint: 'Your explainer uses this profile to pitch answers at your level.',
     professionalHintLink: 'Go to Knowledge',

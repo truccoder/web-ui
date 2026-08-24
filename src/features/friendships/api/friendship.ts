@@ -13,7 +13,8 @@ import type {
  */
 export const friendshipApi = {
   /** GET /v1/api/friendships — cursor-paginated friends list. */
-  getFriends: (cursor?: number, limit = 100) =>
+  // The endpoint's own cap — `limit` is `maximum: 50` and 100 answers 400. See `PREVIEW_LIMIT`.
+  getFriends: (cursor?: number, limit = 50) =>
     api
       .get<FriendListResponse>('/v1/api/friendships', { params: { cursor, limit } })
       .then((r) => r.data),

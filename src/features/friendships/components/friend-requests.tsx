@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Button, EmptyState, Skeleton, Tabs } from '@/shared/components';
+import { Button, Card, EmptyState, Skeleton, Tabs } from '@/shared/components';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { useT } from '@/core/i18n';
 import { useIntlLocale } from '@/shared/lib/format';
@@ -107,10 +107,17 @@ export function FriendRequests({ tabSize = 'md' }: FriendRequestsProps = {}) {
         (loadingPending ? (
           <RequestListSkeleton rows={4} />
         ) : pendingCount === 0 ? (
-          <EmptyState
-            title={t('friends.requests.receivedEmpty.title')}
-            description={t('friends.requests.receivedEmpty.desc')}
-          />
+          // THE EMPTY STATE IS A CARD BECAUSE THE ROWS IT STANDS IN FOR ARE CARDS — `FriendListItem`
+          // draws one per request. Bare, it was a hole in the column: most visible on `/profile`'s
+          // `Tổng quan`, where it sits under two `StatTile`s inside a section whose neighbours are
+          // all carded, and where "no requests" is the ordinary state rather than the rare one.
+          <Card>
+            <EmptyState
+              compact
+              title={t('friends.requests.receivedEmpty.title')}
+              description={t('friends.requests.receivedEmpty.desc')}
+            />
+          </Card>
         ) : (
           <>
             {accept.isError && <ErrorBanner error={accept.error} />}
@@ -154,10 +161,13 @@ export function FriendRequests({ tabSize = 'md' }: FriendRequestsProps = {}) {
         (loadingSent ? (
           <RequestListSkeleton rows={3} />
         ) : !sent || sent.length === 0 ? (
-          <EmptyState
-            title={t('friends.requests.sentEmpty.title')}
-            description={t('friends.requests.sentEmpty.desc')}
-          />
+          <Card>
+            <EmptyState
+              compact
+              title={t('friends.requests.sentEmpty.title')}
+              description={t('friends.requests.sentEmpty.desc')}
+            />
+          </Card>
         ) : (
           <>
             {cancel.isError && <ErrorBanner error={cancel.error} />}

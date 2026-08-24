@@ -944,18 +944,28 @@ export const vi: Messages = {
     profile: {
       title: 'Hồ sơ nghề nghiệp',
       notSetUp: 'Bạn chưa tạo hồ sơ nghề nghiệp. Điền và lưu để tạo mới.',
+      /* Hai nhóm câu hỏi của biểu mẫu. Trước đây bảy ô xếp cách đều nhau nên không nói được ô nào
+         đi với ô nào; hai tiêu đề này là chỗ dựa cho đường kẻ ngăn giữa chúng. */
+      groupRole: 'Vị trí hiện tại',
+      groupStyle: 'Trình giải thích',
       jobTitle: 'Chức danh',
+      jobTitlePlaceholder: 'Kỹ sư backend',
       seniority: 'Cấp độ',
       primaryRole: 'Mảng chính',
       years: 'Số năm kinh nghiệm',
       explanationStyle: 'Kiểu giải thích',
       explanationStyleHint: 'Ảnh hưởng cách AI diễn đạt khi giải thích bài viết.',
       techStack: 'Công nghệ đang dùng',
+      /* Placeholder THAY CHO câu `Ngăn cách bằng dấu phẩy` (đã xoá): dấu phẩy nằm ngay trong ví
+         dụ, và dãy thẻ dưới ô nhập cho thấy chuỗi vừa gõ được tách ra thành gì. */
+      techStackPlaceholder: 'React, TypeScript, PostgreSQL',
       domains: 'Lĩnh vực quan tâm',
-      commaSeparated: 'Ngăn cách bằng dấu phẩy',
+      domainsPlaceholder: 'Fintech, Hệ phân tán',
       unset: 'Chưa chọn',
       save: 'Lưu hồ sơ',
       discard: 'Huỷ thay đổi',
+      unsaved: 'Có thay đổi chưa lưu',
+      saved: 'Đã lưu',
       loadError: 'Không tải được hồ sơ nghề nghiệp',
       saveError: 'Không lưu được hồ sơ',
     },
@@ -1304,6 +1314,10 @@ export const vi: Messages = {
     },
     skills: {
       title: 'Kỹ năng của bạn',
+      /* Ba mục của tab `Chuyên môn` xếp theo độ khó của lời tuyên bố: bạn tự nói mình làm gì →
+         hệ thống đã xác minh được gì → mã nguồn của bạn cho thấy gì. Trước đây thứ tự ấy chỉ có
+         trong bình luận của tệp nguồn; hai câu này (và `professionalHint`) nói nó ra thành lời. */
+      desc: 'Những gì đã được xác minh, kèm cả yêu cầu đang chờ duyệt.',
       loadError: 'Không thể tải kỹ năng của bạn',
       emptyTitle: 'Chưa ghi nhận kỹ năng nào',
       emptyDesc: 'Ghi nhận một kỹ năng từ lộ trình, nó sẽ hiện ở đây.',
@@ -1315,6 +1329,9 @@ export const vi: Messages = {
         pending: 'Đang chờ duyệt',
         rejected: 'Bị từ chối',
       },
+    },
+    github: {
+      desc: 'Những gì mã nguồn công khai của bạn cho thấy.',
     },
     professionalHint: 'Trình giải thích dùng hồ sơ này để nói vừa tầm bạn.',
     professionalHintLink: 'Sang mục Kiến thức',

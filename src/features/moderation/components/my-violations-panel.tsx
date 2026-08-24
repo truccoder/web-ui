@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Badge, Button, Dialog, EmptyState, Skeleton, Textarea } from '@/shared/components';
+import { Badge, Button, Card, Dialog, EmptyState, Skeleton, Textarea } from '@/shared/components';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { formatDate, useIntlLocale } from '@/shared/lib/format';
 import { useT } from '@/core/i18n';
@@ -42,13 +42,26 @@ export function MyViolationsPanel() {
   const [reason, setReason] = useState('');
   const submit = useSubmitAppeal();
 
-  if (violations.isPending) return <Skeleton lines={2} />;
+  // THE THREE UNSETTLED STATES ARE CARDS, LIKE THE ROWS THEY STAND IN FOR. Loading, failed and
+  // empty each returned a bare block onto the page ground while the loaded panel is a column of
+  // `surface-card` rows — so on `/profile`'s `Tài khoản` tab, where this sits between two carded
+  // sections and a carded block list, the common state (nobody has any violations) was the one
+  // section of four that looked like a hole rather than a panel.
+  if (violations.isPending) {
+    return (
+      <Card>
+        <Skeleton lines={2} />
+      </Card>
+    );
+  }
 
   if (violations.isError) {
     return (
-      <p className="text-nx-caption text-nx-status-danger-fg">
-        {getErrorMessage(violations.error, t('moderationMine.loadError'))}
-      </p>
+      <Card>
+        <p className="text-nx-caption text-nx-status-danger-fg">
+          {getErrorMessage(violations.error, t('moderationMine.loadError'))}
+        </p>
+      </Card>
     );
   }
 
@@ -57,11 +70,13 @@ export function MyViolationsPanel() {
 
   if (rows.length === 0 && appealRows.length === 0) {
     return (
-      <EmptyState
-        compact
-        title={t('moderationMine.emptyTitle')}
-        description={t('moderationMine.emptyDesc')}
-      />
+      <Card>
+        <EmptyState
+          compact
+          title={t('moderationMine.emptyTitle')}
+          description={t('moderationMine.emptyDesc')}
+        />
+      </Card>
     );
   }
 

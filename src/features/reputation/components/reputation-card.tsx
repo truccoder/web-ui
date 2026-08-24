@@ -28,26 +28,24 @@ import { RepScore } from './rep-score';
 export interface ReputationCardProps {
   /** Whose score to show. Undefined while the caller is still resolving it. */
   userId?: number;
-  /**
-   * Somebody else's score — swaps the subtitle.
-   *
-   * The default reads *"Điểm uy tín tích luỹ từ đóng góp **của bạn**"* — "**your** contributions".
-   * Rendered on `/u/{handle}` that sentence attributes another person's score to the reader, which
-   * is not a tone problem but a false statement about whose number is on screen.
-   *
-   * Only the subtitle moves. The chip, the bar and the "N points to the next level" line are all
-   * facts about the subject and read correctly either way.
-   *
-   * @default false
-   */
-  readOnly?: boolean;
 }
+
+/**
+ * `readOnly` USED TO BE HERE AND IS NOT A GAP. Its entire job was swapping one subtitle —
+ * *"Điểm uy tín tích luỹ từ đóng góp **của bạn**"* attributes another person's score to the
+ * reader when rendered on `/u/{handle}`, which is a false statement about whose number is on
+ * screen rather than a tone problem. That subtitle now belongs to the `Section` the caller wraps
+ * this in, and a caller that knows whose profile it is renders `reputation.desc` or
+ * `reputation.descOther` directly. Everything left in this card — the chip, the bar, the "N points
+ * to the next level" line, the expert marker — is a fact about the subject and reads correctly to
+ * anyone, so there is nothing else for the flag to switch.
+ */
 
 function ReputationCardShell({ children }: { children: React.ReactNode }) {
   return <Card className="w-full">{children}</Card>;
 }
 
-export function ReputationCard({ userId, readOnly = false }: ReputationCardProps) {
+export function ReputationCard({ userId }: ReputationCardProps) {
   const t = useT();
   // Both numbers below are interpolated into a sentence, which is exactly where a wrong grouping
   // separator does the most damage: `8.800` inside Vietnamese prose reads as 8.8, so the sentence
@@ -97,15 +95,14 @@ export function ReputationCard({ userId, readOnly = false }: ReputationCardProps
 
   return (
     <ReputationCardShell>
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div>
-          <h3 className="text-nx-heading font-semibold text-nx-text-primary">
-            {t('reputation.title')}
-          </h3>
-          <p className="text-nx-body-sm text-nx-text-muted">
-            {readOnly ? t('reputation.descOther') : t('reputation.desc')}
-          </p>
-        </div>
+      {/* THE SCORE AND THE MARKER, ON ONE ROW. This card used to open with its own `<h3>Elite
+          Score` and subtitle, with the expert marker opposite them — see `Section` for why that
+          header is gone. What the header was really doing for the marker was giving it something
+          to sit across from, and the score is a better partner than the title ever was: the badge
+          qualifies the NUMBER (`verifiedExpert` is a claim about how the score was earned), and it
+          used to sit two rows above it. */}
+      <div className="flex flex-wrap items-center justify-between gap-[var(--nx-space-element)]">
+        <RepScore score={eliteScore} size="lg" showLevel levelName={levelName} />
         {verifiedExpert && (
           <span className="inline-flex shrink-0 items-center gap-2 rounded-nx-sm border border-nx-rep-border bg-nx-rep-soft px-2 py-1 text-nx-caption font-medium text-nx-rep-text">
             <ShieldCheck className="size-3.5" aria-hidden />
@@ -113,8 +110,6 @@ export function ReputationCard({ userId, readOnly = false }: ReputationCardProps
           </span>
         )}
       </div>
-
-      <RepScore score={eliteScore} size="lg" showLevel levelName={levelName} />
 
       <div className="mt-4">
         <div

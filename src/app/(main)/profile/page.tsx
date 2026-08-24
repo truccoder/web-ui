@@ -1,24 +1,15 @@
 'use client';
 
 import { Suspense } from 'react';
-import Link from 'next/link';
-import { Clock, Users } from 'lucide-react';
-import { StatTile, Tabs } from '@/shared/components';
+import { Tabs } from '@/shared/components';
 import { useTabParam } from '@/shared/lib/use-tab-param';
-import { BlockedUsersList } from '@/features/blocks';
-import { GithubStatsCard } from '@/features/github';
-import { FriendRequests, useFriends, usePendingRequests } from '@/features/friendships';
-import { ProfessionalProfileForm } from '@/features/knowledge';
-import { MyViolationsPanel } from '@/features/moderation';
-import { MyReputationCard, RepScore, useReputation } from '@/features/reputation';
-import { MySkillsCard } from '@/features/roadmap';
-import {
-  ChangePasswordForm,
-  ProfileIdentityCard,
-  ProfileInfoForm,
-  useMyProfile,
-} from '@/features/security';
+import { RepScore, useReputation } from '@/features/reputation';
+import { ProfileIdentityCard, useMyProfile } from '@/features/security';
+import { usePendingRequests } from '@/features/friendships';
 import { useT } from '@/core/i18n';
+import { AccountPanel } from './account-panel';
+import { OverviewPanel } from './overview-panel';
+import { ProfessionalPanel } from './professional-panel';
 
 /**
  * `/profile` — assembled at P3.2, and it ABSORBED `/dashboard` at P5.2. Owning domain: `security`.
@@ -79,6 +70,13 @@ import { useT } from '@/core/i18n';
  * `/library` beside the catalogue, and a shelf next to other shelves beats a shelf filed under
  * account settings. Same component, same endpoint, one home: `/library`'s `Sách tôi viết` tab.
  * Moved rather than duplicated, so there is still exactly one place a book can be deleted from.
+ *
+ * THIS FILE IS THE SHELL AND NOTHING ELSE — hero, tab strip, which panel is open. It used to be
+ * 350 lines because the three panels and a private `Section` helper lived in it too, so the one
+ * question this file answers ("what is on this route, and which part of it is showing?") was
+ * buried under the answer to three others. The panels are `./overview-panel`, `./professional-panel`
+ * and `./account-panel`; `Section` graduated to `@/shared/components` once `/u/[username]` turned
+ * out to need the same thing four times over.
  */
 const TAB_IDS = ['overview', 'professional', 'account'] as const;
 type TabId = (typeof TAB_IDS)[number];
@@ -162,144 +160,6 @@ function ProfileContent() {
         {tab === 'professional' && <ProfessionalPanel userId={profile?.id} />}
         {tab === 'account' && <AccountPanel />}
       </div>
-    </div>
-  );
-}
-
-/** What the app makes of you, and the one thing on this page that is waiting on you. */
-function OverviewPanel() {
-  const t = useT();
-  const { data: friends } = useFriends();
-  const { data: pendingRequests } = usePendingRequests();
-
-  return (
-    <div className="flex flex-col gap-[var(--nx-space-section)]">
-      <MyReputationCard />
-
-      <section className="flex flex-col gap-3">
-        <div className="flex items-baseline justify-between gap-3">
-          <h2 className="text-nx-title-sm text-nx-text-primary">{t('profile.network.title')}</h2>
-          <Link
-            href="/friends/all"
-            className="shrink-0 text-nx-body-sm text-nx-text-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
-          >
-            {t('profile.network.viewAll')}
-          </Link>
-        </div>
-
-        {/* `StatTile` takes the raw value: while the queries are in flight both read "—" rather
-            than a zero that would be indistinguishable from "you have no friends". */}
-        <div className="grid gap-[var(--nx-space-element)] sm:grid-cols-2">
-          <StatTile
-            label={t('profile.stats.friends')}
-            value={friends?.totalCount}
-            description={t('profile.stats.friendsDesc')}
-            icon={<Users size={16} />}
-          />
-          <StatTile
-            label={t('profile.stats.pending')}
-            value={pendingRequests?.length}
-            description={t('profile.stats.pendingDesc')}
-            icon={<Clock size={16} />}
-          />
-        </div>
-
-        {/* `sm` BECAUSE THIS STRIP IS NESTED UNDER ANOTHER ONE. `Đã nhận · Đã gửi` sits inside
-            the `Tổng quan` panel, so the page shows two tab strips at once — and at the same size
-            they read as two peers rather than as a filter inside a tab. `/friends/requests`
-            already passed `sm` for exactly this reason; this call site was the one that did not,
-            and it is the page where both strips are visible together. */}
-        <FriendRequests tabSize="sm" />
-      </section>
-    </div>
-  );
-}
-
-/**
- * Ordered by how hard the claim is to make: what you say you do → what the app has verified you
- * can do → what your code shows.
- */
-function ProfessionalPanel({ userId }: { userId?: number }) {
-  const t = useT();
-
-  return (
-    <div className="flex flex-col gap-[var(--nx-space-section)]">
-      <section className="flex flex-col gap-3">
-        <h2 className="text-nx-title-sm text-nx-text-primary">{t('knowledge.profile.title')}</h2>
-        <ProfessionalProfileForm />
-        {/* Said here because the form no longer sits next to the feature that depends on it:
-            without a professional profile the explainer refuses to run (428). */}
-        <p className="text-nx-caption text-nx-text-muted">
-          {t('profile.professionalHint')}{' '}
-          <Link
-            href="/knowledge"
-            className="text-nx-text-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
-          >
-            {t('profile.professionalHintLink')}
-          </Link>
-        </p>
-      </section>
-
-      {/* Linking to /roadmap rather than embedding the claim form: claiming a skill needs a
-          roadmap and a node picked out of it, which is a whole surface, not a card. */}
-      <section className="flex flex-col gap-3">
-        <div className="flex items-baseline justify-between gap-3">
-          <h2 className="text-nx-title-sm text-nx-text-primary">{t('profile.skills.title')}</h2>
-          <Link
-            href="/roadmap"
-            className="shrink-0 text-nx-body-sm text-nx-text-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
-          >
-            {t('profile.skills.browseRoadmaps')}
-          </Link>
-        </div>
-        {/* The one section on this page whose contents depend on WHO IS LOOKING: the backend
-            returns pending and rejected claims only to the owner, who here is always the viewer. */}
-        <MySkillsCard userId={userId} />
-      </section>
-
-      <section className="flex flex-col gap-3">
-        <h2 className="text-nx-title-sm text-nx-text-primary">{t('github.title')}</h2>
-        {/* `undefined` until the profile resolves, which keeps the stats query idle rather than
-            firing it for a user id nobody has yet. */}
-        <GithubStatsCard userId={userId} />
-      </section>
-    </div>
-  );
-}
-
-/** The account as an object you administer, including the two decisions made *about* it. */
-function AccountPanel() {
-  const t = useT();
-
-  return (
-    <div className="flex flex-col gap-[var(--nx-space-section)]">
-      {/* THE TWO FORMS COME FIRST NOW, and that inversion is most of the reason this tab exists.
-          They are the only things on the whole page a person arrives intending to DO, and the
-          single column had them below three screens of facts. The old order put them last on the
-          grounds that "changing a password is a task, not a fact about you, and putting a task
-          first makes a page of facts read like a form" — which was right about a page of facts.
-          This is not one: it is the tab of tasks, so the tasks lead it. */}
-      <ProfileInfoForm />
-
-      <ChangePasswordForm />
-
-      {/* MODERATION, FROM THE RECEIVING END. `AppealController` shipped with the 2026-08-09 batch
-          and had no surface: a post could be removed and an account banned for seven days with
-          nothing on screen explaining it and no way to contest it. It sits above the block list
-          because both answer "what has been decided about me". */}
-      <section className="flex flex-col gap-3">
-        <h2 className="text-nx-title-sm text-nx-text-primary">{t('moderationMine.title')}</h2>
-        <MyViolationsPanel />
-      </section>
-
-      {/* THE OTHER HALF OF BLOCKING. The control lives on `/u/{username}`; without a list, a block
-          is an invisible, permanent edit to what the product shows you and there is no way to
-          review or undo it. Filed under the account because that is what it is — a setting about
-          what you see, not a list of people you know. */}
-      <section className="flex flex-col gap-3">
-        <h2 className="text-nx-title-sm text-nx-text-primary">{t('blocks.title')}</h2>
-        <BlockedUsersList />
-      </section>
     </div>
   );
 }
