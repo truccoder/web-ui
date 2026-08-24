@@ -116,6 +116,24 @@ export interface PostCardProps {
   actions?: ReactNode;
   /** Author-only controls, right of the identity row. */
   menu?: ReactNode;
+  /**
+   * Render the body at full length, with no cap and no "Xem thêm".
+   *
+   * THE CAP'S EXIT IS A LINK TO `/posts/{id}`, SO ON `/posts/{id}` IT LEADS NOWHERE. The
+   * permalink renders the same card as the feed, which meant a long post arrived there already
+   * cut, with a "Xem thêm" that navigated to the page the reader was standing on — Next resolves
+   * it to the current route, nothing changes, and the control reads as broken. It was not broken;
+   * it had simply run out of anywhere to go.
+   *
+   * SO THE FLAG IS "AM I THE DESTINATION", NOT "SHOULD I CLAMP". `ExpandableBlock`'s whole
+   * argument is that the cap belongs to the FEED — one sixty-line card makes its neighbours
+   * unreachable — and that the full text belongs at an address. This is that address. Every other
+   * surface (feed, search results, a profile's post list) keeps the cap, because on those the
+   * link still has a page to send the reader to.
+   *
+   * @default false
+   */
+  expanded?: boolean;
   className?: string;
 }
 
@@ -137,6 +155,7 @@ export function PostCard({
   body,
   actions,
   menu,
+  expanded = false,
   className,
 }: PostCardProps) {
   const t = useT();
@@ -158,6 +177,14 @@ export function PostCard({
    * handle is user-chosen text, not a slug this app minted.
    */
   const authorHref = author.username ? `/u/${encodeURIComponent(author.username)}` : undefined;
+
+  /* `whitespace-pre-wrap` because the composer's textarea keeps the author's line breaks and the
+     backend stores them verbatim; collapsing them here would silently reflow every
+     multi-paragraph post. Named because it is rendered from two branches — capped and not — and
+     the two must not drift into two different paragraphs. */
+  const prose = (
+    <p className="whitespace-pre-wrap break-words text-nx-body text-nx-text-primary">{content}</p>
+  );
 
   return (
     /**
@@ -280,7 +307,7 @@ export function PostCard({
               ))}
             </div>
           ) : null}
-          {content && (
+          {content &&
             /**
              * CAPPED AT 280 AND OPENED IN A DIALOG — the same device the code block uses, and for
              * the same reason: a nine-paragraph post is fine on its own permalink and ruins the
@@ -295,16 +322,18 @@ export function PostCard({
              * "Xem thêm" GOES TO THE POST, not to a modal — the timestamp above already links to
              * the same place, so the card now has two ways to the full view and no second copy of
              * it. See `ExpandableBlock`.
+             *
+             * AND ON THE POST ITSELF THERE IS NO CAP AT ALL — see `expanded`. The permalink was
+             * getting the feed's clamp plus a "Xem thêm" pointing at its own URL, which is a
+             * control that visibly does nothing.
              */
-            <ExpandableBlock maxHeight={280} href={`/posts/${postId}`}>
-              {/* `whitespace-pre-wrap` because the composer's textarea keeps the author's line
-                  breaks and the backend stores them verbatim; collapsing them here would silently
-                  reflow every multi-paragraph post. */}
-              <p className="whitespace-pre-wrap break-words text-nx-body text-nx-text-primary">
-                {content}
-              </p>
-            </ExpandableBlock>
-          )}
+            (expanded ? (
+              prose
+            ) : (
+              <ExpandableBlock maxHeight={280} href={`/posts/${postId}`}>
+                {prose}
+              </ExpandableBlock>
+            ))}
 
           {body}
 

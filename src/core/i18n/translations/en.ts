@@ -865,8 +865,6 @@ export const en = {
       hide: 'Hide comments',
       empty: 'No comments yet',
       loadFailed: 'Could not load comments',
-      like: 'Like',
-      likeUnavailable: 'Liking a comment is not supported by the server yet (B14)',
       reply: 'Reply',
       replyPlaceholder: 'Write a reply...',
       edit: 'Edit',

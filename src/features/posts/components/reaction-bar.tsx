@@ -95,7 +95,13 @@ export interface ReactionBarProps {
  * while only five slots existed, and that workaround is over — `HAHA` can go back to meaning
  * `Haha` now that `Sáng tỏ` has a slot of its own.
  */
-const REACTIONS = [
+/*
+ * EXPORTED because the comment row wears the same seven, and there must be exactly one place that
+ * says which glyph and which word belong to `INSIGHT`. `CommentItem` renders a single toggle
+ * rather than this whole bar, but the toggle still has to be able to show whichever type the
+ * reader picked — a comment accepts all seven, and the seeded thread has `INSIGHT` rows on it.
+ */
+export const REACTIONS = [
   { type: 'LIKE', Icon: ThumbsUp, labelKey: 'post.reaction.LIKE' },
   { type: 'INSIGHT', Icon: Lightbulb, labelKey: 'post.reaction.INSIGHT' },
   { type: 'CLAP', Icon: HandHeart, labelKey: 'post.reaction.CLAP' },

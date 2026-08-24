@@ -1,8 +1,14 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type UseMutationOptions,
+} from '@tanstack/react-query';
 import { commentsApi } from '../api/comment';
 import type { CreateCommentRequest, PostComment, UpdateCommentRequest } from '../types/comment';
+import type { ReactionType } from '../types/reaction';
 import { postKeys } from './keys';
 import type { PostMutationOptions } from './use-post';
 
@@ -21,6 +27,14 @@ import type { PostMutationOptions } from './use-post';
  * All three writes return void, so none of them can patch a row into the cached list; they
  * refetch. That is not laziness — see `useDeleteComment` for the case where splicing would
  * be actively wrong.
+ *
+ * THE TWO REACTION WRITES AT THE BOTTOM BREAK THAT RULE, ON PURPOSE AND ONLY THEY. `useDeleteComment`
+ * cannot splice because a cascade makes the number of affected rows unknowable from here; a
+ * reaction's effect is the opposite — it touches exactly one row, and both of the fields it moves
+ * (`myReaction`, `likeCount`) are already on that row and move by a delta this file can compute
+ * with certainty. That certainty is the whole licence: an optimistic write is honest when the
+ * client can derive the same answer the server will, and a lie when it cannot. They still
+ * invalidate on settle, so the server has the last word either way.
  */
 
 /**
@@ -148,4 +162,135 @@ export function groupComments(comments: PostComment[]): CommentWithReplies[] {
   }
 
   return [...roots.values(), ...orphans];
+}
+
+/**
+ * Options for the comment reaction writes.
+ *
+ * `onMutate` is withheld for the same reason `ReactionMutationOptions` withholds it: these two own
+ * an optimistic snapshot and its rollback, and a caller-supplied `onMutate` would replace ours and
+ * leave nothing to roll back to.
+ */
+export type CommentReactionOptions<TVariables> = Omit<
+  UseMutationOptions<void, Error, TVariables, CommentReactionRollback>,
+  'mutationFn' | 'onMutate'
+>;
+
+/** The whole cached thread as it stood before the optimistic write. */
+interface CommentReactionRollback {
+  previous: PostComment[] | undefined;
+}
+
+export interface CommentReactionVariables {
+  postId: number;
+  commentId: number;
+}
+
+export interface UpsertCommentReactionVariables extends CommentReactionVariables {
+  reactionType: ReactionType;
+}
+
+/**
+ * Apply the reader's new reaction to one row of a cached thread, moving `likeCount` by the delta
+ * the change actually implies.
+ *
+ * THREE CASES AND THEY ARE NOT THE SAME NUMBER, which is the reason this is a function rather
+ * than a `+1` at the call site:
+ *  - nothing → something: the reader is a new reactor, so `+1`;
+ *  - something → something else: one row per (user, comment) means the upsert REPLACES, so `0` —
+ *    switching LIKE to CLAP must not inflate the total, and an earlier draft that did was caught
+ *    by clicking twice;
+ *  - something → nothing: `-1`.
+ *
+ * `Math.max(0, …)` because `likeCount` is typed non-null but nothing guarantees the cached copy is
+ * current — a stale zero plus a removal would otherwise render `-1`, which is worse than the
+ * momentary optimism it is protecting.
+ */
+function applyReaction(
+  comments: PostComment[],
+  commentId: number,
+  next: ReactionType | null
+): PostComment[] {
+  return comments.map((comment) => {
+    if (comment.id !== commentId) return comment;
+    const had = comment.myReaction != null;
+    const has = next != null;
+    const delta = had === has ? 0 : has ? 1 : -1;
+    return { ...comment, myReaction: next, likeCount: Math.max(0, comment.likeCount + delta) };
+  });
+}
+
+/** Shared optimistic plumbing: snapshot the thread, patch one row, hand the snapshot back. */
+function useCommentReactionMutation<TVariables extends CommentReactionVariables>(
+  mutationFn: (variables: TVariables) => Promise<void>,
+  nextReaction: (variables: TVariables) => ReactionType | null,
+  options?: CommentReactionOptions<TVariables>
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn,
+    onMutate: async (variables: TVariables) => {
+      const queryKey = postKeys.comments(variables.postId);
+      // Without this, a refetch already in flight can land after the optimistic write and
+      // restore the pre-click row.
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<PostComment[]>(queryKey);
+      if (previous) {
+        queryClient.setQueryData<PostComment[]>(
+          queryKey,
+          applyReaction(previous, variables.commentId, nextReaction(variables))
+        );
+      }
+      return { previous };
+    },
+    ...options,
+    onError: (error, variables, context, ...rest) => {
+      // `context.previous` is undefined when nothing was cached — there is then nothing to put
+      // back and the invalidation below is the only correct move.
+      if (context?.previous) {
+        queryClient.setQueryData(postKeys.comments(variables.postId), context.previous);
+      }
+      options?.onError?.(error, variables, context, ...rest);
+    },
+    onSettled: (data, error, variables, context, ...rest) => {
+      queryClient.invalidateQueries({ queryKey: postKeys.comments(variables.postId) });
+      options?.onSettled?.(data, error, variables, context, ...rest);
+    },
+  });
+}
+
+/**
+ * PUT /v1/api/posts/{postId}/comments/{commentId}/reactions.
+ *
+ * OPTIMISTIC BECAUSE THE CONTROL HAS TO LIGHT UP UNDER THE FINGER — the same argument
+ * `useUpsertReaction` makes for a post, with one thing this can do that it cannot: the count moves
+ * too, because the count lives on the row being patched instead of in another domain's payload.
+ */
+export function useUpsertCommentReaction(
+  options?: CommentReactionOptions<UpsertCommentReactionVariables>
+) {
+  return useCommentReactionMutation(
+    ({ postId, commentId, reactionType }: UpsertCommentReactionVariables) =>
+      commentsApi.upsertReaction(postId, commentId, { reactionType }),
+    ({ reactionType }) => reactionType,
+    options
+  );
+}
+
+/**
+ * DELETE /v1/api/posts/{postId}/comments/{commentId}/reactions.
+ *
+ * ONLY FIRE THIS WHERE `myReaction` IS ALREADY SET. The endpoint answers 404 when there is nothing
+ * to remove, so it is not a safe no-op — the rollback here exists for a failed request, not as
+ * cover for calling it blind.
+ */
+export function useRemoveCommentReaction(
+  options?: CommentReactionOptions<CommentReactionVariables>
+) {
+  return useCommentReactionMutation(
+    ({ postId, commentId }: CommentReactionVariables) =>
+      commentsApi.removeReaction(postId, commentId),
+    () => null,
+    options
+  );
 }

@@ -844,8 +844,6 @@ export const vi: Messages = {
       hide: 'Ẩn bình luận',
       empty: 'Chưa có bình luận',
       loadFailed: 'Không tải được bình luận',
-      like: 'Thích',
-      likeUnavailable: 'Tính năng thích bình luận chưa có ở máy chủ (B14)',
       reply: 'Trả lời',
       replyPlaceholder: 'Viết câu trả lời...',
       edit: 'Sửa',

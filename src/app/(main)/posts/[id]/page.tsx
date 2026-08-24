@@ -64,7 +64,11 @@ export default function PostPermalinkPage() {
         // Comments open on arrival: see `defaultCommentsOpen`. A permalink exists so that a
         // notification, a shared link or a skill's cited evidence has somewhere to land, and
         // in all three the discussion is what the reader came for.
-        <FeedPost post={post} onChanged={() => refetch()} defaultCommentsOpen />
+        //
+        // `expanded` FOR THE SAME REASON, ONE LAYER UP. The card's "Xem thêm" is a link to THIS
+        // page, so rendering the feed's clamped card here left a long post cut behind a control
+        // that navigated to the URL already on screen. This page is where the whole post lives.
+        <FeedPost post={post} onChanged={() => refetch()} defaultCommentsOpen expanded />
       )}
     </div>
   );

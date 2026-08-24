@@ -22,11 +22,16 @@ export {
   useCreateComment,
   useUpdateComment,
   useDeleteComment,
+  useUpsertCommentReaction,
+  useRemoveCommentReaction,
   groupComments,
   type CommentWithReplies,
   type CreateCommentVariables,
   type UpdateCommentVariables,
   type DeleteCommentVariables,
+  type CommentReactionOptions,
+  type CommentReactionVariables,
+  type UpsertCommentReactionVariables,
 } from './use-comment';
 
 export {

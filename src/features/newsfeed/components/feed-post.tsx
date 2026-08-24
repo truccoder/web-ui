@@ -60,6 +60,22 @@ export interface FeedPostProps {
    * @default false
    */
   defaultCommentsOpen?: boolean;
+  /**
+   * Render the post at full length: no 280px clamp on the prose, no 320px clamp on a code
+   * snippet, no "Xem thêm".
+   *
+   * TRUE ON `/posts/{id}` AND NOWHERE ELSE, because "Xem thêm" is a LINK to `/posts/{id}`. The
+   * permalink renders this same component, so a long post arrived there clamped, under a control
+   * that navigated to the page already on screen — nothing happened, and the reader had no way to
+   * reach the rest of a post they had opened deliberately. See `PostCard`'s `expanded`.
+   *
+   * A SEPARATE PROP FROM `defaultCommentsOpen` even though the permalink is the only caller for
+   * both: one says what the discussion does on arrival, the other says how much of the post is
+   * shown. Folding them into one `permalink` boolean would mean any future surface that wants an
+   * open thread also silently loses the clamp.
+   * @default false
+   */
+  expanded?: boolean;
   post: FeedPostData;
   /** Refetch the feed — the payload's counts only move when it is re-fetched. */
   onChanged: () => void;
@@ -128,11 +144,25 @@ function toEditorState(post: FeedPostData): PostEditorState {
  * newsfeed → bookstore is real — the feed genuinely renders book posts — and §4 is explicit that a
  * real coupling should be expressed through the barrel rather than hidden behind an indirection.
  */
-function PostBody({ post, onChanged }: { post: FeedPostData; onChanged: () => void }) {
+function PostBody({
+  post,
+  onChanged,
+  expanded,
+}: {
+  post: FeedPostData;
+  onChanged: () => void;
+  expanded: boolean;
+}) {
   switch (post.postType) {
     case 'CODE_SNIPPET':
       return post.codeSnippetDetails ? (
-        <CodeSnippetBody details={post.codeSnippetDetails} href={`/posts/${post.postId}`} />
+        // No `href` means no cap — `CodeSnippetBody` already documents that a caller which cannot
+        // name a destination gets the snippet whole. The permalink IS the destination, so it is
+        // the same case: a "Xem thêm" here would point at the current URL and do nothing.
+        <CodeSnippetBody
+          details={post.codeSnippetDetails}
+          href={expanded ? undefined : `/posts/${post.postId}`}
+        />
       ) : null;
     case 'ARTICLE':
       return post.articleDetails ? <ArticleBody details={post.articleDetails} /> : null;
@@ -183,7 +213,12 @@ function PostBody({ post, onChanged }: { post: FeedPostData; onChanged: () => vo
   }
 }
 
-export function FeedPost({ post, onChanged, defaultCommentsOpen = false }: FeedPostProps) {
+export function FeedPost({
+  post,
+  onChanged,
+  defaultCommentsOpen = false,
+  expanded = false,
+}: FeedPostProps) {
   const t = useT();
   const { data: profile } = useMyProfile();
   /**
@@ -261,6 +296,8 @@ export function FeedPost({ post, onChanged, defaultCommentsOpen = false }: FeedP
       // The backend now keeps them current. Measured on the live feed at F-A, not taken on
       // trust: a post carrying one real comment answers `"commentCount":1`.
       commentCount={post.commentCount}
+      // Drops the prose clamp on the permalink; see the prop.
+      expanded={expanded}
       menu={
         /**
          * THE MENU RENDERS FOR EVERY POST NOW, and its contents are what differ.
@@ -296,7 +333,7 @@ export function FeedPost({ post, onChanged, defaultCommentsOpen = false }: FeedP
               onSaved={onChanged}
             />
           ) : (
-            <PostBody post={post} onChanged={onChanged} />
+            <PostBody post={post} onChanged={onChanged} expanded={expanded} />
           )}
 
           {/* A quiz is an attachment, not a post type — `buildAndSavePost` accepts
