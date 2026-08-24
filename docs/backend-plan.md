@@ -4,7 +4,10 @@
 > (biên bản trả nợ, nhánh `task/Iq7tLIt0`, commit `ee89d77`: 72 file đổi, 163 test mới,
 > line coverage 91,50%). Từ đây tài liệu này là **hồ sơ lịch sử** — nó ghi lại các khoảng
 > trống đã từng tồn tại và lý lẽ đằng sau từng đề nghị, **không còn là danh sách việc cần làm**.
-> Đừng đọc nó như một hàng chờ.
+> Đừng đọc nó như một hàng chờ — **trừ B22**, được nêu sau khi biên bản đó viết xong và vì thế
+> chưa nằm trong phạm vi nó đóng: `CommentResponseDto` vẫn không mang `authorEliteScore` và
+> `authorLevelName`, nên chip điểm trên hàng danh tính của bình luận vẫn phải mua bằng N request
+> qua `useReputations`. Đó là mục **duy nhất** còn mở trong tài liệu này.
 >
 > **Việc còn lại thuộc về frontend:** contract OpenAPI đã đổi, nên phải **regenerate
 > `src/core/api/schema.gen.ts`** trước khi dựng tiếp. Những gì thay đổi: ba endpoint mới
