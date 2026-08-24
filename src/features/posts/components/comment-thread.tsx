@@ -1,0 +1,336 @@
+'use client';
+
+import { useMemo, useState } from 'react';
+import { EmptyState, Skeleton } from '@/shared/components';
+import { useReputations } from '@/features/reputation';
+import { useMyProfile } from '@/features/security';
+import { useT } from '@/core/i18n';
+import { getErrorMessage } from '@/shared/lib/api-error';
+import { cn } from '@/shared/lib/cn';
+import {
+  groupComments,
+  useComments,
+  useCreateComment,
+  useDeleteComment,
+  useRemoveCommentReaction,
+  useUpdateComment,
+  useUpsertCommentReaction,
+} from '../hooks/use-comment';
+import type { ReactionType } from '../types/reaction';
+import { useAcceptAnswer, useUnacceptAnswer } from '../hooks/use-post';
+import { CommentComposer } from './comment-composer';
+import { CommentItem } from './comment-item';
+
+/**
+ * The comment thread for one post — fills `PostCard`'s `actions` slot.
+ *
+ * TWO LEVELS, AND THE UI ADMITS IT. `CommentService.validateParentComment` rejects a reply
+ * whose parent is itself a reply, so "Reply" is offered on top-level comments only. The
+ * alternative — offering it everywhere and silently re-pointing the parent at the thread
+ * root — would put the new reply somewhere other than under the comment the user answered,
+ * which is worse than not offering it.
+ *
+ * NOTHING IS SPLICED INTO THE CACHED LIST. Every mutation returns void, and deleting a root
+ * takes its replies with it via a Postgres cascade that is invisible in the Java. The hooks
+ * therefore invalidate and refetch the whole thread; this component just renders what comes
+ * back. `onChanged` is separate, and exists because the *count* on the post card belongs to
+ * the feed payload — another domain's cache, which only the composing screen can refresh.
+ *
+ * MOUNTING THIS STARTS THE FETCH — there is no `collapsed` prop, on purpose. Whether a
+ * thread is open is the feed's state, not this component's, and a feed of twenty cards that
+ * all mounted a thread would fire twenty comment requests on load. The caller renders this
+ * only once the user opens the thread; `useComments` also accepts `undefined` if some
+ * future caller needs to hold a mounted-but-idle instance instead.
+ *
+ * THE LIST GAP IS `block` (20), NOT `turn` (16), AND THE RUNG ABOVE IS THE POINT. `--nx-space-turn`
+ * is named for exactly this — "one speaker's turn ↔ the next" — and it was what the thread used,
+ * and it was wrong here for a reason the token cannot know: a comment does not end at its last
+ * word, it ends at a strip of `h-7` ghost buttons carrying ~7.5px of transparent air below their
+ * labels. That air is spent before the eye sees any of it. At 16 two comments read ~23.5px apart
+ * while the rows INSIDE one read ~15.5px apart — a 1.5:1 ratio, not enough for a stack of turns to
+ * look like turns rather than one run of paragraphs.
+ *
+ * So the fix is paid on both sides and stays on the ladder: `CommentItem` cancels its own inside
+ * gap with `-mt-2` (~7.5 apparent), and this steps out one rung to `block`, the block↔block rung,
+ * because after the strip a comment IS a block rather than a turn. Apparent figures land near 7.5
+ * inside and 27.5 between — about 3.7:1, which is where grouping starts to read. Going to 24 would
+ * have read slightly better still and is off-ladder; the rung was the better trade.
+ *
+ * THE SCORES ARE FETCHED HERE, ONCE, FOR THE WHOLE THREAD. `CommentResponseDto` carries no
+ * `authorEliteScore` and no `authorLevelName` — the post payload carries both, the comment payload
+ * carries neither — so the chip on a commenter's name cannot come off the data this component
+ * already has. It has to be asked for, and the only route is per user.
+ *
+ * SO THE ASKING LIVES IN ONE PLACE RATHER THAN INSIDE EVERY ROW. `CommentItem` takes the score as
+ * a prop and never fetches, exactly as `PostCard` takes its author decomposed and never fetches:
+ * a hook call in the row would work — React Query would even de-duplicate it — but the cost would
+ * be invisible, spread across however many rows happened to render. Here the whole bill is one
+ * line, the set is de-duplicated by author before anything is sent, and a thread of six comments
+ * from four people is four requests. See `useReputations` for the rest of the accounting, and for
+ * the backend change that should delete this entirely.
+ *
+ * THE COMPOSER IS NOT COMMENT N+1. At the old flat `gap-4` it sat exactly as far from the last
+ * comment as the comments sat from each other, so the box at the bottom of the thread read as one
+ * more entry in the list. It gets the card's own device instead — a hairline with clearance above
+ * it — because the relationship it marks is the same one: above, what has been said; below, your
+ * turn to say something.
+ */
+export interface CommentThreadProps {
+  postId: number;
+  /** Fired after a successful create/edit/delete so the caller can refresh its own payload. */
+  onChanged?: () => void;
+  /**
+   * Turns on the accept-answer control. True only when the post is a QNA **and** the signed-in
+   * user wrote it — `PostService.acceptAnswer` throws otherwise, and on a QNA post whose
+   * `qnaDetails` is null it throws even for the author.
+   */
+  canAcceptAnswer?: boolean;
+  /** `QnaDetails.acceptedAnswerId` from the post payload, so the chosen answer is marked. */
+  acceptedAnswerId?: number | null;
+  className?: string;
+}
+
+export function CommentThread({
+  postId,
+  onChanged,
+  canAcceptAnswer = false,
+  acceptedAnswerId,
+  className,
+}: CommentThreadProps) {
+  const t = useT();
+  const profile = useMyProfile();
+
+  const [replyingTo, setReplyingTo] = useState<number | null>(null);
+
+  const comments = useComments(postId);
+  const notify = { onSuccess: () => onChanged?.() };
+  const create = useCreateComment(notify);
+  const update = useUpdateComment(notify);
+  const remove = useDeleteComment(notify);
+  // `useAcceptAnswer` already invalidates `postKeys.comments(postId)` itself — it was written
+  // that way in cycle 1, before this query existed. `onChanged` is still needed on top,
+  // because the post's own `qnaDetails.isResolved` lives in the feed payload, not here.
+  const accept = useAcceptAnswer({ onSuccess: () => onChanged?.() });
+  const unaccept = useUnacceptAnswer({ onSuccess: () => onChanged?.() });
+
+  /**
+   * REACTING DOES NOT CALL `onChanged`, and that is the one place these two differ from every
+   * other write in this file.
+   *
+   * `onChanged` exists to refetch the POST's payload, because the comment COUNT on the card lives
+   * there and only a create or a delete moves it. A reaction moves `likeCount` on one comment row,
+   * which lives in this thread's own cache and which the mutations patch and then re-fetch
+   * themselves. Wiring it here would put a whole feed request behind every click on a thumb.
+   */
+  const react = useUpsertCommentReaction();
+  const unreact = useRemoveCommentReaction();
+
+  /**
+   * `null` REMOVES, ANYTHING ELSE UPSERTS. `CommentItem` resolves which of the two it means from
+   * the row's own `myReaction` — see `onReact` there — so this never has to guess, and the DELETE
+   * (which answers 404 when there is nothing to remove) can only fire where there is.
+   */
+  const reactHandler = (commentId: number, reactionType: ReactionType | null) => {
+    if (reactionType === null) unreact.mutate({ postId, commentId });
+    else react.mutate({ postId, commentId, reactionType });
+  };
+
+  // THE PAYLOAD IS THE ONLY SOURCE NOW. Until F-A this line read
+  // `acceptedAnswerId ?? acceptedInSession`, backed by a `useState` that remembered the pick
+  // for the lifetime of the mount — necessary while `fanOutPost` did not copy `qnaDetails`
+  // onto `FeedPostDataDto`, so the prop came back undefined after a successful accept and the
+  // control stayed on every comment. The backend copies it now (measured at F-A: the live feed
+  // answers `qnaDetails` non-null on the QNA post), so the remembered copy would only be a
+  // second truth that a re-fetch could contradict.
+  const acceptedId = acceptedAnswerId ?? null;
+
+  // ACCEPTING IS STILL ONCE-ONLY, but no longer permanent. `acceptAnswer` throws "An answer has
+  // already been accepted for this post" while one is set, so the control leaves every comment
+  // the moment one is chosen — offering it would be a button whose only outcome is a 400. The
+  // way back is `unacceptAnswer`, which is offered on the accepted comment itself.
+  const acceptHandler =
+    canAcceptAnswer && acceptedId == null
+      ? (commentId: number) => accept.mutate({ postId, commentId })
+      : undefined;
+
+  // Only the author gets to undo, and only while there is something to undo. Reputation
+  // awarded for the pick is revoked by the backend under the same `sourceId`.
+  const unacceptHandler =
+    canAcceptAnswer && acceptedId != null ? () => unaccept.mutate(postId) : undefined;
+
+  const thread = groupComments(comments.data ?? []);
+  // Reaction failures join the same line: the optimistic chip has already rolled back by the time
+  // this renders, so without a sentence the click would appear to have simply not registered.
+  const mutationError =
+    create.error ?? update.error ?? remove.error ?? react.error ?? unreact.error;
+
+  /**
+   * Every author on screen, replies included — `comments.data` is the flat list, so it already
+   * covers both levels and `groupComments` would only have to be walked back apart.
+   *
+   * `useMemo` because a new array literal on every render would rebuild `useQueries`' query list
+   * each time; `useReputations` de-duplicates and sorts what it gets, so the only thing this has
+   * to do is be stable while the data is.
+   */
+  const authorIds = useMemo(() => (comments.data ?? []).map((c) => c.authorId), [comments.data]);
+  const reputations = useReputations(authorIds);
+
+  // Which single row is mid-flight, so only that row shows a spinner. `update`/`remove`
+  // carry the id in their variables; `create` has no row yet.
+  const pendingCommentId =
+    (update.isPending ? update.variables?.commentId : undefined) ??
+    (remove.isPending ? remove.variables?.commentId : undefined) ??
+    null;
+
+  if (comments.isLoading) {
+    return (
+      // The same region padding the loaded thread carries, so the discussion does not jump 16px
+      // up the card the moment the comments arrive.
+      <div className={cn('flex flex-col gap-3 pt-[var(--nx-space-group)]', className)}>
+        <Skeleton lines={2} />
+        <Skeleton lines={2} />
+      </div>
+    );
+  }
+
+  if (comments.isError) {
+    return (
+      <EmptyState
+        compact
+        className={className}
+        title={t('post.comments.loadFailed')}
+        description={getErrorMessage(comments.error)}
+      />
+    );
+  }
+
+  return (
+    /**
+     * `pt-[group]` PUTS A REGION BOUNDARY WHERE THE CARD HAD ITS TIGHTEST GAP.
+     *
+     * `PostCard` renders `actions` as one column at `--nx-space-tight` (8), and the feed passes
+     * `ReactionBar` and this thread into that slot as siblings — so the step from "what you can do
+     * about this post" to "the discussion about this post" was 8px, while two comments inside the
+     * discussion were 16 apart. The most important boundary on the card was its narrowest one.
+     * 8 + 16 = 24 restores the order without the card having to know what it is stacking.
+     */
+    <div className={cn('flex flex-col gap-4 pt-[var(--nx-space-group)]', className)}>
+      {thread.length === 0 ? (
+        <EmptyState compact title={t('post.comments.empty')} />
+      ) : (
+        // 20 between turns — see the module note on why this is `block` and not `turn`.
+        <ul className="flex flex-col gap-5">
+          {thread.map((root) => (
+            <li key={root.id} className="flex flex-col gap-3">
+              <CommentItem
+                comment={root}
+                replies={root.replies}
+                currentUserId={profile.data?.id}
+                // Absent until the request lands, and absent for good if it 404s — the chip is
+                // simply not rendered in either case. See `useReputations`.
+                eliteScore={reputations.get(root.authorId)?.eliteScore}
+                levelName={reputations.get(root.authorId)?.levelName}
+                onReact={reactHandler}
+                onReply={(parentId) => setReplyingTo(parentId)}
+                onAcceptAnswer={acceptHandler}
+                isAcceptedAnswer={acceptedId === root.id}
+                onUnacceptAnswer={unacceptHandler}
+                onEdit={(commentId, content) =>
+                  update.mutate({ postId, commentId, payload: { content } })
+                }
+                onDelete={(commentId) => remove.mutate({ postId, commentId })}
+                pendingCommentId={pendingCommentId}
+                editError={update.error ? getErrorMessage(update.error) : null}
+              />
+
+              {root.replies.length > 0 && (
+                /**
+                 * Indent is the only thing marking a reply, and it stops at one level because the
+                 * data does.
+                 *
+                 * `pl-5` (20), UP FROM 12. `CommentItem` now hangs its body off a 42px avatar
+                 * rail, so a 13px step read as smaller than the offset inside a single comment —
+                 * the nesting was quieter than the thing being nested. 20 is `--nx-space-block`,
+                 * the block↔block rung, and it clears the rail's own visual weight.
+                 *
+                 * `gap-5` to match the root list: replies are turns too, and they carry the same
+                 * strip of ghost buttons, so they owe the same optical debt.
+                 */
+                <ul className="flex flex-col gap-5 border-l border-nx-border-subtle pl-5">
+                  {root.replies.map((reply) => (
+                    <li key={reply.id}>
+                      <CommentItem
+                        comment={reply}
+                        currentUserId={profile.data?.id}
+                        eliteScore={reputations.get(reply.authorId)?.eliteScore}
+                        levelName={reputations.get(reply.authorId)?.levelName}
+                        onReact={reactHandler}
+                        onAcceptAnswer={acceptHandler}
+                        isAcceptedAnswer={acceptedId === reply.id}
+                        onUnacceptAnswer={unacceptHandler}
+                        onEdit={(commentId, content) =>
+                          update.mutate({ postId, commentId, payload: { content } })
+                        }
+                        onDelete={(commentId) => remove.mutate({ postId, commentId })}
+                        pendingCommentId={pendingCommentId}
+                        editError={update.error ? getErrorMessage(update.error) : null}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {replyingTo === root.id && (
+                <CommentComposer
+                  // The same 20 the reply list uses: the box you type a reply into belongs to the
+                  // column the replies live in, not to the root comment's.
+                  className="pl-5"
+                  placeholder={t('post.comments.replyPlaceholder')}
+                  submitLabel={t('post.comments.reply')}
+                  onCancel={() => setReplyingTo(null)}
+                  onSubmit={(content) => {
+                    create.mutate({ postId, payload: { content, parentId: root.id } });
+                    setReplyingTo(null);
+                  }}
+                  pending={create.isPending}
+                  autoFocus
+                />
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {/* `key` is the reset: a confirmed write changes it, React remounts an empty box, and
+          nothing calls setState from an effect to get there. `submittedAt` moves on every
+          attempt but is only read once the attempt SUCCEEDED, so a rejected comment keeps
+          the user's draft. */}
+      {/* THE HINGE, AND THE SAME ONE THE CARD'S FOOTER USES — see the module note. The rule is
+          `mt-2` clear of the 16 the column already gives it, so it sits centred in the band
+          rather than pressed against the last comment, and the composer gets a full group rung
+          below it. Nothing is bled to the card edge here: this rule separates two things INSIDE
+          the discussion, which is exactly the "divider in a box" reading `PostCard` avoids for
+          its own hinge and wants for this one. */}
+      <div className="mt-2 flex flex-col gap-[var(--nx-space-group)]">
+        <div className="border-t border-nx-border-subtle" aria-hidden />
+        <CommentComposer
+          key={create.isSuccess ? create.submittedAt : 'draft'}
+          onSubmit={(content) => create.mutate({ postId, payload: { content } })}
+          pending={create.isPending && replyingTo === null}
+          error={create.error ? getErrorMessage(create.error) : null}
+        />
+      </div>
+
+      {/* Delete and the two reaction writes have no box of their own to report into — the
+          composers carry their own `error` — so their failures surface here. */}
+      {mutationError &&
+        (mutationError === remove.error ||
+          mutationError === react.error ||
+          mutationError === unreact.error) && (
+          <p role="status" className="text-nx-micro text-nx-status-danger-fg">
+            {getErrorMessage(mutationError)}
+          </p>
+        )}
+    </div>
+  );
+}
