@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Button, Textarea } from '@/shared/components';
 import { useT } from '@/core/i18n';
 import { cn } from '@/shared/lib/cn';
@@ -56,6 +56,34 @@ export function CommentComposer({
    */
   const [value, setValue] = useState(initialValue);
 
+  /**
+   * PUTS THE CARET AFTER THE PREFILLED TEXT, ONCE, ON THE FOCUS `autoFocus` CAUSES.
+   *
+   * A textarea that is focused programmatically does not agree across browsers about where the
+   * caret lands, and "position 0" is a real answer some of them give. That is invisible on an
+   * empty box and actively wrong on a prefilled one: the reply box opens holding
+   * `@backend_khoi_nguyen ` and the reader types their sentence IN FRONT of the tag.
+   *
+   * ON `onFocus` RATHER THAN A REF, because `Textarea` binds its own `ref` for auto-resize and
+   * does not forward one — adding a second ref path through a shared DS component to move a
+   * caret is a poor trade. `props` is spread onto the element, so a handler gets there.
+   *
+   * THE LATCH IS WHAT MAKES IT SAFE. Without it, every later focus would drag the caret to the
+   * end — including the focus a reader gets from clicking in the middle of their own sentence to
+   * fix a typo, which is the one place a caret must not move. It fires for the opening focus and
+   * never again.
+   *
+   * Gated on `autoFocus && initialValue` so a box the user chose to click into is untouched.
+   */
+  const caretPlaced = useRef(false);
+
+  const placeCaretAtEnd = (event: React.FocusEvent<HTMLTextAreaElement>) => {
+    if (caretPlaced.current || !autoFocus || !initialValue) return;
+    caretPlaced.current = true;
+    const end = event.currentTarget.value.length;
+    event.currentTarget.setSelectionRange(end, end);
+  };
+
   // Mirrors the server rule rather than inventing one: blank (whitespace-only) is rejected
   // with 400 "Comment content must not be blank", so the button is the same gate.
   const canSubmit = value.trim().length > 0 && !pending;
@@ -73,6 +101,7 @@ export function CommentComposer({
         placeholder={placeholder ?? t('post.commentPlaceholder')}
         rows={2}
         autoFocus={autoFocus}
+        onFocus={placeCaretAtEnd}
         onKeyDown={(event) => {
           // Ctrl/Cmd+Enter submits; plain Enter inserts a newline. Comments here are code
           // talk, so multi-line is the common case and Enter-to-send would truncate people

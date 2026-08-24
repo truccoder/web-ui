@@ -45,7 +45,16 @@ export { BookBody, type BookBodyProps, type BookBodySummary } from './book-body'
 export { EventBody, type EventBodyProps } from './event-body';
 
 // Reaction row (P2.4'c-2) — fills `PostCard`'s `actions` slot.
-export { ReactionBar, type ReactionBarProps } from './reaction-bar';
+export {
+  ReactionBar,
+  type ReactionBarProps,
+  // The acting row's glyph-button shape. Exported because the comment button that stands beside
+  // the reaction trigger is built by the caller that owns the post — see the constant's own note.
+  ACTION_GLYPH_BUTTON,
+  ACTION_GLYPH,
+  ACTION_GROUP,
+  ACTION_COUNT,
+} from './reaction-bar';
 
 // Comment thread (P2.4'c-3) — also fills `PostCard`'s `actions` slot.
 export { CommentThread, type CommentThreadProps } from './comment-thread';

@@ -24,11 +24,27 @@ import { CommentItem } from './comment-item';
 /**
  * The comment thread for one post — fills `PostCard`'s `actions` slot.
  *
- * TWO LEVELS, AND THE UI ADMITS IT. `CommentService.validateParentComment` rejects a reply
- * whose parent is itself a reply, so "Reply" is offered on top-level comments only. The
- * alternative — offering it everywhere and silently re-pointing the parent at the thread
- * root — would put the new reply somewhere other than under the comment the user answered,
- * which is worse than not offering it.
+ * TWO LEVELS, AND REPLYING TO A REPLY NOW WORKS — FLAT, WITH A TAG.
+ *
+ * The backend has not changed: `CommentService.validateParentComment` still rejects a reply whose
+ * parent is itself a reply, so this thread is two levels deep and cannot be three. What changed is
+ * the answer to "then what happens when someone wants to answer a reply".
+ *
+ * THE NOTE THAT STOOD HERE REFUSED TO DO IT, and the refusal was reasoned: offering reply
+ * everywhere and "silently re-pointing the parent at the thread root would put the new reply
+ * somewhere other than under the comment the user answered, which is worse than not offering it".
+ * The word carrying that argument is **silently**. Facebook and TikTok flatten exactly the same
+ * way and it does not read as misplaced, because the reply opens with the handle of the person
+ * being answered — the tag replaces the position as the thing that says who this is for.
+ *
+ * SO: pressing reply on a second-level comment opens the same box, pointed at the same root, with
+ * `@their_handle ` already in it. The reply lands at the end of the same column, in the order it
+ * was written, which is what a reader scanning a conversation actually wants — and unlike a third
+ * level, it is a shape the backend accepts.
+ *
+ * WHAT MAKES THE TAG REAL RATHER THAN DECORATION is that `CommentItem` renders `@handle` as a
+ * link to that profile — see `withMentions` there. What is NOT real: nothing is stored as a
+ * mention and nobody is notified. See B20 in `docs/backend-plan.md`.
  *
  * NOTHING IS SPLICED INTO THE CACHED LIST. Every mutation returns void, and deleting a root
  * takes its replies with it via a Postgres cascade that is invisible in the Java. The hooks
@@ -100,7 +116,19 @@ export function CommentThread({
   const t = useT();
   const profile = useMyProfile();
 
-  const [replyingTo, setReplyingTo] = useState<number | null>(null);
+  /**
+   * Which reply box is open, and who it is answering.
+   *
+   * `rootId` IS THE PARENT THAT WILL BE SENT — always a top-level comment, never a reply, because
+   * that is the only shape `validateParentComment` accepts. `mention` is the handle of the person
+   * whose comment was pressed, which is `undefined` when that was the root itself: answering the
+   * comment your reply sits directly under does not need a tag to say so.
+   *
+   * ONE OBJECT RATHER THAN TWO STATES so the pair can never disagree — a stale `mention` left
+   * over from a previous target would tag the wrong person, and that is a mistake the reader
+   * would have to spot and delete by hand.
+   */
+  const [replyingTo, setReplyingTo] = useState<{ rootId: number; mention?: string } | null>(null);
 
   const comments = useComments(postId);
   const notify = { onSuccess: () => onChanged?.() };
@@ -231,7 +259,8 @@ export function CommentThread({
                 eliteScore={reputations.get(root.authorId)?.eliteScore}
                 levelName={reputations.get(root.authorId)?.levelName}
                 onReact={reactHandler}
-                onReply={(parentId) => setReplyingTo(parentId)}
+                // No `mention`: this box already sits under the comment it answers.
+                onReply={() => setReplyingTo({ rootId: root.id })}
                 onAcceptAnswer={acceptHandler}
                 isAcceptedAnswer={acceptedId === root.id}
                 onUnacceptAnswer={unacceptHandler}
@@ -265,6 +294,22 @@ export function CommentThread({
                         eliteScore={reputations.get(reply.authorId)?.eliteScore}
                         levelName={reputations.get(reply.authorId)?.levelName}
                         onReact={reactHandler}
+                        /**
+                         * THE PARENT IS THE ROOT, NOT THIS ROW — a reply cannot parent a reply.
+                         * The handle is what recovers the information that flattening loses.
+                         *
+                         * WITHOUT `authorUsername` THERE IS NO TAG AND THE REPLY IS STILL SENT.
+                         * `CommentResponseDto.authorUsername` arrived with B13 and every seeded
+                         * row carries one, but the field is optional on the wire, so this degrades
+                         * to an untagged flat reply rather than to a disabled button. A reply the
+                         * reader can send and cannot address beats a button that does nothing.
+                         */
+                        onReply={() =>
+                          setReplyingTo({
+                            rootId: root.id,
+                            mention: reply.authorUsername ?? undefined,
+                          })
+                        }
                         onAcceptAnswer={acceptHandler}
                         isAcceptedAnswer={acceptedId === reply.id}
                         onUnacceptAnswer={unacceptHandler}
@@ -280,15 +325,38 @@ export function CommentThread({
                 </ul>
               )}
 
-              {replyingTo === root.id && (
+              {replyingTo?.rootId === root.id && (
                 <CommentComposer
+                  /**
+                   * `key` REMOUNTS THE BOX WHEN THE TARGET CHANGES, and without it this feature
+                   * would look broken in the most ordinary case. `initialValue` seeds the
+                   * composer's state ONCE at mount, by design (see its own note) — so pressing
+                   * reply on one person and then on another, without closing the box in between,
+                   * would leave the first person's handle in it. The box is one element in the
+                   * tree either way; only its identity changes.
+                   */
+                  key={replyingTo.mention ?? 'root'}
                   // The same 20 the reply list uses: the box you type a reply into belongs to the
                   // column the replies live in, not to the root comment's.
                   className="pl-5"
+                  /**
+                   * THE TAG, WITH ITS TRAILING SPACE. The space is not cosmetic — the caret lands
+                   * after it (`CommentComposer` places it at the end), so the reader types their
+                   * sentence rather than a word welded onto a handle. It survives `content.trim()`
+                   * on submit because it is interior text by then.
+                   *
+                   * IT IS EDITABLE, AND THAT IS THE POINT of putting it in the textarea instead of
+                   * on a chip above it: answering two people at once, or deciding halfway through
+                   * that the tag is noise, are both things a reader can just do.
+                   */
+                  initialValue={replyingTo.mention ? `@${replyingTo.mention} ` : undefined}
                   placeholder={t('post.comments.replyPlaceholder')}
                   submitLabel={t('post.comments.reply')}
                   onCancel={() => setReplyingTo(null)}
                   onSubmit={(content) => {
+                    // ALWAYS `root.id`. A second-level reply is flattened onto the same parent —
+                    // the backend rejects anything else — and the handle inside `content` is what
+                    // carries who it answers. See the module note.
                     create.mutate({ postId, payload: { content, parentId: root.id } });
                     setReplyingTo(null);
                   }}

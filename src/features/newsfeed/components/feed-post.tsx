@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { MessageCircle } from 'lucide-react';
 import {
   ArticleBody,
   BookBody,
@@ -18,13 +19,17 @@ import {
   QnaBody,
   QuizTaker,
   ReactionBar,
+  ACTION_COUNT,
+  ACTION_GLYPH,
+  ACTION_GLYPH_BUTTON,
+  ACTION_GROUP,
   type PostEditorState,
 } from '@/features/posts';
 import { BookActions } from '@/features/bookstore';
 import { ReportPostDialog } from '@/features/moderation';
 import { ExplainPostAction } from '@/features/knowledge';
 import { useAuthGate, useMyProfile } from '@/features/security';
-import { Button } from '@/shared/components';
+import { cn } from '@/shared/lib/cn';
 import { useT } from '@/core/i18n';
 import type { FeedPost as FeedPostData } from '../types/feed';
 
@@ -119,8 +124,13 @@ function toEditorState(post: FeedPostData): PostEditorState {
     // wants (`string[]` / `number[]`), so the workaround became the bug: editing the text of
     // a post with images silently destroyed the images.
     //
-    // Not theoretical any more — the seeded feed serves posts with images, so this was one
-    // `Sửa` away on any of them.
+    // THE LINE THAT USED TO STAND HERE — "not theoretical any more, the seeded feed serves posts
+    // with images" — DOES NOT HOLD ON TODAY'S SEED. Measured 24/08 against the running backend
+    // over `GET /users/{id}/posts` for ids 9000–9030: 80 posts, 29 authors, and not one of them
+    // carries `images`, `articleDetails.coverImage` or `linkDetails.thumbnailUrl` (see S10 in
+    // `docs/backend-plan.md`). The mapping below is right regardless — it is the round-trip the
+    // update DTO requires, and the day a post does have images this is what stops an edit from
+    // destroying them. What changed is that nobody can currently SEE that it works.
     // `?? undefined` for the same reason the other keys have it: the payload types these
     // nullable, and the request type does not take null. The two mean the same thing to the
     // server here — an absent key and an explicit null both end up null — so collapsing them
@@ -237,6 +247,27 @@ export function FeedPost({
   const [commentsOpen, setCommentsOpen] = useState(defaultCommentsOpen && !isGuest);
   const [editing, setEditing] = useState(false);
   const [reporting, setReporting] = useState(false);
+
+  /**
+   * Where the comment button sends you.
+   *
+   * IT IS A REF RATHER THAN AN ANCHOR because the discussion block has three shapes on this card
+   * — the full thread on a permalink, the two-comment preview on a feed card, and the thread that
+   * mounts on demand under an empty post — and an `id` would have to be unique per post in a list
+   * of twenty. The ref points at the wrapper that holds whichever one rendered.
+   *
+   * SCROLLING IN THE HANDLER, NOT IN AN EFFECT ON `commentsOpen`. The empty-post case mounts its
+   * thread in the same commit, and the wrapper this scrolls to already exists (empty, height 0)
+   * before that — so the smooth scroll starts toward the right place and the thread fills it on
+   * the way. An effect keyed on the flag would also fire once and never again, so a second press
+   * would do nothing.
+   */
+  const commentsRef = useRef<HTMLDivElement>(null);
+
+  const openComments = () => {
+    setCommentsOpen(true);
+    commentsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  };
 
   const isAuthor = profile?.id === post.authorId;
 
@@ -378,25 +409,77 @@ export function FeedPost({
           <ReactionBar
             postId={post.postId}
             count={post.likeCount}
-            commentCount={post.commentCount}
             onChanged={onChanged}
             /**
              * PASSED IN RATHER THAN RENDERED BESIDE — see `ReactionBar`'s `actions` note. It used
              * to sit next to the bar in a row of this file's own, which capped the bar's width and
              * left the counts stranded mid-card instead of at its right edge.
              *
-             * THE BUTTON IS THE GUEST'S PATH AND THE EMPTY-THREAD PATH ONLY. A signed-out reader
-             * gets it because `GET /posts/{id}/comments` is not one of the anonymous endpoints, so
-             * a preview would render a skeleton that never resolves; a post with no comments gets
-             * it because there is nothing to preview and the composer still has to be reachable.
-             * Everyone else gets `CommentPreview` below, which carries its own way in.
+             * IT RENDERS ON EVERY POST NOW, AND IT USED TO RENDER ON ALMOST NONE. The note here
+             * said it was "the guest's path and the empty-thread path only" — a signed-out reader
+             * got it because `GET /posts/{id}/comments` is not an anonymous endpoint and a preview
+             * would spin forever; an empty post got it because there was nothing to preview and
+             * the composer still had to be reachable. Everyone else got nothing, which is how a
+             * post with six comments ended up showing a lone reaction glyph and an empty stretch
+             * of row beside it.
+             *
+             * BOTH OF THOSE CASES STILL HOLD; what changed is that they are no longer the only
+             * ones. `openComments` does the right thing in all three shapes — it opens the thread
+             * where one has to be mounted, and scrolls to the discussion where one is already on
+             * the page — so there is no state left in which this button is dead.
+             *
+             * A GLYPH, NOT A WORD, and the same glyph button the reaction trigger wears: see
+             * `ACTION_GLYPH_BUTTON`. The label survives as `sr-only`, so the accessible name is
+             * still `Xem bình luận` and `title` gives a mouse the same string.
              */
             actions={
-              (isGuest || (!post.commentCount && !defaultCommentsOpen)) && (
-                <Button size="sm" variant="ghost" onClick={guard(() => setCommentsOpen(true))}>
-                  {t('post.comments.show')}
-                </Button>
-              )
+              // THE COUNT LIVES HERE, NOT IN `ReactionBar`. It used to be a `commentCount` prop on
+              // that component, which printed both totals together at the row's right edge. Now
+              // that each number stands beside the glyph it counts, the comment total belongs to
+              // whoever builds the comment glyph — and that is this file, which already holds the
+              // number and is the only place that knows what pressing it does.
+              <div className={ACTION_GROUP}>
+                <button
+                  type="button"
+                  // `() => guard(openComments)()` RATHER THAN `guard(openComments)`, and it is not
+                  // a style choice: `openComments` reads `commentsRef.current`, and building the
+                  // guarded handler during render trips `react-hooks/refs` — "passing a ref to a
+                  // function may read its value during render". Composing the two inside the
+                  // handler keeps every ref access where it belongs, in the event.
+                  onClick={() => guard(openComments)()}
+                  title={t('post.comments.show')}
+                  className={cn(
+                    ACTION_GLYPH_BUTTON,
+                    'text-nx-text-secondary hover:text-nx-text-primary'
+                  )}
+                >
+                  <MessageCircle aria-hidden className={ACTION_GLYPH} />
+                  <span className="sr-only">{t('post.comments.show')}</span>
+                </button>
+
+                {/* A SECOND CONTROL RATHER THAN TEXT INSIDE THE FIRST, to match the reaction pair
+                    beside it — where the glyph and the number genuinely do different things
+                    (toggle vs. show who reacted) and cannot be one button. Here they lead to the
+                    same place, so the number is simply a second way in; making it a plain span
+                    would have been a number you can see next to a button you can press, which is
+                    the one arrangement that invites a click that does nothing.
+
+                    Hidden at zero, like every other count in this product. */}
+                {!!post.commentCount && (
+                  <button
+                    type="button"
+                    onClick={() => guard(openComments)()}
+                    aria-label={t('post.commentCount', { count: post.commentCount })}
+                    className={cn(
+                      ACTION_COUNT,
+                      'hover:text-nx-text-primary hover:underline',
+                      'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring'
+                    )}
+                  >
+                    {post.commentCount}
+                  </button>
+                )}
+              </div>
             }
           />
 
@@ -415,27 +498,39 @@ export function FeedPost({
            * the card by an unbounded thread. See `CommentPreview`, and note there that the
            * "most-liked" ordering has no backing data on the comment DTO.
            */}
-          {!isGuest &&
-            (defaultCommentsOpen ? (
-              <CommentThread
-                postId={post.postId}
-                onChanged={onChanged}
-                canAcceptAnswer={canAcceptAnswer}
-                acceptedAnswerId={post.qnaDetails?.acceptedAnswerId}
-              />
-            ) : (
-              <CommentPreview postId={post.postId} commentCount={post.commentCount} />
-            ))}
+          {/* ONE WRAPPER FOR ALL THREE SHAPES, so `commentsRef` has a single thing to point at
+              whichever one rendered. It repeats the action strip's own `gap` rather than adding a
+              rung: the two blocks inside are mutually exclusive in practice — the preview returns
+              null on a post with no comments, which is the only case the second one fires — so
+              this never stacks two of them.
 
-          {/* The empty-thread case: nothing to preview, so the button above is the only way to
-              reach the composer. Mounted only once it is pressed. */}
-          {commentsOpen && !defaultCommentsOpen && !post.commentCount && (
-            <CommentThread
-              postId={post.postId}
-              onChanged={onChanged}
-              canAcceptAnswer={canAcceptAnswer}
-              acceptedAnswerId={post.qnaDetails?.acceptedAnswerId}
-            />
+              GATED ON `!isGuest` SO IT IS NOT AN EMPTY FLEX CHILD. Both blocks are already
+              signed-in-only, and an empty div in a `gap` column still pays the gap: a guest would
+              get 8px of dead space under the acting row. */}
+          {!isGuest && (
+            <div ref={commentsRef} className="flex flex-col gap-[var(--nx-space-tight)]">
+              {defaultCommentsOpen ? (
+                <CommentThread
+                  postId={post.postId}
+                  onChanged={onChanged}
+                  canAcceptAnswer={canAcceptAnswer}
+                  acceptedAnswerId={post.qnaDetails?.acceptedAnswerId}
+                />
+              ) : (
+                <CommentPreview postId={post.postId} commentCount={post.commentCount} />
+              )}
+
+              {/* The empty-thread case: nothing to preview, so the button above is the only way to
+                  reach the composer. Mounted only once it is pressed. */}
+              {commentsOpen && !defaultCommentsOpen && !post.commentCount && (
+                <CommentThread
+                  postId={post.postId}
+                  onChanged={onChanged}
+                  canAcceptAnswer={canAcceptAnswer}
+                  acceptedAnswerId={post.qnaDetails?.acceptedAnswerId}
+                />
+              )}
+            </div>
           )}
         </>
       }

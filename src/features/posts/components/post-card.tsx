@@ -369,11 +369,11 @@ export function PostCard({
               `16px 20px` default. */}
           <div className="-mx-5 border-t border-nx-border-subtle" aria-hidden />
           <div className="flex flex-col gap-[var(--nx-space-tight)] pt-2">
-            {/* ONLY WHEN THERE IS NO ACTION STRIP. Where one exists — the feed, a permalink —
-                `ReactionBar` prints both counts on one row at its right edge, which is what the
-                owner asked for; printing this line too would put "5 bình luận" twice on one card.
-                Search results and other read-only surfaces render no strip, and there this is the
-                only place the count appears at all. */}
+            {/* ONLY WHEN THERE IS NO ACTION STRIP. Where one exists — the feed, a permalink — the
+                strip carries each total beside the glyph it counts, so printing this line too
+                would put the comment count on the card twice. Search results and other read-only
+                surfaces render no strip, and there this is the only place it appears at all, in
+                words rather than as a bare number because it has no glyph to lean on. */}
             {!!commentCount && !actions && (
               <DeveloperMeta>{t('post.commentCount', { count: commentCount })}</DeveloperMeta>
             )}

@@ -1,8 +1,10 @@
 'use client';
 
+import * as React from 'react';
 import { useState } from 'react';
+import Link from 'next/link';
 import { ThumbsUp } from 'lucide-react';
-import { Badge, Button, DeveloperIdentity, DeveloperMeta } from '@/shared/components';
+import { Badge, Button, DeveloperIdentity } from '@/shared/components';
 import { RepScore } from '@/features/reputation';
 import { useT } from '@/core/i18n';
 import { cn } from '@/shared/lib/cn';
@@ -69,6 +71,57 @@ const GUTTER = 'ps-[42px]';
  */
 const GUTTER_CONTROLS = 'ms-8';
 
+/**
+ * `@handle` inside a comment body, so a tag reads as a tag rather than as punctuation.
+ *
+ * WHY THIS EXISTS AT ALL: replying to a reply now prefills the box with the handle of the person
+ * being answered, because the backend allows only two levels and the reply therefore lands beside
+ * the comment it answers rather than under it (see `CommentThread`). The handle IS the thread —
+ * it is the only thing saying who a flat reply is for — so leaving it as grey prose would be
+ * shipping the mechanism without the signal.
+ *
+ * THE PATTERN IS DELIBERATELY NARROW, and each restriction pays for itself:
+ *  - `(^|\s)` — an `@` must open the string or follow whitespace, so `someone@example.com` does
+ *    not turn its domain into a profile link.
+ *  - the handle may contain dots but may not END on one, so `@minh.tran.` links `@minh.tran` and
+ *    leaves the full stop in the sentence.
+ *  - no length cap beyond a first character, because usernames are the backend's business and a
+ *    guess here would silently stop linking the day someone registers a long one.
+ *
+ * AN UNKNOWN HANDLE IS NOT A BROKEN LINK. Nothing validates this text — it is prose, and a reader
+ * can type `@nobody` — so the destination may not exist. `/u/[username]` answers a bad handle with
+ * its own empty state (`isError || !profile`), which is a truthful "no such person" rather than a
+ * crash, and is the same thing that happens when someone edits the URL by hand.
+ */
+const MENTION = /(^|\s)@([A-Za-z0-9_](?:[A-Za-z0-9_.]*[A-Za-z0-9_])?)/g;
+
+function withMentions(content: string): React.ReactNode {
+  const nodes: React.ReactNode[] = [];
+  let cursor = 0;
+
+  for (const match of content.matchAll(MENTION)) {
+    // `match.index` is the start of the LEADING WHITESPACE, not of the `@` — group 1 is part of
+    // the match and has to be re-emitted as text or the spacing collapses.
+    const start = match.index + match[1].length;
+    if (start > cursor) nodes.push(content.slice(cursor, start));
+
+    const handle = match[2];
+    nodes.push(
+      <Link
+        key={start}
+        href={`/u/${encodeURIComponent(handle)}`}
+        className="font-medium text-nx-text-accent hover:underline"
+      >
+        @{handle}
+      </Link>
+    );
+    cursor = start + handle.length + 1;
+  }
+
+  if (cursor < content.length) nodes.push(content.slice(cursor));
+  return nodes;
+}
+
 export interface CommentItemProps {
   comment: PostComment;
   /** Replies attached to this comment. Only top-level comments can have them. */
@@ -94,10 +147,19 @@ export interface CommentItemProps {
    */
   levelName?: string;
   /**
-   * Reply target. Only passed for top-level comments: the backend rejects a reply whose
-   * parent is itself a reply, so there is nothing to attach a second level to.
+   * Opens the reply box for this comment. Offered on BOTH levels now.
+   *
+   * IT TAKES NO ARGUMENT, AND THAT IS THE CHANGE. It used to be `(parentId: number)` and to be
+   * passed only to top-level comments, because `CommentService.validateParentComment` rejects a
+   * reply whose parent is itself a reply — so a reply had no id it could hand upward that the
+   * backend would accept.
+   *
+   * THE BACKEND LIMIT HAS NOT MOVED; WHAT MOVED IS WHO RESOLVES IT. `CommentThread` renders this
+   * row already knowing which root it belongs to, so it binds the parent — always the root — and
+   * the person being answered at the render site. This row's job is only "the reader pressed
+   * reply here", which is the one fact it actually holds.
    */
-  onReply?: (parentId: number) => void;
+  onReply?: () => void;
   onEdit: (commentId: number, content: string) => void;
   onDelete: (commentId: number) => void;
   /**
@@ -243,7 +305,32 @@ export function CommentItem({
             />
           ) : undefined
         }
-        time={comment.createdAt ? relativeTime(comment.createdAt) : undefined}
+        /**
+         * `đã sửa` RIDES ON THE TIMESTAMP, and it used to stand in the control strip below.
+         *
+         * WHAT WAS WRONG WITH IT THERE is what the owner saw: the strip is a row of verbs — react,
+         * reply, edit, delete — and a past-tense report sat first in that line, in the same size
+         * and the same rhythm as the things you can press. It read as a fifth control that had
+         * somehow already happened, and it pushed the actual controls one word to the right.
+         *
+         * WHY THE TIMESTAMP IS THE RIGHT PLACE. `đã sửa` is not an action, it is a qualification
+         * of WHEN — "this text is from then, but not the version from then". The post above does
+         * exactly this: B4 in `docs/backend-plan.md` asks for `updatedAt` on the feed DTO so the
+         * card can mark an edited post "gắn vào timestamp chứ không phải một badge riêng". A
+         * comment already has both timestamps, so it can do today what the post is waiting on.
+         *
+         * `DeveloperMeta` IS DROPPED WITH THE MOVE. `time` is already the mono micro line the DS
+         * reserves for machine facts, so wrapping the word in a second such component inside it
+         * would double the treatment; the middot is plain text for the same reason.
+         */
+        time={
+          comment.createdAt ? (
+            <>
+              {relativeTime(comment.createdAt)}
+              {edited && ` · ${t('post.comments.edited')}`}
+            </>
+          ) : undefined
+        }
       />
 
       {editing ? (
@@ -273,7 +360,7 @@ export function CommentItem({
               'whitespace-pre-wrap break-words text-nx-body text-nx-text-primary'
             )}
           >
-            {comment.content}
+            {withMentions(comment.content)}
           </p>
 
           {/**
@@ -298,8 +385,6 @@ export function CommentItem({
                 {t('post.qna.acceptedAnswer')}
               </Badge>
             )}
-
-            {edited && <DeveloperMeta>{t('post.comments.edited')}</DeveloperMeta>}
 
             {/* The thread already withholds `onAcceptAnswer` once any answer is accepted
                 (accepting is once-only server-side), so this only guards the rare case of a
@@ -333,38 +418,62 @@ export function CommentItem({
              * two words for one enum value — a post's LIKE read `Hữu ích` while the comment
              * directly beneath it read `Thích`, on the same screen, for the same row of the same
              * table. One value, one name; the old pair of keys is deleted rather than left to
-             * drift further apart.
+             * drift further apart. The word is `sr-only` now — see below — but it is still the
+             * name this control answers to, so the two must not drift apart again.
+             *
+             * GLYPH AND COUNT, NO WORD, at the owner's call and on the Facebook model: the icon
+             * already says which reaction it is, and the word beside it was the widest thing in a
+             * strip of four controls. `Trả lời`, `Sửa` and `Xoá` keep theirs — they have no glyph
+             * that could stand in for a verb, and a row of four bare icons would be a puzzle.
              *
              * THE COUNT LIVES INSIDE THE BUTTON because a comment has no acting row to pin it to
              * the way `ReactionBar` pins a post's totals to the card's right edge, and a bare
              * number floating beside a ghost button reads as unrelated to it. Hidden at zero,
              * like every other count in this product.
              *
-             * THE ACTIVE STATE IS A SOFT CHIP, NOT ONLY A COLOUR (constitution §12): a background
-             * appears, the glyph and the word change to whichever reaction was picked, and
-             * `aria-pressed` carries the same fact to anything that cannot see either. No border,
-             * unlike `ReactionBar`'s trigger — that one anchors a card's acting row and needs the
-             * weight; this one sits in a strip of four ghost buttons and would shout.
+             * THE ACTIVE STATE IS A FILLED GLYPH, NOT ONLY A COLOUR (constitution §12): the icon
+             * goes from hollow to filled, the glyph and the word change to whichever reaction was
+             * picked, and `aria-pressed` carries the same fact to anything that cannot see either.
+             * `ReactionBar`'s header owns the reasoning, including why the fill is a 20% tint
+             * rather than a solid — lucide has no filled variants and three of the seven glyphs
+             * are faces that a real solid would flatten into discs.
+             *
+             * IT USED TO BE A SOFT CHIP — `bg-nx-accent-soft` — AND THE BOX IS WHAT WENT WRONG,
+             * for the same geometry reason that file records at length. `GUTTER_CONTROLS` is
+             * `ms-8` (32) rather than the rail's 42 precisely so a ghost `Button`'s own `px-2.5`
+             * is absorbed and the LABEL lands on the comment's text column. That is right while
+             * the button is a transparent hit-area and wrong the instant it paints: the chip's
+             * left edge sat 10px outside the paragraph directly above it, on a row that is
+             * otherwise the tidiest left edge in the thread. A fill inside the glyph has no edge
+             * to misalign, so the strip stays flush whatever state it is in.
              */}
             <Button
               size="sm"
               variant="ghost"
-              icon={<ReactionIcon />}
+              icon={<ReactionIcon className={cn(myReaction != null && 'fill-nx-text-accent/20')} />}
               aria-pressed={myReaction != null}
               // Undefined `onReact` means a surface that cannot write — the control greys out
               // rather than vanishing, so the count stays readable.
               disabled={!onReact}
               onClick={() => onReact?.(comment.id, myReaction != null ? null : 'LIKE')}
-              className={cn(myReaction != null && 'bg-nx-accent-soft text-nx-text-accent')}
+              // A NATIVE TOOLTIP, UNLIKE THE POST'S TRIGGER, and the difference is the tray. That
+              // one opens a row of seven glyphs on hover and a `title` would fade in over them;
+              // this one opens nothing, so the hover is free to say what the icon means.
+              title={t(reactionLabelKey)}
+              className={cn(myReaction != null && 'text-nx-text-accent')}
             >
-              {t(reactionLabelKey)}
+              {/* `sr-only`, NOT `aria-label`: a label would replace the button's content, and the
+                  count is part of what this control says. Keeping the word as hidden text leaves
+                  the accessible name reading `Hữu ích 5` — the reaction AND its total — which is
+                  exactly what a sighted reader gets from the glyph and the number. */}
+              <span className="sr-only">{t(reactionLabelKey)}</span>
               {comment.likeCount > 0 && (
                 <span className="font-mono tabular-nums">{comment.likeCount}</span>
               )}
             </Button>
 
             {onReply && (
-              <Button size="sm" variant="ghost" onClick={() => onReply(comment.id)}>
+              <Button size="sm" variant="ghost" onClick={onReply}>
                 {t('post.comments.reply')}
               </Button>
             )}

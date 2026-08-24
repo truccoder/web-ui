@@ -32,14 +32,39 @@ import { ReactorDialog } from './reactor-dialog';
  * MONOCHROME ICONS, NOT EMOJI. Reaction sets are usually colour emoji; nothing else in this
  * product renders one, and the palette is deliberately ink + one blue + amber-for-reputation
  * (constitution §1). Lucide glyphs at currentColor keep the row on-palette, and the active
- * state is carried by a border plus `aria-pressed` rather than colour alone (§12).
+ * state is carried by the glyph FILLING plus `aria-pressed` rather than colour alone (§12).
  *
- * THE COUNT DOES NOT MOVE WHEN YOU CLICK, and that is a backend fact, not a bug to fix here:
- * `PostReactionController` has no endpoint for a post's totals — it only answers "what did I
- * pick". `count` comes from the feed/search payload the caller already holds, so it only
- * changes when that payload is refetched. `onChanged` exists for exactly that: the composing
- * screen decides whether a reaction is worth re-fetching the feed for. Do not fake the
- * increment locally — the highlight is honest, an invented total is not.
+ * THE PICKED STATE IS A FILLED GLYPH, AND THIS FILE HAS NOW TRIED TWO OTHER THINGS. It shipped
+ * `border-nx-accent bg-nx-accent-soft` — a bordered, filled box around the word — and the owner's
+ * objection to that is a geometry fact, not a taste one: the row carries a negative margin so the
+ * *ink* of the control lands on the post's text column (see the note on it), which means the
+ * button's BOX starts 10px to the LEFT of it. While the box was invisible that was the correct
+ * trade. The moment it gained a border and a fill it became the widest visible edge in the card
+ * and hung 10px outside the column every other element — byline, prose, hashtags — lines up on.
+ * The replacement was an accent underline on the label; the owner did not want a rule under the
+ * word, which is fair — it borrows a link's shape for something that is not one.
+ *
+ * SO THE STATE MOVED INTO THE GLYPH, where it costs no box and no layout at all. A hollow icon
+ * becomes a filled one, which is the oldest signal in this control's vocabulary and the one every
+ * reader already knows from a heart.
+ *
+ * IT IS A 20% TINT, NOT A SOLID, AND THAT IS A LUCIDE CONSTRAINT WORTH KNOWING BEFORE ANYONE
+ * "FIXES" IT. Lucide ships no filled variants — every glyph is one stroked path — so a true
+ * `fill-current` solid works on `ThumbsUp` and `Heart` and DESTROYS the three faces: `Laugh`,
+ * `Frown` and `Angry` are a circle whose eyes and mouth are strokes in the same colour, so filling
+ * the circle with that colour leaves a featureless disc. A tint at the ink's own hue fills every
+ * one of the seven and keeps the features legible. If a filled icon set is ever added to the
+ * project, this is the line that becomes a solid.
+ *
+ * THE COUNT DOES NOT MOVE WHEN YOU CLICK, and the reason has changed since this note was
+ * written. It used to be that `PostReactionController` had no endpoint for a post's totals at
+ * all; `/reactions/summary` exists now and `reactionsApi.getSummary` wraps it. What has not
+ * changed is that the summary is PER POST, while `count` arrives embedded in the feed/search
+ * payload the caller already holds — so buying a live number costs one extra request per card,
+ * which is the trade B19 in `docs/backend-plan.md` asks the backend to remove by putting the
+ * breakdown in the list response. Until then `onChanged` is the honest lever: the composing
+ * screen decides whether a reaction is worth re-fetching the feed for. Do not fake the increment
+ * locally — the highlight is honest, an invented total is not.
  */
 export interface ReactionBarProps {
   postId: number;
@@ -49,23 +74,19 @@ export interface ReactionBarProps {
    */
   count?: number;
   /**
-   * Comment total from the same payload, printed beside the reaction total.
+   * Controls that belong beside the reaction trigger — the comment glyph and its count, today.
    *
-   * IT IS HERE RATHER THAN ON ITS OWN LINE because the two numbers answer the same question —
-   * how much has happened to this post — and stacking them put one at the card's left edge and
-   * the other at its right, two rows apart. Undefined or zero prints nothing, so a post with no
-   * discussion does not carry a "0 bình luận".
-   */
-  commentCount?: number;
-  /**
-   * Controls that belong beside the reaction trigger — the comment button, today.
+   * `commentCount` USED TO BE A PROP HERE AND IS NOT ANY MORE. This component printed the two
+   * totals together at the row's right edge, so it needed both numbers even though it owned only
+   * one of them. Now that each number sits beside the glyph it counts, the comment total belongs
+   * to whoever builds the comment glyph — the same caller, one node, no prop that this component
+   * takes and never acts on.
    *
-   * A SLOT RATHER THAN A SIBLING, AND THE REASON IS THE COUNTS. They are pinned right with
-   * `ml-auto`, and `ml-auto` reaches the right edge of whatever box it is inside. While the
-   * comment button sat next to this component in the CALLER's row, this component was only as
-   * wide as its own content, so "1 bình luận · 0 cảm xúc" stopped in the middle of the card with
-   * the button after it. Taking the full row and accepting the neighbour here is what lets the
-   * numbers reach the card's edge.
+   * A SLOT RATHER THAN A SIBLING. The reason used to be `ml-auto`: the counts were pinned to the
+   * right edge of whatever box they were in, so this component had to BE the full row or the
+   * numbers stopped mid-card. That is gone with the pinning, and the slot survives on the weaker
+   * but still sufficient reason — the two controls are one strip and one flex context, and the
+   * caller cannot produce that from outside without re-declaring the row's gap and its margin.
    */
   actions?: React.ReactNode;
   /** Fired after a successful add/change/remove, so the caller can refresh its own payload. */
@@ -118,14 +139,68 @@ export const REACTIONS = [
  */
 export const REACTION_ORDER = REACTIONS.map((reaction) => reaction.type);
 
-export function ReactionBar({
-  postId,
-  count,
-  commentCount,
-  actions,
-  onChanged,
-  className,
-}: ReactionBarProps) {
+/**
+ * The shape every glyph control in a post's acting row wears: a 32px square, a 20px glyph, a
+ * hover box and nothing at rest.
+ *
+ * EXPORTED BECAUSE THE ROW HAS TWO OF THEM AND THEY LIVE IN DIFFERENT FILES. The reaction
+ * trigger is below; the comment button is passed in through `actions` by whoever owns the post
+ * (today `FeedPost`), because only that caller knows where its discussion is and how to open it.
+ * Two icon buttons sitting 4px apart that disagree by a pixel of padding or a shade of grey read
+ * as a bug, and a copied class string is exactly how that happens — so there is one string.
+ *
+ * WHAT IT DELIBERATELY LEAVES OUT is colour-when-active: only the reaction has an active state,
+ * and it carries it on the GLYPH (a fill) rather than on the box. See the module header.
+ *
+ * `size-8` WITH A `size-5` GLYPH, UP FROM 28/16 — the owner asked for a bigger icon once the
+ * labels came off, and the two numbers have to move together. A 16px glyph left 6px of air on
+ * every side of a 28px box, which reads as a small mark floating in a large hit area; 20-in-32
+ * keeps the same 6px inset (so the row's negative margin does not move) while giving the glyph
+ * a quarter more area. It is also the size the DS's own `md` controls use for their icons.
+ */
+export const ACTION_GLYPH_BUTTON = cn(
+  'grid size-8 place-items-center rounded-nx-sm',
+  'transition-colors duration-[var(--nx-duration-fast)] ease-nx-out',
+  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring',
+  'hover:bg-nx-surface-hover',
+  'disabled:pointer-events-none disabled:opacity-50'
+);
+
+/** The glyph inside `ACTION_GLYPH_BUTTON`. Separate because callers style their own icon. */
+export const ACTION_GLYPH = 'size-5 shrink-0';
+
+/**
+ * A glyph and the number it counts, held together.
+ *
+ * NO GAP AT ALL, AND THE NUMBER IS MEASURED RATHER THAN GUESSED. The glyph button is a 32px box
+ * around a 20px mark, so it already carries 6px of its own padding on the side the number sits —
+ * declaring a gap on top of that would be spending the space twice. Ink to ink inside a pair: 6.
+ *
+ * WHAT MAKES THE PAIRING READ is the ratio to the gap BETWEEN pairs, and the first version of
+ * this got it wrong: it left the row on `--nx-space-pair`, which is **4px**, not the 8 assumed —
+ * so a pair would have been 8 apart inside and 10 apart from the next pair, and the eye would
+ * have seen four evenly spaced things rather than two groups of two. The row moved to
+ * `--nx-space-tight` (8), which puts 8 + 6 = 14 between pairs against 6 inside one.
+ *
+ * The token names read backwards for this use and it is worth saying why they are still right:
+ * `pair` is 4 because it is meant for two glyphs that TOUCH, with no padded box between them.
+ * Here the boxes supply the pairing and the row supplies the separation.
+ */
+export const ACTION_GROUP = 'flex items-center';
+
+/**
+ * The number itself.
+ *
+ * `text-nx-body-sm` (13), UP FROM `text-nx-micro`. Micro is the DS's rung for a fact printed at
+ * the edge of a card, which is exactly where these numbers used to live. Beside a 20px glyph it
+ * reads as a footnote attached to a control rather than as part of it.
+ *
+ * `font-mono tabular-nums` is the house treatment for machine facts, and the fixed advance also
+ * stops the row twitching when a count crosses 9 → 10.
+ */
+export const ACTION_COUNT = 'font-mono text-nx-body-sm tabular-nums text-nx-text-muted';
+
+export function ReactionBar({ postId, count, actions, onChanged, className }: ReactionBarProps) {
   const t = useT();
 
   const [reactorsOpen, setReactorsOpen] = useState(false);
@@ -161,162 +236,192 @@ export function ReactionBar({
           do, then what has already been done — and pushing the counts to the far end is what makes
           the two halves legible as different kinds of thing rather than a run of six chips. */}
       {/**
-       * `-ml-2.5` CANCELS THE FIRST BUTTON'S OWN PADDING so the row starts on the card's text
-       * column. Every control on the left of this row is a padded box — the reaction trigger
-       * carries `px-2.5`, the comment button beside it a ghost `Button`'s own inset — so the
-       * *ink* of `Hữu ích` began 10px right of the author's name and the post's prose, and the
-       * whole acting row read as indented under the body it belongs to. The BOX was aligned; the
-       * thing a reader actually sees was not. Pulling the row back by exactly the trigger's
-       * padding puts the glyph's left edge on the same vertical as the paragraph above it.
+       * `-ml-1.5` CANCELS THE FIRST BUTTON'S OWN INSET so the row starts on the card's text
+       * column. Every control on the left of this row is a padded box, so the *ink* of the first
+       * one began several pixels right of the author's name and the post's prose, and the whole
+       * acting row read as indented under the body it belongs to. The BOX was aligned; the thing
+       * a reader actually sees was not. Pulling the row back by exactly that inset puts the
+       * glyph's left edge on the same vertical as the paragraph above it.
        *
-       * ONE SIDE ONLY. The counts on the right are bare text with no padding to cancel, so they
-       * already sit on the card's right column; a matching `-mr` would push them past it. The
-       * negative margin also stays on this row rather than on the flex column, so the error line
-       * below keeps the prose's alignment — it is a sentence, not a control.
+       * THE NUMBER IS 6, NOT 10, AND IT MOVED WITH THE LABEL. This was `-ml-2.5` while the
+       * trigger was a labelled `px-2.5` box. It is now a square `size-7` with a 16px glyph
+       * centred in it, so the inset before the ink is (28 − 16) / 2 = 6. Leaving it at 10 would
+       * have hung the row 4px PAST the column in the other direction — the same defect, mirrored.
+       *
+       * ONE SIDE ONLY, and there is nothing on the other side any more. The counts used to be
+       * pinned to the card's right edge with `ml-auto`, which is why a matching `-mr` would have
+       * been wrong; they now sit beside their own glyphs and the row simply ends where its
+       * controls do. The negative margin also stays on this row rather than on the flex column,
+       * so the error line below keeps the prose's alignment — it is a sentence, not a control.
        */}
-      <div className="-ml-2.5 flex flex-wrap items-center gap-[var(--nx-space-pair)]">
-        {/**
-         * THE TRIGGER SHOWS WHAT YOU PICKED, not a generic "Like". A single button that always
-         * reads `Hữu ích` would hide the one piece of state the seven-toggle row made obvious —
-         * which of them is yours — and a reader would have to open the tray to find out.
-         *
-         * CLICKING IT IS THE SHORTCUT, not a second menu: with nothing picked it sends `LIKE`,
-         * which is the DS's `Hữu ích` and the reaction this product is actually about; with
-         * something picked it removes that one. Everything else is one hover away.
-         */}
-        <ReactionTray
-          label={t('post.reaction.pick')}
-          trigger={
-            <button
-              type="button"
-              aria-pressed={current !== null}
-              onClick={() => pick(current ?? 'LIKE')}
-              /**
-               * TYPOGRAPHY IS COPIED FROM `Button size="sm" variant="ghost"` ON PURPOSE, because
-               * the thing standing next to this button in the same row IS one — the comment
-               * button the caller passes through `actions`. Two controls on one row that read as
-               * two different weights of text look like a mistake rather than a hierarchy, and
-               * that is exactly what shipped: this button was `text-nx-text-muted` at the default
-               * weight while `Bình luận` beside it was `text-nx-text-secondary font-medium`, so
-               * `Hữu ích` sat a shade lighter and visibly thinner than its neighbour.
-               *
-               * WHAT MATCHES NOW: `h-7 gap-1 px-2.5 text-nx-body-sm` (the DS's `sm` metrics, which
-               * this already had), plus `font-medium`, `rounded-nx-sm` and the ghost variant's
-               * `text-nx-text-secondary` → `hover:text-nx-text-primary` pair.
-               *
-               * WHY NOT JUST USE `Button`. The picked state needs a border (`border-nx-accent`)
-               * and ghost has none, so the box would grow 1px on selection unless a transparent
-               * border were forced back in through `className` — and the `-mt-1` optical lift
-               * below has to land on the SVG, while `Button`'s `icon` slot wraps it in a span. The
-               * component would be fought, not used. Keeping the classes here and naming the
-               * source is the honest version; if the DS ever grows a toggle variant, this is what
-               * it replaces.
-               */
-              className={cn(
-                'inline-flex h-7 items-center gap-1 rounded-nx-sm border px-2.5',
-                'text-nx-body-sm font-medium',
-                'transition-colors duration-[var(--nx-duration-fast)] ease-nx-out',
-                'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring',
-                current
-                  ? 'border-nx-accent bg-nx-accent-soft text-nx-text-accent'
-                  : 'border-transparent text-nx-text-secondary hover:bg-nx-surface-hover hover:text-nx-text-primary'
-              )}
-            >
-              {/**
-               * `-mt-1` PULLS THE GLYPH UP ONTO THE TEXT'S BASELINE, and the number is measured
-               * rather than eyeballed. `items-center` centres the icon's 16px BOX in the 28px
-               * button, which is geometrically correct and optically wrong: at 13px the label's
-               * ink runs from the cap (10px above the baseline) to 1px below it, so its visual
-               * mass sits ABOVE the box centre — and `ThumbsUp`, the glyph this button wears by
-               * default, is bottom-heavy on top of that (the mitten fills the lower two thirds
-               * while only the thin thumb reaches the top). Measured on the live card: the icon
-               * read ~2px low against `Hữu ích`.
-               *
-               * A NEGATIVE MARGIN RATHER THAN A TRANSFORM, and half the value you expect. Under
-               * `items-center` the flex line centres the MARGIN box, so `-mt-1` (-4px) lifts the
-               * border box by 2px — the shift asked for. A `translate` would move the glyph
-               * without telling the layout, which is the thing that goes wrong later when the
-               * row wraps.
-               *
-               * NOT `items-baseline` ON THE BUTTON: the button has a fixed `h-7`, and baseline
-               * alignment inside it drops the whole row to the top of the box instead of
-               * centring it, so the label goes with it.
-               */}
-              <TriggerIcon aria-hidden className="-mt-1 size-4 shrink-0" />
-              <span>{t(triggerLabelKey)}</span>
-            </button>
-          }
-        >
-          {REACTIONS.map(({ type, Icon, labelKey }) => (
-            <button
-              key={type}
-              type="button"
-              aria-pressed={current === type}
-              // The label is the accessible name here: the tray is a row of glyphs, and at 16px
-              // `CRY` and `ANGRY` are not distinguishable without one. `title` gives the same
-              // string to a mouse as a native tooltip, which is what the DS's Tooltip would
-              // have done if this row were not already a floating layer.
-              aria-label={t(labelKey)}
-              title={t(labelKey)}
-              onClick={() => pick(type)}
-              className={cn(
-                'grid size-8 place-items-center rounded-nx-full',
-                'transition-colors duration-[var(--nx-duration-fast)] ease-nx-out',
-                'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-nx-focus-ring',
-                current === type
-                  ? 'bg-nx-accent-soft text-nx-text-accent'
-                  : 'text-nx-text-muted hover:bg-nx-surface-hover hover:text-nx-text-primary'
-              )}
-            >
-              <Icon aria-hidden className="size-4 shrink-0" />
-            </button>
-          ))}
-        </ReactionTray>
-
-        {/* THE COUNT IS A BUTTON NOW. It used to be a dead number: it said something had happened
-            and not who it happened with, which on a product whose reactions are meant to be
-            credibility signals is most of the information missing. `GET /posts/{id}/reactions`
-            existed with no caller.
-
-            IT STAYS A COUNT AT ZERO AND STOPS BEING A CONTROL — opening a list of nobody is a
-            worse answer than the number already given. */}
-        {actions}
-
-        {/* BOTH TOTALS, ONE ROW, PINNED RIGHT. `ml-auto` on the group rather than on each number
-            so the separator between them cannot drift apart from the pair. */}
-        <div className="ml-auto flex items-center gap-2 pl-[var(--nx-space-element)]">
-          {!!commentCount && (
-            <>
-              <span className="font-mono text-nx-micro text-nx-text-muted">
-                {t('post.commentCount', { count: commentCount })}
-              </span>
-              {count !== undefined && (
-                <span className="text-nx-micro text-nx-text-faint" aria-hidden>
-                  ·
-                </span>
-              )}
-            </>
-          )}
-
-          {count !== undefined &&
-            (count > 0 ? (
+      {/* `tight` (8), UP FROM `pair` (4) — see `ACTION_GROUP`. This gap now separates one
+          glyph-and-number pair from the next rather than two bare controls, so it has to be the
+          larger of the two spacings on this row, not the smaller. */}
+      <div className="-ml-1.5 flex flex-wrap items-center gap-[var(--nx-space-tight)]">
+        {/* GLYPH AND NUMBER ARE ONE OBJECT — see `ACTION_GROUP`. Without this wrapper both would
+            be plain children of the row and the reaction's count would sit exactly as far from
+            its own thumb as from the comment glyph after it. */}
+        <div className={ACTION_GROUP}>
+          {/**
+           * THE TRIGGER WEARS THE GLYPH YOU PICKED, not a generic thumb. A button stuck on
+           * `ThumbsUp` would hide the one piece of state the seven-toggle row made obvious — which
+           * of them is yours — and a reader would have to open the tray to find out. That mattered
+           * when the word was there too; it matters more now that the glyph is the whole control.
+           *
+           * CLICKING IT IS THE SHORTCUT, not a second menu: with nothing picked it sends `LIKE`,
+           * which is the DS's `Hữu ích` and the reaction this product is actually about; with
+           * something picked it removes that one. Everything else is one hover away.
+           */}
+          <ReactionTray
+            label={t('post.reaction.pick')}
+            trigger={
               <button
                 type="button"
-                onClick={() => setReactorsOpen(true)}
+                aria-pressed={current !== null}
+                onClick={() => pick(current ?? 'LIKE')}
+                /**
+                 * A SQUARE GLYPH BUTTON, NOT A LABELLED ONE — the owner asked for the Facebook
+                 * shape: the icon says it, the word is redundant. The paragraph that used to stand
+                 * here matched this button's TYPOGRAPHY to the ghost `Button` beside it, because a
+                 * row with two different weights of the same-sized text reads as a mistake. That
+                 * argument retires with the text: there is none left to match. The shape and every
+                 * measurement now live in `ACTION_GLYPH_BUTTON` above, because the comment button
+                 * beside this one is the same object built in another file and the two must not
+                 * drift.
+                 *
+                 * `grid place-items-center`, NOT `inline-flex … px-2.5`, AND THE `-mt-1` IS GONE
+                 * WITH THE LABEL. That margin existed to pull the glyph up onto a 13px label's
+                 * optical centre, which is above the box centre. With nothing to align to, the
+                 * geometric centre IS the right answer, and keeping the lift would just print the
+                 * icon 2px high in its own box.
+                 *
+                 * WHY STILL NOT `Button`. Its `icon` slot wraps the SVG in a span and its `sm` size
+                 * forces `px-2.5`, so a square icon-only control has to fight both. If the DS ever
+                 * grows an icon-button size, this is what it replaces.
+                 *
+                 * THE HOVER BOX STAYS. It is transient, and on a control with no text it is now the
+                 * main thing saying "this is a button" before you click.
+                 */
                 className={cn(
-                  'font-mono text-nx-micro text-nx-text-muted',
-                  'hover:text-nx-text-primary hover:underline',
-                  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring'
+                  ACTION_GLYPH_BUTTON,
+                  current
+                    ? 'text-nx-text-accent'
+                    : 'text-nx-text-secondary hover:text-nx-text-primary'
                 )}
               >
-                {t('post.reaction.count', { count })}
+                {/**
+                 * `fill-nx-text-accent/20` IS THE PICKED STATE — see the module header for why it is
+                 * a tint and not a solid. The token is the one the STROKE is already drawn in
+                 * (`text-nx-text-accent`), so the fill is the same ink lightened rather than a
+                 * second blue, and it follows the glyph into dark mode without a second rule. 20%
+                 * is the alpha the old chip used on both themes, so the weight is unchanged; it is
+                 * just inside the shape now instead of behind the word.
+                 *
+                 * IT CARRIES MORE WEIGHT NOW THAN IT DID. With the label gone the fill is the ONLY
+                 * difference between "I reacted" and "I did not", so §12's rule that state may not
+                 * ride on colour alone is doing real work here rather than being belt-and-braces.
+                 */}
+                <TriggerIcon
+                  aria-hidden
+                  className={cn(ACTION_GLYPH, current && 'fill-nx-text-accent/20')}
+                />
+                {/**
+                 * THE WORD IS GONE FROM THE SCREEN, NOT FROM THE ACCESSIBILITY TREE. `sr-only`
+                 * rather than `aria-label` on the button: a label would REPLACE the element's
+                 * content, and this is the pattern `Avatar` already uses for its status dot.
+                 *
+                 * The name has to keep saying which reaction is picked — `Hữu ích` when nothing is,
+                 * `Ghi nhận` when `CLAP` is — because a screen reader now has nothing else to go
+                 * on, and because `e2e/newsfeed.spec.ts` finds this control by that exact name.
+                 *
+                 * NO `title`. The tray opens on hover, so a native tooltip would fade in on top of
+                 * the seven glyphs it just revealed. The tray IS the hover affordance here; the
+                 * comment row's toggle has no tray and does carry one.
+                 */}
+                <span className="sr-only">{t(triggerLabelKey)}</span>
               </button>
-            ) : (
-              <span className="font-mono text-nx-micro text-nx-text-muted">
-                {t('post.reaction.count', { count })}
-              </span>
+            }
+          >
+            {REACTIONS.map(({ type, Icon, labelKey }) => (
+              <button
+                key={type}
+                type="button"
+                aria-pressed={current === type}
+                // The label is the accessible name here: the tray is a row of glyphs, and at 16px
+                // `CRY` and `ANGRY` are not distinguishable without one. `title` gives the same
+                // string to a mouse as a native tooltip, which is what the DS's Tooltip would
+                // have done if this row were not already a floating layer.
+                aria-label={t(labelKey)}
+                title={t(labelKey)}
+                onClick={() => pick(type)}
+                className={cn(
+                  'grid size-8 place-items-center rounded-nx-full',
+                  'transition-colors duration-[var(--nx-duration-fast)] ease-nx-out',
+                  'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-nx-focus-ring',
+                  current === type
+                    ? 'bg-nx-accent-soft text-nx-text-accent'
+                    : 'text-nx-text-muted hover:bg-nx-surface-hover hover:text-nx-text-primary'
+                )}
+              >
+                {/* Filled here too, so "the one that is mine" looks the same in the tray as it does
+                  on the trigger the tray hangs off. The round chip stays: this is a grid of bare
+                  glyphs with no words, and it needs a hit target you can see before you click. */}
+                <Icon
+                  aria-hidden
+                  className={cn('size-4 shrink-0', current === type && 'fill-nx-text-accent/20')}
+                />
+              </button>
             ))}
+          </ReactionTray>
+
+          {/**
+           * THE COUNT STANDS BESIDE ITS OWN GLYPH NOW, and the pair it used to belong to is broken
+           * up on purpose. Both totals used to sit together at the card's far right — `ml-auto`,
+           * reading `6 bình luận · 1 cảm xúc`. That was right while the controls carried words: two
+           * labelled buttons on the left, two labelled facts on the right, a sentence in two halves.
+           * With the labels gone it stopped working — a bare glyph at one end of the row and a
+           * number at the other end, and nothing but the reader's memory joining them.
+           *
+           * SO THE NUMBER MOVED TO THE GLYPH IT COUNTS, which is also what every product that runs
+           * an icon-only action row does. `ACTION_COUNT` is the shape; `ACTION_GROUP` is the tight
+           * gap that makes glyph-and-number read as one object rather than two things in a list.
+           *
+           * IT IS A BARE NUMBER, NOT `1 cảm xúc`. The word was carrying the meaning while the number
+           * sat 500px from anything that explained it; next to a thumb it is redundant, and it is
+           * what made the old line long enough to need its own end of the row. The words survive in
+           * `aria-label`, so the accessible name still reads `1 cảm xúc` rather than `1`.
+           *
+           * HIDDEN AT ZERO, which is a reversal recorded rather than dropped. The note here used to
+           * argue the number should stay at zero and merely stop being a control, because "opening a
+           * list of nobody is a worse answer than the number already given". That held when the
+           * number said `0 cảm xúc` — a sentence, and an honest one. A bare `0` beside a glyph is
+           * not a sentence, it is clutter, and every other count in this product (`PostCard`'s,
+           * `CommentItem`'s) already vanishes at zero. The rule the old note protected — never offer
+           * a reactor list for a post nobody reacted to — is kept: there is no control to press.
+           */}
+          {count !== undefined && count > 0 && (
+            <button
+              type="button"
+              onClick={() => setReactorsOpen(true)}
+              // The label REPLACES the content here, unlike the glyph buttons' `sr-only` span, and
+              // that is the point: the content is `1` and the name has to be `1 cảm xúc`. An
+              // `sr-only` word beside it would have a screen reader say the number twice.
+              aria-label={t('post.reaction.count', { count })}
+              className={cn(
+                ACTION_COUNT,
+                'hover:text-nx-text-primary hover:underline',
+                'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring'
+              )}
+            >
+              {count}
+            </button>
+          )}
         </div>
+
+        {/* The comment glyph and ITS number, built by whoever owns the post — see `actions`. It
+            carries its own count for the same reason this one does: the number belongs to the
+            control, and the control's owner is the only one who knows what pressing it does. */}
+        {actions}
       </div>
 
       {/* The optimistic highlight has already rolled back by the time this renders, so the
