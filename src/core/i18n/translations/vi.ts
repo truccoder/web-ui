@@ -759,6 +759,15 @@ export const vi: Messages = {
       onlineUrl: 'Link trực tuyến (tuỳ chọn)',
       maxAttendees: 'Số người tham gia tối đa (tuỳ chọn)',
     },
+    images: {
+      add: 'Thêm ảnh',
+      remove: 'Bỏ ảnh',
+      tooMany: 'Mỗi bài tối đa ${count} ảnh',
+      invalidFormat: 'Chỉ hỗ trợ JPEG, PNG, WEBP và GIF',
+      fileTooLarge: 'Mỗi ảnh phải từ 20MB trở xuống',
+      batchTooLarge: 'Tổng dung lượng một lần chọn phải dưới 25MB',
+      uploadFailed: 'Không tải được ảnh lên, thử lại',
+    },
     book: {
       button: 'Sách',
       title: 'Tên sách',

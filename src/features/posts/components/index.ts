@@ -44,6 +44,11 @@ export { PollBody, type PollBodyProps } from './poll-body';
 export { BookBody, type BookBodyProps, type BookBodySummary } from './book-body';
 export { EventBody, type EventBodyProps } from './event-body';
 
+// Picking the pictures for a post — the write half of `images`, unbuildable until B16 gave the
+// product an upload endpoint. Lives here rather than in `features/media` for the reason that
+// feature's barrel gives: an upload has no surface of its own.
+export { PostImagePicker, type PostImagePickerProps } from './post-image-picker';
+
 // The pictures on a post. Buildable as of 24/08: B16 gave the product an upload path and S10
 // gave the seed something to show — before that the grid had no way to be seen running.
 export { PostImages, type PostImagesProps } from './post-images';

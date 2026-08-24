@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { ArrowUpRight, Flame } from 'lucide-react';
 import { Badge, Card } from '@/shared/components';
 import { useT } from '@/core/i18n';
@@ -15,6 +16,21 @@ import type { TrendingItem } from '../types/trending';
  * stated plainly — `target="_blank"` with the outward arrow — instead of a card that looks
  * navigable in-app and is not.
  *
+ * IT HAS A PICTURE NOW, AND THE PICTURE IS THE WHOLE POINT OF THIS SURFACE. `TrendingItemDto`
+ * carried title, summary, tags and url and **no image field at all** — filed as B17, on the
+ * argument that a crawled item is the one thing in this product whose content nobody here wrote,
+ * so it has no author, no avatar and no reputation chip to tell one card from the next. A column
+ * of them was a column of grey paragraphs. The column `image_url` had existed since `V12` and
+ * nothing had ever written to it; the backend fills it now — two of the three sources already
+ * return an image in the JSON being fetched, and Hacker News is read off the destination page.
+ *
+ * A 64px THUMBNAIL ON THE LEADING EDGE, NOT A BANNER ACROSS THE TOP. The note below on the
+ * missing rule says these cards are told apart from posts by STRUCTURE and by height — "two to
+ * three lines against a post's six to twelve". A full-bleed image would erase exactly that and
+ * make a crawled item the tallest thing in a mixed column. The leading thumbnail is what
+ * `link-body.tsx` already does for the same object (someone else's link, with a picture), at the
+ * same size, so the two agree without either having to know about the other.
+ *
  * THE TAGS ROW IS CONDITIONAL, AND STAYS CONDITIONAL. `tags` was excluded from this feature's
  * type until F-B because the crawl scheduler never wrote it; it does now, but only 97 of 310 rows
  * carry any (census in `types/trending.ts`). So the row renders when there is something in it and
@@ -29,6 +45,11 @@ export interface TrendingCardProps {
 export function TrendingCard({ item, className }: TrendingCardProps) {
   const t = useT();
   const relativeTime = useRelativeTime();
+
+  // One flag rather than a set, unlike `PostImages`: a card has at most one picture, so a dead
+  // URL can only take its own tile with it.
+  const [thumbFailed, setThumbFailed] = useState(false);
+  const showThumb = Boolean(item.imageUrl?.trim()) && !thumbFailed;
 
   // One appearance in both homes — the `/trending` list and the feed interleave. A `variant`
   // prop briefly made the list version fill-less; the kit fills both.
@@ -63,35 +84,55 @@ export function TrendingCard({ item, className }: TrendingCardProps) {
         )}
       </div>
 
-      {item.url ? (
-        <a
-          href={item.url}
-          target="_blank"
-          // `noopener` is the security part (the opened page cannot reach back through
-          // `window.opener`); `noreferrer` keeps this app's URLs out of the destination's logs.
-          rel="noopener noreferrer"
-          className={cn(
-            'group flex items-start gap-1',
-            'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring'
-          )}
-        >
-          <h3 className="text-nx-ui font-semibold text-nx-text-primary group-hover:underline">
-            {item.title ?? t('trending.untitled')}
-          </h3>
-          <ArrowUpRight className="mt-0.5 size-3.5 shrink-0 text-nx-text-muted" aria-hidden />
-        </a>
-      ) : (
-        <h3 className="text-nx-ui font-semibold text-nx-text-primary">
-          {item.title ?? t('trending.untitled')}
-        </h3>
-      )}
+      <div className="flex items-start gap-3">
+        {/* A HOST WE DO NOT CONTROL, so the same three rules `link-body.tsx` applies: plain
+            `<img>` because `next/image` would need every crawled domain declared and would 500 on
+            the first one that is not; `onError` because a crawled URL rots and a broken frame is
+            worse than no frame; `alt=""` because the title beside it already says what this is,
+            and a crawler has no alt text to offer. */}
+        {showThumb && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={item.imageUrl ?? undefined}
+            alt=""
+            loading="lazy"
+            onError={() => setThumbFailed(true)}
+            className="size-16 shrink-0 rounded-nx-xs border border-nx-border-subtle object-cover"
+          />
+        )}
 
-      {/* Null on 46 of 110 rows — GitHub repositories have no abstract to crawl. */}
-      {item.summary && (
-        <p className="line-clamp-3 text-nx-body-sm leading-relaxed text-nx-text-secondary">
-          {item.summary}
-        </p>
-      )}
+        <div className="flex min-w-0 flex-1 flex-col gap-2">
+          {item.url ? (
+            <a
+              href={item.url}
+              target="_blank"
+              // `noopener` is the security part (the opened page cannot reach back through
+              // `window.opener`); `noreferrer` keeps this app's URLs out of the destination's logs.
+              rel="noopener noreferrer"
+              className={cn(
+                'group flex items-start gap-1',
+                'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring'
+              )}
+            >
+              <h3 className="text-nx-ui font-semibold text-nx-text-primary group-hover:underline">
+                {item.title ?? t('trending.untitled')}
+              </h3>
+              <ArrowUpRight className="mt-0.5 size-3.5 shrink-0 text-nx-text-muted" aria-hidden />
+            </a>
+          ) : (
+            <h3 className="text-nx-ui font-semibold text-nx-text-primary">
+              {item.title ?? t('trending.untitled')}
+            </h3>
+          )}
+
+          {/* Null on 46 of 110 rows — GitHub repositories have no abstract to crawl. */}
+          {item.summary && (
+            <p className="line-clamp-3 text-nx-body-sm leading-relaxed text-nx-text-secondary">
+              {item.summary}
+            </p>
+          )}
+        </div>
+      </div>
 
       {/* Gemini's own words, not a controlled vocabulary — there is no tag filter to link these
           to, and inventing one would promise a query the backend cannot answer. So they are

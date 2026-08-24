@@ -777,6 +777,15 @@ export const en = {
       onlineUrl: 'Online link (optional)',
       maxAttendees: 'Max attendees (optional)',
     },
+    images: {
+      add: 'Add photos',
+      remove: 'Remove photo',
+      tooMany: 'Up to ${count} photos per post',
+      invalidFormat: 'Only JPEG, PNG, WEBP and GIF are supported',
+      fileTooLarge: 'Each photo must be 20MB or smaller',
+      batchTooLarge: 'One selection must total under 25MB',
+      uploadFailed: 'Upload failed, please try again',
+    },
     book: {
       button: 'Book',
       title: 'Book title',

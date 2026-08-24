@@ -44,6 +44,7 @@ import { CodeSnippetFields } from './code-snippet-fields';
 import { EventFields } from './event-fields';
 import { LinkFields, isValidLinkUrl } from './link-fields';
 import { LocationPicker } from './location-picker';
+import { PostImagePicker } from './post-image-picker';
 import { PollFields, POLL_MIN_OPTIONS } from './poll-fields';
 import { QnaFields } from './qna-fields';
 import { QuizComposer, emptyQuiz, isQuizReady, normalizeQuiz } from './quiz-composer';
@@ -196,6 +197,20 @@ export function PostComposer({ onPosted }: PostComposerProps) {
   const [coverFile, setCoverFile] = useState<File | undefined>();
   const [bookFileError, setBookFileError] = useState<string | undefined>();
 
+  /**
+   * URLs of pictures already uploaded for this draft.
+   *
+   * URLS, NOT `File`s, AND THAT IS THE ENDPOINT'S SHAPE RATHER THAN A CHOICE. `CreatePostRequestDto.images`
+   * is a `string[]`; the files go to `POST /v1/api/media` first and this holds what came back. So
+   * unlike `bookFile` below — which really is a `File`, because the book route is multipart and
+   * takes the bytes itself — this is already-stored state by the time the post is submitted.
+   *
+   * IT LIVES ON EVERY KIND, not inside `detailsFor`. `images` sits on the request beside
+   * `content`, not inside any of the six details blocks, so an ARTICLE and a REGULAR post can both
+   * carry pictures — which is also why `PostImages` renders outside the body switch.
+   */
+  const [images, setImages] = useState<string[]>([]);
+
   // The quiz rides on any kind, so it is switched on separately from `postType`. `undefined`
   // means no `quizDetails` key in the payload at all — which is what keeps
   // `validateQuizDetails` from running.
@@ -214,6 +229,7 @@ export function PostComposer({ onPosted }: PostComposerProps) {
     setBookFile(undefined);
     setCoverFile(undefined);
     setBookFileError(undefined);
+    setImages([]);
     setQuiz(undefined);
     setJustPosted(true);
     // The panel closes on success, so the confirmation has to land somewhere that is still on
@@ -368,6 +384,10 @@ export function PostComposer({ onPosted }: PostComposerProps) {
         locationType: location.locationType,
         locationDetails: location.locationDetails,
       }),
+      // Omitted entirely when empty rather than sent as `[]`. `updatePost` runs
+      // `BeanUtils.copyProperties`, which copies nulls, so the two are not the same thing on the
+      // edit path — and a create that sends `images: []` would teach the next reader they are.
+      ...(images.length > 0 && { images }),
       // Blank options are stripped and the correct index re-pointed at the same option before
       // it leaves — see `normalizeQuiz`.
       ...(quiz && { quizDetails: normalizeQuiz(quiz) }),
@@ -548,6 +568,14 @@ export function PostComposer({ onPosted }: PostComposerProps) {
               )}
             </div>
           )}
+
+          {/* PICTURES SIT OUTSIDE THE KIND PANEL, DIRECTLY UNDER THE TEXT THEY BELONG TO. `images`
+              is on the request beside `content`, not inside any of the six details blocks, so
+              every kind can carry them — putting the control inside the panel would have hidden it
+              on `REGULAR`, which is the kind most likely to want a photograph. Above the quiz and
+              the location row because it is part of composing the post rather than an attachment
+              to it. */}
+          <PostImagePicker value={images} onChange={setImages} disabled={pending} />
 
           {quiz && (
             <div className="flex flex-col gap-3 rounded-nx-sm border border-nx-border-default bg-nx-surface-sunken p-3">

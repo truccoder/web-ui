@@ -50,7 +50,7 @@ import { CommentItem } from './comment-item';
  * which is why the backend was asked for the scanner rather than for a `mentionedUserIds` field.
  *
  * THE ONE THING THE READER STILL CANNOT DO IS FOLLOW THAT NOTIFICATION BACK HERE. It carries the
- * comment's id, and no route in this app takes one — filed as B22.
+ * comment's id, and no route in this app takes one — filed as B23.
  *
  * NOTHING IS SPLICED INTO THE CACHED LIST. Every mutation returns void, and deleting a root
  * takes its replies with it via a Postgres cascade that is invisible in the Java. The hooks
