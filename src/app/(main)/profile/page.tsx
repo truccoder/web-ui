@@ -1,271 +1,165 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Camera, Loader2 } from 'lucide-react';
-import {
-  useProfile,
-  useUpdateProfile,
-  useUploadProfilePicture,
-  useChangePassword,
-} from '@/lib/hooks/use-user';
-import { updateProfileSchema, type UpdateProfileFormData } from '@/lib/schemas/user';
-import { changePasswordSchema, type ChangePasswordFormData } from '@/lib/schemas/user';
-import { useT } from '@/lib/i18n';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
-import { getNeutralAvatarColor } from '@/lib/avatar-color';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Suspense } from 'react';
+import { Tabs } from '@/shared/components';
+import { useTabParam } from '@/shared/lib/use-tab-param';
+import { RepScore, useReputation } from '@/features/reputation';
+import { ProfileIdentityCard, useMyProfile } from '@/features/security';
+import { usePendingRequests } from '@/features/friendships';
+import { useT } from '@/core/i18n';
+import { AccountPanel } from './account-panel';
+import { OverviewPanel } from './overview-panel';
+import { ProfessionalPanel } from './professional-panel';
 
-function ProfilePictureUpload({ liveFullname }: { liveFullname?: string }) {
-  const { data: profile } = useProfile();
-  const { mutate: uploadPicture, isPending } = useUploadProfilePicture();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [preview, setPreview] = useState<string | null>(null);
-  const t = useT();
-
-  const initials = (liveFullname || profile?.fullname)
-    ?.trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
-  const avatarColor = getNeutralAvatarColor(profile?.id ?? liveFullname ?? 'default');
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) return;
-
-    setPreview(URL.createObjectURL(file));
-    uploadPicture(file, {
-      onSettled: () => {
-        setPreview(null);
-        if (fileInputRef.current) fileInputRef.current.value = '';
-      },
-    });
-  };
-
-  const displayUrl = preview ?? profile?.profilePictureUrl;
-
-  return (
-    <div className="flex flex-col items-center gap-4">
-      <div className="relative group">
-        <Avatar className="h-28 w-28">
-          {displayUrl ? <AvatarImage src={displayUrl} /> : null}
-          <AvatarFallback className={`${avatarColor} text-white text-3xl`}>
-            {initials ?? '?'}
-          </AvatarFallback>
-        </Avatar>
-
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={isPending}
-          className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer disabled:cursor-not-allowed"
-        >
-          {isPending ? (
-            <Loader2 className="h-6 w-6 text-white animate-spin" />
-          ) : (
-            <Camera className="h-6 w-6 text-white" />
-          )}
-        </button>
-
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          className="hidden"
-          onChange={handleFileSelect}
-        />
-      </div>
-      <p className="text-xs text-muted-foreground">{t('profile.uploadHint')}</p>
-    </div>
-  );
-}
-
-function ProfileInfoTab({ onFullnameChange }: { onFullnameChange: (value: string) => void }) {
-  const { data: profile } = useProfile();
-  const { mutate: updateProfile, isPending } = useUpdateProfile();
-  const t = useT();
-
-  const {
-    register,
-    handleSubmit,
-    control,
-    formState: { errors },
-  } = useForm<UpdateProfileFormData>({
-    resolver: zodResolver(updateProfileSchema),
-    values: { fullname: profile?.fullname ?? '' },
-  });
-
-  const onSubmit = (data: UpdateProfileFormData) => {
-    updateProfile(data);
-  };
-
-  const fullname = useWatch({ control, name: 'fullname' });
-  useEffect(() => {
-    onFullnameChange(fullname ?? '');
-  }, [fullname, onFullnameChange]);
-
-  return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="fullname">{t('profile.info.fullname')}</Label>
-        <Input id="fullname" {...register('fullname')} />
-        {errors.fullname && <p className="text-sm text-destructive">{errors.fullname.message}</p>}
-      </div>
-
-      <Button type="submit" disabled={isPending}>
-        {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        {isPending ? t('profile.info.saving') : t('profile.info.save')}
-      </Button>
-    </form>
-  );
-}
-
-function ChangePasswordTab() {
-  const { mutate: changePassword, isPending } = useChangePassword();
-  const t = useT();
-
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<ChangePasswordFormData>({
-    resolver: zodResolver(changePasswordSchema),
-  });
-
-  const onSubmit = (data: ChangePasswordFormData) => {
-    changePassword(
-      { currentPassword: data.currentPassword, newPassword: data.newPassword },
-      { onSuccess: () => reset() }
-    );
-  };
-
-  return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="currentPassword">{t('profile.password.currentPassword')}</Label>
-        <Input
-          id="currentPassword"
-          type="password"
-          placeholder={t('profile.password.currentPlaceholder')}
-          {...register('currentPassword')}
-        />
-        {errors.currentPassword && (
-          <p className="text-sm text-destructive">{errors.currentPassword.message}</p>
-        )}
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="newPassword">{t('profile.password.newPassword')}</Label>
-        <Input
-          id="newPassword"
-          type="password"
-          placeholder={t('profile.password.newPlaceholder')}
-          {...register('newPassword')}
-        />
-        {errors.newPassword && (
-          <p className="text-sm text-destructive">{errors.newPassword.message}</p>
-        )}
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="confirmPassword">{t('profile.password.confirm')}</Label>
-        <Input
-          id="confirmPassword"
-          type="password"
-          placeholder={t('profile.password.confirmPlaceholder')}
-          {...register('confirmPassword')}
-        />
-        {errors.confirmPassword && (
-          <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
-        )}
-      </div>
-
-      <Button type="submit" disabled={isPending}>
-        {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        {isPending ? t('profile.password.updating') : t('profile.password.update')}
-      </Button>
-    </form>
-  );
-}
+/**
+ * `/profile` — assembled at P3.2, and it ABSORBED `/dashboard` at P5.2. Owning domain: `security`.
+ *
+ * WHY THE MERGE. The two routes were the same page wearing different names: both opened by
+ * claiming to be the home of the signed-in account. `/dashboard` had a greeting, a friend count
+ * and incoming requests; `/profile` had identity, Elite Score, professional profile, GitHub and
+ * credentials. No boundary existed that a person could predict, so every visit started with
+ * "which one has the thing I want". One page, one answer.
+ *
+ * ONE PAGE IS NOT ONE COLUMN, WHICH IS WHAT THE MERGE LEFT BEHIND. Everything the two routes had
+ * ended up stacked: title, identity, Elite Score, two stat tiles, incoming requests, the
+ * professional form, skills, GitHub, violations, the block list, the name form, the password form
+ * — ten blocks down a 672 measure, and the two things a person visits this page to DO (change a
+ * name, change a password) sat at the very bottom of it. The length was never the symptom of a
+ * page holding too much; it was the symptom of a page refusing to say what belongs with what.
+ *
+ * SO: A HERO AND THREE TABS. The hero is who you are and is always on screen — name, handle,
+ * email, avatar, and the Elite Score chip beside the name, which is where `/u/{username}` has
+ * always put it. The three tabs are the three questions the rest of the page answers:
+ *
+ * | tab | what it holds | why together |
+ * | --- | --- | --- |
+ * | Tổng quan | Elite Score progress, friend counts, incoming requests | what the app makes of you, and the one thing here that is waiting on you |
+ * | Chuyên môn | professional profile, verified skills, GitHub | ordered by how hard the claim is to make: what you say you do → what the app has verified → what your code shows |
+ * | Tài khoản | name, password, violations, blocked people | the account as an object you administer, including the two decisions made *about* it |
+ *
+ * THE PAGE TITLE IS GONE, and it is the second thing the restructure removed. `<h1>Trang cá
+ * nhân</h1>` repeated the rail's active item, and its subtitle ("Quản lý cài đặt tài khoản của
+ * bạn") described what is now one tab of three. `ProfileIdentityCard` carries the `<h1>` instead:
+ * on a page about one person, that person's name is the title. The browser-tab title is unchanged
+ * — it lives in `layout.tsx` and never depended on this heading.
+ *
+ * THE TAB LIVES IN THE URL (`?tab=professional`), because two places link here for one section:
+ * `/knowledge` sends people to the professional form, and the GitHub OAuth callback lands here
+ * after linking an account. A default-tab landing would have made both links miss what they
+ * promised. Written with `history.replaceState` rather than `router.replace`: switching a tab
+ * swaps an already-mounted panel and must not cost an RSC round trip, and it must not push a
+ * history entry either — Back belongs to the page you came from, not to the tab you left.
+ *
+ * WHAT THE MERGE DROPPED, deliberately, and what the tabs did not bring back:
+ *  - THE GREETING. "Chào mừng trở lại, X" sat directly above an identity card showing the same
+ *    name and face. Saying it twice is not warmth, it is noise.
+ *  - FRIEND SUGGESTIONS. They were on the dashboard, and they are about *other* people — this page
+ *    is about you. They live one click away on the friends tabs, which is where someone who wants
+ *    to grow their network is already heading.
+ * Incoming requests stayed, because they are addressed to you and are actionable where they sit —
+ * and their count now rides on the `Tổng quan` tab itself, so a hidden panel can still say that
+ * something is waiting.
+ *
+ * SEVEN DOMAINS, and the tabs moved no boundary: `security` owns the shell and everything that is
+ * literally the account; `reputation`, `friendships`, `knowledge`, `roadmap`, `moderation`,
+ * `blocks` and `github` each contribute through their barrels — no domain reaches into another's
+ * internals and this page mediates nothing between them.
+ *
+ * THE BOOKS SECTION LEFT THIS PAGE at M2. It used to sit here on the argument that "what you have
+ * published is another thing your account *is*" — true, but the kit puts an author's shelf in
+ * `/library` beside the catalogue, and a shelf next to other shelves beats a shelf filed under
+ * account settings. Same component, same endpoint, one home: `/library`'s `Sách tôi viết` tab.
+ * Moved rather than duplicated, so there is still exactly one place a book can be deleted from.
+ *
+ * THIS FILE IS THE SHELL AND NOTHING ELSE — hero, tab strip, which panel is open. It used to be
+ * 350 lines because the three panels and a private `Section` helper lived in it too, so the one
+ * question this file answers ("what is on this route, and which part of it is showing?") was
+ * buried under the answer to three others. The panels are `./overview-panel`, `./professional-panel`
+ * and `./account-panel`; `Section` graduated to `@/shared/components` once `/u/[username]` turned
+ * out to need the same thing four times over.
+ */
+const TAB_IDS = ['overview', 'professional', 'account'] as const;
+type TabId = (typeof TAB_IDS)[number];
 
 export default function ProfilePage() {
-  const { data: profile, isLoading } = useProfile();
-  const [liveFullname, setLiveFullname] = useState('');
-  const t = useT();
+  // `useSearchParams` needs a Suspense boundary in the App Router — same shape as `/search`.
+  return (
+    <Suspense>
+      <ProfileContent />
+    </Suspense>
+  );
+}
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
+function ProfileContent() {
+  const t = useT();
+  const { data: profile } = useMyProfile();
+  /**
+   * The same query `MyReputationCard` runs one tab down, so this costs no second request — React
+   * Query dedupes on the key and the card reads the entry this call filled. The ROUTE resolves it
+   * rather than the identity card, because `features/reputation` already imports
+   * `features/security` and the reverse edge would close a cycle between two barrels.
+   */
+  const { data: reputation } = useReputation(profile?.id);
+  /**
+   * THE ONE PANEL QUERY THAT STILL RUNS WHILE ITS PANEL IS CLOSED, and it earns it: the count on
+   * the `Tổng quan` tab is how a collapsed panel says somebody is waiting on you. Everything else
+   * a panel needs is fetched by the panel, which is the point of the split.
+   */
+  const { data: pendingRequests } = usePendingRequests();
+
+  // Was fifteen lines of `useSearchParams` + `useState` + `history.replaceState` here, duplicated
+  // almost verbatim on `/u/[username]` and simply absent on the three pages that needed it too.
+  // The hook's own header carries the reasoning that used to live in this comment.
+  const [tab, onTabChange] = useTabParam<TabId>(TAB_IDS, 'overview');
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">{t('profile.title')}</h1>
-        <p className="text-muted-foreground mt-1">{t('profile.subtitle')}</p>
+    <div className="flex flex-col gap-[var(--nx-space-section)]">
+      <ProfileIdentityCard
+        badge={
+          reputation && (
+            <RepScore
+              score={reputation.eliteScore}
+              showLevel={Boolean(reputation.levelName)}
+              levelName={reputation.levelName}
+            />
+          )
+        }
+      />
+
+      {/* TABS BIND DOWN TO THE PANEL THEY NAME. This wrapper is the whole of that rule: the strip
+          used to be a plain child of the page's `gap-section` column, so it sat 40 below the
+          identity card and 40 above the panel — equidistant from the thing it belongs to and the
+          thing it does not, which reads as a control floating between two sections rather than as
+          the label of the one underneath. 16 down, 40 up, and the group is unambiguous. */}
+      <div className="flex flex-col gap-[var(--nx-space-group)]">
+        <Tabs
+          aria-label={t('profile.title')}
+          active={tab}
+          onChange={onTabChange}
+          tabs={[
+            {
+              id: 'overview',
+              label: t('profile.tabs.overview'),
+              // `|| undefined` rather than the raw length: `Tabs` prints any number it is handed,
+              // and a "0" pill beside a tab is a notification that nothing happened.
+              count: pendingRequests?.length || undefined,
+            },
+            { id: 'professional', label: t('profile.tabs.professional') },
+            { id: 'account', label: t('profile.tabs.account') },
+          ]}
+        />
+
+        {/* THREE COMPONENTS RATHER THAN THREE BLOCKS OF JSX, so that a closed panel is UNMOUNTED
+            and its queries never fire. The page used to ask for everything on every visit —
+            reputation, friends, pending requests, the professional profile, roadmap progress,
+            GitHub stats, violations, the block list — to fill three screens nobody had scrolled
+            to. Inline `{tab === … && <div>…}` would have rendered the same thing but kept every
+            `use*` call at the top of this function, where React runs it regardless of which
+            branch is taken. */}
+        {tab === 'overview' && <OverviewPanel />}
+        {tab === 'professional' && <ProfessionalPanel userId={profile?.id} />}
+        {tab === 'account' && <AccountPanel />}
       </div>
-
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row items-center gap-6">
-            <ProfilePictureUpload liveFullname={liveFullname} />
-            <div className="text-center sm:text-left">
-              <h2 className="text-2xl font-bold">{liveFullname || profile?.fullname || '—'}</h2>
-              <p className="text-muted-foreground text-sm mt-1">
-                {t('profile.id', { id: profile?.userId ?? '' })}
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Separator />
-
-      <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="profile">{t('profile.tabs.info')}</TabsTrigger>
-          <TabsTrigger value="password">{t('profile.tabs.password')}</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="profile">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('profile.info.title')}</CardTitle>
-              <CardDescription>{t('profile.info.desc')}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ProfileInfoTab onFullnameChange={setLiveFullname} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="password">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('profile.password.title')}</CardTitle>
-              <CardDescription>{t('profile.password.desc')}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ChangePasswordTab />
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
     </div>
   );
 }
