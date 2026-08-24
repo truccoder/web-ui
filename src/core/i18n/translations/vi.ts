@@ -552,7 +552,7 @@ export const vi: Messages = {
 
   trending: {
     sourceLabel: 'Lọc theo nguồn',
-    allSources: 'Tất cả nguồn',
+    allSources: 'Mọi nguồn',
     title: 'Xu hướng',
     subtitle: 'Những bài viết công nghệ nổi bật trên khắp mạng',
     error: 'Không thể tải nội dung xu hướng. Vui lòng thử lại.',
@@ -562,7 +562,14 @@ export const vi: Messages = {
       desc: 'Quay lại sau để xem những bài viết mới nhất.',
     },
     allLoaded: 'Bạn đã xem hết nội dung xu hướng rồi',
-    allCategories: 'Tất cả',
+    // `Mọi chủ đề`, KHÔNG PHẢI `Tất cả`: chip này nằm ngay dưới tab `Tất cả` của bảng tin,
+    // cùng một chữ mà hai nghĩa khác hẳn nhau.
+    allCategories: 'Mọi chủ đề',
+    filters: 'Bộ lọc',
+    // Tên cho trình đọc màn hình — con số trên nút là ký hiệu, đứng một mình không nói được
+    // nó đếm cái gì.
+    filtersActive: 'Bộ lọc, ${count} đang bật',
+    clearFilters: 'Xoá lọc',
     errorTitle: 'Không tải được xu hướng',
     untitled: 'Không có tiêu đề',
     timeRangeLabel: 'Khoảng thời gian',

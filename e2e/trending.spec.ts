@@ -27,10 +27,11 @@ const SOURCES = ['GitHub', 'Hacker News', 'DEV Community'] as const;
  * so the test passes while filtering is broken. Worse than failing. Both had to be found the hard
  * way, one after the other:
  *
- *  - the FILTER ROW itself. It is a `<select>` now rather than a tab strip, so the three names
- *    are `<option>` elements; `Badge` renders a `<span>`, so intersecting on the element still
- *    separates a label on a card from the control that chose it. The intersection is what makes
- *    this robust to the control changing shape — it did, and this helper did not have to.
+ *  - the FILTER ROW itself. It has been a tab strip, then a `<select>` whose three names were
+ *    `<option>` elements, and is now four radios in a popover whose names are `<label>`s. `Badge`
+ *    renders a `<span>`, so intersecting on the element separates a label on a card from the
+ *    control that chose it through all three. That is the point of the intersection: the control
+ *    has changed shape twice and this helper has not had to change once.
  *  - the LEDGER's "Từ bên ngoài" section, which names each source it has a headline from — that is
  *    the flank, an `<aside>` beside `<main>` rather than inside it, so scoping to `main` drops it.
  *    The exclusion outlived two rewrites of that card (three counts → three headlines) and one
@@ -60,29 +61,64 @@ async function openTrending(page: Page) {
   await expect(page.locator('main a[href^="http"]').first()).toBeVisible({ timeout: 20_000 });
 }
 
+/**
+ * The two settings that are not chips live behind one button now — the round that put the topic
+ * chips on a single scrolling line and folded range and source into a panel. Opening it is a step
+ * the old `<select>` did not need, so it is a helper rather than two copies of the same click.
+ *
+ * It returns the PANEL, not the page: every locator below should be scoped to it, so a test cannot
+ * accidentally match the same word somewhere else on the feed.
+ */
+async function openFilters(page: Page) {
+  await page.getByRole('button', { name: /^Bộ lọc/ }).click();
+  const panel = page.getByRole('dialog', { name: 'Bộ lọc' });
+  await expect(panel).toBeVisible();
+  return panel;
+}
+
 test.describe('trending', () => {
   test('offers all three sources as filters', async ({ page }) => {
     await openTrending(page);
 
-    // A `combobox`, not a `tablist`. The filter was a tab strip until the round that collapsed
-    // trending's two stacked strips into one row of selects; the assertion is deliberately on the
-    // ROLE rather than on the tag, so it says what the control is for a reader rather than how it
-    // is built. Its accessible name is unchanged, which is why only these two lines moved.
-    const sources = page.getByRole('combobox', { name: 'Lọc theo nguồn' });
+    const panel = await openFilters(page);
+
+    // A `group`, which is what a `<fieldset>` with a `<legend>` is to a screen reader. The
+    // assertion is on the ROLE rather than the tag for the same reason it was through the
+    // `combobox` round: it says what the control is FOR a reader rather than how it is built, and
+    // the accessible name — `Lọc theo nguồn` — has survived all three shapes unchanged.
+    const sources = panel.getByRole('group', { name: 'Lọc theo nguồn' });
     await expect(sources).toBeVisible();
 
     // Three sources AND an unfiltered default — the script switches between them to show the
-    // sources are real, which needs a way back. Read off the options rather than off four
-    // separate locators: a `<select>` states its whole choice set in one place, which is the
-    // point of using one.
-    await expect(sources.locator('option')).toHaveText(['Tất cả nguồn', ...SOURCES]);
+    // sources are real, which needs a way back.
+    //
+    // READ OFF THE LABELS, WITH THE EMPTY ONES DROPPED. `Radio` renders TWO `<label>`s per option:
+    // the visible text, and an `aria-hidden` one that draws the circle and holds no text at all.
+    // Filtering on "has a non-space character" keeps the four that name something. The count is
+    // asserted separately against the radios themselves, so a label going missing cannot quietly
+    // shorten the expected list into agreement.
+    await expect(sources.getByRole('radio')).toHaveCount(4);
+    await expect(sources.locator('label').filter({ hasText: /\S/ })).toHaveText([
+      'Mọi nguồn',
+      ...SOURCES,
+    ]);
   });
 
   test('filtering by a source narrows the list to that source', async ({ page }) => {
     await openTrending(page);
 
+    // OPENED ONCE, FOR THE WHOLE LOOP. The panel does not close on a pick — a reader narrowing by
+    // source often sets the range in the same visit — so reopening between iterations would be
+    // testing a close-on-select this screen deliberately does not do.
+    const sources = (await openFilters(page)).getByRole('group', { name: 'Lọc theo nguồn' });
+
     for (const source of SOURCES) {
-      await page.getByRole('combobox', { name: 'Lọc theo nguồn' }).selectOption({ label: source });
+      // CLICK THE LABEL, NOT THE INPUT. `Radio` hides its `<input>` with `sr-only` — a 1×1 box
+      // clipped to nothing — so a click aimed at the input's own centre lands on whatever is
+      // painted there instead. The `<label for>` is the control a person actually presses, and
+      // pressing it checks the input the same way.
+      await sources.getByText(source, { exact: true }).click();
+      await expect(sources.getByRole('radio', { name: source })).toBeChecked();
 
       // Wait for the list to come back before reading it: the filter is a server round trip, and
       // asserting immediately reads the previous source's cards and passes for the wrong reason.

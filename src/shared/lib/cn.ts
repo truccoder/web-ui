@@ -22,8 +22,28 @@ const NX_FONT_SIZES = [
   'nx-overline',
 ];
 
+/**
+ * The design-system radius scale (`--radius-nx-*` in the `@theme` block).
+ *
+ * SAME CLASS OF PROBLEM AS THE FONT SIZES, found the same way — by measuring. tailwind-merge
+ * recognises `rounded-*` only for values it knows, and `nx-sm` / `nx-full` are not on its scale,
+ * so it treats them as unrelated classes and keeps BOTH. Two `border-radius` declarations then
+ * reach the element and the stylesheet's order decides, not the caller's: trending's filter
+ * button asked for `rounded-nx-full` inside a pill-shaped bar and rendered at `Button`'s own
+ * `rounded-nx-sm` — a near-square corner four pixels inside the bar's radius.
+ *
+ * Declaring the scale is what makes a caller's radius beat a component's default, which is the
+ * whole contract `cn` is supposed to provide.
+ */
+const NX_RADII = ['nx-xs', 'nx-sm', 'nx-md', 'nx-lg', 'nx-xl', 'nx-full'];
+
 const twMerge = extendTailwindMerge({
-  extend: { classGroups: { 'font-size': [{ text: NX_FONT_SIZES }] } },
+  extend: {
+    classGroups: {
+      'font-size': [{ text: NX_FONT_SIZES }],
+      rounded: [{ rounded: NX_RADII }],
+    },
+  },
 });
 
 /**

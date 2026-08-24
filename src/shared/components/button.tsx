@@ -22,6 +22,15 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   /** Optional leading icon (16–18px, currentColor). */
   icon?: React.ReactNode;
   children?: React.ReactNode;
+  /**
+   * Forwarded to the `<button>` through the prop spread.
+   *
+   * A plain prop rather than `forwardRef`, which React 19 made unnecessary — same reasoning, and
+   * the same one-line declaration, as `Input`'s. Added when trending's filter popover needed it:
+   * Escape closes the panel and has to hand focus back to the trigger, which is not expressible
+   * without a handle on the element.
+   */
+  ref?: React.Ref<HTMLButtonElement>;
 }
 
 /** Heights are canonical per constitution §11.2 — screens do not override them. */

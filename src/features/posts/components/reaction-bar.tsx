@@ -154,7 +154,21 @@ export function ReactionBar({
       {/* ONE ROW: verbs left, counts right. The DS's acting row reads as a sentence — what you can
           do, then what has already been done — and pushing the counts to the far end is what makes
           the two halves legible as different kinds of thing rather than a run of six chips. */}
-      <div className="flex flex-wrap items-center gap-[var(--nx-space-pair)]">
+      {/**
+       * `-ml-2.5` CANCELS THE FIRST BUTTON'S OWN PADDING so the row starts on the card's text
+       * column. Every control on the left of this row is a padded box — the reaction trigger
+       * carries `px-2.5`, the comment button beside it a ghost `Button`'s own inset — so the
+       * *ink* of `Hữu ích` began 10px right of the author's name and the post's prose, and the
+       * whole acting row read as indented under the body it belongs to. The BOX was aligned; the
+       * thing a reader actually sees was not. Pulling the row back by exactly the trigger's
+       * padding puts the glyph's left edge on the same vertical as the paragraph above it.
+       *
+       * ONE SIDE ONLY. The counts on the right are bare text with no padding to cancel, so they
+       * already sit on the card's right column; a matching `-mr` would push them past it. The
+       * negative margin also stays on this row rather than on the flex column, so the error line
+       * below keeps the prose's alignment — it is a sentence, not a control.
+       */}
+      <div className="-ml-2.5 flex flex-wrap items-center gap-[var(--nx-space-pair)]">
         {/**
          * THE TRIGGER SHOWS WHAT YOU PICKED, not a generic "Like". A single button that always
          * reads `Hữu ích` would hide the one piece of state the seven-toggle row made obvious —
@@ -171,13 +185,35 @@ export function ReactionBar({
               type="button"
               aria-pressed={current !== null}
               onClick={() => pick(current ?? 'LIKE')}
+              /**
+               * TYPOGRAPHY IS COPIED FROM `Button size="sm" variant="ghost"` ON PURPOSE, because
+               * the thing standing next to this button in the same row IS one — the comment
+               * button the caller passes through `actions`. Two controls on one row that read as
+               * two different weights of text look like a mistake rather than a hierarchy, and
+               * that is exactly what shipped: this button was `text-nx-text-muted` at the default
+               * weight while `Bình luận` beside it was `text-nx-text-secondary font-medium`, so
+               * `Hữu ích` sat a shade lighter and visibly thinner than its neighbour.
+               *
+               * WHAT MATCHES NOW: `h-7 gap-1 px-2.5 text-nx-body-sm` (the DS's `sm` metrics, which
+               * this already had), plus `font-medium`, `rounded-nx-sm` and the ghost variant's
+               * `text-nx-text-secondary` → `hover:text-nx-text-primary` pair.
+               *
+               * WHY NOT JUST USE `Button`. The picked state needs a border (`border-nx-accent`)
+               * and ghost has none, so the box would grow 1px on selection unless a transparent
+               * border were forced back in through `className` — and the `-mt-1` optical lift
+               * below has to land on the SVG, while `Button`'s `icon` slot wraps it in a span. The
+               * component would be fought, not used. Keeping the classes here and naming the
+               * source is the honest version; if the DS ever grows a toggle variant, this is what
+               * it replaces.
+               */
               className={cn(
-                'inline-flex h-7 items-center gap-1 rounded-nx-xs border px-2.5 text-nx-body-sm',
+                'inline-flex h-7 items-center gap-1 rounded-nx-sm border px-2.5',
+                'text-nx-body-sm font-medium',
                 'transition-colors duration-[var(--nx-duration-fast)] ease-nx-out',
                 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring',
                 current
                   ? 'border-nx-accent bg-nx-accent-soft text-nx-text-accent'
-                  : 'border-transparent text-nx-text-muted hover:bg-nx-surface-hover hover:text-nx-text-primary'
+                  : 'border-transparent text-nx-text-secondary hover:bg-nx-surface-hover hover:text-nx-text-primary'
               )}
             >
               {/**

@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { cn } from '@/shared/lib/cn';
+import { EDGE_FADE, useEdgeMask } from '@/shared/lib/use-edge-mask';
 
 /**
  * Hand-written from the design system's `Tabs.d.ts` + `Tabs.prompt.md` contract and the
@@ -202,37 +203,6 @@ const listGap: Record<
 const toItem = (tab: string | TabItem): TabItem =>
   typeof tab === 'string' ? { id: tab, label: tab } : tab;
 
-/**
- * How much of each end of an overflowing `pill` strip is faded, and the margin the active tab
- * keeps from the edge when it scrolls itself in. ONE NUMBER FOR BOTH ON PURPOSE: a tab parked
- * exactly at the edge would sit under its own fade and read as half-erased, so the auto-scroll
- * must clear the fade by exactly the fade's width.
- *
- * 20 is `--nx-space-pad`. It is wide enough to read as a soft edge rather than a cut, and narrow
- * enough that at 390 — the width where `/friends` and `/admin/moderation` actually overflow — it
- * never covers a whole label.
- */
-const FADE = 20;
-
-/**
- * A HORIZONTAL MASK RATHER THAN TWO ABSOLUTELY-POSITIONED GRADIENT DIVS, which is the usual way
- * to fade a scroller and the wrong one here. An overlay gradient has to be painted in the colour
- * of whatever is behind it, and this strip lands on four different planes (page ground, white
- * card, dialog, dark surfaces) — every overlay would need to know which. A mask removes pixels
- * instead of covering them, so it is correct on all four without being told.
- *
- * `undefined` WHEN NEITHER END IS CLIPPED, so a strip that fits is not paying for a mask and its
- * first and last labels are not softened for no reason.
- */
-const edgeMask = (start: boolean, end: boolean) => {
-  if (!start && !end) return undefined;
-  // `black` IS NOT A COLOUR HERE and no token could replace it: a mask reads only the ALPHA
-  // channel, so these stops mean "keep" and "drop". Any opaque value would render identically.
-  const head = start ? `transparent 0, black ${FADE}px` : 'black 0';
-  const tail = end ? `black calc(100% - ${FADE}px), transparent 100%` : 'black 100%';
-  return `linear-gradient(to right, ${head}, ${tail})`;
-};
-
 export function Tabs({
   tabs = [],
   active,
@@ -246,61 +216,24 @@ export function Tabs({
   const items = tabs.map(toItem);
   const activeIndex = items.findIndex((item) => item.id === active);
 
-  const listRef = React.useRef<HTMLDivElement>(null);
-  const [clipped, setClipped] = React.useState({ start: false, end: false });
-
   /**
-   * EVERYTHING THAT CAN CHANGE A TAB'S WIDTH, as one dependency string.
+   * EVERYTHING THAT CAN CHANGE A TAB'S WIDTH, as one dependency string — see `useEdgeMask`, which
+   * explains why a strip has to be remeasured when a count or a label lands after the first paint.
    *
-   * IT EXISTS BECAUSE OF A COUNT THAT ARRIVES LATE, seen on `/friends/all` at 390: the strip is
-   * measured and the active tab scrolled into view on the first paint, and THEN `useInfiniteFriends`
-   * resolves and puts an `8` pill on that same tab. The tab grows by ~24, its right edge slides
-   * back under the trailing fade, and nothing re-runs — `active` did not change, so an effect
-   * keyed on `active` alone never hears about it. The reader is left looking at a half-faded count
-   * on the tab they are already on.
-   *
-   * COUNTS AND LABEL TEXT BOTH, because a label can arrive late too — every caller reads its
-   * labels through `t()`, and the locale is switchable at runtime.
+   * COUNTS AND LABEL TEXT BOTH, because a label can arrive late too: every caller reads its labels
+   * through `t()`, and the locale is switchable at runtime.
    */
   const widthKey = items.map((item) => `${item.id}:${item.count ?? ''}`).join('|');
 
   /**
-   * WHETHER EACH END HAS MORE BEHIND IT, remeasured on scroll and on resize. This is state rather
-   * than a CSS trick because there is no CSS query for "this scroller is not at its end" — and
-   * without it the only two honest options are a mask that is always on (softening labels on a
-   * strip that fits) or no affordance at all, which is what shipped.
+   * THE STRIP SCROLLS ITSELF AND FADES THE END THAT HAS MORE BEHIND IT. Both halves moved to
+   * `useEdgeMask` when the trending chips became the second caller; `active` is deliberately NOT
+   * in its dependency string, because selecting a tab no longer changes any tab's width.
    *
-   * THE 1px SLACK ON BOTH COMPARISONS IS NOT COSMETIC. `scrollWidth`/`clientWidth` are rounded
-   * integers over fractional layout, so a scroller sitting exactly at its end routinely reports a
-   * remaining pixel it cannot scroll; without the slack the trailing fade never switched off.
-   *
-   * `widthKey` IS IN THE DEPS AND `active` IS NOT. Anything that changes a tab's width changes
-   * what overflows; selecting one no longer changes any width, because the weight swap that used
-   * to resize the active tab is gone (header, defect 1).
+   * `relative` IS LOAD-BEARING on the element this ref lands on, not a habit: the auto-scroll
+   * effect below reads `offsetLeft`, which is measured from the nearest positioned ancestor.
    */
-  React.useEffect(() => {
-    const list = listRef.current;
-    if (!list) return;
-
-    const measure = () => {
-      const end = list.scrollWidth - list.clientWidth;
-      setClipped((prev) => {
-        const next = { start: list.scrollLeft > 1, end: list.scrollLeft < end - 1 };
-        // Same object when nothing moved: this fires on every scroll frame, and a fresh object
-        // each time would re-render the whole strip through the length of a swipe.
-        return prev.start === next.start && prev.end === next.end ? prev : next;
-      });
-    };
-
-    measure();
-    list.addEventListener('scroll', measure, { passive: true });
-    const observer = new ResizeObserver(measure);
-    observer.observe(list);
-    return () => {
-      list.removeEventListener('scroll', measure);
-      observer.disconnect();
-    };
-  }, [widthKey]);
+  const { ref: listRef, maskStyle } = useEdgeMask<HTMLDivElement>(widthKey);
 
   /**
    * THE SELECTED TAB PULLS ITSELF INTO VIEW. Selection does not always come from a click on
@@ -322,8 +255,8 @@ export function Tabs({
     const tab = list?.querySelector<HTMLElement>('[data-nx-tab-active="true"]');
     if (!list || !tab) return;
 
-    const start = tab.offsetLeft - FADE;
-    const end = tab.offsetLeft + tab.offsetWidth + FADE;
+    const start = tab.offsetLeft - EDGE_FADE;
+    const end = tab.offsetLeft + tab.offsetWidth + EDGE_FADE;
     const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches
       ? 'auto'
       : 'smooth';
@@ -333,7 +266,10 @@ export function Tabs({
     } else if (end > list.scrollLeft + list.clientWidth) {
       list.scrollTo({ left: end - list.clientWidth, behavior });
     }
-  }, [active, widthKey]);
+    // `listRef` IS IN THE DEPS BECAUSE IT COMES FROM A HOOK NOW. It is the same stable ref
+    // object every render, so this changes nothing at runtime — but the linter cannot know a
+    // returned value is a ref, and silencing it would silence the real dependencies too.
+  }, [active, widthKey, listRef]);
 
   // Arrow keys move between tabs (ARIA tabs pattern); focus follows selection, which is
   // safe here because switching a tab only swaps an already-loaded panel.
@@ -362,15 +298,11 @@ export function Tabs({
       aria-label={ariaLabel}
       onKeyDown={onKeyDown}
       /**
-       * THE MASK GOES IN `style`, NOT IN A CLASS, because its stops are computed — which end fades
-       * depends on where the scroller currently is. The caller's `style` is spread FIRST so a
-       * caller can still position the strip, and cannot accidentally delete the affordance.
+       * THE CALLER'S `style` IS SPREAD FIRST so a caller can still position the strip, and cannot
+       * accidentally delete the fade. `maskStyle` is computed — which end fades depends on where
+       * the scroller currently is — which is why it cannot be a class.
        */
-      style={{
-        ...style,
-        maskImage: edgeMask(clipped.start, clipped.end),
-        WebkitMaskImage: edgeMask(clipped.start, clipped.end),
-      }}
+      style={{ ...style, ...maskStyle }}
       /**
        * IN `pill`, NOTHING IS PAINTED AT THIS LEVEL. No fill, no border, no padding — the element
        * is a positioning box for the tabs and an ARIA landmark, and that is all. Everything the

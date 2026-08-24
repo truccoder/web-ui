@@ -579,7 +579,14 @@ export const en = {
       desc: 'Check back later for the latest stories.',
     },
     allLoaded: "You've seen all trending items",
-    allCategories: 'All',
+    // `All topics`, not `All`: this chip sits directly under the feed's `All` tab, one word
+    // meaning two unrelated things.
+    allCategories: 'All topics',
+    filters: 'Filters',
+    // The screen-reader name — the numeral on the button is a glyph, and alone it does not
+    // say what it counts.
+    filtersActive: 'Filters, ${count} active',
+    clearFilters: 'Clear filters',
     errorTitle: 'Could not load trending',
     untitled: 'Untitled',
     timeRangeLabel: 'Time range',
