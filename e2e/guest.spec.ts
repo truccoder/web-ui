@@ -45,6 +45,30 @@ test.describe('guest', () => {
     expect(await page.locator('main article, main [data-post-id]').count()).toBeGreaterThan(1);
   });
 
+  /**
+   * `Từ bên ngoài` LIVES ONLY HERE NOW, and what it holds changed with it.
+   *
+   * It used to print three source names with a count each, in both columns. The count was items of
+   * that source *within the page the component had already fetched*, so the three numbers summed
+   * to the trending page size and moved as the feed paged; the signed-in column dropped the card
+   * for `Đang tuyển`, and the guest column kept it rewritten as one real headline per source.
+   *
+   * SO THE ASSERTION IS ON THE ANCHORS, not on the heading. A heading over three dead lines is
+   * what this section used to be — proving it renders would not distinguish the two versions.
+   * Every crawled item leaves the app (`features/trending`: "every card is a link that leaves"),
+   * so an `http` href inside the flank is the shape of the new card and could not be the old one.
+   */
+  test('is given crawled headlines it can open, not a count of them', async ({ page }) => {
+    await openGuestFeed(page);
+
+    const ledger = page.getByRole('complementary', { name: 'Tóm lược' });
+    await expect(ledger.getByRole('heading', { name: 'Từ bên ngoài' })).toBeVisible();
+
+    // One per source, so at most three and at least one — asserting exactly three would pin the
+    // test to how many crawlers happened to reach the first page.
+    await expect(ledger.locator('a[href^="http"]').first()).toBeVisible({ timeout: 20_000 });
+  });
+
   test('is offered an account instead of an identity', async ({ page }) => {
     await page.goto('/newsfeed');
 

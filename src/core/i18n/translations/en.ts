@@ -1121,10 +1121,10 @@ export const en = {
   ledger: {
     label: 'Summary',
     evidence: 'Capability',
+    hiring: 'Hiring now',
     external: 'From outside',
     contributions: 'contributions',
     recentWeeks: 'Last 18 weeks',
-    itemCount: '${count} items',
   },
 
   moderationMine: {

@@ -85,7 +85,22 @@ test.describe('shell', () => {
     // so scope to the flank and take the first — the assertion is "the section is there", not
     // "there is exactly one of it".
     await expect(ledger.getByRole('heading', { name: 'Năng lực' }).first()).toBeVisible();
-    await expect(ledger.getByRole('heading', { name: 'Từ bên ngoài' })).toBeVisible();
+
+    /**
+     * `Từ bên ngoài` IS ASSERTED ABSENT, WHICH IS THE ASSERTION THAT USED TO BE ITS OPPOSITE.
+     *
+     * That section counted crawled items per source out of the page it had already fetched — so
+     * the three numbers summed to the trending `PAGE_SIZE` by construction — and it sat beside a
+     * feed that interleaves those very items. It is a guest-only card now; `guest.spec.ts` covers
+     * it there, in its rewritten form.
+     *
+     * The signed-in replacement, `Đang tuyển`, is NOT asserted present here, and deliberately:
+     * `HiringSection` renders nothing when the first page of `/projects` holds no project with an
+     * open position, which is a fact about the demo database rather than about the shell. This
+     * test is "the flank is there at 1440" — pinning it to seed data would make it fail for a
+     * reason it does not test.
+     */
+    await expect(ledger.getByRole('heading', { name: 'Từ bên ngoài' })).toHaveCount(0);
   });
 
   test('the rail reaches every primary surface', async ({ page }) => {

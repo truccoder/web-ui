@@ -2,11 +2,12 @@
 
 import { useMemo } from 'react';
 import Link from 'next/link';
-import { Check } from 'lucide-react';
+import { ArrowUpRight, Check } from 'lucide-react';
 import { Button, Card, Skeleton } from '@/shared/components';
 import { useT } from '@/core/i18n';
 import { useIntlLocale, useRelativeTime } from '@/shared/lib/format';
 import { ContributionGraph, useGithubStats, isNotLinked } from '@/features/github';
+import { useProjects } from '@/features/matchmaking';
 import { RepProgress, useReputation } from '@/features/reputation';
 import { useRoadmapProgress } from '@/features/roadmap';
 import { useAuthHref, useMyProfile } from '@/features/security';
@@ -34,9 +35,27 @@ import { useTrending } from '@/features/trending';
  * leg of the ∩ again.
  *
  * TWO SECTIONS, and the two that used to be here are gone. `Bằng chứng` answers "what does this
- * account amount to"; `Từ bên ngoài` answers "what is the world producing". Pending requests and
- * friend suggestions LEFT the ledger — they are about other people and about acting, which is what
+ * account amount to"; the second answers something about the world. Pending requests and friend
+ * suggestions LEFT the ledger — they are about other people and about acting, which is what
  * `/friends` is for, and a flank that asks you to do things is no longer a summary.
+ *
+ * THE SECOND SECTION IS `Đang tuyển` FOR A SIGNED-IN READER AND `Từ bên ngoài` FOR A GUEST, which
+ * is the one place the two columns diverge in kind rather than in content. `Từ bên ngoài` used to
+ * stand in both, and on the signed-in column it was answering a question nobody asked: it counted
+ * crawled items **per source, out of the page this component had already fetched** — 7 + 7 + 6 is
+ * 20 because `PAGE_SIZE` is 20, so the numbers described the request, not the world — and it did
+ * it beside a feed that already interleaves those very items (`Newsfeed`, scope `all`) and one tab
+ * away from `Công nghệ`, which is the same stream with filters on it. A statistics block about the
+ * column next to it, with nothing in it to open.
+ *
+ * `Đang tuyển` replaces it because matchmaking is the one thing in this product that the ledger
+ * can surface and no other column does: `/projects` is a rail destination you have to decide to
+ * visit, and the roles on it expire. It is the world *asking for something from the reader*, which
+ * is the counterweight `Bằng chứng` wants — evidence on one side, demand on the other.
+ *
+ * A GUEST KEEPS `Từ bên ngoài`, REWRITTEN. `GET /projects` answers 401 anonymously (measured), so
+ * the hiring card has nothing to render for them, while the crawled column is public — the section
+ * stays, but as one real headline per source instead of three counts. See `ExternalSection`.
  *
  * SECTION OVERLINES ARE `text-muted`, NOT `text-faint`. On recessed ground `text-faint` measured
  * below the contrast floor; muted clears it at 4.8:1. The same round retired tracked uppercase
@@ -86,7 +105,14 @@ export function Ledger() {
       className="sticky top-nx-topbar hidden h-[calc(100dvh-var(--spacing-nx-topbar))] w-[var(--spacing-nx-ledger-sm)] shrink-0 flex-col gap-[var(--nx-space-block)] overflow-y-auto px-5 pt-5 pb-12 xl:flex min-[1440px]:w-nx-ledger"
     >
       <EvidenceSection userId={profile?.id} />
-      <ExternalSection />
+      {/* MOUNTED ONLY ONCE THERE IS A PROFILE, which is a request-shaping decision rather than a
+          cosmetic one. `GET /projects` is authenticated (401 anonymously, measured), and this
+          column is in the shell — so an ungated `useProjects` fires on every route, including the
+          window where the session has not resolved or has expired. Measured against a stale
+          session that was exactly what happened: `/projects` was the ONLY call the page made, and
+          it 401'd on a retry loop under a heading that never stopped saying it was loading. The
+          profile is the same gate `EvidenceSection` already takes its id from. */}
+      {profile && <HiringSection />}
     </aside>
   );
 }
@@ -103,6 +129,12 @@ export function Ledger() {
  * three empty boxes, and the file's own rule is that a section with no data renders nothing at
  * all. So the guest column keeps `Từ bên ngoài` — crawled sources are public and just as
  * interesting to a stranger — and puts the invitation where the evidence would have been.
+ *
+ * IT DOES NOT GET `Đang tuyển`, and that is settled by the backend rather than by taste: measured
+ * against the running API, `GET /v1/api/projects` answers **401** to an anonymous caller, unlike
+ * `/posts/public` and `/trending`. So the card could not be filled for a guest even if the column
+ * wanted it — and it should not want it, since applying needs an account too and the invitation
+ * card above already asks for one.
  */
 export function GuestLedger() {
   const t = useT();
@@ -238,64 +270,175 @@ function EvidenceSection({ userId }: { userId?: number }) {
 }
 
 /**
- * `Từ bên ngoài` — the crawled sources, as a pulse rather than as headlines.
+ * `Đang tuyển` — the roles a signed-in reader could take, three at most.
  *
- * THE NAME IS THE PLAIN ONE, ON PURPOSE. It was renamed to `Nhịp nguồn` for a real reason — *nhịp*
- * is tempo, and a count plus a latest timestamp describe tempo, so the name promised no headlines
- * — and the project owner, having seen it in place, preferred the plain word back. The mismatch
- * between a plain name and statistical contents is a known cost, taken with the tradeoff in view.
+ * IT IS THE ONE BLOCK IN THIS COLUMN WITH SOMEWHERE TO GO, and that is deliberate rather than a
+ * lapse from the summary rule. `Bằng chứng` is a state of affairs and correctly inert; a role is a
+ * thing with a deadline attached, and a summary of it that could not be opened would be the same
+ * dead end the section it replaced was. A link is navigation, not the "asking you to do things"
+ * this file's header rules out — no accept, no reject, no apply lives here.
  *
- * TWO LINES PER ROW, NOT THREE CELLS. The earlier layout gave the name a fixed 102px cell, which
- * survives at the 1400 step and leaves 74px at 1280 — where the source name was being clipped
- * mid-word. The name now takes the full width and wraps; the numbers sit under it.
+ * `useProjects()` IS CALLED WITH ITS DEFAULT LIMIT AND NOT WITH `3`, which looks like waste and is
+ * the opposite. The key is `matchmakingKeys.projects(limit)`, so `useProjects(3)` would be a
+ * *second* cached list that `/projects` cannot reuse; sharing the default means this card costs
+ * one request across the whole session and warms the board it links into.
  *
- * WHAT THE COUNT HONESTLY IS: items in the page this component already fetched, not a daily rate.
- * The backend exposes no per-source statistics endpoint, so a `42/ngày` here would be a number
- * invented at the point of display. It says `N bài` instead, which is what was actually counted.
+ * OPEN ROLES ARE COUNTED, NOT ASSUMED, and a project with none is dropped. `status` is per
+ * position (`ProjectList` says the same), so an `OPEN` project whose every role is `FILLED` is a
+ * closed door — under a heading that says `Đang tuyển` it would be a lie the reader only finds
+ * out about after the click.
+ *
+ * IT IS NOT "HỢP VỚI BẠN", AND THE NAME SAYS SO. There is no endpoint that ranks projects against
+ * a reader's skills: `GET /positions/{id}/suggested-candidates` runs the other direction
+ * (position → people), and it matches on "shares at least one skill" with no score even there. So
+ * these are the newest three still hiring, honestly labelled — the plain claim the data supports.
+ *
+ * EVERY PAGE, UNLIKE `ExternalSection`, and the difference is the reason rather than an oversight.
+ * `ProjectList` shares this cache and pages it as the reader scrolls `/projects`, so both cards
+ * read from a pool that grows underneath them. This one takes the HEAD of a list the server
+ * already ordered and pages append to, so the three rows are stable; the crawled card RANKS its
+ * pool by score, where one more page can displace a row, which is why it is pinned to page one.
+ */
+function HiringSection() {
+  const t = useT();
+  const { data, isPending } = useProjects();
+
+  const hiring = useMemo(() => {
+    const projects = data?.pages.flatMap((page) => page.items ?? []) ?? [];
+
+    return projects
+      .map((project) => ({
+        project,
+        openCount: (project.positions ?? []).filter((p) => p.status === 'OPEN').length,
+      }))
+      .filter((row) => row.openCount > 0)
+      .slice(0, 3);
+  }, [data]);
+
+  if (isPending) {
+    return (
+      <Card className="flex flex-col gap-3">
+        <SectionHeading>{t('ledger.hiring')}</SectionHeading>
+        <Skeleton lines={2} />
+      </Card>
+    );
+  }
+
+  if (hiring.length === 0) return null;
+
+  return (
+    <Card className="flex flex-col gap-3">
+      <SectionHeading>{t('ledger.hiring')}</SectionHeading>
+
+      <ul className="flex flex-col gap-2.5">
+        {hiring.map(({ project, openCount }) => (
+          <li key={project.id} className="flex flex-col gap-0.5">
+            {/* THE TITLE WRAPS TO TWO LINES AND THEN STOPS. A 260px drawable takes roughly four
+                words a line; one long project name allowed to run would push the other two rows
+                off the fold this card shares with the contribution graph above it. */}
+            <Link
+              href={`/projects/${project.id}`}
+              className="line-clamp-2 text-nx-body-sm text-nx-text-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
+            >
+              {project.title}
+            </Link>
+            {/* The same sentence `/projects` uses, from the same key — the card and the board must
+                not disagree about how many roles a project has open. */}
+            <span className="text-nx-caption text-nx-text-muted">
+              {t('projects.openPositions', { count: openCount })}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </Card>
+  );
+}
+
+/**
+ * `Từ bên ngoài` — one headline per crawled source. Guest column only.
+ *
+ * IT USED TO BE THREE COUNTS AND THEY WERE NOT WHAT THEY LOOKED LIKE: `N bài` was items of that
+ * source *within the page this component had already fetched*, so the three numbers summed to
+ * `PAGE_SIZE` by construction and moved when the feed beside them paged. The backend has no
+ * per-source statistics endpoint, so the honest options were to caption the number as what it was
+ * or to stop showing a number. This does the second.
+ *
+ * ONE ITEM PER SOURCE, RANKED WITHIN THE SOURCE — never the global top three by `score`. Scores
+ * are not comparable across crawlers: a GitHub star count runs to six figures where a Hacker News
+ * score runs to three, and `TrendingParams.source` carries the backend's own note that sorting
+ * them together put GitHub across the entire first page. A global sort here would fill all three
+ * rows with GitHub and quietly retire the "three sources" claim this card exists to make.
+ *
+ * `useTrending({})` WITH NO FILTER, so the key matches the one `Newsfeed` already mounts on the
+ * page underneath — the card is free on the screen where a guest sees it. A `timeRange: 'today'`
+ * would read better and cost a second request for a window that DEV Community, two days behind in
+ * the measured data, regularly fails to fill.
+ *
+ * THE FIRST PAGE ONLY, AND SHARING THE KEY IS EXACTLY WHY. `Newsfeed` calls `fetchNextPage` on
+ * this same query as the reader scrolls, so a `flatMap` over every page would re-rank against a
+ * growing pool — headlines in a sticky sidebar silently swapping themselves out while the reader
+ * is halfway down the column beside them. Page one is fixed once loaded, and it is a claim that
+ * can be stated: the hottest of the twenty most recent crawled items.
  */
 function ExternalSection() {
   const t = useT();
   const relativeTime = useRelativeTime();
   const { data } = useTrending({});
 
-  const sources = useMemo(() => {
-    const items = data?.pages.flatMap((page) => page.items ?? []) ?? [];
-    const bySource = new Map<string, { count: number; latest?: string }>();
+  const headlines = useMemo(() => {
+    const items = data?.pages[0]?.items ?? [];
+    const bySource = new Map<string, (typeof items)[number]>();
 
     for (const item of items) {
-      if (!item.source) continue;
-      const row = bySource.get(item.source) ?? { count: 0, latest: undefined };
-      row.count += 1;
-      // Latest wins: the pulse is "when did this source last say something".
-      if (item.publishedAt && (!row.latest || item.publishedAt > row.latest)) {
-        row.latest = item.publishedAt;
-      }
-      bySource.set(item.source, row);
+      if (!item.source || !item.title) continue;
+      const held = bySource.get(item.source);
+      // `score` is nullable on every row, so an unscored item still competes — at zero.
+      if (!held || (item.score ?? 0) > (held.score ?? 0)) bySource.set(item.source, item);
     }
 
-    return [...bySource.entries()].sort((a, b) => b[1].count - a[1].count);
+    // Freshest source first. The alternative — ordering by score — would be comparing across
+    // crawlers again at the level of rows instead of at the level of items.
+    return [...bySource.values()].sort((a, b) =>
+      (b.publishedAt ?? '').localeCompare(a.publishedAt ?? '')
+    );
   }, [data]);
 
-  if (sources.length === 0) return null;
+  if (headlines.length === 0) return null;
 
   return (
     <Card className="flex flex-col gap-3">
       <SectionHeading>{t('ledger.external')}</SectionHeading>
 
       <ul className="flex flex-col gap-2.5">
-        {sources.map(([source, row]) => (
-          <li key={source} className="flex flex-col gap-0.5">
-            <span className="text-nx-body-sm text-nx-text-primary">
-              {t(`trending.sources.${source}`)}
+        {headlines.map((item) => (
+          <li key={item.id} className="flex flex-col gap-0.5">
+            <span className="text-nx-caption text-nx-text-muted">
+              {t(`trending.sources.${item.source}`)}
+              {item.publishedAt && ` · ${relativeTime(item.publishedAt)}`}
             </span>
-            <span className="font-mono text-nx-caption">
-              <span className="text-nx-text-secondary">
-                {t('ledger.itemCount', { count: row.count })}
+
+            {/* Every crawled item is a link off-site — that is the whole interaction model of
+                `features/trending`, and `TrendingCard` states the affordance the same way. A row
+                whose `url` is null keeps its title as plain text rather than a dead anchor. */}
+            {item.url ? (
+              <a
+                href={item.url}
+                target="_blank"
+                // `noopener` closes `window.opener`; `noreferrer` keeps this app's URLs out of the
+                // destination's logs.
+                rel="noopener noreferrer"
+                className="group flex items-start gap-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
+              >
+                <span className="line-clamp-2 text-nx-body-sm text-nx-text-primary group-hover:underline">
+                  {item.title}
+                </span>
+                <ArrowUpRight className="mt-0.5 size-3.5 shrink-0 text-nx-text-muted" aria-hidden />
+              </a>
+            ) : (
+              <span className="line-clamp-2 text-nx-body-sm text-nx-text-primary">
+                {item.title}
               </span>
-              {row.latest && (
-                <span className="text-nx-text-muted"> · {relativeTime(row.latest)}</span>
-              )}
-            </span>
+            )}
           </li>
         ))}
       </ul>

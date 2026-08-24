@@ -1097,10 +1097,10 @@ export const vi: Messages = {
   ledger: {
     label: 'Tóm lược',
     evidence: 'Năng lực',
+    hiring: 'Đang tuyển',
     external: 'Từ bên ngoài',
     contributions: 'đóng góp',
     recentWeeks: '18 tuần gần nhất',
-    itemCount: '${count} bài',
   },
 
   moderationMine: {
