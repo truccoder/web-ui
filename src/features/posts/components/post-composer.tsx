@@ -256,7 +256,14 @@ export function PostComposer({ onPosted }: PostComposerProps) {
   };
 
   const trimmed = content.trim();
-  const firstName = profile?.fullName?.trim().split(/\s+/).pop() ?? '';
+  /**
+   * THE WHOLE NAME, NOT THE LAST WORD. Cutting a Vietnamese name down to its given name is the
+   * right instinct — `Trúc Anh` is addressed as `Anh` — but the given name is very often a word
+   * that is ALSO a pronoun: `Anh`, `Em`, `Chị`. `Anh đang nghĩ gì vậy?` then stops reading as
+   * "hello, Anh" and starts reading as the product picking a gendered pronoun for someone it
+   * never asked. A full name can only ever read as a name.
+   */
+  const fullName = profile?.fullName?.trim() ?? '';
 
   // What each kind needs before submitting is worth anything. `content` is the article body and
   // the Q&A question, so those two still require it; a snippet, poll or link carries its own
@@ -382,7 +389,13 @@ export function PostComposer({ onPosted }: PostComposerProps) {
   };
 
   const typeLabel = t(`createPost.type.${postType}`);
-  const placeholder = t(`createPost.contentPlaceholder.${postType}`, { fullname: firstName });
+  /* `REGULAR` is the only kind whose placeholder carries the name, and `useMyProfile` is a
+     query — until it lands there is no name to carry, and `` đang nghĩ gì vậy?`` opening on a
+     space is worse than a sentence that never mentions you. */
+  const placeholder =
+    postType === 'REGULAR' && !fullName
+      ? t('createPost.contentPlaceholderNoName')
+      : t(`createPost.contentPlaceholder.${postType}`, { fullname: fullName });
 
   return (
     <>

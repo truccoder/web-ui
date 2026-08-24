@@ -623,7 +623,7 @@ export const en = {
     visibilityLabel: 'Who can see this',
     submittedPendingReview:
       'Post submitted. It may need to pass moderation before it shows up in the feed.',
-    placeholder: "What's on your mind, ${fullname}?",
+    contentPlaceholderNoName: "What's on your mind?",
     photo: 'Photo',
     posting: 'Posting...',
     post: 'Post',
