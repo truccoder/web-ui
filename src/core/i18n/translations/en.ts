@@ -67,29 +67,12 @@ export const en = {
     // components, deleted at P2.15cd. The screen's own copy now lives under `moderation.*`,
     // owned by the feature that renders it. This one key stays because the `(admin)` layout —
     // shell, not feature — uses it to label the nav link.
+    //
+    // THE READER'S REPORT DIALOG MOVED OUT TOO, and it had never worked from in here: it was
+    // nested under `admin.moderation.report.*` while every caller asked for `moderation.report.*`,
+    // so the `⋯` menu on a post printed the raw key `moderation.report.title` and the whole
+    // dialog behind it was untranslated. It is a reader-facing surface, not an admin one.
     moderation: {
-      report: {
-        title: 'Report post',
-        description: 'Pick the closest reason. Reports go to the moderators, not to the author.',
-        reasonLabel: 'Reason',
-        reason: {
-          SPAM: 'Spam or advertising',
-          HARASSMENT: 'Harassment or personal attacks',
-          HATE_SPEECH: 'Hate speech',
-          ADULT_CONTENT: 'Adult content',
-          VIOLENCE: 'Violence',
-          MISINFORMATION: 'Misinformation',
-          OTHER: 'Something else',
-        },
-        detailsLabel: 'Anything to add (optional)',
-        detailsPlaceholder: 'What made you report this post?',
-        submit: 'Send report',
-        cancel: 'Cancel',
-        failed: 'Could not send the report',
-        sentTitle: 'Report sent',
-        sentBody: 'Thank you. The report has been recorded and passed to the moderators.',
-        done: 'Close',
-      },
       title: 'Moderation',
     },
   },
@@ -99,7 +82,6 @@ export const en = {
     library: 'Library',
     knowledge: 'Archive',
     newsfeed: 'Newsfeed',
-    trending: 'Trending',
     notifications: 'Notifications',
     friends: 'Friends',
     friendsAll: 'All Friends',
@@ -280,6 +262,9 @@ export const en = {
       label: 'Filter the feed',
       all: 'All',
       friends: 'Friends',
+      // Names the CONTENT, the way its three neighbours do — the old `/trending` named a sort
+      // order instead.
+      tech: 'Tech',
     },
     title: 'Newsfeed',
     subtitle: 'Latest updates from your friends and people you follow',
@@ -408,6 +393,31 @@ export const en = {
       logs: 'Decision log',
       banned: 'Banned users',
       appeals: 'Appeals',
+    },
+    report: {
+      /* The `⋯` menu row. Deliberately shorter than `title`: it sits between `Edit` and
+         `Delete`, which are one word each. */
+      action: 'Report',
+      title: 'Report post',
+      description: 'Pick the closest reason. Reports go to the moderators, not to the author.',
+      reasonLabel: 'Reason',
+      reason: {
+        SPAM: 'Spam or advertising',
+        HARASSMENT: 'Harassment or personal attacks',
+        HATE_SPEECH: 'Hate speech',
+        ADULT_CONTENT: 'Adult content',
+        VIOLENCE: 'Violence',
+        MISINFORMATION: 'Misinformation',
+        OTHER: 'Something else',
+      },
+      detailsLabel: 'Anything to add (optional)',
+      detailsPlaceholder: 'What made you report this post?',
+      submit: 'Send report',
+      cancel: 'Cancel',
+      failed: 'Could not send the report',
+      sentTitle: 'Report sent',
+      sentBody: 'Thank you. The report has been recorded and passed to the moderators.',
+      done: 'Close',
     },
     /* The reader-report queue. Read-only by the shape of the API — there is no endpoint that
        marks a report handled — which is what `readOnly` has to say out loud. */

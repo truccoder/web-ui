@@ -46,6 +46,21 @@ import { LocationBadge } from './location-badge';
 /** Everything the identity row needs, as the feed payload actually spells it. */
 export interface PostCardAuthor {
   id: number;
+  /**
+   * The author's handle — the ONLY key `/u/{username}` takes, and the reason the name on a
+   * card can finally be a link.
+   *
+   * IT USED TO BE UNGETTABLE. `FeedPostDataDto` carried `authorId` and no username, and no
+   * endpoint mapped one to the other (`/users/{id}/reputation` returns a score,
+   * `/users/{id}/posts` returns posts), so there was no frontend route round it — written up as
+   * B13 in `docs/backend-plan.md`. The backend added `authorUsername` to the feed payload and
+   * the mapper fills it from the join it was already doing for `authorLevelName`.
+   *
+   * Still optional, and absent still means plain text rather than a broken link: a payload that
+   * predates the field, or a search DTO that has not caught up, must not render an anchor to
+   * `/u/undefined`.
+   */
+  username?: string | null;
   fullName?: string | null;
   profilePictureUrl?: string | null;
   /**
@@ -138,6 +153,12 @@ export function PostCard({
   // instead of showing an empty line.
   const authorName = author.fullName?.trim() || t('post.unknownAuthor');
 
+  /**
+   * The author's page, when the payload says who they are. `encodeURIComponent` because a
+   * handle is user-chosen text, not a slug this app minted.
+   */
+  const authorHref = author.username ? `/u/${encodeURIComponent(author.username)}` : undefined;
+
   return (
     /**
      * THREE GROUPS AT THE `group` RUNG (16), EVERYTHING INSIDE A GROUP AT `tight` (8) — the round-15
@@ -157,6 +178,10 @@ export function PostCard({
           // Under the name, not beside the `⋯`. See the prop's own note.
           timeBelow
           name={authorName}
+          // Puts the link on the name and the picture, and only on those two — see
+          // `DeveloperIdentity`'s `href`. The timestamp below stays the POST's permalink; the
+          // two anchors on this row point at different things on purpose.
+          href={authorHref}
           src={author.profilePictureUrl ?? undefined}
           /**
            * THE TIMESTAMP IS THE PERMALINK — added once `/posts/{id}` existed.
@@ -167,9 +192,10 @@ export function PostCard({
            * because it is already on the row, already the least-interesting text on it, and
            * already where readers look for "this specific post".
            *
-           * NOT the author's name and not the whole card: the name's destination is a person (and
-           * cannot be built yet — `FeedPostDataDto` has no `authorUsername`, B28), and a
-           * card-wide anchor would swallow every reaction click that misses its button.
+           * STILL NOT THE WHOLE CARD: a card-wide anchor would swallow every reaction click that
+           * misses its button. The author's NAME is a link now — that half of this note expired
+           * when the feed payload grew `authorUsername` — but it points at a person while this
+           * points at the post, which is exactly why they are two anchors and not one.
            */
           time={
             <Link href={`/posts/${postId}`} className="hover:text-nx-text-primary hover:underline">

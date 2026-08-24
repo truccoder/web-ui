@@ -123,6 +123,10 @@ export function PostResultCard({ post, className }: PostResultCardProps) {
     <div className={cn('flex flex-col gap-2 px-3 py-3', className)}>
       <DeveloperIdentity
         name={authorName}
+        // `PostDto` carries the handle now, the same field the feed payload grew — so a result
+        // reaches its author instead of naming them. `undefined` keeps the plain-text name for a
+        // hit whose author row was missing.
+        href={post.authorUsername ? `/u/${encodeURIComponent(post.authorUsername)}` : undefined}
         src={post.authorProfilePictureUrl ?? undefined}
         size="sm"
         rep={

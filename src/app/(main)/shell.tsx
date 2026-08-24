@@ -138,10 +138,10 @@ interface NavGroup {
  * explicitly says it is not. `Cộng đồng` says the wider thing, and it is the honest complement to
  * `Phát triển`: outward, then inward.
  *
- * `/trending` IS NOT IN THE RAIL and that is the design, not an omission. The DS folds crawled
+ * `/trending` IS NOT IN THE RAIL, AND IS NOT A DESTINATION ANY MORE EITHER. The DS folds crawled
  * content into the feed's `Tất cả` tab and the ledger's `Từ bên ngoài` section, retiring the
- * separate destination. The route still exists and still works — folding it into the feed is R4
- * — so it moves to `PALETTE_ONLY_ITEMS` rather than being stranded with no way in.
+ * separate page (R4); it is now `/newsfeed`'s `Công nghệ` tab, and the route redirects there.
+ * The palette entry below points at the tab, which is the only place the content lives.
  */
 const NAV_GROUPS: NavGroup[] = [
   {
@@ -209,9 +209,22 @@ const PALETTE_ONLY_ITEMS: NavItem[] = [
   // page is unchanged and reachable two ways: `MeMenu` above, and this entry in the palette.
   { href: '/profile', labelKey: 'nav.profile', icon: User, keywords: 'trang ca nhan account home' },
   { href: '/notifications', labelKey: 'nav.notifications', icon: Users, keywords: 'thong bao' },
-  // Retired from the rail by the round-14 grouping (see `NAV_GROUPS`), kept reachable here until
-  // R4 folds crawled content into the feed. The palette is a keyboard index of every route.
-  { href: '/trending', labelKey: 'nav.trending', icon: TrendingUp, keywords: 'hot xu huong' },
+  /**
+   * NOW A TAB, NOT A PAGE — the entry survives because the palette is how someone who knows the
+   * old name still finds the content.
+   *
+   * IT POINTS AT `/trending` RATHER THAN AT `/newsfeed?tab=tech` DELIBERATELY, and the reason is
+   * that `useTabParam` reads the query string ONCE, when the page mounts. Pushing the tab URL
+   * from a reader already sitting on `/newsfeed` changes the address and nothing else — the
+   * strip would not move. Routing through the redirect makes it a real navigation every time,
+   * from any page, which is the only version of this command that always works.
+   */
+  {
+    href: '/trending',
+    labelKey: 'newsfeed.tabs.tech',
+    icon: TrendingUp,
+    keywords: 'hot xu huong cong nghe tech trending crawl',
+  },
 ];
 
 /** Every route the palette should know about, in rail order. */
@@ -223,9 +236,10 @@ const ALL_NAV_ITEMS: NavItem[] = [
 /**
  * THE ROWS A SIGNED-OUT READER CAN ACTUALLY OPEN — the rail's half of the guest surface.
  *
- * It is the route list from `src/middleware.ts` intersected with what the rail offers, which
- * comes to two: the feed and trending. Everything else in `NAV_GROUPS` is a screen with no
- * anonymous endpoint behind it.
+ * It is the route list from `src/middleware.ts` intersected with what the rail offers, which now
+ * comes to ONE: the feed. Everything else in `NAV_GROUPS` is a screen with no anonymous endpoint
+ * behind it, and the second guest-readable route — the crawler's column — stopped being a rail
+ * destination when it became `/newsfeed`'s `Công nghệ` tab.
  *
  * THE OTHER ROWS STAY ON SCREEN, LOCKED, rather than being hidden — and this is the one place
  * this file departs from the DS's "a rail item that leads nowhere must not exist" rule, on
@@ -234,7 +248,7 @@ const ALL_NAV_ITEMS: NavItem[] = [
  * feed. The lock is what keeps it from being a dead end: the row is a real link, the middleware
  * bounces it to `/login?next=…`, and the reader arrives back where they were pointing.
  */
-const GUEST_READABLE_HREFS = new Set(['/newsfeed', '/trending']);
+const GUEST_READABLE_HREFS = new Set(['/newsfeed']);
 
 const isActive = (item: NavItem, pathname: string) =>
   item.matchPrefix ? pathname.startsWith(item.matchPrefix) : pathname === item.href;
@@ -412,22 +426,15 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const pendingCount = pendingRequests?.length ?? 0;
 
   /**
-   * `/trending` IS PROMOTED INTO THE GUEST RAIL, and only there.
+   * THE GUEST RAIL USED TO GET `/trending` PROMOTED INTO IT, and that special case is gone.
    *
-   * For a signed-in user it lives in the palette because the design folds crawled content into
-   * the feed's `Tất cả` tab (see `PALETTE_ONLY_ITEMS`), so the destination is redundant. For a
-   * guest it is the second — and last — thing they can open, and a rail whose only working row
-   * is the page they are already on gives them nowhere to go. The palette is not an answer here
-   * either: `⌘K` is not something a first-time visitor knows about.
+   * The argument for it was real: it was the second — and last — thing a guest could open, and a
+   * rail whose only working row is the page they are already on gives them nowhere to go. But it
+   * meant one piece of content had two different homes depending on who was asking, and a
+   * signed-in reader never saw the row at all. It is `/newsfeed`'s `Công nghệ` tab now, which a
+   * guest lands on the same page as — see that page's `GUEST_TABS`. One rail for everyone.
    */
-  const groups = useMemo<NavGroup[]>(() => {
-    if (!isGuest) return NAV_GROUPS;
-    const trending = PALETTE_ONLY_ITEMS.find((item) => item.href === '/trending');
-    if (!trending) return NAV_GROUPS;
-    return NAV_GROUPS.map((group, index) =>
-      index === 0 ? { ...group, items: [...group.items, trending] } : group
-    );
-  }, [isGuest]);
+  const groups = NAV_GROUPS;
 
   return (
     <div className="flex h-full flex-col">

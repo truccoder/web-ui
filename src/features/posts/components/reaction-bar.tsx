@@ -180,7 +180,27 @@ export function ReactionBar({
                   : 'border-transparent text-nx-text-muted hover:bg-nx-surface-hover hover:text-nx-text-primary'
               )}
             >
-              <TriggerIcon aria-hidden className="size-4 shrink-0" />
+              {/**
+               * `-mt-1` PULLS THE GLYPH UP ONTO THE TEXT'S BASELINE, and the number is measured
+               * rather than eyeballed. `items-center` centres the icon's 16px BOX in the 28px
+               * button, which is geometrically correct and optically wrong: at 13px the label's
+               * ink runs from the cap (10px above the baseline) to 1px below it, so its visual
+               * mass sits ABOVE the box centre — and `ThumbsUp`, the glyph this button wears by
+               * default, is bottom-heavy on top of that (the mitten fills the lower two thirds
+               * while only the thin thumb reaches the top). Measured on the live card: the icon
+               * read ~2px low against `Hữu ích`.
+               *
+               * A NEGATIVE MARGIN RATHER THAN A TRANSFORM, and half the value you expect. Under
+               * `items-center` the flex line centres the MARGIN box, so `-mt-1` (-4px) lifts the
+               * border box by 2px — the shift asked for. A `translate` would move the glyph
+               * without telling the layout, which is the thing that goes wrong later when the
+               * row wraps.
+               *
+               * NOT `items-baseline` ON THE BUTTON: the button has a fixed `h-7`, and baseline
+               * alignment inside it drops the whole row to the top of the box instead of
+               * centring it, so the label goes with it.
+               */}
+              <TriggerIcon aria-hidden className="-mt-1 size-4 shrink-0" />
               <span>{t(triggerLabelKey)}</span>
             </button>
           }

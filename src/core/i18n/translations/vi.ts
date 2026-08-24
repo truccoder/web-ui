@@ -61,29 +61,6 @@ export const vi: Messages = {
   admin: {
     title: 'Quản trị kiểm duyệt',
     moderation: {
-      report: {
-        title: 'Báo cáo bài viết',
-        description:
-          'Chọn lý do gần nhất. Báo cáo được gửi cho quản trị viên, không gửi cho tác giả.',
-        reasonLabel: 'Lý do',
-        reason: {
-          SPAM: 'Spam hoặc quảng cáo',
-          HARASSMENT: 'Quấy rối, công kích cá nhân',
-          HATE_SPEECH: 'Ngôn từ thù ghét',
-          ADULT_CONTENT: 'Nội dung người lớn',
-          VIOLENCE: 'Bạo lực',
-          MISINFORMATION: 'Thông tin sai lệch',
-          OTHER: 'Lý do khác',
-        },
-        detailsLabel: 'Mô tả thêm (không bắt buộc)',
-        detailsPlaceholder: 'Điều gì khiến bạn báo cáo bài này?',
-        submit: 'Gửi báo cáo',
-        cancel: 'Huỷ',
-        failed: 'Không gửi được báo cáo',
-        sentTitle: 'Đã gửi báo cáo',
-        sentBody: 'Cảm ơn bạn. Báo cáo đã được ghi nhận và chuyển tới quản trị viên.',
-        done: 'Đóng',
-      },
       title: 'Kiểm duyệt',
     },
   },
@@ -93,7 +70,6 @@ export const vi: Messages = {
     library: 'Thư viện',
     knowledge: 'Kho lưu trữ',
     newsfeed: 'Bảng tin',
-    trending: 'Xu hướng',
     notifications: 'Thông báo',
     friends: 'Bạn bè',
     friendsAll: 'Tất cả bạn bè',
@@ -104,8 +80,9 @@ export const vi: Messages = {
     profile: 'Trang cá nhân',
     logout: 'Đăng xuất',
     primary: 'Điều hướng chính',
-    // R15 rail: hai nhóm — người khác, rồi bạn. `groupStream`/`groupNetwork` giữ lại vì
-    // `/trending` và các nhãn cũ còn tham chiếu ở nơi khác; xoá khi R4 dọn xong.
+    // R15 rail: hai nhóm — người khác, rồi bạn. `groupStream`/`groupNetwork` là nhãn của ba
+    // nhóm cũ, không còn ai gọi; xoá khi R4 dọn xong. `trending` thì đã xoá ở đây: `/trending`
+    // thành tab `Công nghệ`, và bảng lệnh gọi thẳng `newsfeed.tabs.tech`.
     groupCommunity: 'Cộng đồng',
     groupStream: 'Dòng chảy',
     groupGrowth: 'Phát triển',
@@ -270,6 +247,11 @@ export const vi: Messages = {
       label: 'Lọc bảng tin',
       all: 'Tất cả',
       friends: 'Bạn bè',
+      /* `Công nghệ`, KHÔNG PHẢI `Xu hướng`. Tab này thay cho trang `/trending` cũ, và tên cũ
+         nói về CÁCH xếp (đang hot) chứ không nói nội dung là gì. Đứng cạnh `Tất cả · Bạn bè ·
+         Kỹ năng của tôi` — ba cái tên đều trả lời "cột này chứa gì" — thì `Công nghệ` mới cùng
+         một loại câu trả lời. */
+      tech: 'Công nghệ',
     },
     title: 'Bảng tin',
     subtitle: 'Cập nhật mới nhất từ bạn bè và những người bạn theo dõi',
@@ -397,6 +379,33 @@ export const vi: Messages = {
       logs: 'Nhật ký quyết định',
       banned: 'Người bị cấm',
       appeals: 'Khiếu nại',
+    },
+    report: {
+      /* THE MENU ITEM, NOT THE DIALOG TITLE. `title` is the heading the dialog wears —
+         `Báo cáo bài viết` — and it read as a whole sentence sitting between `Sửa` and `Xoá` on
+         the `⋯` menu. A menu row is a verb, at the same length as its neighbours. */
+      action: 'Báo cáo',
+      title: 'Báo cáo bài viết',
+      description:
+        'Chọn lý do gần nhất. Báo cáo được gửi cho quản trị viên, không gửi cho tác giả.',
+      reasonLabel: 'Lý do',
+      reason: {
+        SPAM: 'Spam hoặc quảng cáo',
+        HARASSMENT: 'Quấy rối, công kích cá nhân',
+        HATE_SPEECH: 'Ngôn từ thù ghét',
+        ADULT_CONTENT: 'Nội dung người lớn',
+        VIOLENCE: 'Bạo lực',
+        MISINFORMATION: 'Thông tin sai lệch',
+        OTHER: 'Lý do khác',
+      },
+      detailsLabel: 'Mô tả thêm (không bắt buộc)',
+      detailsPlaceholder: 'Điều gì khiến bạn báo cáo bài này?',
+      submit: 'Gửi báo cáo',
+      cancel: 'Huỷ',
+      failed: 'Không gửi được báo cáo',
+      sentTitle: 'Đã gửi báo cáo',
+      sentBody: 'Cảm ơn bạn. Báo cáo đã được ghi nhận và chuyển tới quản trị viên.',
+      done: 'Đóng',
     },
     /* Hàng chờ báo cáo từ người đọc. Chỉ đọc, do chính hình dạng của API — không có endpoint nào
        đánh dấu một báo cáo là đã xử lý — nên `readOnly` phải nói thẳng điều đó. */

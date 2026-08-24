@@ -31,8 +31,11 @@ const SOURCES = ['GitHub', 'Hacker News', 'DEV Community'] as const;
  *    are `<option>` elements; `Badge` renders a `<span>`, so intersecting on the element still
  *    separates a label on a card from the control that chose it. The intersection is what makes
  *    this robust to the control changing shape — it did, and this helper did not have to.
- *  - the LEDGER's "Từ bên ngoài" section, which lists each source with a count — that is the
- *    flank, an `<aside>` beside `<main>` rather than inside it, so scoping to `main` drops it.
+ *  - the LEDGER's "Từ bên ngoài" section, which names each source it has a headline from — that is
+ *    the flank, an `<aside>` beside `<main>` rather than inside it, so scoping to `main` drops it.
+ *    The exclusion outlived two rewrites of that card (three counts → three headlines) and one
+ *    narrowing of where it appears (both columns → guests only), because it was never about what
+ *    the card holds: `main` is the boundary, and the flank is on the other side of it.
  *
  * Neither exclusion is decoration: remove either one and this file goes green on a broken filter.
  */
@@ -43,8 +46,15 @@ function cardSources(page: Page) {
     .and(page.locator('span'));
 }
 
+/**
+ * THE SCREEN MOVED AND THE TESTS DID NOT HAVE TO. What was `/trending` is now the `Công nghệ` tab
+ * on the feed, rendering the same `TrendingList` with the same filters — so everything below is
+ * unchanged apart from this address. It goes straight to the tab rather than through `/trending`'s
+ * redirect: the redirect is asserted once in `shell.spec.ts`, and a suite that reached its subject
+ * through it would be testing the forward on every case.
+ */
 async function openTrending(page: Page) {
-  await page.goto('/trending');
+  await page.goto('/newsfeed?tab=tech');
   // Cards are client-side data, so waiting on one is also what makes the filter clicks below
   // land on a hydrated page — the same hydration race that first broke `newsfeed.spec.ts`.
   await expect(page.locator('main a[href^="http"]').first()).toBeVisible({ timeout: 20_000 });

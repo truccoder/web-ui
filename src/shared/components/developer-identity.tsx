@@ -1,4 +1,5 @@
 import * as React from 'react';
+import Link from 'next/link';
 import { cn } from '@/shared/lib/cn';
 import { Avatar, type AvatarProps } from './avatar';
 
@@ -75,6 +76,21 @@ export interface DeveloperIdentityProps extends React.HTMLAttributes<HTMLDivElem
    * @default false
    */
   timeBelow?: boolean;
+  /**
+   * The person's page. Makes the AVATAR and the NAME links to it; everything else on the row
+   * stays inert.
+   *
+   * TWO LINKS RATHER THAN ONE AROUND THE ROW, and that is the whole design of this prop. The
+   * friends list can wrap the entire identity in an anchor because nothing else lives inside
+   * it — a post card cannot, because `time` is already the post's own permalink and an anchor
+   * inside an anchor is invalid HTML that browsers silently unnest. So the two things a reader
+   * actually aims at when they mean "who is this" get the link, and the timestamp keeps
+   * pointing at the post.
+   *
+   * Omit for a row whose person has no reachable page — the payload carries no handle, or the
+   * row is about the reader themselves. The name then renders as plain text, exactly as before.
+   */
+  href?: string;
   /** Avatar image url. */
   src?: string;
   /** Presence dot on the avatar. */
@@ -103,6 +119,7 @@ export function DeveloperIdentity({
   size = 'md',
   avatarSize,
   timeBelow = false,
+  href,
   src,
   status,
   className,
@@ -115,25 +132,61 @@ export function DeveloperIdentity({
   // supplies both gets the original layout rather than one silently dropped.
   const timeUnderName = timeBelow && !secondLine ? time : undefined;
 
+  /**
+   * The focus ring the two links share. Written once because the avatar and the name are the
+   * same target said twice, and a reader tabbing through must not see two different rings.
+   */
+  const linkRing = cn(
+    'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring'
+  );
+
+  const nameClass = cn(
+    'truncate font-semibold text-nx-text-primary',
+    size === 'sm' ? 'text-nx-body-sm' : 'text-nx-ui'
+  );
+
+  const avatar = (
+    <Avatar
+      src={src}
+      name={name}
+      size={avatarSize ?? (size === 'sm' ? 'sm' : 'lg')}
+      status={status}
+    />
+  );
+
   return (
     <div className={cn('flex items-start gap-2.5', className)} {...props}>
-      <Avatar
-        src={src}
-        name={name}
-        size={avatarSize ?? (size === 'sm' ? 'sm' : 'lg')}
-        status={status}
-      />
+      {/* THE AVATAR LINK IS THE SAME DESTINATION AS THE NAME, so it is hidden from the keyboard
+          and from a screen reader rather than offered twice — `aria-hidden` + `tabIndex={-1}` is
+          the standard fix for a redundant adjacent link, and the picture says nothing the name
+          beside it does not. A mouse still gets the target it expects. */}
+      {href ? (
+        <Link
+          href={href}
+          className={cn('shrink-0 rounded-nx-full', linkRing)}
+          aria-hidden
+          tabIndex={-1}
+        >
+          {avatar}
+        </Link>
+      ) : (
+        avatar
+      )}
 
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span
-            className={cn(
-              'truncate font-semibold text-nx-text-primary',
-              size === 'sm' ? 'text-nx-body-sm' : 'text-nx-ui'
-            )}
-          >
-            {name}
-          </span>
+          {/* THE ANCHOR *IS* THE NAME, not a wrapper around it. `truncate` is `overflow:hidden`,
+              which does nothing to an inline element — so a `<span class="truncate">` inside an
+              `<a>` stops truncating and a long name shoves the rep chip and the timestamp off
+              the row. Putting the classes on the anchor (a blockified flex item) keeps the
+              ellipsis working. */}
+          {href ? (
+            <Link href={href} className={cn(nameClass, 'min-w-0 hover:underline', linkRing)}>
+              {name}
+            </Link>
+          ) : (
+            <span className={nameClass}>{name}</span>
+          )}
 
           {rep}
 

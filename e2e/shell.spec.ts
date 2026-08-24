@@ -18,7 +18,9 @@ import { test, expect } from '@playwright/test';
 /** `<route, the title it must carry>`. Vietnamese because `vi` is `DEFAULT_LOCALE`. */
 const TITLES: ReadonlyArray<readonly [string, string]> = [
   ['/newsfeed', 'Bảng tin · Elite Nexus'],
-  ['/trending', 'Xu hướng · Elite Nexus'],
+  // `/trending` LEFT THIS LIST because it left the product: it is `/newsfeed`'s `Công nghệ` tab
+  // now and the route only redirects, so it has no title of its own to carry. The redirect has a
+  // test of its own below.
   ['/search', 'Tìm kiếm · Elite Nexus'],
   ['/notifications', 'Thông báo · Elite Nexus'],
   ['/profile', 'Trang cá nhân · Elite Nexus'],
@@ -97,5 +99,21 @@ test.describe('shell', () => {
     // `/admin/*` is deliberately absent: the middleware redirects an ADMIN session out of this
     // shell entirely, so an admin link here would be a link nobody who can see it may use.
     await expect(nav.getByRole('link', { name: /admin/i })).toHaveCount(0);
+
+    // `Xu hướng` is absent for the opposite reason: it is not a destination any more. The row
+    // used to exist for GUESTS only — promoted into their rail because it was the second and last
+    // thing they could open — which meant one piece of content had two homes depending on who was
+    // asking. It is a tab on the feed now, for everyone.
+    await expect(nav.getByRole('link', { name: 'Xu hướng' })).toHaveCount(0);
+  });
+
+  test('/trending forwards to the feed tab that replaced it', async ({ page }) => {
+    // The route is in bookmarks, in `src/middleware.ts`'s guest list and in links people have
+    // already sent each other, so it forwards rather than 404s. The assertion is the whole
+    // contract: the address changes, and the tab the reader wanted is the one that is selected.
+    await page.goto('/trending');
+
+    await expect(page).toHaveURL(/\/newsfeed\?tab=tech$/);
+    await expect(page.getByRole('tab', { name: 'Công nghệ', selected: true })).toBeVisible();
   });
 });

@@ -133,7 +133,7 @@ export function ModerationReportsTab({ onViewPost, className }: ModerationReport
                       {/* The reporter-facing labels, reused rather than restated: same enum, same
                           meaning, and one list to keep current instead of two. */}
                       <Badge variant="neutral">
-                        {t(`admin.moderation.report.reason.${report.reason}`)}
+                        {t(`moderation.report.reason.${report.reason}`)}
                       </Badge>
 
                       {report.postId != null &&

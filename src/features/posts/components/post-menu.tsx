@@ -95,7 +95,7 @@ export function PostMenu({
           // on this menu says the owner's version simply does not carry the item, and it is
           // right: reporting your own post is not a thing anyone wants to do.
           ...(onReport
-            ? [{ label: t('moderation.report.title'), icon: <Flag />, onSelect: onReport }]
+            ? [{ label: t('moderation.report.action'), icon: <Flag />, onSelect: onReport }]
             : []),
           ...(canDelete
             ? [

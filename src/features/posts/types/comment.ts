@@ -23,7 +23,8 @@ type Schemas = components['schemas'];
  *    one (measured: a freshly created comment came back with `updatedAt === createdAt`).
  *    Both tightened — but that also means `updatedAt !== createdAt` is the ONLY way to
  *    tell an edited comment apart; there is no `isEdited` flag.
- *  - `authorFullName` / `authorProfilePictureUrl` / `parentId` are nullable, and they are
+ *  - `authorFullName` / `authorProfilePictureUrl` / `authorUsername` / `myReaction` /
+ *    `parentId` are nullable, and they are
  *    typed `| null` rather than `?:` on purpose. The generator writes every field optional,
  *    but the wire payload disagrees: Jackson runs at its default `ALWAYS` inclusion (the
  *    backend configures no `NON_NULL`), so these arrive as explicit
@@ -33,10 +34,25 @@ type Schemas = components['schemas'];
  *    author row is missing, and the picture column is nullable regardless.
  */
 export type PostComment = Required<
-  Omit<Schemas['CommentResponseDto'], 'authorFullName' | 'authorProfilePictureUrl' | 'parentId'>
+  Omit<
+    Schemas['CommentResponseDto'],
+    'authorFullName' | 'authorProfilePictureUrl' | 'parentId' | 'authorUsername' | 'myReaction'
+  >
 > & {
   authorFullName: string | null;
   authorProfilePictureUrl: string | null;
+  /**
+   * The author's handle, so a comment's name and face can link to `/u/{username}` the way the
+   * post above them now does. Nullable for the same reason `authorFullName` is: the DTO is
+   * built from a user row that may be missing.
+   */
+  authorUsername: string | null;
+  /**
+   * The reader's own reaction to this comment, or null when they have not reacted — which is
+   * the common case, so it must never be modelled as `?:`. Not read yet: the like control in
+   * `CommentItem` is still disabled pending the rest of B14.
+   */
+  myReaction: NonNullable<Schemas['CommentResponseDto']['myReaction']> | null;
   parentId: number | null;
 };
 

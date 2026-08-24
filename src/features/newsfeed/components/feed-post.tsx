@@ -233,6 +233,10 @@ export function FeedPost({ post, onChanged, defaultCommentsOpen = false }: FeedP
       postId={post.postId}
       author={{
         id: post.authorId,
+        // The handle, so the name and the avatar link to `/u/{username}`. It is the field
+        // B13 asked for: without it the feed was the one surface in the app where a person's
+        // name was printed and led nowhere.
+        username: post.authorUsername,
         fullName: post.authorFullName,
         profilePictureUrl: post.authorProfilePictureUrl,
         eliteScore: post.authorEliteScore,

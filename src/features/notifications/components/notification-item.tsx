@@ -10,6 +10,7 @@ import {
   ShieldX,
   ShoppingBag,
   Star,
+  ThumbsUp,
   UserCheck,
   UserPlus,
 } from 'lucide-react';
@@ -47,6 +48,11 @@ export interface NotificationItemProps {
  */
 const TYPE_ICON: Record<NotificationType, LucideIcon> = {
   POST_LIKED: Heart,
+  // `ThumbsUp` rather than a second `Heart`: the two arrive in the same list and the icon is the
+  // only thing that separates "someone reacted to your post" from "…to your comment" at a glance.
+  // Added by `CommentReactionService` (B14); the exhaustive `Record` below is what turned the new
+  // enum member into a compile error rather than a silent generic bell.
+  COMMENT_LIKED: ThumbsUp,
   POST_COMMENTED: MessageSquare,
   POST_TAGGED: AtSign,
   FRIEND_REQUEST: UserPlus,
@@ -114,6 +120,15 @@ function hrefFor(notification: AppNotification): string | null {
   if (referenceId == null) return null;
   if (referenceType === 'POST') return `/posts/${referenceId}`;
   if (referenceType === 'BOOK') return `/books/${referenceId}`;
+  /**
+   * `COMMENT` FALLS THROUGH DELIBERATELY. `CommentReactionService` sends `referenceType:
+   * "COMMENT"` with the COMMENT's id, and its own javadoc says why — a reader needs to land on
+   * the comment, and a post id would only get them to the top of a thread that may hold
+   * hundreds. But this app has no route that takes a comment id, and nothing in the payload
+   * carries the post it belongs to, so there is no address to send anyone to. The row still
+   * reads and still marks itself read; it just does not navigate. Closing this needs a
+   * `postId` on the notification (or a `/comments/{id}` resolver), not a guess here.
+   */
   return null;
 }
 

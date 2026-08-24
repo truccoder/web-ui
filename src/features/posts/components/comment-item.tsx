@@ -98,6 +98,12 @@ export function CommentItem({
         // meta stay at `sm`, which is why this is `avatarSize` and not `size="md"`.
         avatarSize="md"
         name={comment.authorFullName?.trim() || t('post.unknownAuthor')}
+        // The same link the post card's byline got, from the same backend change: `CommentResponseDto`
+        // grew `authorUsername`, so a commenter's name and face reach their profile instead of
+        // being the one identity row in the thread that goes nowhere.
+        href={
+          comment.authorUsername ? `/u/${encodeURIComponent(comment.authorUsername)}` : undefined
+        }
         src={comment.authorProfilePictureUrl ?? undefined}
         time={comment.createdAt ? relativeTime(comment.createdAt) : undefined}
       />

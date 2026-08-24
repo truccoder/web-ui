@@ -63,6 +63,22 @@ import { cn } from '@/shared/lib/cn';
  * alternative — `/newsfeed` reaching in with `className` overrides to undo the default — would put
  * the same decision somewhere it cannot be read.
  *
+ * `underline` SCROLLS NOW TOO, AND THIS FILE SAID TWICE THAT IT NEVER WOULD — *"it spans its
+ * parent by design, so it has nothing to fit to and nothing to scroll"*. That was true of three
+ * short labels and stopped being true at four: `Tất cả · Bạn bè · Kỹ năng của tôi · Công nghệ`
+ * measures 371 inside a 343 column at 375, and the feed's strip lives in a `StickyBlock` whose
+ * `overflow-hidden` CLIPPED the fourth tab with no way to reach it. The overflow machinery below
+ * was already written and already correct; it was gated on the variant rather than on whether
+ * anything actually overflowed, which is the bug. Nothing changes for a strip that fits: the mask
+ * is `undefined` and the scroller has nothing to scroll.
+ *
+ * THE 1px THAT PAID FOR IT. `underline`'s tabs carry `-mb-px` so the 2px indicator lands ON the
+ * strip's hairline rather than under it — and `overflow-x: auto` forces `overflow-y: auto`, so
+ * that one pixel of deliberate overflow turned the strip into a VERTICAL scroller as well
+ * (measured: `scrollHeight` 43 against `clientHeight` 42). `pb-px` on the strip absorbs it. The
+ * indicator still sits exactly on the hairline — the padding moves the hairline down by the same
+ * pixel the tab reaches up — and the strip is one pixel taller for it.
+ *
  * FOUR MECHANICAL DEFECTS WERE FIXED ALONGSIDE THE SHAPE and none of them were the shape's fault,
  * so all four are kept:
  *
@@ -74,8 +90,7 @@ import { cn } from '@/shared/lib/cn';
  *     inside a box whose own width never moves.
  *  2. THE FOCUS RING WAS CLIPPED. `overflow-x: auto` forces the computed `overflow-y` to `auto`
  *     too, so an `outline-offset-2` ring on a tab in a strip exactly one tab tall was cut off on
- *     all four sides at once. `inline` takes an INSET ring; `underline` does not scroll and keeps
- *     the system's outset one.
+ *     all four sides at once. BOTH variants take an INSET ring now — see the next paragraph.
  *  3. NOTHING SAID THE STRIP SCROLLED. Five admin tabs and the three Vietnamese labels on
  *     `/friends` both overflow at 390, the scrollbar is hidden by design, and a tab selected
  *     off-screen — which is what arrowing to it does — left the strip looking unchanged. The ends
@@ -264,7 +279,6 @@ export function Tabs({
    * to resize the active tab is gone (header, defect 1).
    */
   React.useEffect(() => {
-    if (variant !== 'inline') return;
     const list = listRef.current;
     if (!list) return;
 
@@ -286,7 +300,7 @@ export function Tabs({
       list.removeEventListener('scroll', measure);
       observer.disconnect();
     };
-  }, [variant, widthKey]);
+  }, [widthKey]);
 
   /**
    * THE SELECTED TAB PULLS ITSELF INTO VIEW. Selection does not always come from a click on
@@ -304,7 +318,6 @@ export function Tabs({
    * follow it. See the note on `widthKey` itself.
    */
   React.useEffect(() => {
-    if (variant !== 'inline') return;
     const list = listRef.current;
     const tab = list?.querySelector<HTMLElement>('[data-nx-tab-active="true"]');
     if (!list || !tab) return;
@@ -320,7 +333,7 @@ export function Tabs({
     } else if (end > list.scrollLeft + list.clientWidth) {
       list.scrollTo({ left: end - list.clientWidth, behavior });
     }
-  }, [active, variant, widthKey]);
+  }, [active, widthKey]);
 
   // Arrow keys move between tabs (ARIA tabs pattern); focus follows selection, which is
   // safe here because switching a tab only swaps an already-loaded panel.
@@ -364,8 +377,9 @@ export function Tabs({
        * variant says visually is said by the one active pill inside it. `underline` is the
        * opposite: the strip owns the hairline and the tabs only put an indicator on it.
        *
-       * EVERYTHING BELOW THIS PARAGRAPH IS ABOUT `pill` ALONE. The underline variant takes none of
-       * it — it spans its parent by design, so it has nothing to fit to and nothing to scroll.
+       * MOST OF WHAT FOLLOWS IS ABOUT `pill`'s SIZING. The scrolling half now applies to both — see
+       * the header — but the width rules do not: `underline` spans its parent, so it has nothing
+       * to fit to.
        *
        * `w-fit` IS NOT REDUNDANT NEXT TO `inline-flex`, which is what it looks like. Most callers
        * put this inside a `flex flex-col`, and a flex item is STRETCHED to the line by default —
@@ -401,7 +415,7 @@ export function Tabs({
             // from whatever card or dialog happens to be positioned further up, and the strip
             // scrolls to an offset that has nothing to do with itself.
             'relative inline-flex w-fit max-w-full overflow-x-auto scrollbar-none'
-          : // THE RAIL, AND IT IS THE ONLY THING THIS BRANCH ADDS over the default variant.
+          : // THE RAIL, which is what this branch is for.
             //
             // R15: the rail the underline tabs sit on is `border-subtle`, not `border-default`.
             // `border-default` climbed the ramp that round to become a line you can actually see;
@@ -409,8 +423,16 @@ export function Tabs({
             // edge, and at the louder value it competed with the 2px indicator sitting on it.
             //
             // PLAIN `flex`, NOT `inline-flex w-fit`: this variant is supposed to span its block,
-            // because the hairline running the full measure is the whole point of it.
-            'flex border-b border-nx-border-subtle',
+            // because the hairline running the full measure is the whole point of it. That is also
+            // why it needs no `max-w-full` — it is already exactly its parent's width, so the
+            // scroller starts at the right place without being told.
+            //
+            // `relative` is read by the auto-scroll effect (`offsetLeft`); `pb-px` absorbs the
+            // tabs' `-mb-px` so `overflow-y` has nothing to scroll. Both are argued in the header.
+            cn(
+              'relative flex overflow-x-auto scrollbar-none pb-px',
+              'border-b border-nx-border-subtle'
+            ),
         className
       )}
     >
@@ -469,7 +491,10 @@ export function Tabs({
                         'border-transparent text-nx-text-secondary hover:text-nx-text-primary'
                   )
                 : cn(
-                    'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring',
+                    // INSET, since this strip scrolls too — an outset ring inside an
+                    // `overflow-x: auto` box is clipped on all four sides at once. Same fix, same
+                    // reason as the `inline` branch above.
+                    'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-nx-focus-ring',
                     // Untouched this round — see the `inline` weight note above.
                     isActive ? 'font-semibold' : 'font-normal',
                     // -1px pulls the indicator onto the tablist hairline instead of below it.
