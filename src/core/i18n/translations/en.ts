@@ -275,6 +275,9 @@ export const en = {
       desc: 'Be the first to post or add more friends to see updates!',
     },
     allLoaded: "You've seen all posts \uD83C\uDF89",
+    // Icon-only button in the sticky filter bar, so this string is the `aria-label` and the
+    // tooltip rather than a visible label — it names the whole action, not one word.
+    composeInBar: 'Write a new post',
   },
 
   notifications: {

@@ -117,5 +117,18 @@ export const config = {
   // register on a cold visit, and the only trace was one console error on the login page.
   // Caught 2026-08-10 by reading the console on `/login`; `tsc`, `lint` and `build` are all blind
   // to it, and so is every screen that only gets opened while already signed in.
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js|api|v1).*)'],
+  //
+  // THE ICON ROUTES ARE HERE FOR THE SAME REASON, and one of them was already broken. `favicon.ico`
+  // was listed and nothing else was, so `/icons/icon-192x192.png` and `/icons/icon-512x512.png` —
+  // every icon the web-app manifest names — answered a 307 to `/login` for anyone without a
+  // session. The manifest itself is exempt, so a cold visitor got a readable manifest pointing at
+  // three icons they could not fetch, which is precisely the case an install prompt needs them
+  // for. `/icon.svg` and `/apple-icon.png` are the App Router's own icon routes (`src/app/`), and
+  // they would have joined it the moment they were added.
+  //
+  // An icon is chrome, not content: there is nothing behind any of these to protect, and a login
+  // page delivered where a PNG was asked for is a redirect no image decoder will follow.
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|icon.svg|apple-icon.png|icons/|manifest.webmanifest|sw.js|api|v1).*)',
+  ],
 };

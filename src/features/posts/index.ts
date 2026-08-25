@@ -19,8 +19,12 @@
 export { postsApi, locationApi, quizApi, commentsApi, reactionsApi, eventsApi } from './api';
 
 export {
+  POST_TYPE_ICONS,
   PostComposer,
+  type PostComposerHandle,
   type PostComposerProps,
+  PostTypeMenu,
+  type PostTypeMenuProps,
   LocationPicker,
   type LocationPickerProps,
   LocationBadge,

@@ -1,5 +1,6 @@
 export { CommentPreview, type CommentPreviewProps } from './comment-preview';
-export { PostComposer, type PostComposerProps } from './post-composer';
+export { PostComposer, type PostComposerHandle, type PostComposerProps } from './post-composer';
+export { POST_TYPE_ICONS, PostTypeMenu, type PostTypeMenuProps } from './post-type-menu';
 export { LocationPicker, type LocationPickerProps } from './location-picker';
 export { LocationBadge, locationLabel, type LocationBadgeProps } from './location-badge';
 

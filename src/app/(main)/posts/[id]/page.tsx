@@ -35,7 +35,14 @@ export default function PostPermalinkPage() {
   const { data: post, isPending, isError, refetch } = usePost(postId);
 
   return (
-    <div className="flex flex-col gap-[var(--nx-space-section)]">
+    /* THE BLOCK RUNG, NOT THE SECTION RUNG. `--nx-space-section` (40) is "section ↔ section
+       within one canvas" — it separates two things that each stand on their own. This page has
+       one section; the link above it is a way BACK OUT of the post, not a second section, and at
+       40 it floated in the middle of nothing with the card starting well below the fold's first
+       comfortable line. `--nx-space-block` (20) is the rung the feed already uses between the
+       filter, the composer and every card, so the permalink now opens on the same rhythm as the
+       screen it was reached from. */
+    <div className="flex flex-col gap-[var(--nx-space-block)]">
       {/* `scroll={false}` HANDS SCROLL TO `useScrollRestoration`.
           Next scrolls a forward navigation to the top, and it does so AFTER the destination has
           rendered — so the feed's restore ran, put the reader back at 2713, and the router then

@@ -10,7 +10,7 @@ import type { MessagePosition } from '../lib/grouping';
  *
  * NO DESIGN-SYSTEM SPECIMEN EXISTS FOR CHAT. The DS ships buttons, cards, forms, tabs, dialogs
  * and menus — there is no message bubble to match, so this is built from tokens only: the
- * accent for one's own messages, the sunken surface for everyone else's, the standard radius
+ * accent for one's own messages, the neutral tint for everyone else's, the standard radius
  * scale, and the same body size the rest of the app reads at. Recorded as a deviation in
  * `ledger/ds-deviations.md` — it is an invention, not a match, and the next person should know
  * that rather than assume there is a specimen they failed to find.
@@ -79,7 +79,24 @@ export function MessageBubble({
           'max-w-[min(28rem,72%)] px-3 py-2',
           'text-nx-body whitespace-pre-wrap break-words',
           bubbleRadius(isOwn, position),
-          isOwn ? 'bg-nx-accent text-white' : 'bg-nx-surface-sunken text-nx-text-primary'
+          /**
+           * THE INCOMING BUBBLE IS `tint`, NOT `surface-sunken`, AND THAT IS A BUG FIX.
+           *
+           * R15 recessed the ground a step — `--nx-surface-page` went from gray-50 to gray-100 —
+           * and `--nx-surface-sunken` is gray-100 too. `/chats` paints its transcript pane
+           * `bg-nx-surface-page` (see `ChatMessenger`), so from that round on every incoming
+           * bubble was gray-100 laid on gray-100: the fill was still there, it just had nothing
+           * to say. Reported as "chat bị mất bg color", and the screenshot is a column of bare
+           * text with no bubble around it.
+           *
+           * A step off the ramp cannot fix it, because this component is rendered on TWO planes:
+           * the page ground here, and `surface-raised` (white) inside the floating window. Any
+           * fixed grey disappears into one of them. `--nx-tint` is the token the DS keeps for
+           * exactly that case — "the one fill that must read on EVERY plane, hence an alpha
+           * rather than a step off the ramp" — so it darkens the ground and the white window by
+           * the same perceptual amount, in both themes.
+           */
+          isOwn ? 'bg-nx-accent text-white' : 'bg-nx-tint text-nx-text-primary'
         )}
       >
         {message.text}

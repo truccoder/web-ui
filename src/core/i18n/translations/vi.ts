@@ -262,6 +262,10 @@ export const vi: Messages = {
       desc: 'Hãy là người đầu tiên đăng bài hoặc kết bạn thêm để xem tin tức mới!',
     },
     allLoaded: 'Bạn đã xem hết bài viết rồi',
+    /* Nhãn của nút soạn bài nằm trong thanh lọc dính. Nút chỉ có icon nên chuỗi này là
+       `aria-label` + tooltip, không hiện thành chữ — vì vậy nó phải nói đủ một hành động
+       (`Viết bài mới`) chứ không phải một từ (`Viết`). */
+    composeInBar: 'Viết bài mới',
   },
 
   notifications: {

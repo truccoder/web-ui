@@ -1,9 +1,10 @@
 'use client';
 
-import { Suspense } from 'react';
-import { StickyBlock, Tabs } from '@/shared/components';
+import { Suspense, useEffect, useRef, useState } from 'react';
+import { SquarePen } from 'lucide-react';
+import { IconButton, StickyBlock, Tabs } from '@/shared/components';
 import { Newsfeed, useRefreshFeed, type FeedScope } from '@/features/newsfeed';
-import { PostComposer } from '@/features/posts';
+import { PostComposer, PostTypeMenu, type PostComposerHandle } from '@/features/posts';
 import { useIsGuest } from '@/features/security';
 import { TrendingList } from '@/features/trending';
 import { useTabParam } from '@/shared/lib/use-tab-param';
@@ -100,6 +101,58 @@ function NewsfeedContent() {
   const tabs = isGuest ? GUEST_TABS : TABS;
   const tab = tabs.includes(tabParam) ? tabParam : 'all';
 
+  /**
+   * THE COMPOSER SCROLLS AWAY AND THE FILTER BAR DOES NOT, SO THE FILTER BAR CARRIES THE WAY BACK
+   * TO IT. Reported by the owner: past the first screen of the feed there is nowhere to write.
+   *
+   * WHY NOT A FLOATING BUTTON, the obvious answer. The surface model forbids it in as many words
+   * — *nothing in flow may appear to float* — and it is the rule that retired `ChatDock` from the
+   * whole product at R15 (see the shell's closing note). Re-introducing a floating layer here to
+   * fix a scroll problem would spend a system-wide decision on one screen.
+   *
+   * WHY NOT STICK THE COMPOSER ITSELF. It is a 68px card and the filter is a 44px bar; parking
+   * both under a 56px chrome puts 112px of permanently fixed furniture over a 672 measure, and on
+   * a 390×844 phone that is a sixth of the viewport spent on a control most people touch once a
+   * session — the exact cost R5-2 turned the composer into a launcher to avoid.
+   *
+   * SO IT IS ONE ICON ON A BAR THAT IS ALREADY THERE, and it opens the very same dialog the card
+   * below opens, on the very same draft — see `PostComposerHandle` for why that is a handle and
+   * not a lifted `open` prop. No new layer, no new vertical budget, and the draft is one object.
+   */
+  const composerRef = useRef<PostComposerHandle>(null);
+  const composerCardRef = useRef<HTMLDivElement>(null);
+  const [composerOffscreen, setComposerOffscreen] = useState(false);
+
+  // `tech` has no composer at all (nothing it publishes would land there) and a guest never gets
+  // one, so on those the bar has nothing to offer and the button is not rendered.
+  const hasComposer = !isGuest && tab !== 'tech';
+
+  /**
+   * The button appears only once the card it stands in for has passed UNDER THE CHROME — the same
+   * `-56px` line `StickyBlock` latches on, so the icon arrives on the frame the composer leaves
+   * rather than at some unrelated scroll offset.
+   *
+   * A sentinel is not needed here the way it is in `StickyBlock`: the composer card does not
+   * restyle when it crosses the line, so observing it directly is not observing an effect of the
+   * thing being detected.
+   */
+  useEffect(() => {
+    // No reset on the way out, deliberately: nothing renders `composerOffscreen` while there is
+    // no composer, and `IntersectionObserver` delivers an initial callback on `observe`, so the
+    // value is re-derived from the real geometry the moment one comes back.
+    if (!hasComposer) return;
+
+    const element = composerCardRef.current;
+    if (!element) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => setComposerOffscreen(!entries[0].isIntersecting),
+      { rootMargin: '-56px 0px 0px 0px', threshold: 0 }
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [hasComposer]);
+
   return (
     // The block rung between canvas blocks. Every gap on this screen is a ladder rung; nothing
     // sets a spacing value of its own.
@@ -125,18 +178,84 @@ function NewsfeedContent() {
        * and each tab's own 12 completes the line to its label.
        */}
       <StickyBlock>
-        {/* THE ONE CALLER THAT IS NOT A PILL. `Tabs` defaults to the pill variant now — a control
-            dropped onto a page, occupying as little as it can. This strip is not that: it IS the
-            block, a full-measure card parked under the chrome, and a pill group inside it would
-            leave the rest of the bar empty. `Tabs`' own header carries the full argument. */}
-        <Tabs
-          tabs={tabs.map((id) => ({ id, label: t(`newsfeed.tabs.${id}`) }))}
-          active={tab}
-          onChange={setTab}
-          aria-label={t('newsfeed.tabs.label')}
-          variant="underline"
-          className="px-2.5"
-        />
+        {/* `items-stretch` IS WHAT KEEPS THE HAIRLINE WHOLE. The `underline` tablist draws its own
+            `border-b` and that line running the full measure is the entire reason the variant
+            exists; putting a control beside it would have ended the line early. The control's own
+            box repeats the same border, so the two meet and read as one rail. */}
+        <div className="flex items-stretch">
+          {/* THE ONE CALLER THAT IS NOT A PILL. `Tabs` defaults to the pill variant now — a
+              control dropped onto a page, occupying as little as it can. This strip is not that:
+              it IS the block, a full-measure card parked under the chrome, and a pill group inside
+              it would leave the rest of the bar empty. `Tabs`' own header carries the full
+              argument.
+
+              `min-w-0` because the strip is an `overflow-x-auto` scroller: without it a flex item
+              refuses to shrink below its content, so at 390 the four Vietnamese labels would push
+              the compose button off the bar instead of scrolling under it. */}
+          <Tabs
+            tabs={tabs.map((id) => ({ id, label: t(`newsfeed.tabs.${id}`) }))}
+            active={tab}
+            onChange={setTab}
+            aria-label={t('newsfeed.tabs.label')}
+            variant="underline"
+            className="min-w-0 flex-1 px-2.5"
+          />
+
+          {hasComposer && (
+            // `pb-px` matches the tablist's own, so both borders land on the same pixel row.
+            <div className="flex shrink-0 items-center border-b border-nx-border-subtle pr-2.5 pl-2 pb-px">
+              {/**
+               * THE BOX IS RESERVED, THE CONTROL COMES AND GOES INSIDE IT. `size-7` is exactly the
+               * `sm` icon button, so the bar's geometry never changes: the button is the only
+               * thing between the tabs and the right edge, and letting its width come and go would
+               * hand it back to a `flex-1` scroller and slide every tab label sideways — a layout
+               * shift, on scroll, under the reader's pointer.
+               *
+               * IT UNMOUNTS RATHER THAN FADING TO `opacity-0`, WHICH IS A CORRECTION. Hiding by
+               * opacity left the menu MOUNTED, and its panel is portalled into `document.body` —
+               * so a panel opened at the bottom of the feed stayed fully painted and fully
+               * clickable after scrolling back to the top, floating over a bar that had gone
+               * invisible underneath it. Nothing about `pointer-events-none` on the trigger
+               * reaches a panel that is no longer inside it. Unmounting takes the portal with it.
+               */}
+              <div className="size-7">
+                {composerOffscreen && (
+                  /**
+                   * IT OPENS THE TYPE LIST, NOT THE DIALOG, and that is the difference between
+                   * this control and the field-shaped button on the card below. That field says
+                   * what it will do — you can read your own draft in it — so pressing it may as
+                   * well go straight in. One icon at the end of a filter bar says nothing about
+                   * what kind of post is waiting on the other side, and dropping someone into
+                   * whichever form the composer happened to be left on is a surprise they did not
+                   * ask for. The menu is the answer to "what am I about to write", and it is the
+                   * same menu the card has.
+                   *
+                   * `align="end"` so the panel hangs from the right edge it is anchored to rather
+                   * than opening off the measure.
+                   *
+                   * `portal` BECAUSE THE BAR CLIPS. `StickyBlock` sets `overflow-hidden` so its
+                   * tab scroller keeps inside the rounded corners, and an absolutely positioned
+                   * panel inside an `overflow: hidden` box is cut off at that box's edge —
+                   * pressing the icon showed a sliver of menu and nothing else. Clipping happens
+                   * before stacking, so no z-index reaches it; the panel has to be somewhere the
+                   * bar is not.
+                   */
+                  <PostTypeMenu
+                    portal
+                    align="end"
+                    onSelect={(type) => composerRef.current?.open(type)}
+                    className="animate-[nx-fade_var(--nx-duration-fast)_var(--ease-nx-out)]"
+                    trigger={
+                      <IconButton size="sm" label={t('newsfeed.composeInBar')}>
+                        <SquarePen />
+                      </IconButton>
+                    }
+                  />
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       </StickyBlock>
 
       {/* The composer is the one block on this page with no read-only form. Everything it does is
@@ -147,7 +266,13 @@ function NewsfeedContent() {
           IT IS ALSO HIDDEN ON `Công nghệ`, where nothing it publishes would appear: that tab is
           the crawler's column and holds no posts by anyone. A composer whose output lands on a
           screen you are not looking at is a control that lies about where it puts things. */}
-      {!isGuest && tab !== 'tech' && <PostComposer onPosted={refreshFeed} />}
+      {hasComposer && (
+        // The wrapper exists for the `IntersectionObserver` above — `PostComposer` renders a
+        // `Card` and forwards no DOM ref, and the one ref it DOES take is the imperative handle.
+        <div ref={composerCardRef}>
+          <PostComposer ref={composerRef} onPosted={refreshFeed} />
+        </div>
+      )}
 
       {/* `TrendingList` BROUGHT ITS FILTERS WITH IT — source, category and time range — which the
           old rail destination had and the `Tất cả` merge never could. That is the tab's argument

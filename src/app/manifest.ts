@@ -27,8 +27,17 @@ export default function manifest(): MetadataRoute.Manifest {
         sizes: '512x512',
         type: 'image/png',
       },
+      /**
+       * A SEPARATE FILE FOR `maskable`, not the same PNG listed twice.
+       *
+       * The old entry pointed `purpose: 'maskable'` at the ordinary icon, which tells Android it
+       * may crop that image to whatever shape the launcher uses. The ordinary icon IS the mark's
+       * rounded square with its own 8/256 inset — a circular mask takes the corners off a shape
+       * whose corners are the shape. The maskable cut is full-bleed ink with the glyph enlarged
+       * into the 80% safe zone, so any mask lands on ground rather than on the mark.
+       */
       {
-        src: '/icons/icon-512x512.png',
+        src: '/icons/icon-maskable-512x512.png',
         sizes: '512x512',
         type: 'image/png',
         purpose: 'maskable',

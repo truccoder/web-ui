@@ -1,21 +1,8 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
-import {
-  BarChart3,
-  BookOpen,
-  Calendar,
-  ChevronDown,
-  Code2,
-  Eye,
-  FileText,
-  HelpCircle,
-  Link2,
-  ListChecks,
-  MessageSquare,
-  X,
-} from 'lucide-react';
-import { Avatar, Button, Card, Dialog, Menu, Select, Textarea } from '@/shared/components';
+import { useImperativeHandle, useState } from 'react';
+import { ChevronDown, Eye, ListChecks, X } from 'lucide-react';
+import { Avatar, Button, Card, Dialog, Select, Textarea } from '@/shared/components';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { cn } from '@/shared/lib/cn';
 import { useMyProfile } from '@/features/security';
@@ -46,6 +33,7 @@ import { EventFields } from './event-fields';
 import { LinkFields, isValidLinkUrl } from './link-fields';
 import { LocationPicker } from './location-picker';
 import { PostImagePicker } from './post-image-picker';
+import { POST_TYPE_ICONS, PostTypeMenu } from './post-type-menu';
 import { PostPreviewDialog } from './post-preview-dialog';
 import { PollFields, POLL_MIN_OPTIONS } from './poll-fields';
 import { QnaFields } from './qna-fields';
@@ -161,38 +149,37 @@ import { QuizComposer, emptyQuiz, isQuizReady, normalizeQuiz } from './quiz-comp
  * announce a guarantee the server does not make. The moderation hedge is used instead, because
  * it describes something that IS true, and it is more useful before posting than after.
  */
+/**
+ * What a host page can do to a mounted composer from the outside: open its dialog.
+ *
+ * A HANDLE RATHER THAN AN `open` PROP, because the draft is the reason this component exists in
+ * its current shape. The file note above spells it out — every field of the form is held HERE, in
+ * the always-mounted launcher, so that dismissing the dialog to check something in the feed is a
+ * pause and not a discard. Lifting `open` into the page would put half of that state one level up
+ * from the rest of it, and the page would then own a piece of a form it knows nothing about.
+ * `open()` is the entire surface: the caller says "give me somewhere to write", the composer
+ * decides what that means.
+ */
+export interface PostComposerHandle {
+  /**
+   * Open the compose dialog. With no argument it opens on whatever type and draft the composer is
+   * currently holding; with one, it switches the kind on the way in — which is what the feed's
+   * sticky bar does, since its menu is where the reader picks the kind.
+   */
+  open: (type?: PostType) => void;
+}
+
 export interface PostComposerProps {
   /** Called after a successful create, for the host page to refresh its feed. */
   onPosted?: () => void;
+  /**
+   * Exposes {@link PostComposerHandle}. React 19 passes `ref` as an ordinary prop, so there is no
+   * `forwardRef` wrapper here.
+   */
+  ref?: React.Ref<PostComposerHandle>;
 }
 
 const VISIBILITIES: PostVisibility[] = ['PUBLIC', 'FRIENDS', 'PRIVATE'];
-
-/** Kinds this composer can actually produce, in switcher order. `REGULAR` is the default state. */
-const SWITCHABLE_TYPES = [
-  'CODE_SNIPPET',
-  'ARTICLE',
-  'QNA',
-  'POLL',
-  'LINK',
-  'BOOK',
-  'EVENT',
-] as const;
-/**
- * Keyed by `PostType`, not `SwitchableType`: the menu now labels itself with the CURRENT kind,
- * and the current kind can be `REGULAR` — which `SWITCHABLE_TYPES` deliberately excludes because
- * the old chip row only ever rendered the kinds you were not on.
- */
-const TYPE_ICONS: Record<PostType, ReactNode> = {
-  REGULAR: <MessageSquare />,
-  CODE_SNIPPET: <Code2 />,
-  ARTICLE: <FileText />,
-  QNA: <HelpCircle />,
-  POLL: <BarChart3 />,
-  LINK: <Link2 />,
-  BOOK: <BookOpen />,
-  EVENT: <Calendar />,
-};
 
 const EMPTY_POLL: PollDetails = {
   allowMultipleVotes: false,
@@ -203,7 +190,7 @@ const EMPTY_POLL: PollDetails = {
   })),
 };
 
-export function PostComposer({ onPosted }: PostComposerProps) {
+export function PostComposer({ onPosted, ref }: PostComposerProps) {
   const t = useT();
   const { data: profile } = useMyProfile();
   const [content, setContent] = useState('');
@@ -214,6 +201,19 @@ export function PostComposer({ onPosted }: PostComposerProps) {
   const [open, setOpen] = useState(false);
   // The confirm step. Never true at the same time as `open` — see the file note.
   const [preview, setPreview] = useState(false);
+
+  // The whole external surface — see `PostComposerHandle`. `/newsfeed`'s sticky filter bar uses
+  // it to offer a way in once this card has scrolled off the top.
+  useImperativeHandle(
+    ref,
+    () => ({
+      open: (type?: PostType) => {
+        if (type) setPostType(type);
+        setOpen(true);
+      },
+    }),
+    []
+  );
 
   const [code, setCode] = useState<CodeSnippetDetails>({ language: 'plaintext', code: '' });
   const [article, setArticle] = useState<ArticleDetails>({});
@@ -503,23 +503,23 @@ export function PostComposer({ onPosted }: PostComposerProps) {
           </button>
 
           {/**
-           * THE TYPE MENU MOVED HERE FROM THE FORM, and picking a type now OPENS the dialog in
-           * the same gesture. Splitting them would make choosing `Câu hỏi` do nothing visible —
-           * the panel that asks for the question is behind a second click nobody was told about.
-           *
-           * `REGULAR` IS IN THE LIST though it is not in `SWITCHABLE_TYPES` (see R4-4): the old
-           * chip row could never offer a way back to a plain post because it only rendered the
-           * types you were not on. A menu has room to say it, and now it is the ONLY way back —
-           * the panel's `Bỏ` header went away with the inline form.
+           * THE TYPE MENU MOVED HERE FROM THE FORM, and picking a type OPENS the dialog in the
+           * same gesture — `PostTypeMenu` carries that argument, along with the list itself and
+           * the `REGULAR` rule. It lives in its own file because `/newsfeed`'s sticky bar offers
+           * the same list from an icon once this card has scrolled away.
            */}
-          <Menu
-            width={220}
+          <PostTypeMenu
+            current={postType}
+            onSelect={(type) => {
+              setPostType(type);
+              setOpen(true);
+            }}
             trigger={
               <Button
                 className="h-[34px]"
                 size="sm"
                 variant="secondary"
-                icon={TYPE_ICONS[postType]}
+                icon={POST_TYPE_ICONS[postType]}
               >
                 {typeLabel}
                 {/* THE CHEVRON IS WHAT SAYS "THERE IS A LIST BEHIND THIS".
@@ -533,25 +533,6 @@ export function PostComposer({ onPosted }: PostComposerProps) {
                 <ChevronDown className="size-4 shrink-0 text-nx-text-muted" aria-hidden />
               </Button>
             }
-            items={[
-              {
-                label: t('createPost.type.REGULAR'),
-                icon: TYPE_ICONS.REGULAR,
-                onSelect: () => {
-                  setPostType('REGULAR');
-                  setOpen(true);
-                },
-              },
-              '-',
-              ...SWITCHABLE_TYPES.filter((type) => type !== postType).map((type) => ({
-                label: t(`createPost.type.${type}`),
-                icon: TYPE_ICONS[type],
-                onSelect: () => {
-                  setPostType(type);
-                  setOpen(true);
-                },
-              })),
-            ]}
           />
         </div>
 
