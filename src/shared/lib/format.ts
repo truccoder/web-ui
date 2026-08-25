@@ -156,23 +156,50 @@ export function formatPriceParts(
  * every row costs a re-render per second for a value nobody watches — but it does mean a page
  * left open shows stale relative times until something else re-renders it.
  */
+export type RelativeTime =
+  /** Unparseable timestamp — the caller shows nothing rather than `Invalid Date`. */
+  | { kind: 'invalid' }
+  /** Older than the relative window; the caller falls back to `formatDate`. */
+  | { kind: 'absolute' }
+  | { kind: 'relative'; key: string; vars?: Record<string, number> };
+
+/**
+ * Which label a timestamp earns, as data rather than as a rendered string.
+ *
+ * SPLIT OUT OF THE HOOK SO IT CAN BE TESTED. The boundaries below — a minute, an hour, a day, a
+ * week — are the whole behaviour, and inside a hook they were reachable only through a React
+ * renderer and a live `Date.now()`. Both are avoidable: `now` is a parameter here, so a case
+ * sitting one second either side of a boundary is an ordinary assertion instead of a clock to
+ * fake. See `format.test.ts`.
+ *
+ * IT RETURNS A KEY, NOT A SENTENCE. Translation belongs to the caller's `t`, and the fallback to
+ * an absolute date needs `formatDate` and a locale tag that this function deliberately does not
+ * take — keeping it free of both is what makes it pure.
+ */
+export function relativeTimeOf(iso: string, now: number): RelativeTime {
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return { kind: 'invalid' };
+
+  const seconds = Math.floor((now - then) / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+
+  if (seconds < 60) return { kind: 'relative', key: 'time.justNow' };
+  if (minutes < 60) return { kind: 'relative', key: 'time.minutesAgo', vars: { minutes } };
+  if (hours < 24) return { kind: 'relative', key: 'time.hoursAgo', vars: { hours } };
+  if (days < 7) return { kind: 'relative', key: 'time.daysAgo', vars: { days } };
+  return { kind: 'absolute' };
+}
+
 export function useRelativeTime() {
   const t = useT();
   const localeTag = useIntlLocale();
 
   return (iso: string): string => {
-    const then = new Date(iso).getTime();
-    if (Number.isNaN(then)) return '';
-
-    const seconds = Math.floor((Date.now() - then) / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
-
-    if (seconds < 60) return t('time.justNow');
-    if (minutes < 60) return t('time.minutesAgo', { minutes });
-    if (hours < 24) return t('time.hoursAgo', { hours });
-    if (days < 7) return t('time.daysAgo', { days });
-    return formatDate(iso, localeTag) ?? '';
+    const result = relativeTimeOf(iso, Date.now());
+    if (result.kind === 'invalid') return '';
+    if (result.kind === 'absolute') return formatDate(iso, localeTag) ?? '';
+    return t(result.key, result.vars);
   };
 }

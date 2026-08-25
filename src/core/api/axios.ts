@@ -98,13 +98,24 @@ export function requestSignIn() {
   authRequiredListeners.forEach((listener) => listener());
 }
 
-/** Path only: callers pass relative URLs, but an absolute one must not smuggle a query past this. */
-function pathOf(url: string) {
+/**
+ * Path only: callers pass relative URLs, but an absolute one must not smuggle a query past this.
+ *
+ * EXPORTED FOR `axios.test.ts`, and that is the only reason it is not module-private. The pair
+ * below is the closest thing this app has to a security decision written in regex — the guest
+ * allow-list — and the sentence above it describes an attack (a query string carrying `/profile`
+ * so a gated path matches a guest pattern) that nothing was checking for. A rule that decides
+ * what leaves the app without a session should not be the one rule with no test, and the test
+ * cannot reach it through the interceptor without standing up a fake transport to observe a
+ * rejection that is the whole point.
+ */
+export function pathOf(url: string) {
   const withoutOrigin = url.replace(/^[a-z]+:\/\/[^/]+/i, '');
   return withoutOrigin.split(/[?#]/)[0];
 }
 
-function isAllowedWithoutSession(method: string, url: string) {
+/** Exported for `axios.test.ts` — see `pathOf`. Not used outside this module in the app. */
+export function isAllowedWithoutSession(method: string, url: string) {
   const path = pathOf(url);
   if (AUTH_ENDPOINTS.test(path)) return true;
   if (method.toLowerCase() !== 'get') return false;

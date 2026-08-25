@@ -3,6 +3,7 @@
 import { useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { clearTokens, setTokens } from '@/core/api/axios';
+import { purgeOfflineCache } from '@/core/pwa/purge-offline-cache';
 import { clearAuth, setCredentials } from '@/core/store/auth-slice';
 import { useAppDispatch, useAppSelector } from '@/core/store/hooks';
 import type { AuthResponse } from '../types/auth';
@@ -71,6 +72,9 @@ export function useClearSession() {
     // Drop every cached response so the next user on this browser cannot read
     // the previous one's data out of the query cache.
     queryClient.clear();
+    // And the same again for the service worker's cache, which holds page documents rendered
+    // with THIS session's chrome and outlives everything above. See `core/pwa`.
+    purgeOfflineCache();
   }, [dispatch, queryClient]);
 }
 
