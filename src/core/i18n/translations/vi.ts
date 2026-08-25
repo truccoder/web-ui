@@ -620,6 +620,16 @@ export const vi: Messages = {
     cancel: 'Huỷ',
     dialogTitle: 'Soạn bài · ${type}',
     dialogNote: 'Bài viết có thể phải qua kiểm duyệt trước khi xuất hiện trên bảng tin.',
+    /* Bước xác nhận. `open` là nút chính của form soạn bài nên nó gọi tên BƯỚC, không gọi tên
+       kết quả — nút đăng thật nằm trong bản xem trước và vẫn là `post`. */
+    preview: {
+      open: 'Xem trước',
+      title: 'Xem trước bài đăng',
+      note: 'Bài của bạn sẽ hiện trên bảng tin gần như thế này. Bài có thể phải qua kiểm duyệt trước khi xuất hiện, và hashtag do máy chủ tách ra sau khi đăng.',
+      back: 'Quay lại sửa',
+      quizAttached: 'Có đính kèm câu đố · ${count} câu hỏi',
+      quizAttachedTitled: 'Câu đố "${title}" · ${count} câu hỏi',
+    },
     visibility: {
       PUBLIC: 'Công khai',
       FRIENDS: 'Bạn bè',

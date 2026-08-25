@@ -7,6 +7,7 @@ import {
   Calendar,
   ChevronDown,
   Code2,
+  Eye,
   FileText,
   HelpCircle,
   Link2,
@@ -45,6 +46,7 @@ import { EventFields } from './event-fields';
 import { LinkFields, isValidLinkUrl } from './link-fields';
 import { LocationPicker } from './location-picker';
 import { PostImagePicker } from './post-image-picker';
+import { PostPreviewDialog } from './post-preview-dialog';
 import { PollFields, POLL_MIN_OPTIONS } from './poll-fields';
 import { QnaFields } from './qna-fields';
 import { QuizComposer, emptyQuiz, isQuizReady, normalizeQuiz } from './quiz-composer';
@@ -129,6 +131,30 @@ import { QuizComposer, emptyQuiz, isQuizReady, normalizeQuiz } from './quiz-comp
  * confirmed. The panel's old `Bỏ` header went with it — it existed to name the type and to get
  * back to `REGULAR`, and the title now does the first while the launcher menu does the second.
  *
+ * ────────────────────────────────────────────────────────────────────────────────────────────
+ * POSTING IS TWO STEPS NOW: the form's primary control is `Xem trước`, and `Đăng bài` lives
+ * under the preview it opens (`post-preview-dialog.tsx`).
+ *
+ * WHY A STEP RATHER THAN A SIDE DOOR. An optional "preview" button beside "post" is the version
+ * nobody presses, and this product gives the author no second chance worth relying on: a post
+ * may enter `PENDING_MODERATION` the moment it is sent, editing is a separate flow on a card in
+ * a feed, and a book post has already uploaded its file by the time anything is visible. The
+ * cheapest place to catch "the code block is empty" or "this was going out publicly" is before
+ * the request, not after it.
+ *
+ * THE TWO DIALOGS ARE MUTUALLY EXCLUSIVE, NOT STACKED. `Dialog` listens for Escape on the
+ * document and locks `body` scroll while open, so two of them on screen at once means one
+ * keypress dismissing both and two components fighting over the same style. Opening the preview
+ * closes the form; going back reopens it. The draft is untouched either way, because the state
+ * has always lived out here in the always-mounted launcher rather than inside a panel — the same
+ * property that lets someone close the composer to check something in the feed.
+ *
+ * THE PREVIEW IS ONLY MOUNTED WHILE IT IS OPEN, and that is a correctness rule rather than a
+ * saving: it renders `buildRequest()`, and the EVENT branch of `detailsFor` calls
+ * `new Date(startTime!).toISOString()`, which THROWS on a half-filled event form. Building the
+ * payload is safe exactly when `canSubmit` is true, which is exactly when this can be opened.
+ * ────────────────────────────────────────────────────────────────────────────────────────────
+ *
  * THE DIALOG DESCRIPTION IS **NOT** THE KIT'S. The kit reads "Giới hạn 5 bài mỗi phút. Nội dung
  * trùng trong 60 giây sẽ bị…" — a rate limit and a duplicate-content rule. Neither exists:
  * `PostService` has no rate limiting and no duplicate check (measured). Printing them would
@@ -186,6 +212,8 @@ export function PostComposer({ onPosted }: PostComposerProps) {
   const [postType, setPostType] = useState<PostType>('REGULAR');
   const [justPosted, setJustPosted] = useState(false);
   const [open, setOpen] = useState(false);
+  // The confirm step. Never true at the same time as `open` — see the file note.
+  const [preview, setPreview] = useState(false);
 
   const [code, setCode] = useState<CodeSnippetDetails>({ language: 'plaintext', code: '' });
   const [article, setArticle] = useState<ArticleDetails>({});
@@ -233,8 +261,11 @@ export function PostComposer({ onPosted }: PostComposerProps) {
     setQuiz(undefined);
     setJustPosted(true);
     // The panel closes on success, so the confirmation has to land somewhere that is still on
-    // screen — it renders under the launcher, not inside the dialog that just went away.
+    // screen — it renders under the launcher, not inside the dialog that just went away. Both
+    // panels are cleared: the create is confirmed from the preview, so that is the one actually
+    // on screen at this point, and `open` is already false.
     setOpen(false);
+    setPreview(false);
     onPosted?.();
   };
 
@@ -367,45 +398,67 @@ export function PostComposer({ onPosted }: PostComposerProps) {
     }
   };
 
+  /**
+   * The payload, assembled in one place because TWO things read it now: `submit` sends it and the
+   * preview renders it. Building it twice — once for the screen, once for the wire — is how a
+   * preview starts lying, since every rule below (the trim, the stripped blank options, the ISO
+   * conversion) would have to be repeated verbatim in the other copy.
+   *
+   * NOT SAFE TO CALL AT ANY TIME: the EVENT branch of `detailsFor` converts `startTime` with
+   * `new Date(...).toISOString()`, which throws on a blank field. Both callers are behind
+   * `canSubmit`.
+   */
+  const buildRequest = (): CreatePostRequest => ({
+    content: trimmed,
+    visibility,
+    postType,
+    // Spread the resolved candidate's own fields: the response mirrors the create request's
+    // location shape on purpose. The legacy composer instead sent a flattened `location`
+    // object, a key `CreatePostRequestDto` does not have — so every location it collected
+    // was silently discarded by the backend.
+    ...(location && {
+      googlePlaceId: location.googlePlaceId,
+      locationType: location.locationType,
+      locationDetails: location.locationDetails,
+    }),
+    // Omitted entirely when empty rather than sent as `[]`. `updatePost` runs
+    // `BeanUtils.copyProperties`, which copies nulls, so the two are not the same thing on the
+    // edit path — and a create that sends `images: []` would teach the next reader they are.
+    ...(images.length > 0 && { images }),
+    // Blank options are stripped and the correct index re-pointed at the same option before
+    // it leaves — see `normalizeQuiz`.
+    ...(quiz && { quizDetails: normalizeQuiz(quiz) }),
+    ...detailsFor(postType),
+    /* THE BOOK'S OWN BLOCK IS PART OF THE REQUEST, not something `submit` bolts on at the last
+       moment. It travels as the `metadata` part of the multipart call rather than as a JSON
+       body, but it is the same object either way — and the preview has to be able to see the
+       title and the price it is about to show. Only on `BOOK`: `BeanUtils.copyProperties` would
+       happily store a `bookDetails` sent on an ARTICLE. */
+    ...(postType === 'BOOK' && {
+      bookDetails: { ...book, title: (book.title ?? '').trim() },
+    }),
+  });
+
   const submit = () => {
     if (!canSubmit) return;
     setJustPosted(false);
 
-    const base: CreatePostRequest = {
-      content: trimmed,
-      visibility,
-      postType,
-      // Spread the resolved candidate's own fields: the response mirrors the create request's
-      // location shape on purpose. The legacy composer instead sent a flattened `location`
-      // object, a key `CreatePostRequestDto` does not have — so every location it collected
-      // was silently discarded by the backend.
-      ...(location && {
-        googlePlaceId: location.googlePlaceId,
-        locationType: location.locationType,
-        locationDetails: location.locationDetails,
-      }),
-      // Omitted entirely when empty rather than sent as `[]`. `updatePost` runs
-      // `BeanUtils.copyProperties`, which copies nulls, so the two are not the same thing on the
-      // edit path — and a create that sends `images: []` would teach the next reader they are.
-      ...(images.length > 0 && { images }),
-      // Blank options are stripped and the correct index re-pointed at the same option before
-      // it leaves — see `normalizeQuiz`.
-      ...(quiz && { quizDetails: normalizeQuiz(quiz) }),
-      ...detailsFor(postType),
-    };
+    const request = buildRequest();
 
     if (postType === 'BOOK') {
       // `bookFile` is non-null here: `isReady` already refused to let `canSubmit` be true
-      // without it, for the same reason the server refuses the call.
+      // without it, for the same reason the server refuses the call. `bookDetails` is on the
+      // request because `buildRequest` puts it there for exactly this kind — restated for the
+      // type system, which cannot see that the branch and the spread test the same value.
       createBook.mutate({
-        metadata: { ...base, bookDetails: { ...book, title: (book.title ?? '').trim() } },
+        metadata: { ...request, bookDetails: request.bookDetails! },
         bookFile: bookFile!,
         coverFile,
       });
       return;
     }
 
-    create.mutate(base);
+    create.mutate(request);
   };
 
   const typeLabel = t(`createPost.type.${postType}`);
@@ -525,10 +578,19 @@ export function PostComposer({ onPosted }: PostComposerProps) {
             <Button variant="ghost" onClick={() => setOpen(false)}>
               {t('createPost.cancel')}
             </Button>
-            <Button onClick={submit} disabled={!canSubmit} loading={pending}>
-              {/* A book post uploads a file, so it can be slow enough that "Đang đăng..." is not
-                  enough of a signal on its own — the button also stays disabled throughout. */}
-              {pending ? t('createPost.posting') : t('createPost.post')}
+            {/* THE FORM NO LONGER POSTS — it hands over to the preview, which is where `Đăng bài`
+                now lives. Same gate (`canSubmit`), one step later, and the label says which of
+                the two this button is: a reader who sees "Xem trước" cannot mistake it for the
+                irreversible one. */}
+            <Button
+              icon={<Eye />}
+              disabled={!canSubmit}
+              onClick={() => {
+                setOpen(false);
+                setPreview(true);
+              }}
+            >
+              {t('createPost.preview.open')}
             </Button>
           </>
         }
@@ -642,6 +704,35 @@ export function PostComposer({ onPosted }: PostComposerProps) {
           )}
         </div>
       </Dialog>
+
+      {/* Mounted only while it is open — see the file note: `buildRequest()` throws on a
+          half-filled EVENT, and this is reachable only from behind `canSubmit`. */}
+      {preview && (
+        <PostPreviewDialog
+          open
+          onBack={() => {
+            setPreview(false);
+            setOpen(true);
+          }}
+          onConfirm={submit}
+          pending={pending}
+          error={error}
+          author={{
+            // `GET /profile/me` answers a `UserResponse`, which carries no Elite Score — so the
+            // card's reputation chip is absent here rather than defaulted to 0, the same rule
+            // `PostCard` states for a payload that did not send one. Everything else on the
+            // identity row is real.
+            id: profile?.id ?? 0,
+            username: profile?.username,
+            fullName: profile?.fullName,
+            profilePictureUrl: profile?.profilePictureUrl,
+          }}
+          request={buildRequest()}
+          location={location}
+          bookFile={bookFile}
+          coverFile={coverFile}
+        />
+      )}
     </>
   );
 }

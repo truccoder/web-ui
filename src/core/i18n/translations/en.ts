@@ -637,6 +637,16 @@ export const en = {
     cancel: 'Cancel',
     dialogTitle: 'New post · ${type}',
     dialogNote: 'Your post may need to pass moderation before it appears in the feed.',
+    /* The confirm step. `open` is the composer's primary button, so it names the step rather
+       than the outcome — the button that posts is inside the preview and says `post`. */
+    preview: {
+      open: 'Preview',
+      title: 'Preview your post',
+      note: 'This is roughly how it will look in the feed. It may need to pass moderation before it appears, and hashtags are picked out by the server after posting.',
+      back: 'Keep editing',
+      quizAttached: 'Quiz attached · ${count} questions',
+      quizAttachedTitled: 'Quiz "${title}" · ${count} questions',
+    },
     visibility: {
       PUBLIC: 'Public',
       FRIENDS: 'Friends',
