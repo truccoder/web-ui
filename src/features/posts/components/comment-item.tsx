@@ -13,7 +13,6 @@ import type { PostComment } from '../types/comment';
 import type { ReactionType } from '../types/reaction';
 import { CommentComposer } from './comment-composer';
 import { REACTIONS } from './reaction-bar';
-import { ReactionSummary } from './reaction-summary';
 
 /**
  * One comment: identity row, body, and the author's own controls.
@@ -477,10 +476,12 @@ export function CommentItem({
                   the accessible name reading `Hữu ích 5` — the reaction AND its total — which is
                   exactly what a sighted reader gets from the glyph and the number. */}
               <span className="sr-only">{t(reactionLabelKey)}</span>
-              {/* The same glyph strip the post's row carries, from the same field — B19 put
-                  `reactionSummary` on `CommentResponseDto` too, so a comment can say WHICH
-                  reactions make up its number instead of only how many. */}
-              <ReactionSummary summary={comment.reactionSummary} max={3} />
+              {/* A NUMBER AND NOTHING ELSE. This carried the post row's glyph strip — three
+                  small outlines out of `reactionSummary` saying which reactions made up the
+                  total — and it comes off here for the same reason it came off there: the owner
+                  asked for one icon and one number per control. `ReactionBar`'s header keeps the
+                  full reversal; `reactionSummary` is still on `CommentResponseDto` and nothing
+                  reads it. */}
               {comment.likeCount > 0 && (
                 <span className="font-mono tabular-nums">{comment.likeCount}</span>
               )}

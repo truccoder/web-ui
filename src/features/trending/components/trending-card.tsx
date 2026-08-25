@@ -24,12 +24,28 @@ import type { TrendingItem } from '../types/trending';
  * nothing had ever written to it; the backend fills it now — two of the three sources already
  * return an image in the JSON being fetched, and Hacker News is read off the destination page.
  *
- * A 64px THUMBNAIL ON THE LEADING EDGE, NOT A BANNER ACROSS THE TOP. The note below on the
- * missing rule says these cards are told apart from posts by STRUCTURE and by height — "two to
- * three lines against a post's six to twelve". A full-bleed image would erase exactly that and
- * make a crawled item the tallest thing in a mixed column. The leading thumbnail is what
- * `link-body.tsx` already does for the same object (someone else's link, with a picture), at the
- * same size, so the two agree without either having to know about the other.
+ * A WIDE PICTURE UNDER THE TEXT, AND IT WAS A 64px THUMBNAIL ON THE LEADING EDGE UNTIL THE OWNER
+ * CALLED IT. The note that stood here defended the thumbnail on the ground that a crawled card is
+ * told apart from a post by STRUCTURE and by height — "two to three lines against a post's six to
+ * twelve" — so a banner would erase the difference and make a crawled item the tallest thing in a
+ * mixed column. The height objection was real and is now paid on purpose: the ask was the Facebook
+ * shape, text first and then the picture at the full measure, and a 64px square of a 1200-wide
+ * article image is a picture nobody can actually see.
+ *
+ * WHAT STILL TELLS THE TWO KINDS APART, now that height does not: the source badge and the flame
+ * score above the title, the outward arrow on the title itself, the tag row, and the absence of
+ * any acting strip at all (see the note on the missing rule below). None of those is on a post.
+ *
+ * `aspect-[1.91/1] object-cover` — THE RATIO IS THE CRAWL'S OWN. Open Graph images are authored at
+ * 1200x630 and GitHub's at 1200x600, so this is the frame they were cut for; letting each image
+ * keep its own proportions would ripple down the column as every source's habit changed.
+ * `PostImages` does the opposite for a single post image — `max-h-[28rem] object-contain` — and
+ * the difference is deliberate: cropping the one picture an author chose destroys what they
+ * posted, while cropping an OG banner crops a banner.
+ *
+ * IT STAYS INSIDE THE CARD'S PADDING rather than bleeding to the card's edge. Facebook's preview
+ * does bleed; nothing in this product does, a post's own images included, and one card breaking
+ * the column would read as a mistake rather than as emphasis.
  *
  * THE TAGS ROW IS CONDITIONAL, AND STAYS CONDITIONAL. `tags` was excluded from this feature's
  * type until F-B because the crawl scheduler never wrote it; it does now, but only 97 of 310 rows
@@ -41,6 +57,18 @@ export interface TrendingCardProps {
   item: TrendingItem;
   className?: string;
 }
+
+/**
+ * The picture's frame, named because the card draws it twice — inside a link when the item has a
+ * URL to open, bare when it does not.
+ *
+ * The sunken fill is what a slow or transparent image sits on, so the frame is the same height
+ * before and after it loads and the column does not jump.
+ */
+const THUMB = cn(
+  'aspect-[1.91/1] w-full rounded-nx-sm border border-nx-border-subtle object-cover',
+  'bg-nx-surface-sunken'
+);
 
 export function TrendingCard({ item, className }: TrendingCardProps) {
   const t = useT();
@@ -84,55 +112,91 @@ export function TrendingCard({ item, className }: TrendingCardProps) {
         )}
       </div>
 
-      <div className="flex items-start gap-3">
-        {/* A HOST WE DO NOT CONTROL, so the same three rules `link-body.tsx` applies: plain
-            `<img>` because `next/image` would need every crawled domain declared and would 500 on
-            the first one that is not; `onError` because a crawled URL rots and a broken frame is
-            worse than no frame; `alt=""` because the title beside it already says what this is,
-            and a crawler has no alt text to offer. */}
-        {showThumb && (
+      <div className="flex min-w-0 flex-col gap-1">
+        {item.url ? (
+          <a
+            href={item.url}
+            target="_blank"
+            // `noopener` is the security part (the opened page cannot reach back through
+            // `window.opener`); `noreferrer` keeps this app's URLs out of the destination's logs.
+            rel="noopener noreferrer"
+            className={cn(
+              'group flex items-start gap-1',
+              'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring'
+            )}
+          >
+            <h3 className="text-nx-ui font-semibold text-nx-text-primary group-hover:underline">
+              {item.title ?? t('trending.untitled')}
+            </h3>
+            <ArrowUpRight className="mt-0.5 size-3.5 shrink-0 text-nx-text-muted" aria-hidden />
+          </a>
+        ) : (
+          <h3 className="text-nx-ui font-semibold text-nx-text-primary">
+            {item.title ?? t('trending.untitled')}
+          </h3>
+        )}
+
+        {/**
+         * ONE LINE, DOWN FROM THREE, AND THE CLAMP IS THE WHOLE DIFFERENCE. The ask was a summary
+         * line under every title, which is what this already rendered — at up to three lines,
+         * which on a card that now carries a picture as well would stack the two most variable
+         * things in the column and let a card run to any height it liked. One line is a fixed
+         * cost, so every card keeps the same skeleton: title, a line about it, the picture.
+         *
+         * IT IS ABSENT, NOT EMPTY, WHEN THERE IS NOTHING TO SAY. `summary` is null on a large
+         * share of rows — GitHub repositories have no abstract to crawl, and Hacker News items
+         * frequently arrive without one (checked live against `GET /v1/api/trending`: 2 of the
+         * first 5 rows null). A blank line held open for them would read as a failed load.
+         */}
+        {item.summary && (
+          <p className="line-clamp-1 text-nx-body-sm leading-relaxed text-nx-text-secondary">
+            {item.summary}
+          </p>
+        )}
+      </div>
+
+      {/**
+       * A HOST WE DO NOT CONTROL, so the same three rules `link-body.tsx` applies: plain `<img>`
+       * because `next/image` would need every crawled domain declared and would 500 on the first
+       * one that is not; `onError` because a crawled URL rots and a broken frame is worse than no
+       * frame; `alt=""` because the title above it already says what this is, and a crawler has no
+       * alt text to offer.
+       *
+       * THE PICTURE IS A SECOND WAY TO THE SAME ARTICLE, and `aria-hidden` + `tabIndex={-1}` are
+       * what keep that from costing anything: an anchor whose only content is an empty-alt image
+       * has no accessible name, so leaving it in the tree would announce a nameless link and add a
+       * second tab stop to a destination the title already offers. A mouse gets what it expects;
+       * a screen reader and the keyboard get one link per card.
+       */}
+      {showThumb &&
+        (item.url ? (
+          <a
+            href={item.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-hidden
+            tabIndex={-1}
+            className="block"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={item.imageUrl ?? undefined}
+              alt=""
+              loading="lazy"
+              onError={() => setThumbFailed(true)}
+              className={THUMB}
+            />
+          </a>
+        ) : (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={item.imageUrl ?? undefined}
             alt=""
             loading="lazy"
             onError={() => setThumbFailed(true)}
-            className="size-16 shrink-0 rounded-nx-xs border border-nx-border-subtle object-cover"
+            className={THUMB}
           />
-        )}
-
-        <div className="flex min-w-0 flex-1 flex-col gap-2">
-          {item.url ? (
-            <a
-              href={item.url}
-              target="_blank"
-              // `noopener` is the security part (the opened page cannot reach back through
-              // `window.opener`); `noreferrer` keeps this app's URLs out of the destination's logs.
-              rel="noopener noreferrer"
-              className={cn(
-                'group flex items-start gap-1',
-                'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring'
-              )}
-            >
-              <h3 className="text-nx-ui font-semibold text-nx-text-primary group-hover:underline">
-                {item.title ?? t('trending.untitled')}
-              </h3>
-              <ArrowUpRight className="mt-0.5 size-3.5 shrink-0 text-nx-text-muted" aria-hidden />
-            </a>
-          ) : (
-            <h3 className="text-nx-ui font-semibold text-nx-text-primary">
-              {item.title ?? t('trending.untitled')}
-            </h3>
-          )}
-
-          {/* Null on 46 of 110 rows — GitHub repositories have no abstract to crawl. */}
-          {item.summary && (
-            <p className="line-clamp-3 text-nx-body-sm leading-relaxed text-nx-text-secondary">
-              {item.summary}
-            </p>
-          )}
-        </div>
-      </div>
+        ))}
 
       {/* Gemini's own words, not a controlled vocabulary — there is no tag filter to link these
           to, and inventing one would promise a query the backend cannot answer. So they are

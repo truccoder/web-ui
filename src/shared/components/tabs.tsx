@@ -127,6 +127,36 @@ export interface TabItem {
   icon?: React.ReactNode;
   /** Rendered as a trailing mono pill. */
   count?: number;
+  /**
+   * Native tooltip on the tab. Defaulted from `label` when `iconOnly` is set and the label is a
+   * string, so an icon strip does not have to say its own names twice.
+   *
+   * NOT IN `Tabs.d.ts`, AND ADDED FOR ONE SHAPE THE CONTRACT DID NOT ANTICIPATE — see `iconOnly`.
+   * A `title` is what the rest of this codebase reaches for when a control is a bare glyph
+   * (`ReactionTray`'s seven buttons, the comment row's toggle), and it costs no layer, no portal
+   * and no state.
+   *
+   * IT IS NOT A REPLACEMENT FOR `label`. A tab still needs a name in the tree; this is the
+   * mouse's copy of it.
+   */
+  title?: string;
+  /**
+   * Show the icon and hide the words, for a tab whose glyph IS its label.
+   *
+   * THE LABEL IS NOT DROPPED, IT MOVES — into an `sr-only` span, so the tab's accessible name is
+   * still `Sáng tỏ` and nothing about the ARIA tabs pattern changes. It also becomes the `title`
+   * unless one was passed, because a sighted mouse user has to be able to learn that the crying
+   * face means `Khó hiểu` — at 16px, three of the seven reaction glyphs are a circle with a
+   * different mouth.
+   *
+   * IT ALSO CHANGES THE TAB'S SIZE, and that is the half a caller cannot do from outside. See
+   * `iconOnlySizeStyles`: a word-shaped tab and a glyph-shaped tab want different boxes, and the
+   * `px-1` that is right for a label makes a 16px glyph into a 24px tap target.
+   *
+   * `ReactorDialog` is the only caller today: `Tất cả` keeps its word — it is not a reaction and
+   * has no glyph that could stand for "all of them" — and the seven types are icons.
+   */
+  iconOnly?: boolean;
 }
 
 export interface TabsProps {
@@ -184,6 +214,33 @@ const sizeStyles: Record<
 };
 
 /**
+ * A SQUARE FOR A GLYPH, BECAUSE `px-1` IS A RULE ABOUT WORDS. The padding above is deliberately
+ * the smallest that lets an inset focus ring be drawn, so that the active bar stays the width of
+ * the LABEL and never starts reading as a segment of rail. A 16px icon in that same box is a
+ * 24×28 target — which clears WCAG 2.2's 24×24 minimum by exactly nothing, and on a phone reads
+ * as a row of pinpricks.
+ *
+ * 32 AT `sm` AND 36 AT `md`, WHICH ARE NOT NEW NUMBERS: `ACTION_GLYPH_BUTTON` on the post's acting
+ * row is a 32px square around a 20px glyph, and it is the closest thing in this product to what
+ * these tabs are. A 16px glyph in 32 leaves the same 8px of air on each side.
+ *
+ * THE STRIP DOES NOT GROW TALLER THAN ITS TALLEST TAB, and this is why the height goes on the tab
+ * rather than on the list: the tablist is a flex row at the default `align-items: stretch`, so
+ * one 32-tall icon tab lifts the word tab beside it to 32 as well and the two bars stay on one
+ * line. Setting a height on the strip would have done the same thing less honestly.
+ *
+ * MEASURED AT THE ONE CALLER, ON THE DEVICE THIS RUNG IS FOR: the dialog is 305 wide inside its
+ * own padding at 375. `Tất cả` (46) + seven 32s + seven 4-gaps = 298, so the strip fits without
+ * scrolling — which is the whole reason it could replace a `<select>`. The 4 is not a fudge; see
+ * `ICON_ONLY_GAP`. Going to 36 squares would make it 326 and put the last reaction behind a
+ * swipe, which is a worse trade than 4px of ink the glyph already pads for itself.
+ */
+const iconOnlySizeStyles: Record<NonNullable<TabsProps['size']>, string> = {
+  sm: 'min-h-8 min-w-8 justify-center px-0',
+  md: 'min-h-9 min-w-9 justify-center px-0',
+};
+
+/**
  * THE GAP IS THE SEPARATOR NOW, since `inline` tabs carry no padding worth the name. 12 + the two
  * tabs' 4 of padding reads as 20 between labels at `md`, 8 + 8 as 16 at `sm` — the same visual
  * separation the pill got out of `px-3` and `gap-1`, moved from the tabs to the strip so that the
@@ -199,6 +256,21 @@ const listGap: Record<
   inline: { sm: 'gap-2', md: 'gap-3' },
   underline: { sm: 'gap-1', md: 'gap-1' },
 };
+
+/**
+ * A STRIP WITH GLYPH TABS IN IT SEPARATES THEM BY 4, not by the 8 or 12 above, and it is the same
+ * padding-beats-gap inversion the post's acting row records on `ACTION_GROUP`. The gaps above are
+ * sized for tabs that carry `px-1` and nothing else, so the strip has to supply the whole
+ * separation. An `iconOnly` tab is a 32px square around a 16px glyph — it brings 8px of its own
+ * padding to each side, so the same 8 of strip gap would be spending the space twice: 24 of air
+ * between two glyphs that are 16 wide.
+ *
+ * IT IS ALSO WHAT MAKES THE STRIP FIT A PHONE, and that is measured rather than hoped: the dialog
+ * that holds the only caller is **305 wide inside its padding at 375**, not the ~327 an earlier
+ * version of this note assumed. `Tất cả` (46) + seven 32s + seven 8-gaps came to 326 and scrolled;
+ * at 4 it is 298 and does not. See `iconOnlySizeStyles` for why the square is 32 and not smaller.
+ */
+const ICON_ONLY_GAP = 'gap-1';
 
 const toItem = (tab: string | TabItem): TabItem =>
   typeof tab === 'string' ? { id: tab, label: tab } : tab;
@@ -340,7 +412,7 @@ export function Tabs({
        */
       className={cn(
         'font-sans',
-        listGap[variant][size],
+        items.some((item) => item.iconOnly) ? ICON_ONLY_GAP : listGap[variant][size],
         variant === 'inline'
           ? // `relative` IS LOAD-BEARING, not a habit: the auto-scroll effect reads `offsetLeft`,
             // which is measured from the nearest positioned ancestor. Without it the numbers come
@@ -381,12 +453,18 @@ export function Tabs({
             // an ARIA attribute makes the attribute load-bearing for layout, and someone tidying
             // the a11y later would have no way to know they were also moving the scroller.
             data-nx-tab-active={isActive}
+            // Undefined on every ordinary tab, so nothing is announced twice: a tab whose label is
+            // on screen already says what it is. See `TabItem.title`.
+            title={
+              item.title ??
+              (item.iconOnly && typeof item.label === 'string' ? item.label : undefined)
+            }
             onClick={() => onChange?.(item.id)}
             className={cn(
               'inline-flex items-center gap-2 whitespace-nowrap',
               // COLOUR ONLY (§2.1) — no lift, no scale, no shadow, in either variant.
               'transition-colors duration-[var(--nx-duration-fast)] ease-nx-out',
-              sizeStyles[variant][size],
+              item.iconOnly ? iconOnlySizeStyles[size] : sizeStyles[variant][size],
               variant === 'inline'
                 ? cn(
                     // ONE WEIGHT FOR BOTH STATES. `font-semibold` active against `font-normal`
@@ -442,7 +520,10 @@ export function Tabs({
                 {item.icon}
               </span>
             )}
-            {item.label}
+            {/* `sr-only` ON AN ICON TAB, plain text otherwise — the name has to stay in the
+                accessibility tree either way. The span is out of flow, so the button's own `gap-2`
+                never opens beside an invisible label. */}
+            {item.iconOnly ? <span className="sr-only">{item.label}</span> : item.label}
             {item.count !== undefined && (
               // ONE TREATMENT FOR SELECTED AND UNSELECTED ALIKE, which is a simplification the
               // shape change paid for. The active tab used to give its count an accent fill,

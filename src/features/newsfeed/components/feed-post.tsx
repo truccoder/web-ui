@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import Link from 'next/link';
 import { MessageCircle } from 'lucide-react';
 import {
   ArticleBody,
@@ -248,33 +249,49 @@ export function FeedPost({
    */
   const { isGuest, guard } = useAuthGate();
 
-  // `&& !isGuest`: the permalink page opens the thread on arrival, and for a signed-out reader
-  // that would mount a panel whose endpoint is not open to them — the one case where the gate has
-  // to reach the initial state rather than the click.
-  const [commentsOpen, setCommentsOpen] = useState(defaultCommentsOpen && !isGuest);
   const [editing, setEditing] = useState(false);
   const [reporting, setReporting] = useState(false);
 
   /**
-   * Where the comment button sends you.
+   * Where the comment button sends you ON THE PERMALINK, which is now the only place it goes
+   * anywhere in-page at all — everywhere else it is a link to `/posts/{id}`. See `commentsHref`.
    *
-   * IT IS A REF RATHER THAN AN ANCHOR because the discussion block has three shapes on this card
-   * — the full thread on a permalink, the two-comment preview on a feed card, and the thread that
-   * mounts on demand under an empty post — and an `id` would have to be unique per post in a list
-   * of twenty. The ref points at the wrapper that holds whichever one rendered.
+   * IT IS A REF RATHER THAN AN ANCHOR because an `id` would have to be unique per post in a list
+   * of twenty. The ref points at the wrapper holding whichever discussion shape rendered.
    *
-   * SCROLLING IN THE HANDLER, NOT IN AN EFFECT ON `commentsOpen`. The empty-post case mounts its
-   * thread in the same commit, and the wrapper this scrolls to already exists (empty, height 0)
-   * before that — so the smooth scroll starts toward the right place and the thread fills it on
-   * the way. An effect keyed on the flag would also fire once and never again, so a second press
-   * would do nothing.
+   * SCROLLING IN THE HANDLER, NOT IN AN EFFECT. There is no state left for an effect to key on —
+   * the thread this scrolls to is already mounted whenever this handler can be reached — and an
+   * effect that fired once would leave a second press doing nothing.
    */
   const commentsRef = useRef<HTMLDivElement>(null);
 
-  const openComments = () => {
-    setCommentsOpen(true);
+  const scrollToComments = () => {
     commentsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   };
+
+  /**
+   * THE COMMENT BUTTON IS A LINK TO THE POST'S OWN PAGE, at the owner's call, and this replaces
+   * both of the things it used to do on a feed card: expanding an unbounded thread inside the
+   * card, and scrolling to a two-comment preview. `/posts/{id}` opens with the whole discussion
+   * already expanded and a composer under it — that is what `defaultCommentsOpen` is for — so the
+   * shortest honest path to "I want to read or write comments" is to go there.
+   *
+   * WHAT IT DELETES, and this is the part worth checking before anyone restores it: the
+   * `commentsOpen` flag and the `CommentThread` that mounted on demand under an EMPTY post. That
+   * block existed because a post with no comments has nothing to preview, so the button was the
+   * only route to its composer. The route is now the post's page, which has the same composer and
+   * an address the reader can keep.
+   *
+   * NULL ON THE PERMALINK ITSELF, where a link would point at the page it is already on. There
+   * the button keeps the scroll — the discussion is below, mounted, and worth moving to.
+   * `defaultCommentsOpen` rather than `expanded` is the right flag for that question: it is the
+   * one that says the thread is on this page.
+   *
+   * NO `guard` ON EITHER SHAPE ANY MORE. The gate was here because opening a panel a guest cannot
+   * fill is worse than refusing — see `useAuthGate` above — but navigating to a public permalink
+   * is not a write, and the page decides for itself what a signed-out reader gets.
+   */
+  const commentsHref = defaultCommentsOpen ? null : `/posts/${post.postId}`;
 
   const isAuthor = profile?.id === post.authorId;
 
@@ -427,9 +444,6 @@ export function FeedPost({
           <ReactionBar
             postId={post.postId}
             count={post.likeCount}
-            // B19, paid 24/08: the breakdown rides on the feed payload now, so the glyph strip
-            // beside the total costs nothing. Null on any entry written before the field existed.
-            summary={post.reactionSummary}
             onChanged={onChanged}
             /**
              * PASSED IN RATHER THAN RENDERED BESIDE — see `ReactionBar`'s `actions` note. It used
@@ -460,23 +474,36 @@ export function FeedPost({
               // whoever builds the comment glyph — and that is this file, which already holds the
               // number and is the only place that knows what pressing it does.
               <div className={ACTION_GROUP}>
-                <button
-                  type="button"
-                  // `() => guard(openComments)()` RATHER THAN `guard(openComments)`, and it is not
-                  // a style choice: `openComments` reads `commentsRef.current`, and building the
-                  // guarded handler during render trips `react-hooks/refs` — "passing a ref to a
-                  // function may read its value during render". Composing the two inside the
-                  // handler keeps every ref access where it belongs, in the event.
-                  onClick={() => guard(openComments)()}
-                  title={t('post.comments.show')}
-                  className={cn(
-                    ACTION_GLYPH_BUTTON,
-                    'text-nx-text-secondary hover:text-nx-text-primary'
-                  )}
-                >
-                  <MessageCircle aria-hidden className={ACTION_GLYPH} />
-                  <span className="sr-only">{t('post.comments.show')}</span>
-                </button>
+                {commentsHref ? (
+                  <Link
+                    href={commentsHref}
+                    title={t('post.comments.show')}
+                    className={cn(
+                      ACTION_GLYPH_BUTTON,
+                      'text-nx-text-secondary hover:text-nx-text-primary'
+                    )}
+                  >
+                    <MessageCircle aria-hidden className={ACTION_GLYPH} />
+                    <span className="sr-only">{t('post.comments.show')}</span>
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    // The handler is composed inside the event rather than built during render:
+                    // `scrollToComments` reads `commentsRef.current`, and passing the function
+                    // itself to `onClick` is fine, but wrapping it at render time in anything
+                    // that could read the ref trips `react-hooks/refs`.
+                    onClick={() => scrollToComments()}
+                    title={t('post.comments.show')}
+                    className={cn(
+                      ACTION_GLYPH_BUTTON,
+                      'text-nx-text-secondary hover:text-nx-text-primary'
+                    )}
+                  >
+                    <MessageCircle aria-hidden className={ACTION_GLYPH} />
+                    <span className="sr-only">{t('post.comments.show')}</span>
+                  </button>
+                )}
 
                 {/* A SECOND CONTROL RATHER THAN TEXT INSIDE THE FIRST, to match the reaction pair
                     beside it — where the glyph and the number genuinely do different things
@@ -486,20 +513,33 @@ export function FeedPost({
                     the one arrangement that invites a click that does nothing.
 
                     Hidden at zero, like every other count in this product. */}
-                {!!post.commentCount && (
-                  <button
-                    type="button"
-                    onClick={() => guard(openComments)()}
-                    aria-label={t('post.commentCount', { count: post.commentCount })}
-                    className={cn(
-                      ACTION_COUNT,
-                      'hover:text-nx-text-primary hover:underline',
-                      'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring'
-                    )}
-                  >
-                    {post.commentCount}
-                  </button>
-                )}
+                {!!post.commentCount &&
+                  (commentsHref ? (
+                    <Link
+                      href={commentsHref}
+                      aria-label={t('post.commentCount', { count: post.commentCount })}
+                      className={cn(
+                        ACTION_COUNT,
+                        'hover:text-nx-text-primary hover:underline',
+                        'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring'
+                      )}
+                    >
+                      {post.commentCount}
+                    </Link>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => scrollToComments()}
+                      aria-label={t('post.commentCount', { count: post.commentCount })}
+                      className={cn(
+                        ACTION_COUNT,
+                        'hover:text-nx-text-primary hover:underline',
+                        'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring'
+                      )}
+                    >
+                      {post.commentCount}
+                    </button>
+                  ))}
               </div>
             }
           />
@@ -518,14 +558,17 @@ export function FeedPost({
            * THE FEED GETS THE PREVIEW: two comments and a way in, instead of a button that grew
            * the card by an unbounded thread. See `CommentPreview`, and note there that the
            * "most-liked" ordering has no backing data on the comment DTO.
+           *
+           * IT IS TWO SHAPES AND NOT THREE ANY MORE. A third used to mount here — a full thread
+           * that appeared under an EMPTY post once the comment button was pressed, because such a
+           * post has nothing to preview and the composer had to be reachable somehow. The button
+           * is a link to `/posts/{id}` now (see `commentsHref`), and that page mounts the same
+           * thread with the same composer, so the on-demand copy had nothing left to do.
            */}
-          {/* ONE WRAPPER FOR ALL THREE SHAPES, so `commentsRef` has a single thing to point at
-              whichever one rendered. It repeats the action strip's own `gap` rather than adding a
-              rung: the two blocks inside are mutually exclusive in practice — the preview returns
-              null on a post with no comments, which is the only case the second one fires — so
-              this never stacks two of them.
+          {/* ONE WRAPPER, so `commentsRef` has a single thing to point at whichever shape
+              rendered. It repeats the action strip's own `gap` rather than adding a rung.
 
-              GATED ON `!isGuest` SO IT IS NOT AN EMPTY FLEX CHILD. Both blocks are already
+              GATED ON `!isGuest` SO IT IS NOT AN EMPTY FLEX CHILD. Both shapes are already
               signed-in-only, and an empty div in a `gap` column still pays the gap: a guest would
               get 8px of dead space under the acting row. */}
           {!isGuest && (
@@ -539,17 +582,6 @@ export function FeedPost({
                 />
               ) : (
                 <CommentPreview postId={post.postId} commentCount={post.commentCount} />
-              )}
-
-              {/* The empty-thread case: nothing to preview, so the button above is the only way to
-                  reach the composer. Mounted only once it is pressed. */}
-              {commentsOpen && !defaultCommentsOpen && !post.commentCount && (
-                <CommentThread
-                  postId={post.postId}
-                  onChanged={onChanged}
-                  canAcceptAnswer={canAcceptAnswer}
-                  acceptedAnswerId={post.qnaDetails?.acceptedAnswerId}
-                />
               )}
             </div>
           )}

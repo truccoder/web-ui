@@ -42,8 +42,6 @@ export {
   PostCard,
   PostImages,
   type PostImagesProps,
-  ReactionSummary,
-  type ReactionSummaryProps,
   type PostCardProps,
   type PostCardAuthor,
   CodeSnippetBody,

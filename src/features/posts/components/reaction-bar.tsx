@@ -7,7 +7,6 @@ import { getErrorMessage } from '@/shared/lib/api-error';
 import { cn } from '@/shared/lib/cn';
 import { useMyReaction, useRemoveReaction, useUpsertReaction } from '../hooks/use-reaction';
 import type { ReactionType } from '../types/reaction';
-import { ReactionSummary } from './reaction-summary';
 import { ReactionTray } from './reaction-tray';
 import { ReactorDialog } from './reactor-dialog';
 
@@ -62,16 +61,23 @@ import { ReactorDialog } from './reactor-dialog';
  * totals at all. Version two: `/reactions/summary` existed but was per post, so a live number
  * cost one request per card — filed as B19. **B19 is paid** (BE `ee89d77`, 24/08):
  * `reactionSummary` now rides on `FeedPostDataDto`, `PostDto` and `CommentResponseDto` out of one
- * `GROUP BY` for the whole page, which is what `summary` below renders.
+ * `GROUP BY` for the whole page.
+ *
+ * NOTHING ON THIS ROW READS THAT MAP ANY MORE, AND THAT IS A REVERSAL WORTH RECORDING. A strip of
+ * three 14px glyphs used to stand in front of the number saying WHICH reactions made it up
+ * (`ReactionSummary`, now deleted). The owner's instruction was one line and it settles it: beside
+ * the icon there is to be a number, and no second picture. So the breakdown leaves the row, the
+ * `summary` prop goes with it, and the question it answered — which reactions, and from whom —
+ * belongs to `ReactorDialog`, which now opens on a tab per type. That is a better answer than
+ * three outlines a reader had to hover to name.
  *
  * WHAT STILL DOES NOT MOVE IS THE NUMBER ITSELF, and that is now a cache fact rather than a
- * missing endpoint. `count` and `summary` both arrive inside the feed/search payload the caller
- * is holding, so neither changes until that payload is re-fetched. The backend keeps its Redis
- * entry current — `updateCachedReactions` writes the total and the breakdown together, on
- * purpose, so a feed read can never show a number that disagrees with its own glyphs — but a page
- * already rendered is a page already read. `onChanged` remains the honest lever: the composing
- * screen decides whether a reaction is worth re-fetching for. Do not fake the increment locally —
- * the highlight is honest, an invented total is not.
+ * missing endpoint. `count` arrives inside the feed/search payload the caller is holding, so it
+ * does not change until that payload is re-fetched. The backend keeps its Redis entry current —
+ * `updateCachedReactions` writes it on every write — but a page already rendered is a page
+ * already read. `onChanged` remains the honest lever: the composing screen decides whether a
+ * reaction is worth re-fetching for. Do not fake the increment locally — the highlight is honest,
+ * an invented total is not.
  */
 export interface ReactionBarProps {
   postId: number;
@@ -80,19 +86,6 @@ export interface ReactionBarProps {
    * rather than showing 0 for "not supplied".
    */
   count?: number;
-  /**
-   * `reactionSummary` from the same payload — WHICH reactions make up `count`.
-   *
-   * IT ARRIVED WITH B19, AND THIS COMPONENT IS WHY IT WAS ASKED FOR. The header's note on the
-   * count records the problem: once the labels came off, a bare `1` beside a thumb could not say
-   * that the one reaction was `Sáng tỏ` rather than a like — on a product whose reaction set is
-   * its argument, that is the interesting half of the number. The only breakdown available then
-   * was one request per post; the map rides on the list payload now.
-   *
-   * Undefined or null renders no glyphs and leaves the bare number, which is what any payload
-   * predating the field does.
-   */
-  summary?: { [key: string]: number } | null;
   /**
    * Controls that belong beside the reaction trigger — the comment glyph and its count, today.
    *
@@ -205,29 +198,57 @@ export const ACTION_GLYPH = 'size-5 shrink-0';
  * The token names read backwards for this use and it is worth saying why they are still right:
  * `pair` is 4 because it is meant for two glyphs that TOUCH, with no padded box between them.
  * Here the boxes supply the pairing and the row supplies the separation.
+ *
+ * `items-center`, AND IT WENT TO `items-baseline` AND BACK. The round trip is recorded because
+ * the failure is the useful part: asked for a number that sits on the icon's line rather than
+ * floating beside it, this row aligned the two on a real CSS baseline — the glyph button's, which
+ * is the bottom edge of its 20px glyph. Measured, that put the digits' ink between 16.2 and 26.2
+ * in a 32px box whose glyph runs 6 to 26, i.e. the number's whole mass in the BOTTOM HALF of the
+ * icon beside it. It is the correct reading of "baseline" and it reads as a number that has
+ * slipped off its control.
+ *
+ * WHAT ACTUALLY MAKES THE PAIR LOOK LIKE ONE OBJECT is not the alignment rule — centring already
+ * lands the digits' ink centre within half a pixel of the glyph's — but the three things below,
+ * and two of them were wrong while the alignment was being argued about:
+ *
+ *  - ONE INK. The glyph is `text-nx-text-secondary` (gray-600) and the count was
+ *    `text-nx-text-muted` (gray-500): two greys one rung apart, in a pair meant to read as a
+ *    single control. See `ACTION_COUNT`, which now takes the glyph's own token.
+ *  - ONE SIZE, as far as the scale allows — 14, see `ACTION_COUNT`.
+ *  - NO GAP, because the button already carries 6px of padding on the side the number sits.
  */
 export const ACTION_GROUP = 'flex items-center';
 
 /**
  * The number itself.
  *
- * `text-nx-body-sm` (13), UP FROM `text-nx-micro`. Micro is the DS's rung for a fact printed at
- * the edge of a card, which is exactly where these numbers used to live. Beside a 20px glyph it
- * reads as a footnote attached to a control rather than as part of it.
+ * `text-nx-ui` (14), AND IT HAS CLIMBED THE SCALE TWICE. It began at `text-nx-micro` (11) —
+ * the DS's rung for a fact printed at the edge of a card, which is where these numbers used to
+ * live — then moved to `text-nx-body-sm` (13) when they came in beside their own glyphs. Both
+ * were footnote sizes hanging off a 20px control, which is what the owner named: the icon and its
+ * number have to read as ONE object, and they cannot while one of them is styled as an annotation
+ * of the other.
+ *
+ * 14 AND NOT 15, AND THE RUNG ABOVE WAS TRIED AND MEASURED FIRST. In Geist Mono on the pixel
+ * grid, a digit's cap height comes out at 10px at 13, and 11px at BOTH 14 and 15 — so `nx-body`
+ * (15) buys no extra ink over `nx-ui` (14) while its 1.6 line box hangs 6.5px below the baseline
+ * against the button's 6, which grows the whole acting row to 33.2 and shifts every card under
+ * it. 14 is the largest step that is free. Measured in the running app, not reasoned from the
+ * scale.
+ *
+ * `text-nx-text-secondary`, THE GLYPH'S OWN INK, AND THIS WAS THE REAL DEFECT. The number sat at
+ * `text-nx-text-muted` (gray-500) beside a glyph at `text-nx-text-secondary` (gray-600) — one rung
+ * lighter than the thing it belongs to, on every count in the row. That is what made the pair read
+ * as a control with a footnote stuck to it rather than as one object, and no amount of moving the
+ * digit up or down was going to fix a colour. Both halves now share one token at rest and one on
+ * hover (`text-nx-text-primary`), so the pair lights up together.
  *
  * `font-mono tabular-nums` is the house treatment for machine facts, and the fixed advance also
  * stops the row twitching when a count crosses 9 → 10.
  */
-export const ACTION_COUNT = 'font-mono text-nx-body-sm tabular-nums text-nx-text-muted';
+export const ACTION_COUNT = 'font-mono text-nx-ui tabular-nums text-nx-text-secondary';
 
-export function ReactionBar({
-  postId,
-  count,
-  summary,
-  actions,
-  onChanged,
-  className,
-}: ReactionBarProps) {
+export function ReactionBar({ postId, count, actions, onChanged, className }: ReactionBarProps) {
   const t = useT();
 
   const [reactorsOpen, setReactorsOpen] = useState(false);
@@ -436,16 +457,10 @@ export function ReactionBar({
               aria-label={t('post.reaction.count', { count })}
               className={cn(
                 ACTION_COUNT,
-                'flex items-center gap-1',
                 'hover:text-nx-text-primary hover:underline',
                 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring'
               )}
             >
-              {/* THE GLYPHS GO INSIDE THE BUTTON, not beside it. They answer the same question
-                  the number answers and they lead to the same place — the list of who reacted.
-                  Two adjacent controls where one is a picture of the other is a click target
-                  that has to be explained. */}
-              <ReactionSummary summary={summary} />
               {count}
             </button>
           )}

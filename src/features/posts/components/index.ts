@@ -53,10 +53,6 @@ export { PostImagePicker, type PostImagePickerProps } from './post-image-picker'
 // gave the seed something to show — before that the grid had no way to be seen running.
 export { PostImages, type PostImagesProps } from './post-images';
 
-// The glyphs of the reactions a post or comment received, in front of its total. Needs
-// `reactionSummary`, which B19 put on all three list DTOs.
-export { ReactionSummary, topReactions, type ReactionSummaryProps } from './reaction-summary';
-
 // Reaction row (P2.4'c-2) — fills `PostCard`'s `actions` slot.
 export {
   ReactionBar,
