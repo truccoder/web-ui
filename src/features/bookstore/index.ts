@@ -38,6 +38,7 @@ export {
   MyBooksList,
   type MyBooksListProps,
   PaymentResultPanel,
+  type PaymentResultMode,
   type PaymentResultPanelProps,
   StarRating,
   type StarRatingProps,
@@ -54,9 +55,29 @@ export {
   useCreateReview,
   useDeleteBook,
   useDownloadBook,
+  usePendingPayment,
+  usePendingPayments,
+  usePendingPaymentByRef,
   useRatingBreakdown,
   useSyncPaymentStatus,
 } from './hooks';
+
+/**
+ * The browser's own note of a payment it started, exported because the ref is the ONLY handle on
+ * an unfinished purchase and the backend has no endpoint that lists one. Consumers outside this
+ * feature should reach for the hooks above rather than these; the functions are here so a surface
+ * that has to write or drop an entry (a logout teardown, say) can do it through the barrel instead
+ * of reaching into the folder.
+ */
+export {
+  extractOrderId,
+  forgetPendingPayment,
+  isPendingPaymentFresh,
+  pendingPaymentExpiresAt,
+  rememberPendingPayment,
+  PENDING_PAYMENT_TTL_MS,
+  type PendingPayment,
+} from './lib/pending-payment';
 
 export type {
   Book,

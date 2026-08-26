@@ -13,3 +13,9 @@ export {
 } from './use-book';
 
 export { useCreatePayment, useSyncPaymentStatus } from './use-payment';
+
+export {
+  usePendingPayment,
+  usePendingPayments,
+  usePendingPaymentByRef,
+} from './use-pending-payment';

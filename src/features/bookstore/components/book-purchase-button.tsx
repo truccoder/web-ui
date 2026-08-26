@@ -1,15 +1,18 @@
 'use client';
 
 import * as React from 'react';
-import { Download, ShoppingCart } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Clock, Download, ShoppingCart } from 'lucide-react';
 import { Button } from '@/shared/components';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { useT } from '@/core/i18n';
-import { useBook, useCreatePayment, useDownloadBook } from '../hooks';
+import { extractOrderId, rememberPendingPayment } from '../lib/pending-payment';
+import { useBook, useCreatePayment, useDownloadBook, usePendingPayment } from '../hooks';
 
 /**
  * The single control that is either "Read" or "Buy", depending on what the backend says the caller
- * may do with this book.
+ * may do with this book — plus the way back to a payment that was started and not finished.
  *
  * THE PREDICATE IS `downloadUrl != null`, NOT `purchased`. The backend fills exactly one of
  * `downloadUrl` / `previewUrl` after evaluating (free ∨ purchased ∨ is-author), and it hardcodes
@@ -31,6 +34,7 @@ export interface BookPurchaseButtonProps {
 
 export function BookPurchaseButton({ bookId, isFree, onDownloadReady }: BookPurchaseButtonProps) {
   const t = useT();
+  const router = useRouter();
   const { data: book, isPending: isLoadingBook, isError: bookFailed } = useBook(bookId, !isFree);
   const {
     mutate: createPayment,
@@ -38,6 +42,11 @@ export function BookPurchaseButton({ bookId, isFree, onDownloadReady }: BookPurc
     error: paymentError,
   } = useCreatePayment();
   const { mutate: downloadBook, isPending: isDownloading } = useDownloadBook();
+
+  // What this browser remembers about an unfinished payment for THIS book. The backend has no
+  // endpoint that lists a buyer's orders, so without this note a payment the reader walked away
+  // from is unreachable — see `lib/pending-payment.ts` for the whole argument.
+  const pending = usePendingPayment(bookId);
 
   // A free book is readable by definition; for anything else the backend's own answer decides.
   const canRead = isFree || book?.downloadUrl != null;
@@ -75,25 +84,103 @@ export function BookPurchaseButton({ bookId, isFree, onDownloadReady }: BookPurc
     return <Button size="sm" variant="secondary" loading disabled />;
   }
 
+  /**
+   * A REMEMBERED PAYMENT NEVER REMOVES "BUY" WHEN ITS AGE IS A GUESS. Two kinds of note reach here
+   * and they carry different certainty:
+   *
+   *   - one this app wrote when it created the payment — the ref, MoMo's page, and the exact
+   *     moment. It is safe to lead with it and stand down the Buy button, because the backend
+   *     would refuse a second attempt for the same fifteen minutes anyway.
+   *   - one recovered from the backend's "already in progress (orderId=…)" rejection. That
+   *     rejection does not say when the attempt started, so the note's clock starts late by an
+   *     unknown amount — up to the full window. Hiding Buy behind it could keep the only way to
+   *     buy the book off screen for as much as half an hour after the order really died.
+   *
+   * So the recovered case shows both, and lets the backend be the one that says no.
+   */
+  const statusHref = pending
+    ? `/payment/pending?orderId=${encodeURIComponent(pending.transactionRef)}`
+    : null;
+
   return (
     <div className="flex flex-col items-start gap-1">
-      <Button
-        size="sm"
-        icon={<ShoppingCart className="h-3.5 w-3.5" />}
-        loading={isCreatingPayment}
-        onClick={() =>
-          createPayment(bookId, {
-            onSuccess: (intent) => {
-              // `paymentUrl` is read out of MoMo's response map and is genuinely nullable. The
-              // legacy version assigned it unconditionally, which navigated the browser to the
-              // string "null" when MoMo answered without it. Staying put is the honest failure.
-              if (intent.paymentUrl) window.location.href = intent.paymentUrl;
-            },
-          })
-        }
-      >
-        {t('post.book.buy')}
-      </Button>
+      <div className="flex flex-wrap items-center gap-2">
+        {pending && statusHref && (
+          <Link href={statusHref}>
+            <Button size="sm" variant="secondary" icon={<Clock className="h-3.5 w-3.5" />}>
+              {pending.recovered ? t('post.book.checkPayment') : t('post.book.resumePayment')}
+            </Button>
+          </Link>
+        )}
+
+        {(!pending || pending.recovered) && (
+          <Button
+            size="sm"
+            icon={<ShoppingCart className="h-3.5 w-3.5" />}
+            loading={isCreatingPayment}
+            onClick={() =>
+              createPayment(bookId, {
+                onSuccess: (intent) => {
+                  // WRITTEN BEFORE ANYTHING NAVIGATES, and that order is the point. Everything
+                  // after this line either leaves the page or opens another one; a ref that is not
+                  // on disk by then is a ref the app can never ask about again.
+                  rememberPendingPayment({
+                    bookId,
+                    transactionRef: intent.transactionRef,
+                    paymentUrl: intent.paymentUrl ?? null,
+                    startedAt: Date.now(),
+                    recovered: false,
+                  });
+
+                  // MOMO GOES IN ITS OWN TAB, AND THIS TAB STAYS IN THE APP. Handing the whole tab
+                  // to MoMo — what this did before — makes the app blind for the entire payment:
+                  // MoMo's page only sends the browser back once the order SETTLES, and the flow
+                  // it now uses is a QR code that is paid on a phone, so on a desktop the tab that
+                  // opened it can sit there for ever with nothing to show. The waiting screen this
+                  // pushes to polls the ref instead and resolves on its own, whichever device the
+                  // money actually leaves from.
+                  //
+                  // `window.open` from a settled promise is outside the browser's transient
+                  // activation window and may be blocked — this is the same trap `BookActions`
+                  // documents for presigned links. It is best-effort ON PURPOSE: the waiting
+                  // screen carries an "open MoMo" anchor built from the same `paymentUrl`, so a
+                  // blocked popup costs one click and never strands the buyer.
+                  //
+                  // `paymentUrl` is read out of MoMo's response map and is genuinely nullable. The
+                  // legacy version assigned it unconditionally, which navigated the browser to the
+                  // string "null" when MoMo answered without it.
+                  if (intent.paymentUrl) {
+                    window.open(intent.paymentUrl, '_blank', 'noopener,noreferrer');
+                  }
+
+                  router.push(
+                    `/payment/pending?orderId=${encodeURIComponent(intent.transactionRef)}`
+                  );
+                },
+                onError: (error) => {
+                  // THE REJECTION THAT NAMES AN ORDER IS A SECOND CHANCE AT THE REF. A pending
+                  // attempt this browser has forgotten — paid on a phone, or started before a
+                  // cache clear — comes back only in the text of this 400. Lifting the id out of
+                  // it turns the message from a dead end into a link; the message itself is still
+                  // shown below, unedited.
+                  const recoveredRef = extractOrderId(getErrorMessage(error));
+                  if (recoveredRef) {
+                    rememberPendingPayment({
+                      bookId,
+                      transactionRef: recoveredRef,
+                      paymentUrl: null,
+                      startedAt: Date.now(),
+                      recovered: true,
+                    });
+                  }
+                },
+              })
+            }
+          >
+            {t('post.book.buy')}
+          </Button>
+        )}
+      </div>
 
       {/* A REJECTED PURCHASE USED TO PRODUCE NOTHING AT ALL. `createPayment` was called with an
           `onSuccess` and no `onError`, so every 400 this endpoint returns ended as an unread
@@ -106,7 +193,8 @@ export function BookPurchaseButton({ bookId, isFree, onDownloadReady }: BookPurc
           `MomoService.PENDING_PAYMENT_STALE_MINUTES`, 15 minutes. So after any abandoned checkout,
           pressing Buy again on the SAME book does nothing for a quarter of an hour. The message
           explains exactly that, names the orderId and says to try again shortly; showing it is the
-          difference between a wait and a broken button.
+          difference between a wait and a broken button — and `onError` above now turns the orderId
+          it names into the button beside it.
 
           The backend's own sentence, not a mapping from the status: 400 here also covers "this
           book is free" and "cannot purchase your own book", so status alone cannot pick the copy,

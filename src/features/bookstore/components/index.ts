@@ -8,6 +8,10 @@ export { BookRatingSummary, type BookRatingSummaryProps } from './book-rating-su
 export { BookReviewForm, type BookReviewFormProps } from './book-review-form';
 export { MyBooksList, type MyBooksListProps } from './my-books-list';
 export { BookReviewList, type BookReviewListProps } from './book-review-list';
-export { PaymentResultPanel, type PaymentResultPanelProps } from './payment-result-panel';
+export {
+  PaymentResultPanel,
+  type PaymentResultMode,
+  type PaymentResultPanelProps,
+} from './payment-result-panel';
 export { StarRating, type StarRatingProps } from './star-rating';
 export { BookLibrary, type BookLibraryProps } from './book-library';

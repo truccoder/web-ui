@@ -38,6 +38,7 @@ export const en = {
     project: 'Project',
     developer: 'Developer profile',
     payment: 'Payment result',
+    paymentPending: 'Waiting for payment',
   },
 
   notFound: {
@@ -59,6 +60,18 @@ export const en = {
     successTitle: 'Payment successful',
     successDesc: 'Thank you! You now have full access to this book.',
     backToNewsfeed: 'Back to newsfeed',
+    /* The screen the app waits on while the buyer pays, which is a different situation from the
+       one MoMo redirects into: nothing has been paid yet, and the QR is scanned on a phone. The
+       copy has to say that this page resolves itself, or the reader closes it and loses the ref. */
+    awaitTitle: 'Waiting for your payment',
+    awaitDesc:
+      'Finish the payment in the MoMo tab, or scan the QR code with the MoMo app. This page updates by itself the moment MoMo confirms — there is nothing else for you to do here.',
+    awaitTimeoutTitle: 'No payment yet',
+    awaitTimeoutDesc:
+      'We stopped checking after a few minutes. If you have paid, check again — access opens as soon as MoMo reports the order.',
+    expiresIn: 'The order expires in ${time}',
+    openMomo: 'Open the MoMo payment page',
+    checkAgain: 'Check again',
   },
 
   admin: {
@@ -980,6 +993,12 @@ export const en = {
       nextPage: 'Next',
       pageIndicator: 'Page ${current} of ${total}',
       buy: 'Buy',
+      /* Two different certainties, which is why they are two strings. `resumePayment` sits on a
+         payment this browser started and can link straight back to MoMo's page; `checkPayment`
+         sits on a ref recovered from the backend's rejection, where all the app can offer is to
+         ask whether it went through. */
+      resumePayment: 'Resume payment',
+      checkPayment: 'Check payment',
       unavailable: 'Unavailable',
       download: 'Download',
     },

@@ -11,6 +11,12 @@ import { PaymentResultPanel } from '@/features/bookstore';
  * that resolves the webhook-vs-redirect race, and the four states it can end in — belongs to
  * `features/bookstore` and lives in `PaymentResultPanel`.
  *
+ * ARRIVING HERE IS EVIDENCE, WHICH IS WHY THE WAIT IS SHORT. MoMo only sends the browser to its
+ * `redirect-url` once an order settles, so the only thing still outstanding is the webhook — a
+ * dozen seconds of polling either has it or does not. The other entrance, `/payment/pending`, is
+ * the one the app itself pushes to right after opening MoMo, where nothing has been paid yet and
+ * the wait is a person with a phone; it runs the same panel in `await` mode.
+ *
  * `useSearchParams` forces a Suspense boundary in the App Router; without one this page cannot be
  * statically rendered at all.
  */

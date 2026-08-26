@@ -35,6 +35,7 @@ export const vi: Messages = {
     project: 'Dự án',
     developer: 'Hồ sơ lập trình viên',
     payment: 'Kết quả thanh toán',
+    paymentPending: 'Đang chờ thanh toán',
   },
 
   notFound: {
@@ -56,6 +57,18 @@ export const vi: Messages = {
     successTitle: 'Thanh toán thành công',
     successDesc: 'Cảm ơn bạn! Bạn đã có toàn quyền truy cập cuốn sách này.',
     backToNewsfeed: 'Về trang bảng tin',
+    /* Màn app tự chờ trong lúc người mua trả tiền — khác hẳn màn MoMo chuyển về: chưa có đồng nào
+       rời đi, và mã QR thì quét bằng điện thoại. Câu chữ phải nói rõ trang này tự cập nhật, nếu
+       không người đọc đóng tab và mất luôn mã đơn. */
+    awaitTitle: 'Đang chờ thanh toán',
+    awaitDesc:
+      'Hoàn tất thanh toán ở tab MoMo, hoặc quét mã QR bằng ứng dụng MoMo. Trang này tự cập nhật ngay khi MoMo báo về — bạn không cần làm gì thêm ở đây.',
+    awaitTimeoutTitle: 'Chưa thấy thanh toán nào',
+    awaitTimeoutDesc:
+      'Sau vài phút chúng tôi tạm ngừng hỏi. Nếu bạn đã trả tiền, hãy bấm kiểm tra lại — quyền truy cập mở ngay khi MoMo báo đơn về.',
+    expiresIn: 'Đơn hàng hết hạn sau ${time}',
+    openMomo: 'Mở trang thanh toán MoMo',
+    checkAgain: 'Kiểm tra lại',
   },
 
   admin: {
@@ -959,6 +972,11 @@ export const vi: Messages = {
       nextPage: 'Sau',
       pageIndicator: 'Trang ${current} / ${total}',
       buy: 'Mua',
+      /* Hai mức chắc chắn khác nhau nên phải là hai câu. `resumePayment` đứng trên một lần thanh
+         toán chính app này mở, có sẵn đường quay lại trang MoMo; `checkPayment` đứng trên mã đơn
+         bóc ra từ lời từ chối của backend, lúc đó app chỉ hỏi được là đơn đã xong chưa. */
+      resumePayment: 'Tiếp tục thanh toán',
+      checkPayment: 'Kiểm tra thanh toán',
       unavailable: 'Không khả dụng',
       download: 'Tải xuống',
     },
