@@ -1035,6 +1035,8 @@ export const en = {
       domainsPlaceholder: 'Fintech, Distributed systems',
       unset: 'Not set',
       save: 'Save profile',
+      edit: 'Edit',
+      cancel: 'Cancel',
       discard: 'Discard changes',
       unsaved: 'Unsaved changes',
       saved: 'Saved',

@@ -174,6 +174,20 @@ function ListPreview({ text }: { text: string }) {
   );
 }
 
+/** One fact in the read-only summary. Not `aria-hidden` like `ListPreview`: this IS the value,
+    there is no input beside it carrying the same text to a screen reader first. */
+function SummaryField({ label, value }: { label: string; value?: string | null }) {
+  const t = useT();
+  return (
+    <div className="flex flex-col gap-[var(--nx-space-pair)]">
+      <span className="text-nx-caption text-nx-text-muted">{label}</span>
+      <span className="text-nx-body-sm font-medium text-nx-text-primary">
+        {value || t('knowledge.profile.unset')}
+      </span>
+    </div>
+  );
+}
+
 export function ProfessionalProfileForm() {
   const t = useT();
   const { data: profile, isPending, isError, error } = useProfessionalProfile();
@@ -184,6 +198,10 @@ export function ProfessionalProfileForm() {
   // state into local state on load", which `react-hooks/set-state-in-effect` rejects and which
   // would also go stale the moment the mutation writes a fresh profile into the cache.
   const [edited, setEdited] = React.useState<Draft | null>(null);
+  // A SET-UP PROFILE OPENS AS A READ-ONLY SUMMARY; THE SEVEN-FIELD FORM ONLY SHOWS ONCE SOMEONE
+  // ASKS TO EDIT IT. A profile that has never been filled in has nothing to summarise, so `missing`
+  // always forces the form open regardless of this flag.
+  const [editing, setEditing] = React.useState(false);
   const missing = isError && isProfileMissing(error);
   const draft = edited ?? (profile ? toDraft(profile) : EMPTY_DRAFT);
   const set = <K extends keyof Draft>(key: K, value: Draft[K]) =>
@@ -206,6 +224,75 @@ export function ProfessionalProfileForm() {
         <p className="text-nx-caption text-nx-status-danger-fg">
           {getErrorMessage(error, t('knowledge.profile.loadError'))}
         </p>
+      </Card>
+    );
+  }
+
+  // THE VIEW MODE. `!missing` guarantees `profile` is defined here: `isPending` and the real-error
+  // case are both handled above, and `missing` is the only way `isError` can still be true.
+  if (!editing && !missing && profile) {
+    const techStack = profile.knownTechStack ?? [];
+    const domains = profile.interestedDomains ?? [];
+
+    return (
+      <Card>
+        <div className="flex flex-col gap-[var(--nx-space-block)]">
+          <div className="flex items-start justify-between gap-[var(--nx-space-element)]">
+            <div className="grid flex-1 gap-x-[var(--nx-space-element)] gap-y-[var(--nx-space-block)] sm:grid-cols-2">
+              <SummaryField label={t('knowledge.profile.jobTitle')} value={profile.jobTitle} />
+              <SummaryField
+                label={t('knowledge.profile.seniority')}
+                value={t(`knowledge.seniority.${profile.seniorityLevel}`)}
+              />
+              <SummaryField
+                label={t('knowledge.profile.primaryRole')}
+                value={
+                  profile.primaryRole
+                    ? t(`knowledge.primaryRole.${profile.primaryRole}`)
+                    : undefined
+                }
+              />
+              <SummaryField
+                label={t('knowledge.profile.years')}
+                value={
+                  profile.yearsOfExperience != null ? String(profile.yearsOfExperience) : undefined
+                }
+              />
+              <SummaryField
+                label={t('knowledge.profile.explanationStyle')}
+                value={
+                  profile.explanationStyle
+                    ? t(`knowledge.explanationStyle.${profile.explanationStyle}`)
+                    : undefined
+                }
+              />
+            </div>
+            <Button size="sm" variant="secondary" onClick={() => setEditing(true)}>
+              {t('knowledge.profile.edit')}
+            </Button>
+          </div>
+
+          {(techStack.length > 0 || domains.length > 0) && (
+            <div className="flex flex-col gap-[var(--nx-space-element)] border-t border-nx-border-subtle pt-4">
+              {techStack.length > 0 && (
+                <div className="flex flex-col gap-[var(--nx-space-tight)]">
+                  <span className="text-nx-caption text-nx-text-muted">
+                    {t('knowledge.profile.techStack')}
+                  </span>
+                  <ListPreview text={listToText(techStack)} />
+                </div>
+              )}
+              {domains.length > 0 && (
+                <div className="flex flex-col gap-[var(--nx-space-tight)]">
+                  <span className="text-nx-caption text-nx-text-muted">
+                    {t('knowledge.profile.domains')}
+                  </span>
+                  <ListPreview text={listToText(domains)} />
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </Card>
     );
   }
@@ -233,8 +320,12 @@ export function ProfessionalProfileForm() {
     };
     update.mutate(payload, {
       // Drop the local copy so the fields re-derive from the profile the server just returned,
-      // rather than continuing to show what was typed.
-      onSuccess: () => setEdited(null),
+      // rather than continuing to show what was typed, and close back to the summary — the form
+      // was only open because someone asked to edit, and the edit is now done.
+      onSuccess: () => {
+        setEdited(null);
+        setEditing(false);
+      },
     });
   };
 
@@ -366,9 +457,24 @@ export function ProfessionalProfileForm() {
           </p>
 
           <div className="flex items-center gap-2">
-            {edited && (
-              <Button type="button" variant="ghost" onClick={() => setEdited(null)}>
-                {t('knowledge.profile.discard')}
+            {missing ? (
+              // No summary to fall back to yet — the only way out of an untouched blank form is
+              // discarding what was typed into it, and that only means something once it is dirty.
+              edited && (
+                <Button type="button" variant="ghost" onClick={() => setEdited(null)}>
+                  {t('knowledge.profile.discard')}
+                </Button>
+              )
+            ) : (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  setEdited(null);
+                  setEditing(false);
+                }}
+              >
+                {t('knowledge.profile.cancel')}
               </Button>
             )}
             <Button type="submit" loading={update.isPending} disabled={update.isPending}>

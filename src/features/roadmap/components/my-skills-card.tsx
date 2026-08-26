@@ -139,24 +139,29 @@ export function MySkillsCard({ userId, readOnly = false }: MySkillsCardProps) {
 
   return (
     <Card>
-      <ul className="flex flex-col gap-2">
+      {/* A GRID OF RECESSED TILES, NOT A COLUMN OF ROWS. A handful of skills in one flex row each
+          read as a table with no header, name on the left and two badges pinned to the far right
+          edge of a wide card. Grouped two or three across, the badges sit right under the name
+          they describe instead of stretched away from it. */}
+      <ul className="grid gap-[var(--nx-space-element)] sm:grid-cols-2 lg:grid-cols-3">
         {sortRows(rows).map((row) => (
-          <li
-            key={row.nodeId}
-            className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1"
-          >
-            <span className="text-nx-body-sm font-medium text-nx-text-primary">{row.nodeName}</span>
-            <div className="flex shrink-0 items-center gap-2">
-              {/* The tier says HOW it was backed up, which is what makes one verified skill
-                  different from another — a GitHub-certified node is a stronger claim than a
-                  self-declared one, and collapsing them to a single tick throws that away. */}
-              <Badge variant="neutral">
-                {t(`roadmap.verify.tier.${TIER_LABEL_KEY[row.tier]}`)}
-              </Badge>
-              <Badge variant={STATUS_VARIANT[row.status]}>
-                {t(`profile.skills.status.${STATUS_LABEL_KEY[row.status]}`)}
-              </Badge>
-            </div>
+          <li key={row.nodeId}>
+            <Card variant="inset" padding="12px 14px" className="flex h-full flex-col gap-2">
+              <span className="text-nx-body-sm font-medium text-nx-text-primary">
+                {row.nodeName}
+              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                {/* The tier says HOW it was backed up, which is what makes one verified skill
+                    different from another — a GitHub-certified node is a stronger claim than a
+                    self-declared one, and collapsing them to a single tick throws that away. */}
+                <Badge variant="neutral">
+                  {t(`roadmap.verify.tier.${TIER_LABEL_KEY[row.tier]}`)}
+                </Badge>
+                <Badge variant={STATUS_VARIANT[row.status]}>
+                  {t(`profile.skills.status.${STATUS_LABEL_KEY[row.status]}`)}
+                </Badge>
+              </div>
+            </Card>
           </li>
         ))}
       </ul>

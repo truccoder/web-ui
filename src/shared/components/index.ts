@@ -16,6 +16,7 @@ export { Tabs, type TabsProps, type TabItem } from './tabs';
 export { Pagination, type PaginationProps } from './pagination';
 export { ProfileHero, type ProfileHeroProps } from './profile-hero';
 export { Section, SectionLink, type SectionProps } from './section';
+export { Disclosure, type DisclosureProps } from './disclosure';
 export { StatTile, type StatTileProps } from './stat-tile';
 export { StickyBlock, type StickyBlockProps } from './sticky-block';
 export { Textarea, type TextareaProps } from './textarea';

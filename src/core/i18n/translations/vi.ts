@@ -1012,6 +1012,8 @@ export const vi: Messages = {
       domainsPlaceholder: 'Fintech, Hệ phân tán',
       unset: 'Chưa chọn',
       save: 'Lưu hồ sơ',
+      edit: 'Chỉnh sửa',
+      cancel: 'Huỷ',
       discard: 'Huỷ thay đổi',
       unsaved: 'Có thay đổi chưa lưu',
       saved: 'Đã lưu',
