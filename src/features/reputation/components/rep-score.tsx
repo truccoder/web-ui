@@ -58,10 +58,26 @@ const sizeStyles: Record<NonNullable<RepScoreProps['size']>, string> = {
   lg: 'h-8 gap-2 px-2.5 text-nx-body/none',
 };
 
+/**
+ * WIDTHS ARE THE SPECIMEN'S; THE HEIGHT IS NO LONGER, and this one is a measurement, not a
+ * re-reading. The kit's bar heights (10 / 12 / 16px) are TALLER THAN THE TEXT THEY STAND
+ * BESIDE: Geist Mono's cap height is 0.73em, so at `lg` an 16px bar towers 2.5px over the
+ * digits' caps and — the part that actually shows — hangs 2.5px BELOW THE BASELINE. The
+ * baseline is the strongest horizontal in the chip; both `41` and the level name rest on it,
+ * and the one element that crosses it reads as having slipped down, however precisely it is
+ * centred. (It is centred: measured in Chromium, the bar's centre and the digits' ink centre
+ * agree to within half a pixel at all three sizes. The complaint was never about the centre.)
+ *
+ * `0.75em` puts the bar on the CAP BOX instead — top on the cap line, bottom on the baseline,
+ * nothing overhanging either — and ties it to the type, so it tracks the font size instead of
+ * being three px values that only happen to suit today's scale. A caret that spans the whole
+ * line (which is what the kit's number describes) is right for a text cursor and wrong here,
+ * where the bar is a mark beside a number rather than an insertion point in it.
+ */
 const barStyles: Record<NonNullable<RepScoreProps['size']>, string> = {
-  sm: 'h-2.5 w-[3px]',
-  md: 'h-3 w-1',
-  lg: 'h-4 w-[5px]',
+  sm: 'h-[0.75em] w-[3px]',
+  md: 'h-[0.75em] w-1',
+  lg: 'h-[0.75em] w-[5px]',
 };
 
 /**
@@ -106,7 +122,28 @@ export function RepScore({
       <span aria-hidden className={cn('shrink-0 rounded-[1.5px] bg-nx-rep', barStyles[size])} />
       {formatRep(score, localeTag)}
       {showLevel && levelName && (
-        <span className="font-medium text-nx-rep-strong">· {levelName}</span>
+        <>
+          {/*
+            THE SEPARATOR IS ITS OWN ITEM, AND THE SPACE AFTER IT IS GONE. It used to be the text
+            `· {levelName}` inside one span, which put THREE different kinds of space in a row that
+            is only four elements long: the flex `gap` between the bar and the digits, the same
+            `gap` before the middot, and then — inside the text — a MONOSPACE space character.
+            A space in a mono face is a full advance cell (~0.6em, so ~9px at `lg`), so the room
+            after the middot was roughly double the room before it, and the chip read as leaning
+            left even though its padding is symmetric.
+
+            Split in two, every gap in the chip is the one `gap` token and nothing else. The middot
+            keeps its own optical breathing room from the mono cell it sits in, evenly on both
+            sides, which is what the cell is for.
+
+            `aria-hidden` because it is punctuation between two facts, not a fact: the chip should
+            be heard as "8,420 Expert", not "8,420 middle dot Expert".
+          */}
+          <span aria-hidden className="text-nx-rep-strong">
+            ·
+          </span>
+          <span className="font-medium text-nx-rep-strong">{levelName}</span>
+        </>
       )}
     </span>
   );

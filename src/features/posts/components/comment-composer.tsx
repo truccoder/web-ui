@@ -1,7 +1,8 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { Button, Textarea } from '@/shared/components';
+import { SendHorizontal, X } from 'lucide-react';
+import { Button, IconButton, Textarea } from '@/shared/components';
 import { useT } from '@/core/i18n';
 import { cn } from '@/shared/lib/cn';
 
@@ -18,7 +19,17 @@ export interface CommentComposerProps {
   /** Prefilled text — the existing body when editing. */
   initialValue?: string;
   placeholder?: string;
+  /**
+   * The action's NAME, not its face — the control is icon-only, so this is what it carries as
+   * `aria-label` and as the tooltip. A screen reader still hears "Trả lời" / "Lưu"; nobody
+   * loses the word, it just stopped taking a row of its own.
+   */
   submitLabel?: string;
+  /**
+   * The glyph in the send button. Defaults to the paper plane, which is right for "post this" —
+   * editing passes a tick instead, because saving a change is not sending a new thing.
+   */
+  submitIcon?: React.ReactNode;
   /** Renders a cancel button. Reply and edit use it; the top-level box does not. */
   onCancel?: () => void;
   onSubmit: (content: string) => void;
@@ -33,6 +44,7 @@ export function CommentComposer({
   initialValue = '',
   placeholder,
   submitLabel,
+  submitIcon,
   onCancel,
   onSubmit,
   pending = false,
@@ -93,12 +105,18 @@ export function CommentComposer({
     onSubmit(value.trim());
   };
 
+  const submitName = submitLabel ?? t('post.send');
+
   return (
     <div className={cn('flex flex-col gap-2', className)}>
       <Textarea
         value={value}
         onChange={(event) => setValue(event.target.value)}
         placeholder={placeholder ?? t('post.commentPlaceholder')}
+        // Grows with what is written instead of scrolling inside two fixed lines. It matters more
+        // now than it did: the send control lives at the bottom-right INSIDE the box, so the box's
+        // own height is the thing that has to follow the text.
+        autoResize
         rows={2}
         autoFocus={autoFocus}
         onFocus={placeCaretAtEnd}
@@ -110,21 +128,61 @@ export function CommentComposer({
             event.preventDefault();
             submit();
           }
+          /**
+           * ESCAPE CLOSES A REPLY OR AN EDIT, and it is the keyboard half of a change that took a
+           * word off the screen: cancel used to be a labelled button and is now a small ✕. Anyone
+           * who would rather not hunt for a 28px target can back out of the box the way every
+           * other dismissable thing in this app backs out.
+           */
+          if (event.key === 'Escape' && onCancel && !pending) {
+            event.preventDefault();
+            onCancel();
+          }
         }}
+        /**
+         * THE ACTIONS SIT IN THE FIELD, BOTTOM-RIGHT, rather than on a row under it. Three
+         * reasons, in order of how much they cost the reader:
+         *
+         * 1. A full-width filled button under every box made the composer look like a form to
+         *    fill in. A comment box is one gesture, and the gesture belongs to the box.
+         * 2. It gave the thread a stack of identical "Gửi" buttons — the top-level box, an open
+         *    reply, an open edit — competing for the same eye at the same weight.
+         * 3. It cost a row of vertical space per box, in a list whose whole job is to show as
+         *    much of the conversation as fits.
+         *
+         * The word is not lost: it is the `aria-label` and the tooltip on both controls.
+         */
+        trailing={
+          <div className="flex items-center gap-1">
+            {onCancel && (
+              <IconButton
+                size="sm"
+                variant="ghost"
+                label={t('post.comments.cancel')}
+                onClick={onCancel}
+                disabled={pending}
+              >
+                <X />
+              </IconButton>
+            )}
+            {/* `Button` with an icon and no children, which is what the chat composer's send
+                already is — `IconButton` only ships ghost/outline, and this one is the primary
+                action of the box. `aria-label` names it, since there is no text node to read. */}
+            <Button
+              size="sm"
+              className="px-2"
+              icon={submitIcon ?? <SendHorizontal />}
+              aria-label={submitName}
+              title={submitName}
+              onClick={submit}
+              disabled={!canSubmit}
+              loading={pending}
+            />
+          </div>
+        }
       />
 
       {error && <p className="text-nx-micro text-nx-status-danger-fg">{error}</p>}
-
-      <div className="flex items-center gap-2">
-        <Button size="sm" onClick={submit} disabled={!canSubmit} loading={pending}>
-          {submitLabel ?? t('post.send')}
-        </Button>
-        {onCancel && (
-          <Button size="sm" variant="ghost" onClick={onCancel} disabled={pending}>
-            {t('post.comments.cancel')}
-          </Button>
-        )}
-      </div>
     </div>
   );
 }

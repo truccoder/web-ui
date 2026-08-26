@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { useState } from 'react';
 import Link from 'next/link';
+import { Check } from 'lucide-react';
 import { Badge, Button, DeveloperIdentity } from '@/shared/components';
 import { RepScore } from '@/features/reputation';
 import { useT } from '@/core/i18n';
@@ -351,6 +352,9 @@ export function CommentItem({
           className={GUTTER}
           initialValue={comment.content}
           submitLabel={t('post.comments.save')}
+          // A TICK, NOT A PAPER PLANE. The composer's send glyph says "post this"; saving an edit
+          // changes something that is already posted, and the two must not look like one action.
+          submitIcon={<Check />}
           onCancel={() => setEditing(false)}
           onSubmit={(content) => {
             onEdit(comment.id, content);

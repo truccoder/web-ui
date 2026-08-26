@@ -39,6 +39,16 @@ export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextArea
    * metadata are mono). @default false
    */
   mono?: boolean;
+  /**
+   * Controls parked INSIDE the field box, against its right edge — a send button, a clear
+   * button. They sit in the same flex row as the `<textarea>`, so the box grows around them
+   * instead of them floating over the text the way an absolutely-positioned overlay would.
+   *
+   * BOTTOM-ALIGNED ON PURPOSE (`items-end` below): with `autoResize` the box grows downward,
+   * and a control pinned to the top would drift away from the caret. At the bottom it stays
+   * where the last line is.
+   */
+  trailing?: React.ReactNode;
 }
 
 export function Textarea({
@@ -47,6 +57,7 @@ export function Textarea({
   error,
   autoResize = false,
   mono = false,
+  trailing,
   className,
   wrapperClassName,
   id,
@@ -88,7 +99,10 @@ export function Textarea({
 
       <div
         className={cn(
-          'flex w-full rounded-nx-sm border bg-nx-surface-raised px-2.5 py-2',
+          'flex w-full gap-2 rounded-nx-sm border bg-nx-surface-raised px-2.5 py-2',
+          // Only when something is parked in there: with no trailing slot the single child
+          // should keep stretching exactly as it did before this prop existed.
+          trailing && 'items-end',
           'transition-colors duration-[var(--nx-duration-fast)] ease-nx-out',
           'focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-nx-focus-ring',
           error ? 'border-nx-status-danger' : 'border-nx-border-default',
@@ -115,6 +129,8 @@ export function Textarea({
           )}
           {...props}
         />
+
+        {trailing}
       </div>
 
       {description && (
