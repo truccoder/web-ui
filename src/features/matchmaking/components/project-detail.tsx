@@ -245,7 +245,7 @@ function PositionCard({ position, canApply }: { position: ProjectPosition; canAp
  * position to `FILLED`.
  */
 /**
- * WHO ALREADY HAS THE SKILLS THIS POSITION ASKS FOR.
+ * WHO ALREADY HAS THE SKILLS THIS POSITION ASKS FOR, BEST MATCH FIRST.
  *
  * This is the product's matchmaking claim made visible — "query by verified skill instead of
  * reading CVs" — and the endpoint behind it had a complete data layer and no screen at all:
@@ -258,21 +258,25 @@ function PositionCard({ position, canApply }: { position: ProjectPosition; canAp
  * server actually answers: a professional shape. That is arguably the more honest object for a
  * skills query anyway; it is a match on capability, not a shortlist of people.
  *
- * IT IS NOT A RANKING, and the wording is careful about it. The backend matches on "shares at
- * least one required skill", with no score and no ordering, so this says `phù hợp` (matching)
- * rather than `gợi ý` (suggested) and never numbers the rows. Presenting an unordered set as a
- * leaderboard would be the interface inventing a claim the data cannot support.
+ * IT IS A RANKING NOW (B26, `ecc53bb`), AND THE WORDING CHANGED WITH IT. The backend used to
+ * match on "shares at least one required skill" with no score and no order, which is why this
+ * used to say `phù hợp` and never numbered the rows. `ProfileMatchScorer` computes a real
+ * `matchScore` per candidate and the backend sorts by it, so presenting position — a rank, a
+ * score — is no longer inventing a claim the data cannot support; it is reading one off the wire.
+ *
+ * `matchedSkills` DRIVES THE ACCENT HIGHLIGHT, NOT A CLIENT-SIDE SET COMPUTED AGAINST
+ * `position.requiredSkills`. The backend already computed the intersection to produce
+ * `matchScore` — recomputing it here risked the two disagreeing the moment either side's
+ * normalisation (case, whitespace) drifted.
  */
 function MatchingCandidates({ position }: { position: ProjectPosition }) {
   const t = useT();
-  const { data, isPending, isError } = useSuggestedCandidates(position.id ?? undefined);
+  const { data, isPending, isError } = useSuggestedCandidates(position.id ?? undefined, 10);
 
   // Errors are a normal outcome for this endpoint rather than a bug (it 500'd on every call
   // until B24), and an empty result is the common case: a position with no required skills
   // matches nobody. Neither deserves a slab of error text inside a position card.
   if (isPending || isError || !data || data.length === 0) return null;
-
-  const required = new Set((position.requiredSkills ?? []).map((skill) => skill.toLowerCase()));
 
   return (
     <div className="mt-[var(--nx-space-element)] border-t border-nx-border-subtle pt-[var(--nx-space-element)]">
@@ -281,46 +285,53 @@ function MatchingCandidates({ position }: { position: ProjectPosition }) {
       </p>
 
       <ul className="mt-[var(--nx-space-tight)] flex flex-col gap-[var(--nx-space-tight)]">
-        {data.slice(0, 4).map((candidate) => (
-          <li
-            key={candidate.userId}
-            className="flex flex-wrap items-baseline gap-x-[var(--nx-space-tight)] gap-y-[var(--nx-space-pair)]"
-          >
-            <span className="text-nx-body-sm text-nx-text-primary">
-              {candidate.jobTitle?.trim() ||
-                (candidate.primaryRole
-                  ? t(`knowledge.primaryRole.${candidate.primaryRole}`)
-                  : t('projects.matching.unnamedRole'))}
-            </span>
-
-            {candidate.seniorityLevel && (
-              <span className="text-nx-caption text-nx-text-secondary">
-                {t(`knowledge.seniority.${candidate.seniorityLevel}`)}
+        {data.slice(0, 4).map((candidate) => {
+          const matched = new Set(candidate.matchedSkills.map((skill) => skill.toLowerCase()));
+          return (
+            <li
+              key={candidate.userId}
+              className="flex flex-wrap items-baseline gap-x-[var(--nx-space-tight)] gap-y-[var(--nx-space-pair)]"
+            >
+              <span className="text-nx-body-sm text-nx-text-primary">
+                {candidate.jobTitle?.trim() ||
+                  (candidate.primaryRole
+                    ? t(`knowledge.primaryRole.${candidate.primaryRole}`)
+                    : t('projects.matching.unnamedRole'))}
               </span>
-            )}
 
-            {/* An em dash rather than a 0 when the number is absent — better no number than a
-                wrong one. */}
-            {candidate.yearsOfExperience != null && (
-              <span className="font-mono text-nx-caption tabular-nums text-nx-text-muted">
-                {t('projects.matching.years', { count: candidate.yearsOfExperience })}
+              {candidate.seniorityLevel && (
+                <span className="text-nx-caption text-nx-text-secondary">
+                  {t(`knowledge.seniority.${candidate.seniorityLevel}`)}
+                </span>
+              )}
+
+              {/* An em dash rather than a 0 when the number is absent — better no number than a
+                  wrong one. */}
+              {candidate.yearsOfExperience != null && (
+                <span className="font-mono text-nx-caption tabular-nums text-nx-text-muted">
+                  {t('projects.matching.years', { count: candidate.yearsOfExperience })}
+                </span>
+              )}
+
+              <span className="font-mono text-nx-caption tabular-nums text-nx-text-faint">
+                {t('projects.matching.score', { score: candidate.matchScore })}
               </span>
-            )}
 
-            {/* The skills this person shares with the position are the reason they are on the
-                list, so they are the ones drawn in the accent; the rest stay neutral. */}
-            <span className="flex flex-wrap items-center gap-[var(--nx-space-pair)]">
-              {(candidate.knownTechStack ?? []).slice(0, 5).map((skill) => (
-                <Badge
-                  key={skill}
-                  variant={required.has(skill.toLowerCase()) ? 'accent' : 'neutral'}
-                >
-                  {skill}
-                </Badge>
-              ))}
-            </span>
-          </li>
-        ))}
+              {/* The skills this person shares with the position are the reason they are on the
+                  list, so they are the ones drawn in the accent; the rest stay neutral. */}
+              <span className="flex flex-wrap items-center gap-[var(--nx-space-pair)]">
+                {(candidate.knownTechStack ?? []).slice(0, 5).map((skill) => (
+                  <Badge
+                    key={skill}
+                    variant={matched.has(skill.toLowerCase()) ? 'accent' : 'neutral'}
+                  >
+                    {skill}
+                  </Badge>
+                ))}
+              </span>
+            </li>
+          );
+        })}
       </ul>
 
       {data.length > 4 && (

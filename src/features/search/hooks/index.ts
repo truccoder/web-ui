@@ -1,1 +1,7 @@
-export { useSearch, useSuggestions, searchKeys, MIN_QUERY_LENGTH } from './use-search';
+export {
+  useSearch,
+  useSuggestions,
+  useMentionSuggestions,
+  searchKeys,
+  MIN_QUERY_LENGTH,
+} from './use-search';

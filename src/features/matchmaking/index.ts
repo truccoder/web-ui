@@ -1,10 +1,11 @@
 /**
  * `features/matchmaking` — public surface. BE package `com.socialapp.matchmaking`.
  *
- * One controller, nine endpoints: browse projects, read one project with its positions, the
+ * One controller, ELEVEN endpoints: browse projects, read one project with its positions, the
  * owner's application inbox, the applicant's own applications, create a project (with its
- * positions), apply to a position, accept an application, reject an application, and the candidate
- * shortlist for a position.
+ * positions and now its `tags`), apply to a position, accept an application, reject an
+ * application, ranked candidates for a position, and — new in B26 — projects ranked against the
+ * caller's own professional profile.
  *
  * THE BLOCKER THIS MODULE CARRIED FOR ITS WHOLE LIFE IS GONE, and the old note is worth keeping in
  * view because it is the reason a complete data layer sat here with no screens since P2.16ab:
@@ -18,8 +19,10 @@
  *     `ProjectResponseDto`, ids included. The backend's javadoc records the fix in as many words:
  *     "this method threw it away, so a client had no way to navigate to what it had just created".
  *  3. "**The one read endpoint answers 500.**" → the schema-qualifier bug was in
- *     `findBySkillsMatch`; consumers should still treat `isError` on the shortlist as a normal
- *     outcome rather than assume it is fixed everywhere.
+ *     `findBySkillsMatch`, fixed at B24. B26 then closed the note that replaced it — "matching is
+ *     shares-at-least-one-skill, no score, no order" — by adding a real `matchScore`: both
+ *     `getSuggestedCandidates` and the new `getSuggestedProjects` return an already-sorted,
+ *     best-match-first list.
  *
  * `SuggestedCandidate` IS NARROW ON PURPOSE, not by accident: the backend deliberately withholds
  * work history, explanation style and interested domains from a project owner. Do not try to
@@ -35,6 +38,7 @@ export { matchmakingApi } from './api';
 export {
   ProjectList,
   ProjectCard,
+  SuggestedProjects,
   ProjectDetail,
   type ProjectDetailProps,
   MyApplications,
@@ -49,6 +53,7 @@ export {
   useProjectApplications,
   useMyApplications,
   useSuggestedCandidates,
+  useSuggestedProjects,
   useCreateProject,
   useApplyToPosition,
   useAcceptApplication,
@@ -61,6 +66,7 @@ export type {
   SeniorityLevel,
   PrimaryRole,
   SuggestedCandidate,
+  SuggestedProject,
   CreatePositionInput,
   CreateProjectInput,
   ApplyToPositionInput,

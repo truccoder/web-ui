@@ -90,3 +90,14 @@ export type SearchResponse = {
  */
 export type Suggestion = Schemas['SuggestionDto'];
 export type SuggestionType = NonNullable<Suggestion['type']>;
+
+/**
+ * One row of the `@`-mention dropdown, from `GET /v1/api/search/mentions` (BE `9fe0b88`).
+ *
+ * NOT `Suggestion`, though they look alike — the backend gives this its own DTO on purpose.
+ * `username` here is the bare handle to insert after the `@`, never null and never `@`-prefixed
+ * (unlike `Suggestion.sublabel`, which is decoration and may be absent). `isFriend` is what lets
+ * the dropdown draw a divider between "bạn bè" and everyone else, since the backend already
+ * returns friends first and this is the only signal that says where the split is.
+ */
+export type MentionSuggestion = Schemas['MentionSuggestionDto'];

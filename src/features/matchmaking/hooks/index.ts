@@ -5,6 +5,7 @@ export {
   useProjectApplications,
   useMyApplications,
   useSuggestedCandidates,
+  useSuggestedProjects,
   useCreateProject,
   useApplyToPosition,
   useAcceptApplication,

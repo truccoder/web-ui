@@ -25,6 +25,10 @@ import { useCreateProject } from '../hooks/use-matchmaking';
  * would have to invent its options. It matters more than it looks: `suggestCandidates` matches
  * these strings against professional profiles, and a position with no skills returns an empty
  * shortlist without querying anything.
+ *
+ * `tags` FOLLOWS THE SAME COMMA-SEPARATED SHAPE (BE `ecc53bb`, B26) and is optional — a project
+ * without tags still scores on skill overlap alone in `GET /projects/suggested`, it just carries
+ * no weight on the domain half of that match.
  */
 export interface CreateProjectDialogProps {
   open: boolean;
@@ -42,6 +46,7 @@ export function CreateProjectDialog({ open, onClose, onCreated }: CreateProjectD
   const t = useT();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [tags, setTags] = useState('');
   const [positions, setPositions] = useState<CreatePositionInput[]>([emptyPosition()]);
 
   const create = useCreateProject();
@@ -49,6 +54,7 @@ export function CreateProjectDialog({ open, onClose, onCreated }: CreateProjectD
   const reset = () => {
     setTitle('');
     setDescription('');
+    setTags('');
     setPositions([emptyPosition()]);
     create.reset();
   };
@@ -87,6 +93,10 @@ export function CreateProjectDialog({ open, onClose, onCreated }: CreateProjectD
                 {
                   title: title.trim(),
                   description: description.trim(),
+                  tags: tags
+                    .split(',')
+                    .map((tag) => tag.trim())
+                    .filter(Boolean),
                   positions: filled.map((position) => ({
                     ...position,
                     title: position.title.trim(),
@@ -121,6 +131,13 @@ export function CreateProjectDialog({ open, onClose, onCreated }: CreateProjectD
           onChange={(event) => setDescription(event.target.value)}
           placeholder={t('projects.create.descriptionPlaceholder')}
           aria-label={t('projects.create.description')}
+        />
+
+        <Input
+          label={t('projects.create.tags')}
+          value={tags}
+          onChange={(event) => setTags(event.target.value)}
+          placeholder={t('projects.create.tagsPlaceholder')}
         />
 
         <div className="flex flex-col gap-3">

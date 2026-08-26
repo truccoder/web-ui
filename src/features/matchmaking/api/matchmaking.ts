@@ -6,6 +6,7 @@ import type {
   ProjectApplication,
   ProjectPage,
   SuggestedCandidate,
+  SuggestedProject,
 } from '../types/matchmaking';
 
 /**
@@ -93,20 +94,34 @@ export const matchmakingApi = {
   /**
    * GET /v1/api/projects/positions/{positionId}/suggested-candidates.
    *
-   * IT USED TO ANSWER 500 EVERY TIME — measure before trusting it. `findBySkillsMatch` is the
-   * one native query in the backend, and it named the table without its schema —
-   * `SELECT * FROM t_user_professional_profiles`, while the table is
-   * `socialapp.t_user_professional_profiles`. Measured at 2ab:
-   * `relation "t_user_professional_profiles" does not exist`. Every other repository uses JPQL,
-   * which resolves the schema through the entity mapping, so this is the only query with the
-   * problem. Raised as B24.
+   * NOW A REAL RANKING (BE `ecc53bb`, B26). It used to answer 500 on every call (B24: a native
+   * query missing its schema qualifier), and once fixed it was still "shares at least one skill"
+   * with no order. Both are stale: the backend scores each candidate against the position's
+   * required skills (`ProfileMatchScorer`) and returns `matchScore` + `matchedSkills` sorted
+   * best-first, so this is a leaderboard now, not a shortlist.
    *
-   * When it works: a position with no `requiredSkills` returns `[]` without querying, and matching
-   * is a plain "shares at least one skill" — there is no ranking, no score and no ordering, so the
-   * result is a shortlist rather than a leaderboard and must not be presented as one.
+   * A position with no `requiredSkills` still returns `[]` without querying.
    */
-  getSuggestedCandidates: (positionId: number) =>
+  getSuggestedCandidates: (positionId: number, limit = 10) =>
     api
-      .get<SuggestedCandidate[]>(`/v1/api/projects/positions/${positionId}/suggested-candidates`)
+      .get<SuggestedCandidate[]>(`/v1/api/projects/positions/${positionId}/suggested-candidates`, {
+        params: { limit },
+      })
+      .then((r) => r.data),
+
+  /**
+   * GET /v1/api/projects/suggested — projects ranked against the caller's own professional
+   * profile (BE `ecc53bb`, new). The mirror image of `getSuggestedCandidates`: there, a project
+   * owner sees people who fit a role; here, a person sees projects that fit them.
+   *
+   * `[]` IS A NORMAL ANSWER, NOT AN ERROR, and it is common: `MatchmakingService.suggestProjects`
+   * returns it outright for a caller with no professional profile row at all, and separately
+   * drops any project that scores 0 once profiles exist — a project already applied to, or
+   * belonging to someone in the caller's block set, is filtered out before scoring even runs. The
+   * list is also already sorted best-first; do not re-sort by `matchScore` on this side.
+   */
+  getSuggestedProjects: (limit = 10) =>
+    api
+      .get<SuggestedProject[]>('/v1/api/projects/suggested', { params: { limit } })
       .then((r) => r.data),
 };

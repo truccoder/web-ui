@@ -2,6 +2,7 @@ export type {
   SeniorityLevel,
   PrimaryRole,
   SuggestedCandidate,
+  SuggestedProject,
   CreatePositionInput,
   CreateProjectInput,
   ApplyToPositionInput,

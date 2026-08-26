@@ -5,7 +5,12 @@ import { useRouter } from 'next/navigation';
 import { Plus } from 'lucide-react';
 import { Button, Tabs } from '@/shared/components';
 import { useTabParam } from '@/shared/lib/use-tab-param';
-import { CreateProjectDialog, MyApplications, ProjectList } from '@/features/matchmaking';
+import {
+  CreateProjectDialog,
+  MyApplications,
+  ProjectList,
+  SuggestedProjects,
+} from '@/features/matchmaking';
 import { useT } from '@/core/i18n';
 
 /**
@@ -73,7 +78,17 @@ function ProjectsContent() {
           ]}
         />
 
-        {tab === 'board' ? <ProjectList /> : <MyApplications />}
+        {tab === 'board' ? (
+          <>
+            {/* Board-only: this is a "for you" cut of the same list, ranked against the
+                caller's own professional profile, which "Đơn của tôi" has no equivalent axis
+                for. Renders nothing itself when there is no match to show. */}
+            <SuggestedProjects />
+            <ProjectList />
+          </>
+        ) : (
+          <MyApplications />
+        )}
       </div>
 
       <CreateProjectDialog

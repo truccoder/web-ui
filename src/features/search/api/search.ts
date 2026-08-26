@@ -1,5 +1,5 @@
 import api from '@/core/api/axios';
-import type { SearchResponse, Suggestion } from '../types/search';
+import type { MentionSuggestion, SearchResponse, Suggestion } from '../types/search';
 
 /**
  * SearchController (`com.socialapp.search`) — 1 endpoint, 1 function. Bare response, no wrapper.
@@ -39,4 +39,21 @@ export const searchApi = {
    */
   suggest: (q: string, limit = 6) =>
     api.get<Suggestion[]>('/v1/api/search/suggest', { params: { q, limit } }).then((r) => r.data),
+
+  /**
+   * GET /v1/api/search/mentions — the people list behind the `@` in a composer (BE `9fe0b88`).
+   *
+   * `q` MAY BE EMPTY, unlike `search` and `suggest` above. The moment this is most useful is the
+   * keystroke right after `@`, before anything has been typed — and that call is answered with
+   * the caller's friends rather than rejected the way an empty `search` term is (422).
+   *
+   * FRIENDS FIRST, ALREADY SORTED. The backend pays for a Neo4j round trip to rank friends ahead
+   * of everyone else; do not re-sort by `isFriend` on this side, that would just repeat the work.
+   *
+   * `limit` IS CAPPED AT 20 SERVER-SIDE (`@Max`), same ceiling as `suggest`.
+   */
+  suggestMentions: (q: string, limit = 6) =>
+    api
+      .get<MentionSuggestion[]>('/v1/api/search/mentions', { params: { q, limit } })
+      .then((r) => r.data),
 };

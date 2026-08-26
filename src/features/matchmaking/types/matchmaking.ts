@@ -26,7 +26,7 @@ export type SeniorityLevel = NonNullable<Schemas['SuggestedCandidateDto']['senio
 export type PrimaryRole = NonNullable<Schemas['SuggestedCandidateDto']['primaryRole']>;
 
 /**
- * One shortlisted candidate for a position.
+ * One shortlisted candidate for a position, best match first (BE `ecc53bb`).
  *
  * DELIBERATELY NARROW, AND NOT A PROFILE. The backend's own javadoc says so: "the full
  * professional profile (work history, explanation style, interested domains) belongs to its owner
@@ -41,12 +41,33 @@ export type PrimaryRole = NonNullable<Schemas['SuggestedCandidateDto']['primaryR
  * `userId` IS THE EXCEPTION and is always present: it is the entity's own key. It is also the only
  * field that identifies the person, and it cannot be turned into a name or a picture — nothing in
  * this app resolves a user id to a profile.
+ *
+ * `matchScore` and `matchedSkills` ARE THE OTHER EXCEPTION, always present rather than nullable —
+ * the backend computes both for every row it returns (`ProfileMatchScorer`), so there is no state
+ * in which a candidate arrives without them the way there is for an optional profile column.
+ * **This is now an actual ranking**: the list used to be "shares at least one skill" with no order
+ * (B24's note, now stale) — `matchScore` is real and the backend sorts by it, so a UI may present
+ * position, not just content.
  */
 export type SuggestedCandidate = {
   [K in keyof Required<Schemas['SuggestedCandidateDto']>]: K extends 'userId'
     ? NonNullable<Schemas['SuggestedCandidateDto'][K]>
-    : Required<Schemas['SuggestedCandidateDto']>[K] | null;
+    : K extends 'matchScore' | 'matchedSkills'
+      ? NonNullable<Schemas['SuggestedCandidateDto'][K]>
+      : Required<Schemas['SuggestedCandidateDto']>[K] | null;
 };
+
+/**
+ * One project suggested to the caller, from `GET /v1/api/projects/suggested` (BE `ecc53bb`, new).
+ *
+ * Wraps `Project` rather than flattening it — the backend's own reasoning (`SuggestedProjectDto`
+ * javadoc): three endpoints already answer `ProjectResponseDto` as "a project", and a `matchScore`
+ * meaningful on only one of them would make the shared shape worse everywhere to serve this one
+ * caller. `matchedSkills`/`matchedDomains` are what produced the score — the caller's own tech
+ * stack against the project's open roles, and their interested domains against the project's
+ * `tags` — shipped alongside it so a suggestion is not a number nobody can explain to themselves.
+ */
+export type SuggestedProject = Schemas['SuggestedProjectDto'];
 
 /**
  * One position on a new project.

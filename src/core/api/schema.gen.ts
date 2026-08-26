@@ -1620,6 +1620,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/api/projects/suggested": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getSuggestedProjects"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/api/projects/{projectId}": {
         parameters: {
             query?: never;
@@ -1692,6 +1708,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["search"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/api/search/mentions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["suggestMentions"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2414,6 +2446,14 @@ export interface components {
         MediaUploadResponseDto: {
             urls?: string[];
         };
+        MentionSuggestionDto: {
+            fullName?: string;
+            /** Format: int32 */
+            id?: number;
+            isFriend?: boolean;
+            profilePictureUrl?: string;
+            username?: string;
+        };
         ModerationLogDto: {
             /** Format: date-time */
             createdAt?: string;
@@ -2791,6 +2831,7 @@ export interface components {
             bannerUrl?: string;
             description: string;
             positions?: components["schemas"]["ProjectPositionRequestDTO"][];
+            tags?: string[];
             title: string;
         };
         ProjectResponseDto: {
@@ -2807,6 +2848,7 @@ export interface components {
             positions?: components["schemas"]["ProjectPositionResponseDto"][];
             /** @enum {string} */
             status?: "OPEN" | "CLOSED";
+            tags?: string[];
             title?: string;
         };
         PublicProfileResponse: {
@@ -3016,6 +3058,9 @@ export interface components {
         SuggestedCandidateDto: {
             jobTitle?: string;
             knownTechStack?: string[];
+            /** Format: int32 */
+            matchScore?: number;
+            matchedSkills?: string[];
             /** @enum {string} */
             primaryRole?: "BACKEND" | "FRONTEND" | "FULLSTACK" | "MOBILE" | "DEVOPS" | "DATA_ML" | "SECURITY" | "QA" | "OTHER";
             /** @enum {string} */
@@ -3024,6 +3069,13 @@ export interface components {
             userId?: number;
             /** Format: int32 */
             yearsOfExperience?: number;
+        };
+        SuggestedProjectDto: {
+            /** Format: int32 */
+            matchScore?: number;
+            matchedDomains?: string[];
+            matchedSkills?: string[];
+            project?: components["schemas"]["ProjectResponseDto"];
         };
         SuggestionDto: {
             /** Format: int32 */
@@ -15086,7 +15138,9 @@ export interface operations {
     };
     getSuggestedCandidates: {
         parameters: {
-            query?: never;
+            query?: {
+                limit?: number;
+            };
             header?: never;
             path: {
                 positionId: number;
@@ -15102,6 +15156,109 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["SuggestedCandidateDto"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Payload Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+        };
+    };
+    getSuggestedProjects: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SuggestedProjectDto"][];
                 };
             };
             /** @description Bad Request */
@@ -15828,6 +15985,110 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["SearchResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Payload Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+        };
+    };
+    suggestMentions: {
+        parameters: {
+            query?: {
+                q?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MentionSuggestionDto"][];
                 };
             };
             /** @description Bad Request */

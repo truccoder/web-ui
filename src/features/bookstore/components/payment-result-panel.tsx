@@ -2,11 +2,19 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { CheckCircle2, Clock, ExternalLink, Loader2, RotateCw, XCircle } from 'lucide-react';
+import {
+  CheckCircle2,
+  Clock,
+  ExternalLink,
+  FlaskConical,
+  Loader2,
+  RotateCw,
+  XCircle,
+} from 'lucide-react';
 import { Button } from '@/shared/components';
 import { useT } from '@/core/i18n';
 import { forgetPendingPayment, pendingPaymentExpiresAt } from '../lib/pending-payment';
-import { usePendingPaymentByRef, useSyncPaymentStatus } from '../hooks';
+import { useDevSettlePayment, usePendingPaymentByRef, useSyncPaymentStatus } from '../hooks';
 
 /**
  * The app's one payment-status surface — both the screen MoMo redirects to and the screen the app
@@ -87,6 +95,20 @@ export function PaymentResultPanel({ transactionRef, mode = 'confirm' }: Payment
   const t = useT();
   const { mutate: sync } = useSyncPaymentStatus();
   const [phase, setPhase] = React.useState<Phase>('checking');
+
+  /**
+   * THE DEMO SHORTCUT (BE `211f073`, B27). `dev-settle` only exists when the backend runs its
+   * `dev` Spring profile — everywhere else the route 404s, which this side has no way to know in
+   * advance without calling it. So the gate here is the BUILD, not the backend: hidden outright
+   * in a production bundle, offered in every other build, and hidden FOR THE REST OF THIS SCREEN
+   * the first time it 404s (`missing` below) rather than shown as a broken button on every retry.
+   *
+   * A BUILD GATE, NOT A DOMAIN CHECK — this is a tool for whoever is running the app on a dev or
+   * staging machine, not for a real buyer, and `localhost` during a production build test would
+   * make a domain check lie in exactly the direction that matters.
+   */
+  const devSettle = useDevSettlePayment();
+  const [devSettleMissing, setDevSettleMissing] = React.useState(false);
 
   // Bumped by "check again", and part of the run key below so a second run is allowed to start on
   // a ref the first run already finished with.
@@ -252,6 +274,31 @@ export function PaymentResultPanel({ transactionRef, mode = 'confirm' }: Payment
             {t('payment.checkAgain')}
           </Button>
         )}
+
+        {/* See the state declaration above for why the gate is the build and not the backend. */}
+        {process.env.NODE_ENV !== 'production' &&
+          !devSettleMissing &&
+          transactionRef &&
+          phase === 'checking' &&
+          mode === 'await' && (
+            <Button
+              variant="secondary"
+              icon={<FlaskConical className="h-4 w-4" />}
+              loading={devSettle.isPending}
+              onClick={() =>
+                devSettle.mutate(transactionRef, {
+                  // A 404 here means this backend is not running the `dev` profile — the button
+                  // has nothing to offer for the rest of this screen, so it hides rather than
+                  // sitting there failing the same way on every press. `onSuccess` needs no
+                  // handling: the poll effect above is already mid-flight and will see
+                  // `paid: true` on its next attempt.
+                  onError: () => setDevSettleMissing(true),
+                })
+              }
+            >
+              {t('payment.devSettle')}
+            </Button>
+          )}
 
         <Link href="/newsfeed">
           <Button variant="ghost">{t('payment.backToNewsfeed')}</Button>

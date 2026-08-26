@@ -23,7 +23,10 @@ export const matchmakingKeys = {
   /** What the signed-in account has applied to. */
   myApplications: ['matchmaking', 'my-applications'] as const,
 
-  /** Shortlisted candidates for one position. */
-  suggestedCandidates: (positionId: number) =>
-    ['matchmaking', 'suggested-candidates', positionId] as const,
+  /** Ranked candidates for one position. `limit` is in the key for the same reason as `projects`. */
+  suggestedCandidates: (positionId: number, limit: number) =>
+    ['matchmaking', 'suggested-candidates', positionId, limit] as const,
+
+  /** Projects ranked against the caller's own professional profile. */
+  suggestedProjects: (limit: number) => ['matchmaking', 'suggested-projects', limit] as const,
 };

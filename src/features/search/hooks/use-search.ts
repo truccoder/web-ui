@@ -16,6 +16,7 @@ export const searchKeys = {
   all: ['search'] as const,
   query: (q: string, size: number) => [...searchKeys.all, q, size] as const,
   suggest: (q: string, limit: number) => [...searchKeys.all, 'suggest', q, limit] as const,
+  mentions: (q: string, limit: number) => [...searchKeys.all, 'mentions', q, limit] as const,
 };
 
 /**
@@ -73,6 +74,37 @@ export function useSuggestions(query: string, limit: number = SUGGEST_LIMIT) {
     queryKey: searchKeys.suggest(trimmed, limit),
     queryFn: () => searchApi.suggest(trimmed, limit),
     enabled: trimmed.length >= MIN_QUERY_LENGTH,
+    staleTime: 60_000,
+  });
+}
+
+/** How many rows the `@`-mention dropdown asks for. Same ceiling as `useSuggestions`. */
+const MENTION_LIMIT = 6;
+
+/**
+ * The `@`-mention dropdown in a composer.
+ *
+ * DELIBERATELY NOT `MIN_QUERY_LENGTH`-GATED, unlike `useSuggestions` right above. An empty term is
+ * a 422 on `/search` and simply "no filter yet, show friends" on `/search/mentions` — the two
+ * endpoints disagree about what a blank query means, so this hook cannot share that guard.
+ *
+ * `enabled` IS THE CALLER'S OWN SIGNAL ("is a `@` currently open"), separate from the query text.
+ * The composer knows when it is mid-mention; this hook only adds the debounce-friendly caching
+ * `useQuery` gives for free, and never invalidates for the same reason `useSuggestions` never
+ * does — a term's answer is a function of the term plus who is asking, not of any mutation in
+ * this app.
+ */
+export function useMentionSuggestions(
+  query: string,
+  enabled: boolean,
+  limit: number = MENTION_LIMIT
+) {
+  const trimmed = query.trim();
+
+  return useQuery({
+    queryKey: searchKeys.mentions(trimmed, limit),
+    queryFn: () => searchApi.suggestMentions(trimmed, limit),
+    enabled,
     staleTime: 60_000,
   });
 }

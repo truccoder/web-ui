@@ -5,8 +5,8 @@ import Link from 'next/link';
 import { Avatar, Badge, Card, EmptyState, Skeleton } from '@/shared/components';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { useT } from '@/core/i18n';
-import type { Project } from '../types/matchmaking';
-import { useProjects } from '../hooks/use-matchmaking';
+import type { Project, SuggestedProject } from '../types/matchmaking';
+import { useProjects, useSuggestedProjects } from '../hooks/use-matchmaking';
 
 /**
  * The project board — every project, newest first.
@@ -145,6 +145,84 @@ export function ProjectCard({ project }: { project: Project }) {
           )}
         </div>
       )}
+
+      {/* `tags` (BE `ecc53bb`, B26) — the domain half of `GET /projects/suggested`'s scoring,
+          e.g. "Blockchain", "Fintech". Optional and neutral, unlike a position's accent badge: a
+          tag is a topic, not something to apply to. */}
+      {project.tags && project.tags.length > 0 && (
+        <div className="flex flex-wrap gap-[var(--nx-space-pair)]">
+          {project.tags.map((tag) => (
+            <Badge key={tag} variant="neutral">
+              {tag}
+            </Badge>
+          ))}
+        </div>
+      )}
     </Card>
+  );
+}
+
+/**
+ * "Projects that fit you" — `GET /v1/api/projects/suggested` (BE `ecc53bb`, B26, new).
+ *
+ * THE MIRROR OF `MatchingCandidates` IN `project-detail.tsx`: there, a project owner sees who fits
+ * a role; here, a person sees which open projects fit THEM, scored against their own professional
+ * profile (`knowledge`).
+ *
+ * RENDERS NOTHING ON AN EMPTY LIST, and that is the common case, not a failure state — a caller
+ * with no professional profile row gets `[]` outright, and the backend already drops anything
+ * that scores 0. A visible "no matches" block for what is usually just "you have not filled in a
+ * profile yet" would be a permanent fixture on this screen for most people.
+ *
+ * REUSES `ProjectCard` rather than a bespoke row: it is the same project, and the match reason
+ * (`matchedSkills` / `matchedDomains`) is additive information alongside it, not a different way
+ * of presenting a project.
+ */
+export function SuggestedProjects() {
+  const t = useT();
+  const { data, isPending, isError } = useSuggestedProjects(5);
+
+  if (isPending || isError || !data || data.length === 0) return null;
+
+  return (
+    <div className="flex flex-col gap-[var(--nx-space-block)]">
+      <div>
+        <h2 className="text-nx-heading font-semibold text-nx-text-primary">
+          {t('projects.suggested.title')}
+        </h2>
+        <p className="text-nx-caption text-nx-text-muted">{t('projects.suggested.subtitle')}</p>
+      </div>
+
+      <ul className="flex flex-col gap-[var(--nx-space-block)]">
+        {data.map((suggestion) => (
+          <li key={suggestion.project?.id}>
+            <SuggestedProjectCard suggestion={suggestion} />
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function SuggestedProjectCard({ suggestion }: { suggestion: SuggestedProject }) {
+  const t = useT();
+  if (!suggestion.project) return null;
+
+  const reasons = [...(suggestion.matchedSkills ?? []), ...(suggestion.matchedDomains ?? [])];
+
+  return (
+    <div className="flex flex-col gap-[var(--nx-space-tight)]">
+      <ProjectCard project={suggestion.project} />
+
+      {/* The reason ships with the recommendation (backend javadoc on `SuggestedProjectDto`) so
+          it renders here rather than being recomputed against `requiredSkills` client-side —
+          the same principle `MatchingCandidates` follows for `matchedSkills` on a candidate. */}
+      {reasons.length > 0 && (
+        <p className="text-nx-caption text-nx-text-muted">
+          {t('projects.matching.score', { score: suggestion.matchScore ?? 0 })} ·{' '}
+          {reasons.slice(0, 4).join(' · ')}
+        </p>
+      )}
+    </div>
   );
 }

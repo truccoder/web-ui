@@ -68,3 +68,17 @@ export function useSyncPaymentStatus() {
     },
   });
 }
+
+/**
+ * Settle a purchase without MoMo, for a demo (B27). No `onSuccess` invalidation of its own: the
+ * caller (`PaymentResultPanel`) is already mid-`sync`-poll while this is offered, and that poll's
+ * own `onSuccess` is what invalidates the bookstore namespace once it next sees `paid: true`.
+ *
+ * A 404 IS THE EXPECTED SHAPE OF "not available here" — the backend endpoint only exists under
+ * its `dev` Spring profile — not a bug to surface. The caller decides what a failure means.
+ */
+export function useDevSettlePayment() {
+  return useMutation({
+    mutationFn: (transactionRef: string) => paymentApi.devSettlePayment(transactionRef),
+  });
+}

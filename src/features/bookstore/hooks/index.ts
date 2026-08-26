@@ -12,7 +12,7 @@ export {
   useRatingBreakdown,
 } from './use-book';
 
-export { useCreatePayment, useSyncPaymentStatus } from './use-payment';
+export { useCreatePayment, useSyncPaymentStatus, useDevSettlePayment } from './use-payment';
 
 export {
   usePendingPayment,

@@ -81,18 +81,32 @@ export function useMyApplications() {
 }
 
 /**
- * GET /positions/{positionId}/suggested-candidates.
+ * GET /positions/{positionId}/suggested-candidates — best match first (B26).
  *
  * IT USED TO 500 ON EVERY CALL (B24: the one native query in the backend omitted the schema
- * qualifier). Consumers should still handle `isError` as a normal outcome rather than a bug —
- * and must not present the result as a ranking: matching is "shares at least one skill", with no
- * score and no ordering.
+ * qualifier), and once fixed carried no score or order. Both are stale: the backend now ranks by
+ * `matchScore` and returns it with each row, so consumers may present position, not just content.
+ * `isError` is still a normal outcome to handle (a position simply has no matches) rather than a
+ * bug to report.
  */
-export function useSuggestedCandidates(positionId: number | undefined) {
+export function useSuggestedCandidates(positionId: number | undefined, limit = 10) {
   return useQuery({
-    queryKey: matchmakingKeys.suggestedCandidates(positionId!),
-    queryFn: () => matchmakingApi.getSuggestedCandidates(positionId!),
+    queryKey: matchmakingKeys.suggestedCandidates(positionId!, limit),
+    queryFn: () => matchmakingApi.getSuggestedCandidates(positionId!, limit),
     enabled: positionId !== undefined,
+  });
+}
+
+/**
+ * GET /projects/suggested — projects ranked against the caller's own professional profile (B26,
+ * new). `[]` covers both "no profile yet" and "nothing scored above 0", and is the common case
+ * rather than an error; a screen using this should hide itself on an empty list instead of
+ * showing an empty-state block for what is, most of the time, an unremarkable answer.
+ */
+export function useSuggestedProjects(limit = 10) {
+  return useQuery({
+    queryKey: matchmakingKeys.suggestedProjects(limit),
+    queryFn: () => matchmakingApi.getSuggestedProjects(limit),
   });
 }
 

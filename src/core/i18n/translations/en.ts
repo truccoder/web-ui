@@ -72,6 +72,9 @@ export const en = {
     expiresIn: 'The order expires in ${time}',
     openMomo: 'Open the MoMo payment page',
     checkAgain: 'Check again',
+    // Shown only in non-production builds (B27) — calls `dev-settle` directly, a shortcut for a
+    // demo with no phone on hand to scan MoMo's QR.
+    devSettle: 'Mark as paid (demo)',
   },
 
   admin: {
@@ -913,6 +916,8 @@ export const en = {
       deleteYes: 'Delete',
       deleteConfirm: 'Delete this comment?',
       deleteWithReplies: 'Deletes this comment and its ${count} replies.',
+      mentionFriends: 'Friends',
+      mentionOthers: 'Others',
     },
     /* Labels retuned to a technical register; the wire values are untouched. See the note
        in vi.ts and docs/backend-plan.md B5 — the kit's three knowledge reactions do not
@@ -1211,10 +1216,17 @@ export const en = {
   },
   projects: {
     matching: {
-      title: '${count} people already have the skills this position asks for',
+      // Since B26 the backend scores and sorts by `matchScore` — this is a real ranking now,
+      // not an unordered set, so the label moved from "N people have" to "best match".
+      title: '${count} best matches for this position',
+      score: '${score} match score',
       years: '${count} yrs',
       unnamedRole: 'No job title set',
       more: 'and ${count} more',
+    },
+    suggested: {
+      title: 'Projects that fit you',
+      subtitle: 'Ranked against the skills and domains in your professional profile.',
     },
     title: 'Projects',
     subtitle: 'Find people to build with, or a place to contribute.',
@@ -1284,6 +1296,8 @@ export const en = {
       skillsPlaceholder: 'Comma-separated skills: Kotlin, PostgreSQL',
       addPosition: 'Add a role',
       removePosition: 'Remove role',
+      tags: 'Tags',
+      tagsPlaceholder: 'Optional, comma-separated: Blockchain, Fintech',
       submit: 'Post project',
       error: 'Could not post the project. Please try again.',
     },

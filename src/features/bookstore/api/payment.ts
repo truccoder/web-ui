@@ -52,4 +52,25 @@ export const paymentApi = {
    * not 101 (the other being `GET /events/google/callback`, which Google redirects to directly).
    * Recorded here so the Phase 4.7 coverage sweep reads it as intentional and does not "fix" it.
    */
+
+  /**
+   * POST /v1/api/payments/{transactionRef}/dev-settle — settle a purchase without MoMo, for a
+   * demo (BE `211f073`, B27). **Only exists when the backend runs the `dev` Spring profile** —
+   * `DevPaymentController` is `@Profile("dev")`, so calling this against any other environment
+   * 404s. Neither MoMo flow can be finished by one person at a desk on the sandbox: `captureWallet`
+   * needs a phone to scan the QR, and `payWithATM` — the card screen, easy to fill in by hand —
+   * parks forever at result code 7002. This is the one way to reach `COMPLETED` without either.
+   *
+   * Answers the SAME shape `/sync` does (`PaymentStatusResponse`), on purpose — see the backend's
+   * own javadoc — so a caller reuses whatever already handles a poll result instead of learning a
+   * second response shape for a development-only route.
+   *
+   * NOT GATED HERE ON WHETHER `dev` IS ACTIVE — this side cannot know that without asking, and
+   * asking is calling it. The caller (`payment-result-panel.tsx`) decides whether to offer the
+   * button at all, and treats a 404 here as "this backend is not running `dev`", not as a bug.
+   */
+  devSettlePayment: (transactionRef: string) =>
+    api
+      .post<PaymentStatus>(`/v1/api/payments/${encodeURIComponent(transactionRef)}/dev-settle`)
+      .then((r) => r.data),
 };

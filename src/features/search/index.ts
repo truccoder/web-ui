@@ -24,7 +24,13 @@
 
 export { searchApi } from './api';
 
-export { useSearch, useSuggestions, searchKeys, MIN_QUERY_LENGTH } from './hooks';
+export {
+  useSearch,
+  useSuggestions,
+  useMentionSuggestions,
+  searchKeys,
+  MIN_QUERY_LENGTH,
+} from './hooks';
 
 export {
   SearchBar,
@@ -44,4 +50,5 @@ export type {
   SearchResponse,
   Suggestion,
   SuggestionType,
+  MentionSuggestion,
 } from './types';

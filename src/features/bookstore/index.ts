@@ -54,6 +54,7 @@ export {
   useCreatePayment,
   useCreateReview,
   useDeleteBook,
+  useDevSettlePayment,
   useDownloadBook,
   usePendingPayment,
   usePendingPayments,

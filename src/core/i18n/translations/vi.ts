@@ -69,6 +69,9 @@ export const vi: Messages = {
     expiresIn: 'Đơn hàng hết hạn sau ${time}',
     openMomo: 'Mở trang thanh toán MoMo',
     checkAgain: 'Kiểm tra lại',
+    // Chỉ hiện ở build không phải production (B27) — nút gọi thẳng `dev-settle`, đường tắt cho
+    // buổi demo khi không có điện thoại quét mã QR MoMo trong tay.
+    devSettle: 'Đánh dấu đã thanh toán (demo)',
   },
 
   admin: {
@@ -893,6 +896,8 @@ export const vi: Messages = {
       deleteYes: 'Xoá',
       deleteConfirm: 'Xoá bình luận này?',
       deleteWithReplies: 'Xoá bình luận này và ${count} câu trả lời của nó.',
+      mentionFriends: 'Bạn bè',
+      mentionOthers: 'Khác',
     },
     /* Ba nhãn đầu là bộ của design system — Hữu ích · Sáng tỏ · Ghi nhận — và từ B5 chúng có
        giá trị enum thật ở backend (`INSIGHT`, `CLAP`), nên không còn là bản vá nhãn nữa. Bốn
@@ -1187,10 +1192,17 @@ export const vi: Messages = {
   },
   projects: {
     matching: {
-      title: 'Đã có ${count} người mang kỹ năng vị trí này cần',
+      // Từ B26, backend chấm điểm và sắp theo `matchScore` — đây là một bảng xếp hạng thật,
+      // không còn là tập không thứ tự nữa, nên nhãn đổi từ "đã có N người" sang "phù hợp nhất".
+      title: '${count} người phù hợp nhất với vị trí này',
+      score: '${score} điểm phù hợp',
       years: '${count} năm',
       unnamedRole: 'Chưa đặt chức danh',
       more: 'và ${count} người nữa',
+    },
+    suggested: {
+      title: 'Dự án phù hợp với bạn',
+      subtitle: 'Xếp theo kỹ năng và lĩnh vực bạn quan tâm trong hồ sơ nghề nghiệp.',
     },
     title: 'Dự án',
     subtitle: 'Tìm người cùng làm, hoặc tìm một chỗ để góp sức.',
@@ -1260,6 +1272,8 @@ export const vi: Messages = {
       skillsPlaceholder: 'Kỹ năng, cách nhau bằng dấu phẩy: Kotlin, PostgreSQL',
       addPosition: 'Thêm vị trí',
       removePosition: 'Bỏ vị trí',
+      tags: 'Thẻ chủ đề',
+      tagsPlaceholder: 'Không bắt buộc, cách nhau bằng dấu phẩy: Blockchain, Fintech',
       submit: 'Đăng dự án',
       error: 'Không đăng được dự án. Vui lòng thử lại.',
     },
