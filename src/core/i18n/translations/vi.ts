@@ -289,6 +289,8 @@ export const vi: Messages = {
     unreadMarker: 'Chưa đọc',
     markAllRead: 'Đánh dấu tất cả đã đọc',
     error: 'Không thể tải thông báo. Vui lòng thử lại.',
+    markReadError: 'Không đánh dấu đã đọc được thông báo này. Vui lòng thử lại.',
+    markAllReadError: 'Không đánh dấu tất cả đã đọc được. Vui lòng thử lại.',
     retry: 'Thử lại',
     allLoaded: 'Bạn đã xem hết thông báo rồi',
     bell: {
@@ -1269,6 +1271,7 @@ export const vi: Messages = {
     confirmDesc:
       'Hai người sẽ không thấy bài viết của nhau, và tình bạn hiện có sẽ bị xoá — bỏ chặn sau này không khôi phục lại tình bạn đó.',
     blockError: 'Không chặn được người này. Vui lòng thử lại.',
+    unblockError: 'Không bỏ chặn được người này. Vui lòng thử lại.',
     loadError: 'Không tải được danh sách đã chặn',
     emptyTitle: 'Bạn chưa chặn ai',
     emptyDesc: 'Người bạn chặn sẽ biến mất khỏi bảng tin, tìm kiếm và danh sách bạn bè của bạn.',
@@ -1477,5 +1480,15 @@ export const vi: Messages = {
       label: 'Thông tin cuộc trò chuyện',
       verifiedSkills: 'Kỹ năng đã xác minh',
     },
+  },
+
+  toast: {
+    dismiss: 'Đóng',
+  },
+
+  session: {
+    expiredTitle: 'Phiên đăng nhập đã hết hạn',
+    expiredDesc: 'Để bảo mật tài khoản, bạn đã được đăng xuất. Đăng nhập lại để tiếp tục.',
+    expiredCta: 'Đăng nhập lại',
   },
 };

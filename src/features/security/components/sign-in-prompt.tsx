@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, Dialog } from '@/shared/components';
-import { onAuthRequired } from '@/core/api/axios';
+import { onAuthRequired, onSessionExpired } from '@/core/api/axios';
 import { useT } from '@/core/i18n';
 import { useAuthHref } from './session-presence';
 
@@ -86,4 +86,39 @@ export function AuthRequiredPrompt() {
   }, []);
 
   return <SignInPrompt open={open} onClose={() => setOpen(false)} />;
+}
+
+/**
+ * The dialog a signed-in reader gets when their refresh token is rejected mid-session
+ * (`core/api/axios.ts`'s response interceptor) — in place of the silent hard-redirect that used
+ * to fire from inside the interceptor with no explanation.
+ *
+ * A HARD NAVIGATION, NOT `router.push`, and deliberately so: `axios.ts`'s own comment on this
+ * path explains that `src/middleware.ts` decides `/login` vs `/newsfeed` off the `session`
+ * cookie, which `clearSessionFlags` has already cleared by the time this dialog can be
+ * confirmed — a full navigation reads it fresh instead of trusting client-side router state that
+ * was current before the session died.
+ */
+export function SessionExpiredPrompt() {
+  const t = useT();
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = onSessionExpired(() => setOpen(true));
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  return (
+    <Dialog
+      open={open}
+      onClose={() => setOpen(false)}
+      title={t('session.expiredTitle')}
+      description={t('session.expiredDesc')}
+      footer={
+        <Button onClick={() => (window.location.href = '/login')}>{t('session.expiredCta')}</Button>
+      }
+    />
+  );
 }

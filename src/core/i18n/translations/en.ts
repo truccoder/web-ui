@@ -301,6 +301,8 @@ export const en = {
     unreadMarker: 'Unread',
     markAllRead: 'Mark all as read',
     error: 'Could not load notifications. Please try again.',
+    markReadError: 'Could not mark this notification as read. Please try again.',
+    markAllReadError: 'Could not mark all notifications as read. Please try again.',
     retry: 'Try again',
     allLoaded: "You've seen all notifications",
     bell: {
@@ -1293,6 +1295,7 @@ export const en = {
     confirmDesc:
       'Neither of you will see the other’s posts, and any existing friendship is deleted — unblocking later does not restore it.',
     blockError: 'Could not block this person. Please try again.',
+    unblockError: 'Could not unblock this person. Please try again.',
     loadError: 'Could not load your block list',
     emptyTitle: 'You have not blocked anyone',
     emptyDesc: 'Blocked people disappear from your feed, your search results and your friends.',
@@ -1508,6 +1511,20 @@ export const en = {
       label: 'Conversation details',
       verifiedSkills: 'Verified skills',
     },
+  },
+
+  /* The fire-and-forget notification stack (`shared/components/toast.tsx`) — for background
+     actions with no field or form to put an inline banner next to. */
+  toast: {
+    dismiss: 'Dismiss',
+  },
+
+  /* The dialog `core/api/axios.ts`'s refresh-failure path raises instead of silently
+     hard-redirecting to `/login`. See `features/security`'s `SessionExpiredPrompt`. */
+  session: {
+    expiredTitle: 'Your session has expired',
+    expiredDesc: 'For your security, you were signed out. Sign in again to continue.',
+    expiredCta: 'Sign in again',
   },
 };
 

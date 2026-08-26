@@ -2,9 +2,10 @@
 
 import { useEffect, useRef } from 'react';
 import { CheckCheck, RefreshCw } from 'lucide-react';
-import { Button, Card, EmptyState, Skeleton } from '@/shared/components';
+import { Button, Card, EmptyState, Skeleton, toast } from '@/shared/components';
 import { useT } from '@/core/i18n';
 import { cn } from '@/shared/lib/cn';
+import { getErrorMessage } from '@/shared/lib/api-error';
 import {
   useMarkAllNotificationsAsRead,
   useMarkNotificationAsRead,
@@ -88,7 +89,12 @@ export function NotificationList({ className }: NotificationListProps) {
           variant="secondary"
           size="sm"
           icon={<CheckCheck className="size-4" />}
-          onClick={() => markAllAsRead.mutate()}
+          onClick={() =>
+            markAllAsRead.mutate(undefined, {
+              onError: (error) =>
+                toast.error(getErrorMessage(error, t('notifications.markAllReadError'))),
+            })
+          }
           loading={markAllAsRead.isPending}
           // Nothing to mark, so the control is off rather than a no-op that looks like it
           // worked. The backend would answer 200 either way.
@@ -144,7 +150,12 @@ export function NotificationList({ className }: NotificationListProps) {
               <NotificationItem
                 key={notification.id}
                 notification={notification}
-                onRead={(id) => markAsRead.mutate(id)}
+                onRead={(id) =>
+                  markAsRead.mutate(id, {
+                    onError: (error) =>
+                      toast.error(getErrorMessage(error, t('notifications.markReadError'))),
+                  })
+                }
               />
             ))}
 

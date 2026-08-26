@@ -100,6 +100,24 @@ export function requestSignIn() {
 }
 
 /**
+ * Subscribe to "a real, signed-in session just died mid-request" — the refresh token itself was
+ * rejected, not just the access token. Same shape as `onAuthRequired` above and for the same
+ * reason: `features/security` mounts the one listener that opens a dialog; this module stays
+ * ignorant of what the UI does about it.
+ */
+type SessionExpiredListener = () => void;
+const sessionExpiredListeners = new Set<SessionExpiredListener>();
+
+export function onSessionExpired(listener: SessionExpiredListener) {
+  sessionExpiredListeners.add(listener);
+  return () => sessionExpiredListeners.delete(listener);
+}
+
+function notifySessionExpired() {
+  sessionExpiredListeners.forEach((listener) => listener());
+}
+
+/**
  * Path only: callers pass relative URLs, but an absolute one must not smuggle a query past this.
  *
  * EXPORTED FOR `axios.test.ts`, and that is the only reason it is not module-private. The pair
@@ -190,21 +208,27 @@ api.interceptors.response.use(
           return api(originalRequest);
         } catch {
           /**
-           * BOTH HALVES, OR THE REDIRECT ON THE NEXT LINE IS UNDONE BEFORE IT LANDS.
-           *
-           * `clearTokens` empties localStorage and nothing else, so this used to leave the
-           * `session` cookie saying `true`. `src/middleware.ts` reads only that cookie, and it
-           * treats `/login` as a page a signed-in reader must be bounced away from — so this
-           * navigation was answered with a 307 straight back to `/newsfeed`, where the client
-           * (which had no tokens) rendered the guest shell. The reader was left looking at a
-           * `Đăng nhập` button that redirected to the feed every time it was pressed.
+           * BOTH HALVES, STILL — clearing only `clearTokens` and not `clearSessionFlags` leaves
+           * the `session` cookie saying `true`. `src/middleware.ts` reads only that cookie, and it
+           * treats `/login` as a page a signed-in reader must be bounced away from — so a later
+           * navigation there would be answered with a 307 straight back to `/newsfeed`, where the
+           * client (which has no tokens) renders the guest shell: a `Đăng nhập` button that
+           * redirects to the feed every time it is pressed.
            *
            * See `core/api/session-flags` for the whole story; `useClearSession` calls the same
            * function, so the deliberate logout and this one cannot drift apart again.
+           *
+           * THE REDIRECT ITSELF IS NO LONGER HERE. `window.location.href = '/login'` used to fire
+           * straight from this catch block — a person typing a comment got silently bounced to a
+           * blank login screen with no explanation for why. `notifySessionExpired` raises a
+           * dialog instead (`features/security`'s `SessionExpiredPrompt`, mounted in the `(main)`
+           * shell), whose own confirm button does the hard navigation. Tokens and session flags
+           * are still cleared synchronously right here, so nothing is sent authenticated in the
+           * gap between this catch and that click.
            */
           clearTokens();
           clearSessionFlags();
-          window.location.href = '/login';
+          notifySessionExpired();
         }
       }
     }

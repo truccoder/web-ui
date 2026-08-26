@@ -60,6 +60,7 @@ export {
   useAuthHref,
   SignInPrompt,
   AuthRequiredPrompt,
+  SessionExpiredPrompt,
 } from './components';
 
 export type {

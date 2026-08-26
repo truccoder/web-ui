@@ -21,4 +21,4 @@ export {
   useIsSignedIn,
   useAuthHref,
 } from './session-presence';
-export { SignInPrompt, AuthRequiredPrompt } from './sign-in-prompt';
+export { SignInPrompt, AuthRequiredPrompt, SessionExpiredPrompt } from './sign-in-prompt';

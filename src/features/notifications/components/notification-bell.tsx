@@ -3,9 +3,10 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Bell, CheckCheck } from 'lucide-react';
-import { Button, IconButton } from '@/shared/components';
+import { Button, IconButton, toast } from '@/shared/components';
 import { useT } from '@/core/i18n';
 import { cn } from '@/shared/lib/cn';
+import { getErrorMessage } from '@/shared/lib/api-error';
 import {
   useMarkAllNotificationsAsRead,
   useMarkNotificationAsRead,
@@ -126,7 +127,12 @@ export function NotificationBell({ className }: NotificationBellProps) {
                 variant="ghost"
                 icon={<CheckCheck />}
                 loading={markAllAsRead.isPending}
-                onClick={() => markAllAsRead.mutate()}
+                onClick={() =>
+                  markAllAsRead.mutate(undefined, {
+                    onError: (error) =>
+                      toast.error(getErrorMessage(error, t('notifications.markAllReadError'))),
+                  })
+                }
               >
                 {t('notifications.markAllRead')}
               </Button>
@@ -158,7 +164,12 @@ export function NotificationBell({ className }: NotificationBellProps) {
                   <NotificationItem
                     key={notification.id}
                     notification={notification}
-                    onRead={(id) => markAsRead.mutate(id)}
+                    onRead={(id) =>
+                      markAsRead.mutate(id, {
+                        onError: (error) =>
+                          toast.error(getErrorMessage(error, t('notifications.markReadError'))),
+                      })
+                    }
                   />
                 ))}
               </div>

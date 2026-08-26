@@ -41,6 +41,7 @@ import { SearchBar } from '@/features/search';
 import { Ledger, GuestLedger } from './ledger';
 import {
   AuthRequiredPrompt,
+  SessionExpiredPrompt,
   setRoleCookie,
   useAuthHref,
   useIsGuest,
@@ -952,6 +953,11 @@ export function MainShell({ children }: { children: React.ReactNode }) {
             has never heard of — is refused by the transport, which raises it here. See
             `features/security`'s `AuthRequiredPrompt`. */}
         {isGuest && <AuthRequiredPrompt />}
+
+        {/* Signed-in counterpart to the prompt above: a refresh-token failure raises this instead
+            of `core/api/axios.ts` silently hard-redirecting to `/login`. Not gated on `isGuest` —
+            it only ever fires for someone who had a session to lose. */}
+        <SessionExpiredPrompt />
 
         <CommandPalette
           open={paletteOpen}

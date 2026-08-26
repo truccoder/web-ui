@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import { Providers } from '@/core/providers';
 import { DEFAULT_LOCALE, LOCALE_COOKIE, isLocale } from '@/core/i18n/locale';
 import { ServiceWorkerRegister } from '@/core/pwa/service-worker-register';
+import { Toaster } from '@/shared/components';
 import './globals.css';
 
 const geistSans = Geist({
@@ -76,7 +77,10 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <Providers initialLocale={locale}>{children}</Providers>
+        <Providers initialLocale={locale}>
+          {children}
+          <Toaster />
+        </Providers>
         <ServiceWorkerRegister />
       </body>
     </html>

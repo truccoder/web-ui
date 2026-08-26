@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Avatar, Button, Dialog, EmptyState, Skeleton } from '@/shared/components';
+import { Avatar, Button, Dialog, EmptyState, Skeleton, toast } from '@/shared/components';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { useT } from '@/core/i18n';
 import type { BlockedUser } from '../types/block';
@@ -58,7 +58,12 @@ export function BlockedUsersList() {
           <BlockedRow
             user={user}
             pending={unblock.isPending && unblock.variables === user.id}
-            onUnblock={() => user.id != null && unblock.mutate(user.id)}
+            onUnblock={() =>
+              user.id != null &&
+              unblock.mutate(user.id, {
+                onError: (error) => toast.error(getErrorMessage(error, t('blocks.unblockError'))),
+              })
+            }
           />
         </li>
       ))}

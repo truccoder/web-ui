@@ -50,3 +50,6 @@ AGENTS.md
 e2e/.auth/
 test-results/
 playwright-report/
+
+# Documents
+docs
