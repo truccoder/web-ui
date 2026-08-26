@@ -1,13 +1,19 @@
 'use client';
 
 import {
+  useInfiniteQuery,
   useMutation,
-  useQuery,
   useQueryClient,
+  type InfiniteData,
   type UseMutationOptions,
 } from '@tanstack/react-query';
 import { commentsApi } from '../api/comment';
-import type { CreateCommentRequest, PostComment, UpdateCommentRequest } from '../types/comment';
+import type {
+  CommentPage,
+  CreateCommentRequest,
+  PostComment,
+  UpdateCommentRequest,
+} from '../types/comment';
 import type { ReactionType } from '../types/reaction';
 import { postKeys } from './keys';
 import type { PostMutationOptions } from './use-post';
@@ -38,21 +44,35 @@ import type { PostMutationOptions } from './use-post';
  */
 
 /**
- * GET /v1/api/posts/{postId}/comments — the whole thread, flat and oldest-first.
+ * GET /v1/api/posts/{postId}/comments — the thread, flat and oldest-first, ONE PAGE AT A TIME.
  *
- * `undefined` disables the query, which is how a collapsed comment section avoids fetching
- * a thread nobody has opened: N post cards would otherwise be N requests on mount.
+ * IT WAS A `useQuery` OVER THE WHOLE THREAD UNTIL THE BACKEND PAGED THE ENDPOINT (`93ca5e2`).
+ * Nothing here failed to compile when that landed — the response is hand-typed in `api/comment.ts`
+ * — so the thread simply rendered nothing and `groupComments` walked a page object as if it were
+ * an array. This is the fix, not an enhancement.
  *
- * Returned flat on purpose. The list carries `parentId` and the backend caps replies at one
- * level (`validateParentComment`), so grouping into top-level + replies is a pure transform
- * the consuming component does — putting it here would bake one presentation into the hook.
+ * `undefined` disables the query, which is how a collapsed comment section avoids fetching a
+ * thread nobody has opened: N post cards would otherwise be N requests on mount.
+ *
+ * PAGES ARE CONCATENATED BY THE CALLER, not here, and the hook stays flat for the same reason it
+ * always was: the list carries `parentId`, the backend caps replies at one level, and a page
+ * never splits a root from its replies (see `CommentPage`) — so grouping is a pure transform the
+ * consuming component does, over one page or over five.
+ *
+ * NO `limit` PASSED. 20 is the backend's default and the number a reader can take in; the cap is
+ * 50 and asking for it would just be the old unbounded response with extra steps.
  */
 export function useComments(postId: number | undefined) {
-  return useQuery({
+  return useInfiniteQuery({
     // Non-null assertion is safe: `enabled` gates the fn, and the key is only built when an
     // id exists. Same pattern as `useResolveLocation`.
     queryKey: postKeys.comments(postId!),
-    queryFn: () => commentsApi.getComments(postId!),
+    queryFn: ({ pageParam }: { pageParam: number | undefined }) =>
+      commentsApi.getComments(postId!, pageParam),
+    initialPageParam: undefined as number | undefined,
+    // `hasMore` is the authority; `nextCursor` is only meaningful while it is true, and returning
+    // undefined is what tells React Query the list has ended.
+    getNextPageParam: (last: CommentPage) => (last.hasMore ? last.nextCursor : undefined),
     enabled: postId !== undefined,
   });
 }
@@ -176,9 +196,9 @@ export type CommentReactionOptions<TVariables> = Omit<
   'mutationFn' | 'onMutate'
 >;
 
-/** The whole cached thread as it stood before the optimistic write. */
+/** Every cached page of the thread as it stood before the optimistic write. */
 interface CommentReactionRollback {
-  previous: PostComment[] | undefined;
+  previous: InfiniteData<CommentPage> | undefined;
 }
 
 export interface CommentReactionVariables {
@@ -187,7 +207,13 @@ export interface CommentReactionVariables {
 }
 
 export interface UpsertCommentReactionVariables extends CommentReactionVariables {
-  reactionType: ReactionType;
+  /**
+   * `'LIKE'`, NOT `ReactionType`, SINCE B24 — a comment takes one kind of reaction and the
+   * backend 400s the other six. Kept as a field rather than dropped because the request body
+   * still carries it (see `commentsApi.upsertReaction`), and a literal type is what stops a
+   * caller reconstructing the old seven-way toggle without noticing the server changed.
+   */
+  reactionType: 'LIKE';
 }
 
 /**
@@ -207,17 +233,36 @@ export interface UpsertCommentReactionVariables extends CommentReactionVariables
  * momentary optimism it is protecting.
  */
 function applyReaction(
-  comments: PostComment[],
+  cached: InfiniteData<CommentPage>,
   commentId: number,
   next: ReactionType | null
-): PostComment[] {
-  return comments.map((comment) => {
-    if (comment.id !== commentId) return comment;
-    const had = comment.myReaction != null;
-    const has = next != null;
-    const delta = had === has ? 0 : has ? 1 : -1;
-    return { ...comment, myReaction: next, likeCount: Math.max(0, comment.likeCount + delta) };
-  });
+): InfiniteData<CommentPage> {
+  /**
+   * EVERY PAGE IS WALKED, NOT JUST THE FIRST. The row being patched sits in whichever page it
+   * arrived in, and after two "load more" presses that is rarely page zero. Pages the row is not
+   * in are returned by reference, so React Query's structural sharing keeps them stable and only
+   * the page that actually changed re-renders.
+   */
+  return {
+    ...cached,
+    pages: cached.pages.map((page) => {
+      if (!page.comments.some((comment) => comment.id === commentId)) return page;
+      return {
+        ...page,
+        comments: page.comments.map((comment) => {
+          if (comment.id !== commentId) return comment;
+          const had = comment.myReaction != null;
+          const has = next != null;
+          const delta = had === has ? 0 : has ? 1 : -1;
+          return {
+            ...comment,
+            myReaction: next,
+            likeCount: Math.max(0, comment.likeCount + delta),
+          };
+        }),
+      };
+    }),
+  };
 }
 
 /** Shared optimistic plumbing: snapshot the thread, patch one row, hand the snapshot back. */
@@ -234,9 +279,9 @@ function useCommentReactionMutation<TVariables extends CommentReactionVariables>
       // Without this, a refetch already in flight can land after the optimistic write and
       // restore the pre-click row.
       await queryClient.cancelQueries({ queryKey });
-      const previous = queryClient.getQueryData<PostComment[]>(queryKey);
+      const previous = queryClient.getQueryData<InfiniteData<CommentPage>>(queryKey);
       if (previous) {
-        queryClient.setQueryData<PostComment[]>(
+        queryClient.setQueryData<InfiniteData<CommentPage>>(
           queryKey,
           applyReaction(previous, variables.commentId, nextReaction(variables))
         );

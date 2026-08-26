@@ -24,7 +24,7 @@ type Schemas = components['schemas'];
  *    Both tightened — but that also means `updatedAt !== createdAt` is the ONLY way to
  *    tell an edited comment apart; there is no `isEdited` flag.
  *  - `authorFullName` / `authorProfilePictureUrl` / `authorUsername` / `myReaction` /
- *    `parentId` are nullable, and they are
+ *    `parentId` / `authorEliteScore` / `authorLevelName` are nullable, and they are
  *    typed `| null` rather than `?:` on purpose. The generator writes every field optional,
  *    but the wire payload disagrees: Jackson runs at its default `ALWAYS` inclusion (the
  *    backend configures no `NON_NULL`), so these arrive as explicit
@@ -36,7 +36,13 @@ type Schemas = components['schemas'];
 export type PostComment = Required<
   Omit<
     Schemas['CommentResponseDto'],
-    'authorFullName' | 'authorProfilePictureUrl' | 'parentId' | 'authorUsername' | 'myReaction'
+    | 'authorFullName'
+    | 'authorProfilePictureUrl'
+    | 'parentId'
+    | 'authorUsername'
+    | 'myReaction'
+    | 'authorEliteScore'
+    | 'authorLevelName'
   >
 > & {
   authorFullName: string | null;
@@ -54,6 +60,43 @@ export type PostComment = Required<
    */
   myReaction: NonNullable<Schemas['CommentResponseDto']['myReaction']> | null;
   parentId: number | null;
+  /**
+   * The commenter's reputation, and B22 is why these are here rather than fetched.
+   *
+   * THEY CLOSE THE ONE ASYMMETRY BETWEEN A POST'S IDENTITY ROW AND A COMMENT'S. `FeedPostDataDto`
+   * has carried `authorEliteScore` and `authorLevelName` all along, so a post could draw the score
+   * chip off the payload it already held while the comment four lines below it could not — the
+   * thread had to buy the same two values with one `GET /users/{id}/reputation` per distinct
+   * author. That workaround (`useReputations`) is deleted with this change; the backend now hands
+   * both fields down out of the `findAllById` it was already running for the page.
+   *
+   * NULL TOGETHER WITH THE REST OF THE AUTHOR FIELDS, and for the same reason: `toResponseDto`
+   * writes them off a user row that may be missing. A comment whose author row is gone has no
+   * name, no picture and no score, and the chip is simply not drawn.
+   */
+  authorEliteScore: number | null;
+  authorLevelName: string | null;
+};
+
+/**
+ * One page of a post's comments — `CommentPageResponseDto`.
+ *
+ * THE THREAD USED TO ARRIVE WHOLE AND NOW ARRIVES A PAGE AT A TIME, and the backend's own note
+ * says why: a comment list has no upper bound the way a feed does, so the busiest post produced
+ * the largest response the API could emit on the endpoint that gets hit hardest while that post
+ * is trending. Cursor-based, 20 by default, capped at 50 (`MAX_PAGINATION_PAGE_SIZE`).
+ *
+ * THE PAGE COUNTS TOP-LEVEL COMMENTS AND CARRIES THEIR REPLIES WITH THEM. That is the detail
+ * everything downstream depends on: `comments` is still the flat two-level list this app has
+ * always grouped, so `groupComments` works on one page and on several concatenated — a page
+ * boundary can never fall between a root and its replies, and no reply can arrive orphaned.
+ *
+ * `nextCursor` IS THE LAST ROOT'S ID, and it is only meaningful while `hasMore` is true.
+ */
+export type CommentPage = {
+  comments: PostComment[];
+  nextCursor?: number;
+  hasMore: boolean;
 };
 
 /**

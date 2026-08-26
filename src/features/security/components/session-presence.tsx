@@ -1,6 +1,7 @@
 'use client';
 
-import { createContext, useContext, useMemo, useSyncExternalStore } from 'react';
+import { createContext, useContext, useEffect, useMemo, useSyncExternalStore } from 'react';
+import { clearSessionFlags } from '@/core/api/session-flags';
 import { useSession } from '../hooks/session';
 
 /**
@@ -48,6 +49,29 @@ export function SessionPresenceProvider({
   const { isAuthenticated } = useSession();
 
   const signedIn = hydrated ? isAuthenticated : initialSignedIn;
+
+  /**
+   * THE ONE PLACE THE COOKIE AND THE STORE CAN BE COMPARED, so it is the place that repairs them.
+   *
+   * `initialSignedIn` is the cookie the middleware routed on; `isAuthenticated` is the store,
+   * hydrated from localStorage before this renders. They agree in every normal flow. When they
+   * disagree in THIS direction — the edge thinks a session exists, the browser holds no tokens —
+   * the cookie is the stale one, and it is stale in a way the reader cannot escape on their own:
+   * the client draws the guest shell, and the middleware bounces the `Đăng nhập` button back to
+   * the feed because it sees a signed-in reader visiting a sign-in page.
+   *
+   * `core/api/session-flags` explains how the pair came apart (a teardown path that cleared the
+   * tokens and not the cookie); that hole is closed, but a browser that went through it while it
+   * was open is still holding the cookie, and no amount of fixing the write path clears it. This
+   * does, on the next page load.
+   *
+   * NOT THE OTHER DIRECTION. Tokens present with no cookie is a session that merely needs its flag
+   * re-stamped, and it is `useEstablishSession`'s job to do that on sign-in — writing a `session`
+   * cookie from here would hand the edge a verdict this component never verified.
+   */
+  useEffect(() => {
+    if (hydrated && initialSignedIn && !isAuthenticated) clearSessionFlags();
+  }, [hydrated, initialSignedIn, isAuthenticated]);
 
   return (
     <SessionPresenceContext.Provider value={signedIn}>{children}</SessionPresenceContext.Provider>

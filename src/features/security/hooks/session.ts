@@ -3,31 +3,20 @@
 import { useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { clearTokens, setTokens } from '@/core/api/axios';
+import { clearSessionFlags, markSessionPresent } from '@/core/api/session-flags';
 import { purgeOfflineCache } from '@/core/pwa/purge-offline-cache';
 import { clearAuth, setCredentials } from '@/core/store/auth-slice';
 import { useAppDispatch, useAppSelector } from '@/core/store/hooks';
 import type { AuthResponse } from '../types/auth';
 
 /**
- * Presence flag read by `src/middleware.ts` on the edge, which cannot see
- * localStorage or the react-query cache. It is not a credential — the Bearer
- * token is — so it carries no value beyond "a session exists".
+ * THE COOKIES MOVED TO `core/api/session-flags` and are no longer declared here.
+ *
+ * They used to be, and the axios response interceptor — which is not a hook and cannot call
+ * `useClearSession` — had to clear a session without them. It cleared the tokens only, and the
+ * leftover `session=true` made the middleware bounce every visit to `/login` back to the feed.
+ * One definition, imported by both, is what stops that from happening again.
  */
-const SESSION_COOKIE = 'session';
-
-/**
- * Cached verdict of whether the signed-in user is an admin. Written once the
- * profile is known; the middleware routes on it. Only cleared here — it is
- * *set* by the profile cycle (P2.1"), which owns `/profile/me`.
- */
-const ROLE_COOKIE = 'role';
-
-const setCookie = (name: string, value: string) => {
-  document.cookie = `${name}=${value}; path=/`;
-};
-const deleteCookie = (name: string) => {
-  document.cookie = `${name}=; path=/; max-age=0`;
-};
 
 /**
  * Turns a successful auth response into a live session.
@@ -47,7 +36,7 @@ export function useEstablishSession() {
     (auth: AuthResponse) => {
       setTokens(auth.accessToken, auth.refreshToken);
       dispatch(setCredentials({ accessToken: auth.accessToken, refreshToken: auth.refreshToken }));
-      setCookie(SESSION_COOKIE, 'true');
+      markSessionPresent();
       // Anything cached before sign-in belongs to the anonymous (or previous)
       // identity. Clearing is cheaper than auditing every key for tenancy.
       queryClient.clear();
@@ -67,8 +56,7 @@ export function useClearSession() {
   return useCallback(() => {
     clearTokens();
     dispatch(clearAuth());
-    deleteCookie(SESSION_COOKIE);
-    deleteCookie(ROLE_COOKIE);
+    clearSessionFlags();
     // Drop every cached response so the next user on this browser cannot read
     // the previous one's data out of the query cache.
     queryClient.clear();

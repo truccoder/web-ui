@@ -887,6 +887,7 @@ export const en = {
       hide: 'Hide comments',
       empty: 'No comments yet',
       loadFailed: 'Could not load comments',
+      loadMore: 'Show more comments',
       reply: 'Reply',
       replyPlaceholder: 'Write a reply...',
       edit: 'Edit',

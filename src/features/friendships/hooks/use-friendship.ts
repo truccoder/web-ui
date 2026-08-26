@@ -54,10 +54,23 @@ export function useFriendSuggestions(limit = 10) {
  * with, so the count is not merely empty — the question cannot be put. Defaulted so every other
  * caller is unchanged.
  */
+/**
+ * `select` UNWRAPS THE PAGE SO EVERY CALLER KEEPS AN ARRAY. The endpoint started returning
+ * `{ requests, nextCursor, hasMore }` in the backend's `src` audit, and four callers read this —
+ * the requests screen, the rail badge, the profile stat and the friends layout — of which three
+ * only want `.length`. Unwrapping here changes nothing for any of them and keeps one place to fix
+ * if the cursor ever has to be walked. `select` runs on cached data too, so the shape is
+ * consistent whether the page came from the network or the cache.
+ *
+ * WHAT IS NOT HANDLED, AND IS DELIBERATE: a reader with more than 50 pending requests sees 50.
+ * `getPendingRequests` asks for the endpoint's ceiling for exactly that reason, and going further
+ * means an infinite query and a "load more" on a screen that has never needed one.
+ */
 export function usePendingRequests(enabled = true) {
   return useQuery({
     queryKey: friendshipKeys.pending,
     queryFn: () => friendshipApi.getPendingRequests(),
+    select: (page) => page.requests,
     enabled,
   });
 }
@@ -66,6 +79,7 @@ export function useSentRequests() {
   return useQuery({
     queryKey: friendshipKeys.sent,
     queryFn: () => friendshipApi.getSentRequests(),
+    select: (page) => page.requests,
   });
 }
 

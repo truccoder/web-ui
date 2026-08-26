@@ -1,8 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { EmptyState, Skeleton } from '@/shared/components';
-import { useReputations } from '@/features/reputation';
 import { useMyProfile } from '@/features/security';
 import { useT } from '@/core/i18n';
 import { getErrorMessage } from '@/shared/lib/api-error';
@@ -16,7 +15,6 @@ import {
   useUpdateComment,
   useUpsertCommentReaction,
 } from '../hooks/use-comment';
-import type { ReactionType } from '../types/reaction';
 import { useAcceptAnswer, useUnacceptAnswer } from '../hooks/use-post';
 import { CommentComposer } from './comment-composer';
 import { CommentItem } from './comment-item';
@@ -78,18 +76,17 @@ import { CommentItem } from './comment-item';
  * inside and 27.5 between — about 3.7:1, which is where grouping starts to read. Going to 24 would
  * have read slightly better still and is off-ladder; the rung was the better trade.
  *
- * THE SCORES ARE FETCHED HERE, ONCE, FOR THE WHOLE THREAD. `CommentResponseDto` carries no
- * `authorEliteScore` and no `authorLevelName` — the post payload carries both, the comment payload
- * carries neither — so the chip on a commenter's name cannot come off the data this component
- * already has. It has to be asked for, and the only route is per user.
+ * NOTHING IS FETCHED HERE FOR THE IDENTITY ROWS ANY MORE, AND THAT IS B22 BEING PAID. This
+ * component used to hold a second query beside the comments: `CommentResponseDto` carried no
+ * `authorEliteScore` and no `authorLevelName` while the post payload carried both, so the chip on
+ * a commenter's name had to be bought one `GET /users/{id}/reputation` at a time — a thread of six
+ * comments from four people was four extra requests, collected here rather than inside the rows so
+ * that the bill was at least visible in one place.
  *
- * SO THE ASKING LIVES IN ONE PLACE RATHER THAN INSIDE EVERY ROW. `CommentItem` takes the score as
- * a prop and never fetches, exactly as `PostCard` takes its author decomposed and never fetches:
- * a hook call in the row would work — React Query would even de-duplicate it — but the cost would
- * be invisible, spread across however many rows happened to render. Here the whole bill is one
- * line, the set is de-duplicated by author before anything is sent, and a thread of six comments
- * from four people is four requests. See `useReputations` for the rest of the accounting, and for
- * the backend change that should delete this entirely.
+ * THE BACKEND CARRIES BOTH FIELDS NOW, out of the `findAllById` it was already running to build
+ * the page, so the cost is zero queries instead of N. `useReputations`, the memo that fed it and
+ * the two props that carried its answer down to `CommentItem` are all deleted; the row reads the
+ * score off the comment it was handed, exactly as `PostCard` reads it off the post.
  *
  * THE COMPOSER IS NOT COMMENT N+1. At the old flat `gap-4` it sat exactly as far from the last
  * comment as the comments sat from each other, so the box at the bottom of the thread read as one
@@ -160,11 +157,12 @@ export function CommentThread({
   const unreact = useRemoveCommentReaction();
 
   /**
-   * `null` REMOVES, ANYTHING ELSE UPSERTS. `CommentItem` resolves which of the two it means from
-   * the row's own `myReaction` — see `onReact` there — so this never has to guess, and the DELETE
-   * (which answers 404 when there is nothing to remove) can only fire where there is.
+   * `null` REMOVES, `'LIKE'` UPSERTS, AND THERE IS NO THIRD CASE SINCE B24. `CommentItem` resolves
+   * which of the two it means from the row's own `myReaction` — see `onReact` there — so this
+   * never has to guess, and the DELETE (which answers 404 when there is nothing to remove) can
+   * only fire where there is.
    */
-  const reactHandler = (commentId: number, reactionType: ReactionType | null) => {
+  const reactHandler = (commentId: number, reactionType: 'LIKE' | null) => {
     if (reactionType === null) unreact.mutate({ postId, commentId });
     else react.mutate({ postId, commentId, reactionType });
   };
@@ -192,22 +190,18 @@ export function CommentThread({
   const unacceptHandler =
     canAcceptAnswer && acceptedId != null ? () => unaccept.mutate(postId) : undefined;
 
-  const thread = groupComments(comments.data ?? []);
+  /**
+   * EVERY PAGE, FLATTENED, THEN GROUPED — in that order, and the order is what makes it correct.
+   * The backend pages TOP-LEVEL comments and ships each root's replies inside the same page (see
+   * `CommentPage`), so concatenating pages can never separate a reply from its root and
+   * `groupComments` sees exactly the flat two-level list it always did.
+   */
+  const rows = comments.data?.pages.flatMap((page) => page.comments) ?? [];
+  const thread = groupComments(rows);
   // Reaction failures join the same line: the optimistic chip has already rolled back by the time
   // this renders, so without a sentence the click would appear to have simply not registered.
   const mutationError =
     create.error ?? update.error ?? remove.error ?? react.error ?? unreact.error;
-
-  /**
-   * Every author on screen, replies included — `comments.data` is the flat list, so it already
-   * covers both levels and `groupComments` would only have to be walked back apart.
-   *
-   * `useMemo` because a new array literal on every render would rebuild `useQueries`' query list
-   * each time; `useReputations` de-duplicates and sorts what it gets, so the only thing this has
-   * to do is be stable while the data is.
-   */
-  const authorIds = useMemo(() => (comments.data ?? []).map((c) => c.authorId), [comments.data]);
-  const reputations = useReputations(authorIds);
 
   // Which single row is mid-flight, so only that row shows a spinner. `update`/`remove`
   // carry the id in their variables; `create` has no row yet.
@@ -260,10 +254,6 @@ export function CommentThread({
                 comment={root}
                 replies={root.replies}
                 currentUserId={profile.data?.id}
-                // Absent until the request lands, and absent for good if it 404s — the chip is
-                // simply not rendered in either case. See `useReputations`.
-                eliteScore={reputations.get(root.authorId)?.eliteScore}
-                levelName={reputations.get(root.authorId)?.levelName}
                 onReact={reactHandler}
                 // No `mention`: this box already sits under the comment it answers.
                 onReply={() => setReplyingTo({ rootId: root.id })}
@@ -297,8 +287,6 @@ export function CommentThread({
                       <CommentItem
                         comment={reply}
                         currentUserId={profile.data?.id}
-                        eliteScore={reputations.get(reply.authorId)?.eliteScore}
-                        levelName={reputations.get(reply.authorId)?.levelName}
                         onReact={reactHandler}
                         /**
                          * THE PARENT IS THE ROOT, NOT THIS ROW — a reply cannot parent a reply.
@@ -373,6 +361,26 @@ export function CommentThread({
             </li>
           ))}
         </ul>
+      )}
+
+      {/* THE NEXT PAGE, AND ONLY WHEN THERE IS ONE. `hasNextPage` comes from the page's own
+          `hasMore` rather than from a short page, so this disappears on the last one instead of
+          after a press that returns nothing. Text, not a card: it belongs to the list above it,
+          and a filled button here would compete with the composer below. */}
+      {comments.hasNextPage && (
+        <button
+          type="button"
+          onClick={() => comments.fetchNextPage()}
+          disabled={comments.isFetchingNextPage}
+          className={cn(
+            'self-start rounded-nx-sm px-1 py-1 text-nx-body-sm text-nx-text-muted',
+            'transition-colors duration-[var(--nx-duration-fast)] ease-nx-out',
+            'hover:text-nx-text-primary hover:underline disabled:opacity-50',
+            'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring'
+          )}
+        >
+          {t('post.comments.loadMore')}
+        </button>
       )}
 
       {/* `key` is the reset: a confirmed write changes it, React remounts an empty box, and

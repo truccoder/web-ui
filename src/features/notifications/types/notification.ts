@@ -45,6 +45,12 @@ type AlwaysPresent = 'id' | 'type' | 'title' | 'channel' | 'isRead' | 'createdAt
  * every uncapped event render as full, because `0 >= null` is true), so it is encoded in the
  * type instead of left to callers. Compare a nullable number against a bound only after
  * excluding null.
+ *
+ * `postId` IS THE ONE EXCEPTION AND IT IS DELIBERATE ON THE BACKEND'S SIDE. B23 added it carrying
+ * `@JsonInclude(NON_NULL)` — the only field on this DTO that does — so a friend request or a book
+ * purchase omits the key entirely instead of shipping `"postId": null` on every row to say
+ * nothing. The mapped type still declares it (as `number | undefined | null`), and the rule for
+ * reading it is therefore `== null`, which catches both shapes. See `hrefFor`, its only reader.
  */
 export type AppNotification = {
   [K in keyof Required<Schemas['NotificationResponseDto']>]: K extends AlwaysPresent

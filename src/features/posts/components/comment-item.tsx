@@ -3,16 +3,27 @@
 import * as React from 'react';
 import { useState } from 'react';
 import Link from 'next/link';
-import { ThumbsUp } from 'lucide-react';
 import { Badge, Button, DeveloperIdentity } from '@/shared/components';
 import { RepScore } from '@/features/reputation';
 import { useT } from '@/core/i18n';
 import { cn } from '@/shared/lib/cn';
 import { useRelativeTime } from '@/shared/lib/format';
 import type { PostComment } from '../types/comment';
-import type { ReactionType } from '../types/reaction';
 import { CommentComposer } from './comment-composer';
 import { REACTIONS } from './reaction-bar';
+
+/**
+ * The one reaction a comment can carry, since B24.
+ *
+ * READ OUT OF `REACTIONS` RATHER THAN IMPORTED FROM LUCIDE. `ThumbsUp` would be one character
+ * shorter and would put a second answer in the codebase to "which picture and which word mean
+ * LIKE" — the post's row already reads this table, and the two must never disagree about the
+ * glyph a reader sees on two controls four lines apart. The non-null assertion is safe by
+ * construction: `LIKE` is the first entry of that table and the enum's first member.
+ */
+const LIKE = REACTIONS.find((reaction) => reaction.type === 'LIKE')!;
+const LikeIcon = LIKE.Icon;
+const LIKE_LABEL = LIKE.labelKey;
 
 /**
  * One comment: identity row, body, and the author's own controls.
@@ -138,24 +149,6 @@ export interface CommentItemProps {
   /** Current user's id — controls whether edit/delete are offered at all. */
   currentUserId?: number;
   /**
-   * The commenter's Elite Score, for the chip beside their name.
-   *
-   * A PROP RATHER THAN A HOOK CALL IN HERE, and that is the same rule `PostCard` follows: the
-   * row renders identity it is handed and never fetches any of it. `CommentResponseDto` does not
-   * carry a score, so somebody has to ask for it — but if that somebody were this component, a
-   * thread of six comments would fire six requests from six places and no single file would say
-   * so. `CommentThread` asks once for the whole set instead; see `useReputations`.
-   *
-   * Undefined hides the chip, which is also what a score of zero does — see the render site.
-   */
-  eliteScore?: number;
-  /**
-   * The level's NAME, read from the reputation response and never derived from the score.
-   * CLAUDE.md §1 keeps the thresholds in the backend enum and the design system only; `RepScore`
-   * refuses to compute the level itself, and this is how the name reaches it.
-   */
-  levelName?: string;
-  /**
    * Opens the reply box for this comment. Offered on BOTH levels now.
    *
    * IT TAKES NO ARGUMENT, AND THAT IS THE CHANGE. It used to be `(parentId: number)` and to be
@@ -198,7 +191,7 @@ export interface CommentItemProps {
    * Undefined disables the control — which is what a read-only surface gets, and what this was
    * hardcoded to before the endpoints existed.
    */
-  onReact?: (commentId: number, reactionType: ReactionType | null) => void;
+  onReact?: (commentId: number, reactionType: 'LIKE' | null) => void;
   pendingCommentId?: number | null;
   editError?: string | null;
   className?: string;
@@ -208,8 +201,6 @@ export function CommentItem({
   comment,
   replies,
   currentUserId,
-  eliteScore,
-  levelName,
   onReply,
   onEdit,
   onDelete,
@@ -241,21 +232,23 @@ export function CommentItem({
   const replyCount = replies?.length ?? 0;
 
   /**
-   * What the reader picked on THIS comment, and what the toggle therefore wears.
+   * Whether the reader has liked THIS comment. A comment takes one reaction and only one kind.
    *
-   * IT IS NOT ASSUMED TO BE A LIKE. `CommentResponseDto.myReaction` is the full seven-value enum
-   * and the backend accepts every one of them here — the seeded thread genuinely carries
-   * `INSIGHT` — so a button hardcoded to `ThumbsUp` would sit un-pressed above a count that
-   * already includes the reader's own reaction, and pressing it would silently REPLACE that
-   * reaction with a LIKE. Showing what they actually chose is the only version that cannot lie.
+   * IT USED TO DRESS FOR ALL SEVEN, AND THE NOTE HERE ARGUED HARD THAT IT HAD TO. `myReaction`
+   * is the full enum, the endpoint accepted every value, and `db/seed/V65` genuinely wrote
+   * `INSIGHT`, `CLAP` and `LOVE` rows onto comments — so a button hardcoded to `ThumbsUp` would
+   * have sat un-pressed above a count that already included the reader, and pressing it would
+   * have silently replaced their reaction with a LIKE. Every word of that was true and none of
+   * it is any more: **B24 shipped**. `CommentReactionService.upsertReaction` throws 400 for the
+   * other six, and `V73__comments_are_like_only.sql` moved all seven non-LIKE rows over (an
+   * UPDATE rather than a DELETE, so the seed's deliberately uneven counts survive).
    *
-   * The fallback is `LIKE`, which is both the default action and the reaction this product is
-   * built around — the same fallback, from the same table, that `ReactionBar` uses on a post.
+   * SO THE GLYPH IS A CONSTANT NOW, and the constant is still read from `REACTIONS` rather than
+   * imported straight from lucide: one table owns which picture and which word mean `LIKE`, and
+   * the post's row reads the same entry. `myReaction` stays the enum on the wire — the backend
+   * kept the shared DTO — so it is compared against null, never destructured for its value.
    */
-  const myReaction = comment.myReaction;
-  const activeReaction = REACTIONS.find((reaction) => reaction.type === myReaction);
-  const ReactionIcon = activeReaction?.Icon ?? ThumbsUp;
-  const reactionLabelKey = activeReaction?.labelKey ?? 'post.reaction.LIKE';
+  const liked = comment.myReaction != null;
 
   return (
     <div className={cn('flex flex-col gap-2', className)}>
@@ -301,16 +294,25 @@ export function CommentItem({
          * zero, and a chip reading `0` is a worse answer than no chip — "nothing earned yet" and
          * "nothing to show" read alike to a person, and only one of them costs a badge.
          */
+        /**
+         * B22 IS PAID, AND THE TWO PROPS THAT USED TO FEED THIS ARE GONE WITH IT. The score and
+         * the level name arrived here as `eliteScore` / `levelName` because
+         * `CommentResponseDto` carried neither, so `CommentThread` had to buy them with one
+         * `GET /users/{id}/reputation` per distinct author and hand them down. The payload
+         * carries `authorEliteScore` and `authorLevelName` now — out of the `findAllById` the
+         * backend was already running for the page — so the row reads its own identity off the
+         * one object it was given, exactly as `PostCard` does. `useReputations` is deleted.
+         */
         rep={
-          eliteScore != null && eliteScore > 0 ? (
+          comment.authorEliteScore != null && comment.authorEliteScore > 0 ? (
             <RepScore
-              score={eliteScore}
+              score={comment.authorEliteScore}
               size="sm"
               // Gated on the name being there rather than passed flat: `RepScore` drops the
               // suffix without a `levelName` anyway, so this only avoids asking for something
               // the response did not supply.
-              showLevel={Boolean(levelName)}
-              levelName={levelName}
+              showLevel={Boolean(comment.authorLevelName)}
+              levelName={comment.authorLevelName ?? undefined}
             />
           ) : undefined
         }
@@ -459,23 +461,23 @@ export function CommentItem({
             <Button
               size="sm"
               variant="ghost"
-              icon={<ReactionIcon className={cn(myReaction != null && 'fill-nx-text-accent/20')} />}
-              aria-pressed={myReaction != null}
+              icon={<LikeIcon className={cn(liked && 'fill-nx-text-accent/20')} />}
+              aria-pressed={liked}
               // Undefined `onReact` means a surface that cannot write — the control greys out
               // rather than vanishing, so the count stays readable.
               disabled={!onReact}
-              onClick={() => onReact?.(comment.id, myReaction != null ? null : 'LIKE')}
+              onClick={() => onReact?.(comment.id, liked ? null : 'LIKE')}
               // A NATIVE TOOLTIP, UNLIKE THE POST'S TRIGGER, and the difference is the tray. That
               // one opens a row of seven glyphs on hover and a `title` would fade in over them;
               // this one opens nothing, so the hover is free to say what the icon means.
-              title={t(reactionLabelKey)}
-              className={cn(myReaction != null && 'text-nx-text-accent')}
+              title={t(LIKE_LABEL)}
+              className={cn(liked && 'text-nx-text-accent')}
             >
               {/* `sr-only`, NOT `aria-label`: a label would replace the button's content, and the
                   count is part of what this control says. Keeping the word as hidden text leaves
                   the accessible name reading `Hữu ích 5` — the reaction AND its total — which is
                   exactly what a sighted reader gets from the glyph and the number. */}
-              <span className="sr-only">{t(reactionLabelKey)}</span>
+              <span className="sr-only">{t(LIKE_LABEL)}</span>
               {/* A NUMBER AND NOTHING ELSE. This carried the post row's glyph strip — three
                   small outlines out of `reactionSummary` saying which reactions made up the
                   total — and it comes off here for the same reason it came off there: the owner

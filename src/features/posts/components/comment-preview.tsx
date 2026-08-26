@@ -77,7 +77,12 @@ export function CommentPreview({ postId, commentCount, className }: CommentPrevi
   }, [hasComments, visible]);
 
   const comments = useComments(visible ? postId : undefined);
-  const roots = comments.data ? groupComments(comments.data) : [];
+  /**
+   * THE FIRST PAGE ONLY, AND IT IS NOT A SHORTCUT. This shows two comments; a page carries twenty
+   * top-level ones. Reading `pages[0]` rather than flattening keeps the preview from re-rendering
+   * every time the open thread on the same post loads another page into the shared cache entry.
+   */
+  const roots = groupComments(comments.data?.pages[0]?.comments ?? []);
   const preview = roots.slice(0, PREVIEW_COUNT);
 
   if (!hasComments) return null;

@@ -56,12 +56,18 @@ import { QuizComposer, isQuizReady, normalizeQuiz } from './quiz-composer';
  *
  * WHICH KINDS ARE MISSING, AND WHY THAT IS THE CONTRACT RATHER THAN AN OMISSION.
  * `UpdatePostRequestDto` carries `articleDetails`, `codeSnippetDetails`, `linkDetails`,
- * `pollDetails`, `qnaDetails` and `quizDetails` — and **no** `eventDetails`, `bookDetails` or
+ * `pollDetails` and `quizDetails` — and **no** `eventDetails`, `bookDetails`, `qnaDetails` or
  * `postType`. An event's time and a book's price are immutable by the shape of the request, so
- * those two kinds get a sentence saying so instead of a panel that could not save. `QNA` has a
- * block on the DTO but nothing in it is author input: `isResolved` and `acceptedAnswerId` are
- * written by accepting an answer, so it rides through on `...current`, and the question itself
- * is the post's own prose, which the textarea already edits.
+ * those two kinds get a sentence saying so instead of a panel that could not save.
+ *
+ * `QNA` JOINED THAT LIST FROM THE OTHER DIRECTION AND NEEDS NO SENTENCE. Its block was on the
+ * DTO and rode through untouched on `...current`, because nothing in it is author input —
+ * `isResolved` and `acceptedAnswerId` are written by accepting an answer. The backend's `src`
+ * audit (`93ca5e2`) removed it, which is strictly safer: `PostService.updatePost` runs
+ * `BeanUtils.copyProperties` and copies nulls, so while the field existed, any edit that failed
+ * to echo it exactly would have unpicked the post's accepted answer. There is nothing to tell
+ * the author about, because the question itself is the post's prose and the textarea still
+ * edits it.
  *
  * EDITING A POLL DOES NOT DESTROY VOTES, because there are none to destroy: the backend has no
  * vote endpoint at all (recorded in `poll-fields.tsx`), so `votesCount` is whatever create or

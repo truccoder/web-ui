@@ -38,6 +38,23 @@ export type PendingFriendRequest = Required<Omit<RawPending, 'requesterProfilePi
 
 type RawSent = Schemas['SentFriendRequestDto'];
 /** An outgoing request. Only the addressee's picture is nullable. */
+/**
+ * One page of friend requests, incoming or outgoing.
+ *
+ * BOTH ENDPOINTS PAGED IN THE BACKEND'S `src` AUDIT (`93ca5e2`) and neither says so to the type
+ * checker on this side — the responses are hand-typed in `api/friendship.ts`, so the client kept
+ * compiling and started reading `.length` off a page object. Cursor-based, 20 by default, 50 max.
+ *
+ * THE TWO ROW TYPES DIFFER, WHICH IS WHY THIS IS GENERIC: an incoming request names the person who
+ * sent it, an outgoing one names the person it went to, and the backend keeps two DTOs for that
+ * reason rather than one with two half-filled halves.
+ */
+export type FriendRequestPage<T> = {
+  requests: T[];
+  nextCursor?: number;
+  hasMore: boolean;
+};
+
 export type SentFriendRequest = Required<Omit<RawSent, 'addresseeProfilePictureUrl'>> & {
   addresseeProfilePictureUrl?: string;
 };

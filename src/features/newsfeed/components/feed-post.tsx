@@ -115,7 +115,14 @@ function toEditorState(post: FeedPostData): PostEditorState {
     locationDetails: post.locationDetails ?? undefined,
     codeSnippetDetails: post.codeSnippetDetails ?? undefined,
     articleDetails: post.articleDetails ?? undefined,
-    qnaDetails: post.qnaDetails ?? undefined,
+    // `qnaDetails` IS NOT HERE ANY MORE, and its absence is now the backend's rule rather than
+    // this file's choice: the `src` audit (`93ca5e2`) dropped the block from
+    // `UpdatePostRequestDto`. Nothing in it was ever author input — `isResolved` and
+    // `acceptedAnswerId` are written by accepting an answer — so it used to ride through
+    // untouched, and riding through was the risky half: `PostService.updatePost` runs
+    // `BeanUtils.copyProperties`, which copies nulls, so any edit that failed to echo it exactly
+    // would have unpicked the accepted answer. A field the request cannot carry cannot be
+    // nulled by the request.
     pollDetails: post.pollDetails ?? undefined,
     linkDetails: post.linkDetails ?? undefined,
     quizDetails: post.quizDetails ?? undefined,

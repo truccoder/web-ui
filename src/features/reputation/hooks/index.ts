@@ -1,2 +1,2 @@
 export { reputationKeys } from './keys';
-export { useReputation, useReputations } from './use-reputation';
+export { useReputation } from './use-reputation';

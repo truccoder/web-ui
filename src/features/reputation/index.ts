@@ -7,12 +7,13 @@
  * feed and search payloads, so posts/newsfeed/search render the chip from data they
  * already hold, without calling this domain's endpoint.
  *
- * COMMENTS ARE THE ONE EXCEPTION, and it is a gap rather than a change of policy.
- * `CommentResponseDto` carries no `authorEliteScore` and no `authorLevelName`, so a comment's
- * identity row cannot render the chip from data it holds — there is none. `useReputations` is
- * exported for exactly that case and documents the cost. When the backend adds the two fields to
- * the comment DTO (the same join `FeedPostDataDto`'s mapper already performs), the thread should
- * read them off the payload and this hook should lose its only caller.
+ * COMMENTS WERE THE ONE EXCEPTION AND ARE NOT ANY MORE. `CommentResponseDto` carried no
+ * `authorEliteScore` and no `authorLevelName`, so a comment's identity row had nothing to draw a
+ * chip from and `useReputations` existed to buy the pair one request per author. B22 shipped both
+ * fields — the same join `FeedPostDataDto`'s mapper was already doing — so the thread reads them
+ * off the payload and that hook is deleted, exactly as the note here said it should be. Every
+ * identity row in the app now renders its chip from data its own payload carries; nothing outside
+ * this feature calls the endpoint.
  */
 
 export { reputationApi } from './api';
@@ -28,6 +29,6 @@ export {
   type RepProgressProps,
 } from './components';
 
-export { reputationKeys, useReputation, useReputations } from './hooks';
+export { reputationKeys, useReputation } from './hooks';
 
 export type { Reputation } from './types';

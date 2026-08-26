@@ -2060,10 +2060,19 @@ export interface components {
             code?: string;
             language?: string;
         };
+        CommentPageResponseDto: {
+            comments?: components["schemas"]["CommentResponseDto"][];
+            hasMore?: boolean;
+            /** Format: int32 */
+            nextCursor?: number;
+        };
         CommentResponseDto: {
+            /** Format: int32 */
+            authorEliteScore?: number;
             authorFullName?: string;
             /** Format: int32 */
             authorId?: number;
+            authorLevelName?: string;
             authorProfilePictureUrl?: string;
             authorUsername?: string;
             content?: string;
@@ -2314,6 +2323,12 @@ export interface components {
             /** Format: int64 */
             totalCount?: number;
         };
+        FriendRequestPageResponseDto: {
+            hasMore?: boolean;
+            /** Format: int32 */
+            nextCursor?: number;
+            requests?: components["schemas"]["PendingFriendRequestDto"][];
+        };
         FriendSuggestionDto: {
             /** Format: int64 */
             mutualFriends?: number;
@@ -2444,6 +2459,8 @@ export interface components {
             /** Format: int32 */
             id?: number;
             isRead?: boolean;
+            /** Format: int32 */
+            postId?: number;
             /** Format: int32 */
             referenceId?: number;
             referenceType?: string;
@@ -2968,6 +2985,12 @@ export interface components {
             /** @enum {string} */
             status?: "PENDING" | "ACCEPTED" | "REJECTED" | "CANCELLED";
         };
+        SentFriendRequestPageResponseDto: {
+            hasMore?: boolean;
+            /** Format: int32 */
+            nextCursor?: number;
+            requests?: components["schemas"]["SentFriendRequestDto"][];
+        };
         SkillVerificationRequestDto: {
             /** Format: int32 */
             nodeId: number;
@@ -3064,7 +3087,6 @@ export interface components {
             /** @enum {string} */
             locationType?: "COORDINATE" | "PLACE" | "REGION";
             pollDetails?: components["schemas"]["PollDetails"];
-            qnaDetails?: components["schemas"]["QnaDetails"];
             quizDetails?: components["schemas"]["QuizDetails"];
             taggedUserIds?: number[];
             /** @enum {string} */
@@ -7934,7 +7956,10 @@ export interface operations {
     };
     getPendingRequests_1: {
         parameters: {
-            query?: never;
+            query?: {
+                cursor?: number;
+                limit?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -7947,7 +7972,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["PendingFriendRequestDto"][];
+                    "*/*": components["schemas"]["FriendRequestPageResponseDto"];
                 };
             };
             /** @description Bad Request */
@@ -8035,7 +8060,10 @@ export interface operations {
     };
     getSentRequests: {
         parameters: {
-            query?: never;
+            query?: {
+                cursor?: number;
+                limit?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -8048,7 +8076,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["SentFriendRequestDto"][];
+                    "*/*": components["schemas"]["SentFriendRequestPageResponseDto"];
                 };
             };
             /** @description Bad Request */
@@ -12149,7 +12177,10 @@ export interface operations {
     };
     getComments: {
         parameters: {
-            query?: never;
+            query?: {
+                cursor?: number;
+                limit?: number;
+            };
             header?: never;
             path: {
                 postId: number;
@@ -12164,7 +12195,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["CommentResponseDto"][];
+                    "*/*": components["schemas"]["CommentPageResponseDto"];
                 };
             };
             /** @description Bad Request */

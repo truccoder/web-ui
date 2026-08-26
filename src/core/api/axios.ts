@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { clearSessionFlags } from './session-flags';
 
 const AUTH_STORAGE_KEY = 'auth_tokens';
 
@@ -188,7 +189,21 @@ api.interceptors.response.use(
           originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
           return api(originalRequest);
         } catch {
+          /**
+           * BOTH HALVES, OR THE REDIRECT ON THE NEXT LINE IS UNDONE BEFORE IT LANDS.
+           *
+           * `clearTokens` empties localStorage and nothing else, so this used to leave the
+           * `session` cookie saying `true`. `src/middleware.ts` reads only that cookie, and it
+           * treats `/login` as a page a signed-in reader must be bounced away from — so this
+           * navigation was answered with a 307 straight back to `/newsfeed`, where the client
+           * (which had no tokens) rendered the guest shell. The reader was left looking at a
+           * `Đăng nhập` button that redirected to the feed every time it was pressed.
+           *
+           * See `core/api/session-flags` for the whole story; `useClearSession` calls the same
+           * function, so the deliberate logout and this one cannot drift apart again.
+           */
           clearTokens();
+          clearSessionFlags();
           window.location.href = '/login';
         }
       }

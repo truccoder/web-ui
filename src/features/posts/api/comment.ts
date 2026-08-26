@@ -1,6 +1,6 @@
 import api from '@/core/api/axios';
-import type { PostComment, CreateCommentRequest, UpdateCommentRequest } from '../types/comment';
-import type { UpsertReactionRequest } from '../types/reaction';
+import type { CommentPage, CreateCommentRequest, UpdateCommentRequest } from '../types/comment';
+import type { LikeCommentRequest } from '../types/reaction';
 
 /**
  * CommentController (`com.socialapp.posts`) — 6 endpoints, one function each. Bare
@@ -24,14 +24,22 @@ import type { UpsertReactionRequest } from '../types/reaction';
  */
 export const commentsApi = {
   /**
-   * GET /v1/api/posts/{postId}/comments — the whole thread, flat, oldest first
-   * (`findByPostIdOrderByCreatedAtAsc`).
+   * GET /v1/api/posts/{postId}/comments — ONE PAGE of the thread, flat, oldest first.
    *
-   * Not paginated and not nested: replies come back in the same array carrying `parentId`,
-   * so grouping into a two-level thread is the caller's job. 404 when the post is gone.
+   * IT RETURNED A BARE ARRAY UNTIL THE BACKEND'S `src` AUDIT (`93ca5e2`), and the change is
+   * invisible to the type checker on this side — the response is hand-typed here, so a client
+   * still reading `r.data` as an array compiled perfectly and broke at runtime with a page object
+   * where a list was expected. That is the whole reason `schema.gen.ts` gets regenerated before
+   * anything else after a backend release.
+   *
+   * Still flat and still not nested: replies come back in the same array carrying `parentId`, so
+   * grouping into a two-level thread is the caller's job. See `CommentPage` for the guarantee
+   * that makes paging safe for that grouping. 404 when the post is gone.
    */
-  getComments: (postId: number) =>
-    api.get<PostComment[]>(`/v1/api/posts/${postId}/comments`).then((r) => r.data),
+  getComments: (postId: number, cursor?: number, limit?: number) =>
+    api
+      .get<CommentPage>(`/v1/api/posts/${postId}/comments`, { params: { cursor, limit } })
+      .then((r) => r.data),
 
   /**
    * POST /v1/api/posts/{postId}/comments — returns **void**, not the created comment, so
@@ -62,14 +70,20 @@ export const commentsApi = {
    * PUT /v1/api/posts/{postId}/comments/{commentId}/reactions — set or change the reader's
    * reaction on one comment.
    *
-   * SAME REQUEST DTO AS A POST'S (`UpsertPostReactionRequestDto`), so the seven-value enum is
-   * shared and `UpsertReactionRequest` is reused rather than copied. A comment therefore accepts
-   * `INSIGHT` and `ANGRY` exactly as a post does — the seeded thread has `INSIGHT` rows on it —
-   * which is why the UI must never assume the reader's reaction is a `LIKE`.
+   * `LIKE` AND NOTHING ELSE, SINCE B24. The wire DTO is still a post's
+   * (`UpsertPostReactionRequestDto`) because the backend shares it — a post does take all seven —
+   * but `CommentReactionService.upsertReaction` answers 400 for the other six, and
+   * `V73__comments_are_like_only.sql` moved the rows that predate the rule. The narrowing is
+   * mirrored in the parameter type here rather than left to callers to remember: a request this
+   * layer cannot build is a 400 nobody has to handle.
    *
-   * Idempotent upsert on the (user, comment) pair: switching LIKE → CLAP is this one call.
+   * THE FIELD STAYS IN THE BODY, exactly as it does on the backend's own DTO. Sending
+   * `{ reactionType: 'LIKE' }` where the server expects that shape is cheaper than a second
+   * request type for one path, and the literal type carries the rule.
+   *
+   * Idempotent upsert on the (user, comment) pair: pressing like twice leaves one row.
    */
-  upsertReaction: (postId: number, commentId: number, payload: UpsertReactionRequest) =>
+  upsertReaction: (postId: number, commentId: number, payload: LikeCommentRequest) =>
     api
       .put<void>(`/v1/api/posts/${postId}/comments/${commentId}/reactions`, payload)
       .then((r) => r.data),

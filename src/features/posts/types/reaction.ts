@@ -39,6 +39,20 @@ export type UpsertReactionRequest = {
 };
 
 /**
+ * `PUT /posts/{postId}/comments/{commentId}/reactions` — the same body, narrowed to the one value
+ * a comment accepts.
+ *
+ * B24: `CommentReactionService.upsertReaction` throws 400 for the other six, and
+ * `V73__comments_are_like_only.sql` rewrote the rows that predate the rule. The backend kept the
+ * shared request DTO because a POST still takes all seven, so the narrowing has to be expressed
+ * on this side rather than read off the schema — which is exactly why it is a named type and not
+ * an inline literal at the call site.
+ */
+export type LikeCommentRequest = {
+  reactionType: 'LIKE';
+};
+
+/**
  * One page of "who reacted".
  *
  * THE ROWS ARE `PublicUserResponse`, the same shape the block list renders — so they carry a

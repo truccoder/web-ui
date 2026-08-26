@@ -45,7 +45,16 @@
 // brand mark. `STATIC_PREFIXES` serves that path cache-first on the claim that everything under
 // it is "content-addressed or versioned", which those filenames are not, so an existing install
 // would have kept serving the blank placeholder forever. Bumping the name is the version.
-const CACHE_NAME = 'elite-nexus-v3';
+//
+// v4: THE BUMP IS THE ONLY WAY OUT FOR A MACHINE THAT IS ALREADY BROKEN. This worker used to be
+// registered in development too, where the claim above is false (see `STATIC_PREFIXES`), so every
+// dev browser holds a v3 cache full of Turbopack chunks pinned to whatever the source looked like
+// when each was first fetched. `core/pwa/service-worker-register.tsx` now tears the installation
+// down — but it is a React effect, and the symptom of a poisoned chunk graph is that React never
+// mounts, so the repair could not reach the machines that needed it. `activate` runs regardless of
+// what the page does, and it deletes every cache whose name is not this one; renaming is therefore
+// what unblocks the load that then runs the teardown.
+const CACHE_NAME = 'elite-nexus-v4';
 
 const OFFLINE_URL = '/offline';
 
@@ -56,7 +65,16 @@ const OFFLINE_URL = '/offline';
  */
 const PRECACHE_URLS = ['/', OFFLINE_URL];
 
-/** Build output and app icons: content-addressed or versioned, so cache-first is safe. */
+/**
+ * Build output and app icons: content-addressed or versioned, so cache-first is safe.
+ *
+ * "CONTENT-ADDRESSED" IS A PRODUCTION FACT AND A DEVELOPMENT FALSEHOOD, which is why this worker
+ * is only registered in production — see `core/pwa/service-worker-register.tsx`, which also tears
+ * down any installation it finds on a dev machine. `next build` writes chunk names with a content
+ * hash; `next dev` under Turbopack keeps a stable name (`src_core_04bqgiq._.js`) and changes what
+ * is behind it on every edit, so cache-first here pins the first copy of every chunk forever and
+ * the app slowly assembles itself out of modules from different builds.
+ */
 const STATIC_PREFIXES = ['/_next/static/', '/icons/'];
 
 self.addEventListener('install', (event) => {

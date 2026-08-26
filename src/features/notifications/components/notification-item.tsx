@@ -133,14 +133,30 @@ function hrefFor(notification: AppNotification): string | null {
   if (referenceType === 'POST') return `/posts/${referenceId}`;
   if (referenceType === 'BOOK') return `/books/${referenceId}`;
   /**
-   * `COMMENT` FALLS THROUGH DELIBERATELY. `CommentReactionService` sends `referenceType:
-   * "COMMENT"` with the COMMENT's id, and its own javadoc says why — a reader needs to land on
-   * the comment, and a post id would only get them to the top of a thread that may hold
-   * hundreds. But this app has no route that takes a comment id, and nothing in the payload
-   * carries the post it belongs to, so there is no address to send anyone to. The row still
-   * reads and still marks itself read; it just does not navigate. Closing this needs a
-   * `postId` on the notification (or a `/comments/{id}` resolver), not a guess here.
+   * `COMMENT` NOW HAS AN ADDRESS, AND IT IS THE POST'S. This branch returned `null` for a year of
+   * this file's life: `CommentService` and `CommentReactionService` both send `referenceType:
+   * "COMMENT"` with the COMMENT's id — right, because a reader should land on the reply that
+   * named them and not at the top of a thread of hundreds — but no route in this app takes a
+   * comment id, and the payload carried nothing to resolve one with. So `USER_MENTIONED` and
+   * `COMMENT_LIKED` read fine, marked themselves read, and went nowhere.
+   *
+   * B22'S SIBLING SHIPPED: `V72__add_post_id_to_notifications.sql` adds the column, backfills
+   * every row already in the table (the seeded mentions included, which are the ones a demo
+   * presses first), and `NotificationResponseDto.postId` carries it. Both types are unlocked by
+   * the one field.
+   *
+   * IT IS ABSENT, NOT NULL, WHEN THERE IS NO POST — the field is `@JsonInclude(NON_NULL)`, unlike
+   * every other field on this DTO. `== null` catches both, which is what this needs and is why
+   * the check is loose rather than `!== undefined`.
+   *
+   * WHAT IS STILL LOST is the last few pixels: the reader lands on the post, not on the comment
+   * inside it. Closing that needs an anchor per comment in the thread — this app renders none —
+   * rather than anything further from the backend.
    */
+  if (referenceType === 'COMMENT') {
+    return notification.postId == null ? null : `/posts/${notification.postId}`;
+  }
+
   return null;
 }
 

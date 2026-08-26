@@ -867,6 +867,7 @@ export const vi: Messages = {
       hide: 'Ẩn bình luận',
       empty: 'Chưa có bình luận',
       loadFailed: 'Không tải được bình luận',
+      loadMore: 'Xem thêm bình luận',
       reply: 'Trả lời',
       replyPlaceholder: 'Viết câu trả lời...',
       edit: 'Sửa',

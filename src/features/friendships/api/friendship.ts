@@ -1,6 +1,7 @@
 import api from '@/core/api/axios';
 import type {
   FriendListResponse,
+  FriendRequestPage,
   FriendSuggestion,
   PendingFriendRequest,
   SentFriendRequest,
@@ -19,13 +20,30 @@ export const friendshipApi = {
       .get<FriendListResponse>('/v1/api/friendships', { params: { cursor, limit } })
       .then((r) => r.data),
 
-  /** GET /v1/api/friendships/requests/pending — incoming requests. */
-  getPendingRequests: () =>
-    api.get<PendingFriendRequest[]>('/v1/api/friendships/requests/pending').then((r) => r.data),
+  /**
+   * GET /v1/api/friendships/requests/pending — incoming requests, ONE PAGE.
+   *
+   * `limit = 50` IS THE ENDPOINT'S CEILING, asked for deliberately. Everything that reads this
+   * either lists the requests or counts them for a badge, and both want the whole set; 20 (the
+   * server default) would silently cap a badge that is supposed to say how many people are
+   * waiting. The page's `hasMore` is what tells a caller the ceiling was hit — see the hooks,
+   * which are the ones that would have to grow a cursor if it ever fires.
+   */
+  getPendingRequests: (cursor?: number, limit = 50) =>
+    api
+      .get<FriendRequestPage<PendingFriendRequest>>('/v1/api/friendships/requests/pending', {
+        params: { cursor, limit },
+      })
+      .then((r) => r.data),
 
-  /** GET /v1/api/friendships/requests/sent — outgoing requests. */
-  getSentRequests: () =>
-    api.get<SentFriendRequest[]>('/v1/api/friendships/requests/sent').then((r) => r.data),
+  /** GET /v1/api/friendships/requests/sent — outgoing requests, one page. Same ceiling, same
+   * reason: the screen lists them all. */
+  getSentRequests: (cursor?: number, limit = 50) =>
+    api
+      .get<FriendRequestPage<SentFriendRequest>>('/v1/api/friendships/requests/sent', {
+        params: { cursor, limit },
+      })
+      .then((r) => r.data),
 
   /** GET /v1/api/friendships/suggestions — people you may know. */
   getSuggestions: (limit = 10) =>
