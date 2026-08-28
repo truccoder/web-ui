@@ -301,7 +301,7 @@ export const en = {
 
   notifications: {
     title: 'Notifications',
-    subtitle: 'Activity involving you, and how you want to hear about it',
+    subtitle: 'Activity involving you',
     unreadCount: '${count} unread',
     allRead: "You're all caught up",
     unreadMarker: 'Unread',
@@ -523,7 +523,7 @@ export const en = {
 
   roadmap: {
     title: 'Roadmaps',
-    subtitle: 'Learning tracks, and the skills on them.',
+    subtitle: 'Pick a track to learn and verify skills',
     list: {
       loadFailed: 'Could not load the roadmaps',
       empty: 'No roadmaps yet',
@@ -1028,7 +1028,7 @@ export const en = {
       'Your professional profile moved to the profile page — the explainer will not run without it.',
     profileMovedLink: 'Open profile',
     title: 'Archive',
-    subtitle: 'Your sync tokens and saved explanations.',
+    subtitle: 'Your access tokens and saved explanations',
     profile: {
       title: 'Professional profile',
       notSetUp:
@@ -1252,7 +1252,7 @@ export const en = {
       subtitle: 'Ranked against the skills and domains in your professional profile.',
     },
     title: 'Projects',
-    subtitle: 'Find people to build with, or a place to contribute.',
+    subtitle: 'Find people to build with, or a place to contribute',
     tabs: {
       board: 'Project board',
       mine: 'My applications',
@@ -1367,7 +1367,7 @@ export const en = {
       mine: 'Written by me',
     },
     title: 'Library',
-    subtitle: 'Books published by the community',
+    subtitle: 'Books written by community members',
     owned: 'Owned',
     loadError: 'Could not load the library',
     storageError: 'Books are unavailable: the file storage cannot be reached.',

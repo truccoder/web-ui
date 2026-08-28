@@ -10,7 +10,7 @@ import {
   type RoadmapNodeLevel,
 } from '@/features/roadmap';
 import { useMyProfile } from '@/features/security';
-import { Button, Dialog } from '@/shared/components';
+import { Button, Dialog, PageHeader } from '@/shared/components';
 import { useT } from '@/core/i18n';
 
 /**
@@ -116,10 +116,7 @@ function RoadmapContent() {
 
   return (
     <div className="flex flex-col gap-[var(--nx-space-section)]">
-      <div>
-        <h1 className="text-nx-title font-semibold text-nx-text-primary">{t('roadmap.title')}</h1>
-        <p className="mt-0.5 text-nx-body-sm text-nx-text-secondary">{t('roadmap.subtitle')}</p>
-      </div>
+      <PageHeader title={t('roadmap.title')} description={t('roadmap.subtitle')} />
 
       <RoadmapList
         selectedId={roadmapId}

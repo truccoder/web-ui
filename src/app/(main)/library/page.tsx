@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense } from 'react';
-import { Tabs } from '@/shared/components';
+import { PageHeader, Tabs } from '@/shared/components';
 import { useTabParam } from '@/shared/lib/use-tab-param';
 import { BookLibrary, MyBooksList } from '@/features/bookstore';
 import { useMyProfile } from '@/features/security';
@@ -53,12 +53,7 @@ function LibraryContent() {
 
   return (
     <div className="flex flex-col gap-[var(--nx-space-section)]">
-      <div>
-        <h1 className="text-nx-title font-semibold tracking-tight text-nx-text-primary">
-          {t('library.title')}
-        </h1>
-        <p className="mt-1 text-nx-body-sm text-nx-text-muted">{t('library.subtitle')}</p>
-      </div>
+      <PageHeader title={t('library.title')} description={t('library.subtitle')} />
 
       {/* A QUERY PARAMETER RATHER THAN ROUTES, unlike `/friends`: those three tabs were three
           existing URLs that people could already be holding links to, and collapsing them into

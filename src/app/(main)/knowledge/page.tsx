@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { KnowledgeLibrary, TokenList } from '@/features/knowledge';
+import { PageHeader } from '@/shared/components';
 import { useT } from '@/core/i18n';
 
 /**
@@ -30,12 +31,7 @@ export default function KnowledgePage() {
 
   return (
     <div className="flex flex-col gap-[var(--nx-space-section)]">
-      <div>
-        <h1 className="text-nx-title font-semibold tracking-tight text-nx-text-primary">
-          {t('knowledge.title')}
-        </h1>
-        <p className="mt-0.5 text-nx-body-sm text-nx-text-secondary">{t('knowledge.subtitle')}</p>
-      </div>
+      <PageHeader title={t('knowledge.title')} description={t('knowledge.subtitle')} />
 
       <p className="text-nx-body-sm text-nx-text-secondary">
         {t('knowledge.profileMoved')}{' '}

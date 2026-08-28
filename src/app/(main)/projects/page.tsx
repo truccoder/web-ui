@@ -3,7 +3,7 @@
 import { Suspense, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus } from 'lucide-react';
-import { Button, Tabs } from '@/shared/components';
+import { Button, PageHeader, Tabs } from '@/shared/components';
 import { useTabParam } from '@/shared/lib/use-tab-param';
 import {
   CreateProjectDialog,
@@ -49,17 +49,15 @@ function ProjectsContent() {
 
   return (
     <div className="flex flex-col gap-[var(--nx-space-section)]">
-      <div className="flex items-start gap-3">
-        <div className="min-w-0 flex-1">
-          <h1 className="text-nx-title font-semibold tracking-tight text-nx-text-primary">
-            {t('projects.title')}
-          </h1>
-          <p className="mt-1 text-nx-body-sm text-nx-text-muted">{t('projects.subtitle')}</p>
-        </div>
-        <Button size="sm" icon={<Plus />} onClick={() => setCreating(true)}>
-          {t('projects.create.action')}
-        </Button>
-      </div>
+      <PageHeader
+        title={t('projects.title')}
+        description={t('projects.subtitle')}
+        action={
+          <Button size="sm" icon={<Plus />} onClick={() => setCreating(true)}>
+            {t('projects.create.action')}
+          </Button>
+        }
+      />
 
       {/* `?tab=mine` rather than state alone. The paragraph above says these two never had URLs of
           their own, and that stays true of ROUTES — but a reader who submits an application and

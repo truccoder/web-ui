@@ -3,6 +3,7 @@
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { SearchResults } from '@/features/search';
+import { PageHeader } from '@/shared/components';
 import { useT } from '@/core/i18n';
 
 /**
@@ -26,14 +27,10 @@ function SearchContent() {
 
   return (
     <div className="flex flex-col gap-[var(--nx-space-section)]">
-      <div>
-        <h1 className="text-nx-title font-semibold text-nx-text-primary">{t('search.title')}</h1>
-        {query && (
-          <p className="mt-0.5 text-nx-body-sm text-nx-text-secondary">
-            {t('search.resultsFor', { query })}
-          </p>
-        )}
-      </div>
+      <PageHeader
+        title={t('search.title')}
+        description={query ? t('search.resultsFor', { query }) : undefined}
+      />
 
       <SearchResults query={query} />
     </div>

@@ -289,7 +289,7 @@ export const vi: Messages = {
 
   notifications: {
     title: 'Thông báo',
-    subtitle: 'Hoạt động liên quan tới bạn và cách bạn muốn được báo',
+    subtitle: 'Hoạt động liên quan tới bạn',
     unreadCount: '${count} thông báo chưa đọc',
     allRead: 'Bạn đã đọc hết thông báo',
     unreadMarker: 'Chưa đọc',
@@ -507,7 +507,7 @@ export const vi: Messages = {
 
   roadmap: {
     title: 'Lộ trình',
-    subtitle: 'Các lộ trình học và những kỹ năng trên đó.',
+    subtitle: 'Chọn lộ trình để học và xác nhận kỹ năng',
     list: {
       loadFailed: 'Không tải được lộ trình',
       empty: 'Chưa có lộ trình nào',
@@ -1007,7 +1007,7 @@ export const vi: Messages = {
       'Hồ sơ nghề nghiệp đã chuyển sang trang cá nhân — thiếu nó thì trình giải thích không chạy.',
     profileMovedLink: 'Mở trang cá nhân',
     title: 'Kho lưu trữ',
-    subtitle: 'Token đồng bộ và thư viện giải thích của bạn.',
+    subtitle: 'Token truy cập và những giải thích bạn đã lưu',
     profile: {
       title: 'Hồ sơ nghề nghiệp',
       notSetUp: 'Bạn chưa tạo hồ sơ nghề nghiệp. Điền và lưu để tạo mới.',
@@ -1229,7 +1229,7 @@ export const vi: Messages = {
       subtitle: 'Xếp theo kỹ năng và lĩnh vực bạn quan tâm trong hồ sơ nghề nghiệp.',
     },
     title: 'Dự án',
-    subtitle: 'Tìm người cùng làm, hoặc tìm một chỗ để góp sức.',
+    subtitle: 'Tìm người cùng làm, hoặc chỗ để góp sức',
     tabs: {
       board: 'Bảng dự án',
       mine: 'Đơn của tôi',
@@ -1344,7 +1344,7 @@ export const vi: Messages = {
       mine: 'Sách tôi viết',
     },
     title: 'Thư viện',
-    subtitle: 'Sách do cộng đồng xuất bản',
+    subtitle: 'Sách do thành viên cộng đồng viết',
     owned: 'Đã sở hữu',
     loadError: 'Không thể tải thư viện',
     storageError: 'Không tải được sách: kho lưu trữ tệp đang không truy cập được.',

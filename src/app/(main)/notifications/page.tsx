@@ -1,6 +1,7 @@
 'use client';
 
 import { NotificationList, NotificationPreferences } from '@/features/notifications';
+import { PageHeader } from '@/shared/components';
 import { useT } from '@/core/i18n';
 
 /**
@@ -24,14 +25,7 @@ export default function NotificationsPage() {
 
   return (
     <div className="flex flex-col gap-[var(--nx-space-section)]">
-      <div>
-        <h1 className="text-nx-title font-semibold tracking-tight text-nx-text-primary">
-          {t('notifications.title')}
-        </h1>
-        <p className="mt-0.5 text-nx-body-sm text-nx-text-secondary">
-          {t('notifications.subtitle')}
-        </p>
-      </div>
+      <PageHeader title={t('notifications.title')} description={t('notifications.subtitle')} />
 
       <NotificationList />
 

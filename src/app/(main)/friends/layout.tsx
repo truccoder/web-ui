@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { Tabs } from '@/shared/components';
+import { PageHeader, Tabs } from '@/shared/components';
 import { useInfiniteFriends, usePendingRequests } from '@/features/friendships';
 import { useT } from '@/core/i18n';
 
@@ -55,9 +55,7 @@ export default function FriendsLayout({ children }: { children: React.ReactNode 
 
   return (
     <div className="flex flex-col gap-[var(--nx-space-section)]">
-      <h1 className="text-nx-title font-semibold tracking-tight text-nx-text-primary">
-        {t('friends.title')}
-      </h1>
+      <PageHeader title={t('friends.title')} />
 
       {/* Tabs bind DOWN to the panel they name: 16 to the list, the canvas's own 40 to the
           heading. The strip used to sit 40 from both, which on the one screen where the tabs ARE
