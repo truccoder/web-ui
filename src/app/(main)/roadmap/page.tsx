@@ -56,8 +56,15 @@ function RoadmapContent() {
   // asking `/users/NaN/roadmap-progress`.
   const { data: profile } = useMyProfile();
 
+  /**
+   * `secondary`, NOT `ghost`, and the reason is a reported miss rather than a taste call. A ghost
+   * button is a word with no edges; sitting at the right end of a 32-tall row next to a skill name
+   * it read as a label, and the owner's report was literally *"tôi không thấy nơi nào để user xác
+   * nhận roadmap"* — the one control this whole screen exists to offer. `secondary` gives it the
+   * strong border that says "press me" without promoting a per-row action to the page's primary.
+   */
   const claimAction = (node: RoadmapNode) => (
-    <Button size="sm" variant="ghost" onClick={() => setClaiming(node)}>
+    <Button size="sm" variant="secondary" onClick={() => setClaiming(node)}>
       {t('roadmap.verify.claim')}
     </Button>
   );

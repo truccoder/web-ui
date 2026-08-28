@@ -525,6 +525,7 @@ export const vi: Messages = {
       emptyDesc: 'Kỹ năng sẽ xuất hiện khi quản trị viên thêm vào lộ trình.',
     },
     path: {
+      hint: 'Bấm Ghi nhận ở một giai đoạn hoặc một kỹ năng để tự khai, hoặc gửi minh chứng cho kiểm duyệt viên duyệt.',
       legend: {
         verified: 'Đã xác minh',
         pending: 'Chờ duyệt',
