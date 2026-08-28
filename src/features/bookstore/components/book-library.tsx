@@ -281,34 +281,54 @@ function BookCell({ book, localeTag }: { book: Book; localeTag: string }) {
         className={cn(
           // `inset-x-0 top-0` + the cover's own aspect: the veil covers the ARTWORK, not
           // the title line that now sits below it.
-          'absolute inset-x-0 top-0 aspect-[2/3] flex flex-col justify-end gap-[var(--nx-space-pair)]',
+          'absolute inset-x-0 top-0 aspect-[2/3] flex flex-col justify-end gap-[var(--nx-space-tight)]',
           'rounded-nx-md p-[var(--nx-space-element)]',
           // The gradient, not a flat scrim: a flat one dims the artwork it is there to sit on.
-          'bg-gradient-to-t from-[rgba(16,24,32,0.94)] via-[rgba(16,24,32,0.72)] to-transparent',
+          // The bottom third is opaque, though — that is the band the facts actually sit on, and
+          // over a bright cover a 0.72 stop let enough through to grey the text out.
+          'bg-gradient-to-t from-[rgba(16,24,32,0.97)] from-30% via-[rgba(16,24,32,0.82)] via-60% to-transparent',
           'opacity-0 transition-opacity duration-[var(--nx-duration-fast)] ease-nx-out',
           'group-hover:opacity-100 group-focus-within:opacity-100',
           // No hover to give: show it. See the note above.
           '[@media(hover:none)]:opacity-100'
         )}
       >
+        {/* THREE STACKED ROWS — stars, then the score, then the price — rather than stars+score on
+            one line. Each fact gets its own baseline, and the price ends up alone on the last row
+            where it reads as the headline it is. */}
         {book.reviewCount && book.avgRating ? (
-          <span className="flex items-center gap-[var(--nx-space-pair)]">
-            <StarRating rating={book.avgRating} size={12} />
-            <span className="font-mono text-nx-micro tabular-nums text-nx-gray-300">
+          <span className="flex flex-col gap-[var(--nx-space-pair)]">
+            {/* THE VEIL IS DARK IN BOTH THEMES, so the stars take theme-stable ink classes rather
+                than their defaults — `text-nx-text-primary` is near-black in light mode and would
+                vanish here. Same reason the price row below uses `nx-brand-ink-*`. */}
+            <StarRating
+              rating={book.avgRating}
+              size={12}
+              filledClassName="text-nx-brand-ink-text"
+              emptyClassName="text-nx-brand-ink-muted"
+            />
+            <span className="font-mono text-nx-micro tabular-nums text-nx-brand-ink-muted">
               {book.avgRating.toFixed(1)} · {book.reviewCount}
             </span>
           </span>
         ) : null}
 
-        <span className="flex flex-wrap items-center gap-[var(--nx-space-tight)]">
+        <span className="flex flex-wrap items-center gap-x-[var(--nx-space-tight)] gap-y-[var(--nx-space-pair)]">
           {/* THE DIGITS ARE MONO, THE CURRENCY SYMBOL IS NOT — mono is for numbers (§6.5) and a
               currency mark is not one. The symbol itself is `đ` rather than `₫`: measured in the
               live document, `₫` has no glyph in EITHER Geist face and fell back, which is why
-              splitting the spans alone did not fix it. See `withDongGlyph` in `shared/lib`. */}
-          <span className="font-mono text-nx-caption tabular-nums text-nx-gray-50">
-            {price.amount}
+              splitting the spans alone did not fix it. See `withDongGlyph` in `shared/lib`.
+
+              BIGGER THAN THE ROWS ABOVE IT — `body` semibold against the 11px score line — because
+              price is the fact a buyer scans a shelf for. */}
+          <span className="flex items-baseline gap-[var(--nx-space-pair)]">
+            <span className="font-mono text-nx-body font-semibold tabular-nums text-nx-brand-ink-text">
+              {price.amount}
+            </span>
+            {price.symbol && (
+              <span className="text-nx-body-sm text-nx-brand-ink-text">{price.symbol}</span>
+            )}
           </span>
-          {price.symbol && <span className="text-nx-caption text-nx-gray-50">{price.symbol}</span>}
 
           {/* `isFree` FIRST: the backend computes `purchased` as `!isFree && …`, so a free book
               reports `purchased: false` even to its own author. And a free book already says

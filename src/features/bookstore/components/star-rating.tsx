@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { Star } from 'lucide-react';
+import { cn } from '@/shared/lib/cn';
 
 /**
  * Read-only star display, with fractional fill.
@@ -23,9 +24,22 @@ export interface StarRatingProps {
   rating: number;
   /** Star edge length in px. @default 13 */
   size?: number;
+  /**
+   * Colour of a filled star. Defaults to the primary ink token, which follows the theme.
+   * Pass a theme-stable class (e.g. `text-nx-brand-ink-text`) when the stars sit on a surface
+   * that is dark in BOTH themes, such as the library veil.
+   */
+  filledClassName?: string;
+  /** Colour of an empty star's outline. @see filledClassName */
+  emptyClassName?: string;
 }
 
-export function StarRating({ rating, size = 13 }: StarRatingProps) {
+export function StarRating({
+  rating,
+  size = 13,
+  filledClassName = 'text-nx-text-primary',
+  emptyClassName = 'text-nx-text-faint',
+}: StarRatingProps) {
   return (
     <div className="flex items-center gap-0.5" aria-label={`${rating.toFixed(1)} / 5`} role="img">
       {[0, 1, 2, 3, 4].map((i) => {
@@ -40,12 +54,12 @@ export function StarRating({ rating, size = 13 }: StarRatingProps) {
             aria-hidden
           >
             <Star
-              className="absolute inset-0 text-nx-text-faint"
+              className={cn('absolute inset-0', emptyClassName)}
               style={{ width: size, height: size }}
             />
             <span className="absolute inset-0 overflow-hidden" style={{ width: `${fillPercent}%` }}>
               <Star
-                className="fill-current text-nx-text-primary"
+                className={cn('fill-current', filledClassName)}
                 style={{ width: size, height: size }}
               />
             </span>
