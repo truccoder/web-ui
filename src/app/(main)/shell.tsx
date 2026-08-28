@@ -701,114 +701,128 @@ export function MainShell({ children }: { children: React.ReactNode }) {
          * shadows would re-close the ∩ r4 spent a round opening — vertically this time."* So the
          * bar drops its own shadow exactly when something else is going to sit under it.
          */}
-        <header
-          className={cn(
-            'sticky top-0 z-30 h-nx-topbar shrink-0 bg-nx-surface-card',
-            !isFullBleed && 'shadow-nx-1'
-          )}
-        >
-          <div
+        {/**
+         * `/chats` DROPS THE TOP BAR ENTIRELY. Focus mode already strips it back to brand · search
+         * · bell · avatar, and on this tenant even that is redundant: the context bar below carries
+         * the way out, the messenger owns the height, and the reclaimed 56px goes to the transcript.
+         * Its one mobile job — the menu button — moves onto the context bar (`ChatsTrail`). The
+         * roadmap tenant keeps the bar, so this is `isChats`, not `isFullBleed`.
+         */}
+        {!isChats && (
+          <header
             className={cn(
-              'mx-auto flex h-full w-full max-w-[var(--spacing-nx-shell-max)]',
-              'items-center gap-2.5 px-3 xl:px-5'
+              'sticky top-0 z-30 h-nx-topbar shrink-0 bg-nx-surface-card',
+              !isFullBleed && 'shadow-nx-1'
             )}
           >
-            <IconButton
-              label={t('nav.openMenu')}
-              // Pairs with the rail's `lg:flex` — the two must switch on the same number, or
-              // there is a band with neither a rail nor a way to open one.
-              className="lg:hidden"
-              onClick={() => setDrawerOpen(true)}
-            >
-              <MenuIcon />
-            </IconButton>
-
-            {/**
-             * THE MARK IS ALWAYS IN THE BAR; ONLY THE WORDMARK STEPS. The DS's brand row reads
-             * `mark + wordmark` at 1440 · 1280 · 1024 · 768 and `mark only` at 375 — so the
-             * wordmark drops at the PHONE step, not at 1280. This was hidden entirely below 768
-             * (leaving the bar with no brand at all whenever the drawer was shut) and dropped its
-             * wordmark below 1280, which is two steps too eager.
-             */}
-            <Link
-              href="/newsfeed"
+            <div
               className={cn(
-                'flex shrink-0 items-center gap-2.5',
-                'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring'
+                'mx-auto flex h-full w-full max-w-[var(--spacing-nx-shell-max)]',
+                'items-center gap-2.5 px-3 xl:px-5'
               )}
             >
-              <BrandMark size={24} />
-              <span className="hidden text-nx-body font-semibold tracking-tight text-nx-text-primary min-[576px]:inline">
-                {t('app.name')}
-              </span>
-            </Link>
+              <IconButton
+                label={t('nav.openMenu')}
+                // Pairs with the rail's `lg:flex` — the two must switch on the same number, or
+                // there is a band with neither a rail nor a way to open one.
+                className="lg:hidden"
+                onClick={() => setDrawerOpen(true)}
+              >
+                <MenuIcon />
+              </IconButton>
 
-            <div className="ml-auto flex shrink-0 items-center gap-1">
-              {/* Below 576 the field does not exist (the DS derives that number: at 576 the
+              {/**
+               * THE MARK IS ALWAYS IN THE BAR; ONLY THE WORDMARK STEPS. The DS's brand row reads
+               * `mark + wordmark` at 1440 · 1280 · 1024 · 768 and `mark only` at 375 — so the
+               * wordmark drops at the PHONE step, not at 1280. This was hidden entirely below 768
+               * (leaving the bar with no brand at all whenever the drawer was shut) and dropped its
+               * wordmark below 1280, which is two steps too eager.
+               */}
+              <Link
+                href="/newsfeed"
+                className={cn(
+                  'flex shrink-0 items-center gap-2.5',
+                  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring'
+                )}
+              >
+                <BrandMark size={24} />
+                <span className="hidden text-nx-body font-semibold tracking-tight text-nx-text-primary min-[576px]:inline">
+                  {t('app.name')}
+                </span>
+              </Link>
+
+              <div className="ml-auto flex shrink-0 items-center gap-1">
+                {/* Below 576 the field does not exist (the DS derives that number: at 576 the
                   centred field's clamped minimum no longer fits between the two reserves), so the
                   palette needs a control of its own down there. Above it, the hint inside the
                   field is that control. */}
-              <IconButton
-                label={t('palette.label')}
-                className="min-[576px]:hidden"
-                onClick={() => setPaletteOpen(true)}
-              >
-                <Search />
-              </IconButton>
+                <IconButton
+                  label={t('palette.label')}
+                  className="min-[576px]:hidden"
+                  onClick={() => setPaletteOpen(true)}
+                >
+                  <Search />
+                </IconButton>
 
-              {/* Both are identity surfaces with nothing behind them for a guest: a bell that can
+                {/* Both are identity surfaces with nothing behind them for a guest: a bell that can
                   only ever read zero, and a menu whose two items are a profile and a sign-out. */}
-              {isGuest ? (
-                <GuestAuthActions />
-              ) : (
-                <>
-                  <NotificationBell />
-                  <MeMenu />
-                </>
-              )}
+                {isGuest ? (
+                  <GuestAuthActions />
+                ) : (
+                  <>
+                    <NotificationBell />
+                    <MeMenu />
+                  </>
+                )}
+              </div>
             </div>
-          </div>
 
-          {/**
-           * THE FIELD, OUT OF FLOW. `left-1/2 -translate-x-1/2` on the header centres it on the
-           * VIEWPORT, which is the one thing both flanks can be wrong about without moving it.
-           *
-           * 320 wide, 360 from 1280 up — `FIELD_MAX 360 (320 compact)` in §5.3, and 320 is what
-           * the kit measured at 1265. It stops existing below 576 rather than shrinking past
-           * usefulness; the icon button above takes over there.
-           */}
-          <div
-            className={cn(
-              // IT STEPS AGAIN, PAST WHAT THE KIT MEASURED — the owner's call, and the reason is
-              // that the kit's 320 was fitted to a bar this app does not have. Search here reaches
-              // people, posts, books and skills in one field; 320 shows about thirty characters of
-              // a query that is routinely a full name plus a qualifier, and the field looked
-              // undersized in a 1300 shell with empty ground on both sides of it.
-              //
-              // THE STEPS ARE BOUNDED BY THE FLANKS, not chosen for looks. The field is centred on
-              // the VIEWPORT while brand and controls flow inside the capped row, so a width only
-              // clears them if half of it stays short of the longer flank. The left one is the
-              // larger: pad 12 + rail button 34 + mark 24 + wordmark ≈ 175 while the button is
-              // still there. Hence the first step waits for `lg`, where the button goes away and
-              // the flank drops to ≈ 140 — a 440 field starts at 292 there. `xl` takes 520,
-              // starting at 380 against a flank that ends near 210. Below `lg` it stays at 320,
-              // which is what already fitted.
-              'absolute top-1/2 left-1/2 hidden -translate-x-1/2 -translate-y-1/2',
-              'w-[320px] lg:w-[440px] xl:w-[520px]',
-              'min-[576px]:block'
-            )}
-          >
-            <SearchBar
-              shortcutLabel={t('palette.shortcutHint')}
-              shortcutAriaLabel={t('palette.label')}
-              onShortcutClick={() => setPaletteOpen(true)}
-            />
-          </div>
-        </header>
+            {/**
+             * THE FIELD, OUT OF FLOW. `left-1/2 -translate-x-1/2` on the header centres it on the
+             * VIEWPORT, which is the one thing both flanks can be wrong about without moving it.
+             *
+             * 320 wide, 360 from 1280 up — `FIELD_MAX 360 (320 compact)` in §5.3, and 320 is what
+             * the kit measured at 1265. It stops existing below 576 rather than shrinking past
+             * usefulness; the icon button above takes over there.
+             */}
+            <div
+              className={cn(
+                // IT STEPS AGAIN, PAST WHAT THE KIT MEASURED — the owner's call, and the reason is
+                // that the kit's 320 was fitted to a bar this app does not have. Search here reaches
+                // people, posts, books and skills in one field; 320 shows about thirty characters of
+                // a query that is routinely a full name plus a qualifier, and the field looked
+                // undersized in a 1300 shell with empty ground on both sides of it.
+                //
+                // THE STEPS ARE BOUNDED BY THE FLANKS, not chosen for looks. The field is centred on
+                // the VIEWPORT while brand and controls flow inside the capped row, so a width only
+                // clears them if half of it stays short of the longer flank. The left one is the
+                // larger: pad 12 + rail button 34 + mark 24 + wordmark ≈ 175 while the button is
+                // still there. Hence the first step waits for `lg`, where the button goes away and
+                // the flank drops to ≈ 140 — a 440 field starts at 292 there. `xl` takes 520,
+                // starting at 380 against a flank that ends near 210. Below `lg` it stays at 320,
+                // which is what already fitted.
+                'absolute top-1/2 left-1/2 hidden -translate-x-1/2 -translate-y-1/2',
+                'w-[320px] lg:w-[440px] xl:w-[520px]',
+                'min-[576px]:block'
+              )}
+            >
+              <SearchBar
+                shortcutLabel={t('palette.shortcutHint')}
+                shortcutAriaLabel={t('palette.label')}
+                onShortcutClick={() => setPaletteOpen(true)}
+              />
+            </div>
+          </header>
+        )}
 
         {/* Focus mode's second row. Which trail renders is a mount-time branch, not a prop —
             see `FocusTrail` at the foot of this file. */}
-        {isFullBleed && (isChats ? <ChatsTrail /> : <RoadmapTrail roadmapId={Number(roadmapId)} />)}
+        {isFullBleed &&
+          (isChats ? (
+            <ChatsTrail onOpenMenu={() => setDrawerOpen(true)} />
+          ) : (
+            <RoadmapTrail roadmapId={Number(roadmapId)} />
+          ))}
 
         <Drawer
           open={drawerOpen}
@@ -968,11 +982,20 @@ export function MainShell({ children }: { children: React.ReactNode }) {
  * that has no roadmap on it. Hooks cannot be called conditionally; components can be mounted
  * conditionally, so the branch belongs at the mount rather than inside.
  */
-function FocusTrailBar({ children }: { children: React.ReactNode }) {
+function FocusTrailBar({
+  children,
+  // `/chats` removed the top bar above this one, so the trail is the chrome's top edge and sticks
+  // at 0. The roadmap tenant still has the 56px bar, so it stays offset below it.
+  atTop = false,
+}: {
+  children: React.ReactNode;
+  atTop?: boolean;
+}) {
   return (
     <div
       className={cn(
-        'sticky top-nx-topbar z-30 flex h-nx-subnav shrink-0 items-center gap-2',
+        'sticky z-30 flex h-nx-subnav shrink-0 items-center gap-2',
+        atTop ? 'top-0' : 'top-nx-topbar',
         'bg-nx-surface-card px-3 shadow-nx-1 xl:px-5'
       )}
     >
@@ -993,13 +1016,19 @@ function FocusTrail({
   backHref,
   backLabel,
   title,
+  atTop,
+  leading,
 }: {
   backHref: string;
   backLabel: string;
   title?: string;
+  atTop?: boolean;
+  /** Rendered before the back link — the menu button on `/chats`, where the top bar is gone. */
+  leading?: React.ReactNode;
 }) {
   return (
-    <FocusTrailBar>
+    <FocusTrailBar atTop={atTop}>
+      {leading}
       <Link
         href={backHref}
         className={cn(
@@ -1023,10 +1052,29 @@ function FocusTrail({
   );
 }
 
-/** `/chats` — no parent of its own, so the trail leads back out to the rail's first item. */
-function ChatsTrail() {
+/**
+ * `/chats` — no parent of its own, so the trail leads back out to the rail's first item.
+ *
+ * IT CARRIES THE MENU BUTTON NOW. The top bar that used to hold it is gone on this tenant, and
+ * below `lg` the rail is a Drawer with no other opener — so the button lands here, `lg:hidden`
+ * like it was in the bar. Above `lg` focus mode has never shown a rail; the trail's back link is
+ * the way out and always was.
+ */
+function ChatsTrail({ onOpenMenu }: { onOpenMenu: () => void }) {
   const t = useT();
-  return <FocusTrail backHref="/newsfeed" backLabel={t('nav.newsfeed')} title={t('nav.chats')} />;
+  return (
+    <FocusTrail
+      backHref="/newsfeed"
+      backLabel={t('nav.newsfeed')}
+      title={t('nav.chats')}
+      atTop
+      leading={
+        <IconButton label={t('nav.openMenu')} className="lg:hidden" onClick={onOpenMenu}>
+          <MenuIcon />
+        </IconButton>
+      }
+    />
+  );
 }
 
 /**

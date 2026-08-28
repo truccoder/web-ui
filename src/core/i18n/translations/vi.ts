@@ -1551,6 +1551,7 @@ export const vi: Messages = {
     groupFailed: 'Không tạo được nhóm. Vui lòng thử lại.',
     info: {
       label: 'Thông tin cuộc trò chuyện',
+      memberCount: '${count} thành viên',
       verifiedSkills: 'Kỹ năng đã xác minh',
     },
   },

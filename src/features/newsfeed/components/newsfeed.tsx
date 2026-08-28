@@ -9,6 +9,7 @@ import { cn } from '@/shared/lib/cn';
 import { newsfeedKeys } from '../hooks/keys';
 import { useNewsfeed, usePublicFeed } from '../hooks/use-feed';
 import { useScrollRestoration } from '../hooks/use-scroll-restoration';
+import { useSeenReporter } from '../hooks/use-seen-reporter';
 import { TrendingCard, useTrending } from '@/features/trending';
 import { FeedPost } from './feed-post';
 
@@ -86,6 +87,15 @@ export function Newsfeed({ scope = 'friends', className }: NewsfeedProps) {
    * would clamp to zero and throw the saved position away.
    */
   useScrollRestoration(`newsfeed:${scope}`, Boolean(feed.data));
+
+  /**
+   * SEEN-POST REPORTING RUNS ONLY ON THE FAN-OUT FEED. `POST /feed/seen` demotes posts in
+   * `GET /feed`'s Redis ranking; `Tất cả` is `GET /posts/public`, an id-ordered scan with nothing
+   * to demote — and passing `scope !== 'all'` here also keeps the beacon off a guest, who never
+   * reaches another scope. `trackSeen(postId)` is a stable callback ref hung on the wrapper around
+   * each card below.
+   */
+  const trackSeen = useSeenReporter(scope !== 'all');
 
   /**
    * CRAWLED CONTENT IS MIXED INTO `Tất cả`, AND ONLY INTO IT. This is the design's central claim
@@ -233,7 +243,12 @@ export function Newsfeed({ scope = 'friends', className }: NewsfeedProps) {
     <div className={cn('flex flex-col gap-[var(--nx-space-block)]', className)}>
       {entries.map((entry) =>
         entry.kind === 'post' ? (
-          <FeedPost key={`p${entry.post.postId}`} post={entry.post} onChanged={refresh} />
+          // The wrapper exists for the seen-post observer: `FeedPost` renders a `Card` and
+          // forwards no DOM ref. It is a plain block box, so the flex column's gap is unchanged.
+          // `trackSeen` returns a no-op ref on the `Tất cả` tab, where the hook is inactive.
+          <div key={`p${entry.post.postId}`} ref={trackSeen(entry.post.postId)}>
+            <FeedPost post={entry.post} onChanged={refresh} />
+          </div>
         ) : (
           <TrendingCard key={`x${entry.item.id}`} item={entry.item} />
         )

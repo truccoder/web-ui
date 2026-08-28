@@ -376,7 +376,7 @@ export function ConversationSidebar({
 
   return (
     <div className={cn('flex h-full flex-col', className)}>
-      <div className="flex items-center justify-between gap-2 px-3 pt-3">
+      <div className="flex items-center justify-between gap-2 px-3 pt-3 pb-2">
         <h1 className="text-nx-title-sm font-semibold text-nx-text-primary">{t('chat.chats')}</h1>
         <Button
           variant="ghost"

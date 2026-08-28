@@ -1581,6 +1581,8 @@ export const en = {
     groupFailed: 'Could not create the group. Please try again.',
     info: {
       label: 'Conversation details',
+      // Does not inflect at 1, following `profile.hero.verifiedSkills` and `github.repos`.
+      memberCount: '${count} members',
       verifiedSkills: 'Verified skills',
     },
   },

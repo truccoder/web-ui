@@ -119,3 +119,13 @@ export type PublicFeedPage = {
 export type FeedApiScope = NonNullable<
   NonNullable<paths['/v1/api/feed']['get']['parameters']['query']>['scope']
 >;
+
+/**
+ * Body of `POST /v1/api/feed/seen` — the posts the reader has scrolled past.
+ *
+ * JUST THE IDS. Whose seen-set they land in is the JWT's user, never the body's: the worst a
+ * forged id does is reorder the sender's own feed, so `MarkSeenRequestDto` carries nothing else
+ * and the ids are not checked against the posts table. `postIds` is required and non-empty
+ * (`@NotEmpty`), which is why the generator kept it non-optional and this is a straight alias.
+ */
+export type MarkSeenInput = Schemas['MarkSeenRequestDto'];

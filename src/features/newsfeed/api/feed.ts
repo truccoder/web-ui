@@ -1,10 +1,17 @@
 import api from '@/core/api/axios';
-import type { FeedPage, FeedPost, PublicFeedPage, FeedApiScope } from '../types/feed';
+import type {
+  FeedPage,
+  FeedPost,
+  MarkSeenInput,
+  PublicFeedPage,
+  FeedApiScope,
+} from '../types/feed';
 
 /**
- * NewsfeedController (`com.socialapp.newsfeed`) — 1 endpoint. Bare responses, no wrapper.
+ * NewsfeedController (`com.socialapp.newsfeed`) — 2 endpoints (`GET /feed`, `POST /feed/seen`).
+ * Bare responses, no wrapper.
  *
- * A SECOND ENDPOINT LIVES HERE THAT THE PACKAGE MIRROR WOULD PUT IN `features/posts`, and the
+ * A FURTHER ENDPOINT LIVES HERE THAT THE PACKAGE MIRROR WOULD PUT IN `features/posts`, and the
  * exception is deliberate. `GET /v1/api/posts/public` (`getPublicFeed`, added 2026-08-09) is
  * served by `PostController`, so CLAUDE.md §4's 1:1 package mirror points at `features/posts`.
  * It is here instead, because putting it there would create the project's FIRST DEPENDENCY CYCLE:
@@ -39,6 +46,25 @@ export const newsfeedApi = {
    */
   getFeed: (page = 1, size = 10, scope: FeedApiScope = 'ALL') =>
     api.get<FeedPage>('/v1/api/feed', { params: { page, size, scope } }).then((r) => r.data),
+
+  /**
+   * POST /v1/api/feed/seen — report the cards the reader has scrolled past, so `getFeed` stops
+   * floating them back to the top. **204**, and a beacon rather than a step in a flow.
+   *
+   * NOTHING AWAITS THIS. The backend swallows its own Redis failures (`SeenPostTracker` is kept
+   * out of the readiness group precisely so losing it costs a feature, not the service) and sends
+   * no body back; a caller that blocked on it would be waiting on a fire-and-forget. `useSeenReporter`
+   * calls it and drops the promise.
+   *
+   * ONLY MEANINGFUL FOR THE FAN-OUT FEED. It reorders `GET /feed`; `GET /posts/public` is an
+   * id-ordered scan with no per-user ranking, so the `Tất cả` tab never calls this.
+   *
+   * AT MOST 200 IDS PER CALL (`MarkSeenRequestDto` `@Size(max = 200)`) — over the cap the whole
+   * request is a 422, so the hook chunks rather than trusting the batch to stay small. The ids are
+   * not validated against the posts table on purpose: the seen-set key is the caller's own.
+   */
+  markSeen: (postIds: number[]) =>
+    api.post<void>('/v1/api/feed/seen', { postIds } satisfies MarkSeenInput).then((r) => r.data),
 
   /**
    * GET /v1/api/posts/public — every post in the product, newest first. The `Tất cả` tab.
