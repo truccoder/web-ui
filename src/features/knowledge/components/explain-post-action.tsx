@@ -124,6 +124,12 @@ export function ExplainPostAction({ postId, postContent }: ExplainPostActionProp
                     title: link.title ?? undefined,
                     url: link.url ?? undefined,
                   })),
+                  // THE TOPIC THE MODEL PICKED, HANDED STRAIGHT BACK. `saveExplanation` reads
+                  // `category` off the request and the column defaults to `OTHER`, so dropping it
+                  // here would file every explanation in the Archive's catch-all tab while the
+                  // generated card on screen showed the real topic — a mismatch nobody would think
+                  // to look for.
+                  category: explanation.category ?? undefined,
                 })
               }
             >

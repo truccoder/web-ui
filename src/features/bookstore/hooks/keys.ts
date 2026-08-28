@@ -11,8 +11,19 @@
  * invalidated explicitly when a book is deleted.
  */
 export const bookstoreKeys = {
-  /** The catalogue. Its own branch: nothing a single book's write touches can reorder it. */
-  library: ['bookstore', 'library'] as const,
+  /**
+   * The catalogue. Its own branch: nothing a single book's write touches can reorder it.
+   *
+   * KEYED BY TOPIC, AND THAT IS WHAT MAKES CHANGING THE FILTER SAFE. `GET /books` is cursor-paged,
+   * so an infinite query holds a chain of pages that only means anything for the list it was
+   * fetched from; a shared key would have appended `?category=BACKEND` pages onto the pages of a
+   * previous, unfiltered scroll and cached the result as one list. Each topic gets its own chain,
+   * each starts from no cursor, and switching back to one already read is instant.
+   *
+   * `undefined` — "every topic" — is a member of this namespace like any other, not a special
+   * case: `['bookstore', 'library', undefined]` is a stable, distinct key.
+   */
+  library: (category?: string) => ['bookstore', 'library', category] as const,
 
   all: ['bookstore'] as const,
 

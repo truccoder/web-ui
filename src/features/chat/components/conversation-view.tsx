@@ -13,7 +13,7 @@ import { MessageComposer } from './message-composer';
 /** Just the identity part of a conversation — what the header needs. */
 export type ConversationHeaderData = Pick<
   ChatConversation,
-  'id' | 'name' | 'otherMemberId' | 'otherMemberName' | 'otherMemberImage'
+  'id' | 'name' | 'otherMemberId' | 'otherMemberName' | 'otherMemberImage' | 'memberCount'
 >;
 
 /**
@@ -87,7 +87,14 @@ export function ConversationView({
     bottomRef.current?.scrollIntoView({ behavior: 'auto' });
   }, [messages.length]);
 
-  const title = header?.otherMemberName ?? header?.name ?? header?.otherMemberId ?? '';
+  /**
+   * `name` FIRST, WHICH IS THE ORDER THE SIDEBAR ROW ALREADY USED. A group's `name` is the only
+   * honest title it has, and the mappers null `otherMemberName` out above two members precisely so
+   * this chain reaches it — but the two files disagreed on the order, so the row said `Team FE`
+   * while the header above the same thread said whichever member Stream listed first. For a direct
+   * message nothing changes: `name` is null there and the peer's name is still what shows.
+   */
+  const title = header?.name ?? header?.otherMemberName ?? header?.otherMemberId ?? '';
 
   return (
     <div className={cn('flex h-full flex-col', className)}>

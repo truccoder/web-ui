@@ -23,6 +23,27 @@ type Schemas = components['schemas'];
 export type BookFileFormat = NonNullable<Schemas['BookResponseDto']['fileFormat']>;
 
 /**
+ * What a book is ABOUT — the topic the Library filters by. BE `15090af`, migration V78.
+ *
+ * ONE BACKEND ENUM, THREE FRONTEND DECLARATIONS, ON PURPOSE. `LearningCategory` lives in
+ * `com.socialapp.common.enums` and is carried by books, roadmaps and saved AI explanations alike;
+ * there is no `features/common` here to mirror that package into, and lifting a nine-value union
+ * into `shared/` would put a domain concept in the folder whose whole rule is that it holds none.
+ * So each feature derives the union from ITS OWN DTO — the same shape `PrimaryRole` (knowledge)
+ * and `TrendingCategory` (trending) already take — and the three stay identical because they are
+ * all generated from one Java enum. If the backend ever splits them, the three declarations split
+ * with it and nothing has to be untangled.
+ *
+ * THE LABELS ARE NOT DUPLICATED, and that is the half that would actually have drifted: all three
+ * screens read `learningCategory.*` from the message bundles, so a topic is worded once.
+ *
+ * `OTHER` IS A REAL TOPIC WITH REAL BOOKS IN IT, not an error state to hide. Every row that
+ * existed before V78 carries it (the column defaulted), and so does anything the seed did not
+ * name.
+ */
+export type LearningCategory = NonNullable<Schemas['BookResponseDto']['category']>;
+
+/**
  * One book.
  *
  * TWO TRAPS LIVE IN THIS DTO. Both were measured on the running backend (findings §6), and both

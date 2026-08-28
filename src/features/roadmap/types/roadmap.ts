@@ -25,6 +25,26 @@ type Schemas = components['schemas'];
 export type VerificationTier = NonNullable<Schemas['SkillVerificationRequestDto']['tier']>;
 
 /**
+ * What a track is ABOUT. BE `15090af`, migration V76.
+ *
+ * IT CLOSES ds-deviation #23. `RoadmapEntity` had three columns — id, name, description — and no
+ * domain of any kind, which is why `RoadmapList` shipped as a flat list while the design system's
+ * `skill-taxonomy.html` grouped tracks under a fixed set of domains: grouping would have meant
+ * assigning tracks to categories the backend had never heard of. It has heard of them now, and the
+ * five seeded tracks were labelled 1:1 in V79, so the filter draws on real data rather than on a
+ * taxonomy invented on this side.
+ *
+ * NOT THE SAME SET AS THE DESIGN SYSTEM'S EIGHT. The kit lists Backend, Frontend, DevOps, Mobile,
+ * AI/ML, Security, Cloud, Data; the backend enum has no `Cloud`, folds Data and AI/ML into one
+ * `DATA_ML`, and adds `QA`, `CAREER` and `OTHER`. Where the two disagree the backend wins — it is
+ * the set the rows are actually stored with.
+ *
+ * Declared per-feature; `bookstore`'s copy carries the note on why one backend enum has three
+ * frontend declarations and one shared set of labels.
+ */
+export type LearningCategory = NonNullable<Schemas['RoadmapDto']['category']>;
+
+/**
  * One roadmap (a learning track).
  *
  * `id` and `name` ALWAYS ARRIVE. `RoadmapService.getAllRoadmaps` sets all three fields from a
@@ -34,6 +54,12 @@ export type VerificationTier = NonNullable<Schemas['SkillVerificationRequestDto'
  * `createRoadmap` echoes back the REQUEST DTO with the new id patched into it, not a re-read of
  * the entity. Harmless today because the entity stores exactly what was sent, but it means the
  * response is the caller's own input rather than the database's opinion of it.
+ *
+ * `category` IS THE ONE FIELD THAT ESCAPES THAT, and deliberately: the service reads it back off
+ * the saved entity before answering, because a request that omits it is stored as `OTHER` and a
+ * response echoing the caller's `null` would be telling them something untrue about their own row.
+ * So it is `NonNullable` here on both paths — a created track and a listed one always name a
+ * topic.
  */
 export type Roadmap = {
   [K in keyof Required<Schemas['RoadmapDto']>]: K extends 'description'

@@ -4,6 +4,7 @@ import type {
   BookPage,
   BookReview,
   CreateReviewRequest,
+  LearningCategory,
   PresignedUrl,
   RatingBreakdown,
 } from '../types/book';
@@ -12,10 +13,10 @@ import type {
  * `BookController` (`com.socialapp.bookstore`) — 9 endpoints, 9 functions. Bare responses, no
  * envelope, consistent with every other controller in this backend.
  *
- * THERE IS NO "LIST BOOKS" ENDPOINT. No `GET /books`, no search, no pagination anywhere in this
- * controller. The only ways to reach a book are `getBooksByAuthor` and the book summary embedded
- * in a feed/search post. Same family of limitation as `posts` having no `GET /posts` — design to
- * it rather than around it.
+ * THIS HEADER USED TO SAY "THERE IS NO LIST BOOKS ENDPOINT", and it was true until 2026-08-09.
+ * `GET /books` exists now, cursor-paged and filterable by topic — see `getLibrary`. What has still
+ * never existed is a SEARCH over books, and a list keyed on the BUYER; the ways to reach one book
+ * remain the catalogue, `getBooksByAuthor`, and the summary embedded in a feed or search post.
  */
 export const bookApi = {
   /**
@@ -62,9 +63,24 @@ export const bookApi = {
    *
    * Cursor-paginated like `/posts/public`, not page-paginated like `/feed` — pass back the
    * `nextCursor` you were given, and send none at all for the first page.
+   *
+   * `category` NARROWS THE CATALOGUE TO ONE TOPIC, and it is filtered inside the paging query
+   * rather than after it (BE `15090af`). That matters to the caller: a topic with books but none
+   * on the first page would otherwise come back empty, and scrolling would not save it — every
+   * page would be empty the same way.
+   *
+   * OMIT IT ENTIRELY FOR "EVERY TOPIC". Not an empty string: anything outside `LearningCategory`
+   * fails Spring's binding with a **400**, which is deliberate on the backend's part — a filter
+   * that silently returned the whole catalogue when its value was wrong would look exactly like a
+   * filter that is broken. `axios` drops `undefined` params, so passing `undefined` is the same as
+   * omitting it.
+   *
+   * A CURSOR BELONGS TO THE LIST IT WAS ISSUED FOR. The ordering is id-descending either way, so
+   * reusing one across a topic change does not error — it just resumes from a position in a
+   * different list. The state layer keys each topic separately, which is what stops that happening.
    */
-  getLibrary: (cursor?: number, limit = 12) =>
-    api.get<BookPage>('/v1/api/books', { params: { cursor, limit } }).then((r) => r.data),
+  getLibrary: (cursor?: number, limit = 12, category?: LearningCategory) =>
+    api.get<BookPage>('/v1/api/books', { params: { cursor, limit, category } }).then((r) => r.data),
 
   getBooksByAuthor: (authorId: number) =>
     api.get<Book[]>(`/v1/api/books/author/${authorId}`).then((r) => r.data),

@@ -130,6 +130,14 @@ export function ExplanationCard({
         {!collapsed && (
           <>
             <div className="flex flex-wrap items-center gap-2">
+              {/* FIRST IN THE ROW, because it answers "what is this about" while complexity and
+                  version answer "how hard" and "which one" — and it is the only one of the three
+                  that a reader arriving in the Archive can act on, since it is what the filter
+                  above the list sorts by. Shown on both sources: the model picks it while it
+                  writes, so a freshly generated card carries it too. */}
+              {explanation.category != null && (
+                <Badge>{t(`learningCategory.${explanation.category}`)}</Badge>
+              )}
               {explanation.complexityScore != null && (
                 <Badge>
                   {t('knowledge.explain.complexity', { score: explanation.complexityScore })}

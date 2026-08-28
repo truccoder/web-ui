@@ -500,6 +500,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/api/chat/groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["createGroup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/api/chat/participants/{userId}": {
         parameters: {
             query?: never;
@@ -670,6 +686,22 @@ export interface paths {
         get: operations["getFeed"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/api/feed/seen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["markSeen"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2034,6 +2066,8 @@ export interface components {
             authorId?: number;
             /** Format: double */
             avgRating?: number;
+            /** @enum {string} */
+            category?: "BACKEND" | "FRONTEND" | "MOBILE" | "DEVOPS" | "DATA_ML" | "SECURITY" | "QA" | "CAREER" | "OTHER";
             coverImageUrl?: string;
             /** Format: date-time */
             createdAt?: string;
@@ -2127,6 +2161,8 @@ export interface components {
             updatedAt?: string;
         };
         CreateBookRequestDto: {
+            /** @enum {string} */
+            category?: "BACKEND" | "FRONTEND" | "MOBILE" | "DEVOPS" | "DATA_ML" | "SECURITY" | "QA" | "CAREER" | "OTHER";
             description?: string;
             /** Format: int32 */
             previewPages?: number;
@@ -2138,6 +2174,11 @@ export interface components {
             content: string;
             /** Format: int32 */
             parentId?: number;
+        };
+        CreateGroupChatRequest: {
+            imageUrl?: string;
+            memberIds: number[];
+            name: string;
         };
         CreatePostReportRequestDto: {
             details?: string;
@@ -2229,6 +2270,8 @@ export interface components {
             language?: string;
         };
         ExplanationResponseDto: {
+            /** @enum {string} */
+            category?: "BACKEND" | "FRONTEND" | "MOBILE" | "DEVOPS" | "DATA_ML" | "SECURITY" | "QA" | "CAREER" | "OTHER";
             /** Format: int32 */
             complexityScore?: number;
             concepts?: string[];
@@ -2389,6 +2432,14 @@ export interface components {
         GoogleLoginRequestDto: {
             code: string;
         };
+        GroupChatResponse: {
+            channelId?: string;
+            channelType?: string;
+            cid?: string;
+            createdBy?: string;
+            memberIds?: string[];
+            name?: string;
+        };
         JsonNode: Record<string, never>;
         KnowledgeLibraryResponseDto: {
             explanations?: components["schemas"]["ExplanationResponseDto"][];
@@ -2442,6 +2493,9 @@ export interface components {
         };
         MagicLinkRequestDto: {
             email: string;
+        };
+        MarkSeenRequestDto: {
+            postIds: number[];
         };
         MediaUploadResponseDto: {
             urls?: string[];
@@ -2971,6 +3025,8 @@ export interface components {
             token: string;
         };
         RoadmapDto: {
+            /** @enum {string} */
+            category?: "BACKEND" | "FRONTEND" | "MOBILE" | "DEVOPS" | "DATA_ML" | "SECURITY" | "QA" | "CAREER" | "OTHER";
             description?: string;
             /** Format: int32 */
             id?: number;
@@ -3000,6 +3056,8 @@ export interface components {
             verifiedAt?: string;
         };
         SaveExplanationRequestDto: {
+            /** @enum {string} */
+            category?: "BACKEND" | "FRONTEND" | "MOBILE" | "DEVOPS" | "DATA_ML" | "SECURITY" | "QA" | "CAREER" | "OTHER";
             /** Format: int32 */
             complexityScore?: number;
             concepts?: string[];
@@ -5850,6 +5908,7 @@ export interface operations {
         parameters: {
             query?: {
                 cursor?: number;
+                category?: "BACKEND" | "FRONTEND" | "MOBILE" | "DEVOPS" | "DATA_ML" | "SECURITY" | "QA" | "CAREER" | "OTHER";
                 limit?: number;
             };
             header?: never;
@@ -6691,6 +6750,111 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["RatingBreakdownDto"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Payload Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+        };
+    };
+    createGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateGroupChatRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GroupChatResponse"];
                 };
             };
             /** @description Bad Request */
@@ -7818,6 +7982,109 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["FeedResponseDto"];
                 };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Payload Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+        };
+    };
+    markSeen: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MarkSeenRequestDto"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Bad Request */
             400: {

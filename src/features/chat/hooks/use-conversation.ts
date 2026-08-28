@@ -32,9 +32,14 @@ function toHeader(
   myUserId: string
 ): Pick<
   ChatConversation,
-  'id' | 'name' | 'otherMemberId' | 'otherMemberName' | 'otherMemberImage'
+  'id' | 'name' | 'otherMemberId' | 'otherMemberName' | 'otherMemberImage' | 'memberCount'
 > {
-  const other = Object.values(channel.state.members).find((member) => member.user_id !== myUserId);
+  const members = Object.values(channel.state.members);
+
+  // Same rule as `toConversation`: there is no "other person" in a group, and picking the first
+  // one would title the thread after an arbitrary member and send `ChatInfo` to look up their
+  // reputation. See the note on `ChatConversation.otherMemberId`.
+  const other = members.length === 2 ? members.find((member) => member.user_id !== myUserId) : null;
 
   return {
     id: channel.id ?? '',
@@ -42,6 +47,7 @@ function toHeader(
     otherMemberId: other?.user_id ?? null,
     otherMemberName: other?.user?.name ?? null,
     otherMemberImage: (other?.user?.image as string | undefined) ?? null,
+    memberCount: members.length,
   };
 }
 

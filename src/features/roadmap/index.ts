@@ -67,6 +67,7 @@ export type {
   SkillVerificationInput,
   PendingVerification,
   VerificationTier,
+  LearningCategory,
   VerificationStatus,
   RoadmapProgress,
 } from './types';

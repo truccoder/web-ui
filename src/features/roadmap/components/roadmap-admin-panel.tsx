@@ -5,6 +5,8 @@ import { Button, Input, Select, Textarea } from '@/shared/components';
 import { useT } from '@/core/i18n';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { cn } from '@/shared/lib/cn';
+import type { LearningCategory } from '../types/roadmap';
+import { LEARNING_CATEGORIES } from '../lib/categories';
 import {
   useCreateRoadmap,
   useCreateRoadmapNode,
@@ -41,6 +43,7 @@ export function RoadmapAdminPanel({ roadmapId, className }: RoadmapAdminPanelPro
 
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [category, setCategory] = useState<LearningCategory>('OTHER');
   const [nodeName, setNodeName] = useState('');
   const [parentNodeId, setParentNodeId] = useState('');
 
@@ -48,6 +51,7 @@ export function RoadmapAdminPanel({ roadmapId, className }: RoadmapAdminPanelPro
     onSuccess: () => {
       setName('');
       setDescription('');
+      setCategory('OTHER');
     },
   });
   const createNode = useCreateRoadmapNode({
@@ -77,6 +81,12 @@ export function RoadmapAdminPanel({ roadmapId, className }: RoadmapAdminPanelPro
             // Blank becomes undefined rather than "": the column is nullable and an empty string
             // would render as a description that is present but says nothing.
             description: description.trim() || undefined,
+            // ALWAYS SENT, even as `OTHER`. The field is optional and the column defaults to
+            // `OTHER` anyway, so omitting it would store the same row — but the form defaults the
+            // select to `Khác` rather than to blank, which means the author has seen the topic
+            // their track will be filed under and can change it before it exists. A track created
+            // untagged is one nobody goes back to tag.
+            category,
           });
         }}
       >
@@ -99,6 +109,19 @@ export function RoadmapAdminPanel({ roadmapId, className }: RoadmapAdminPanelPro
           value={description}
           onChange={(event) => setDescription(event.target.value)}
           rows={2}
+        />
+
+        {/* NO "ALL TOPICS" ENTRY, unlike the reader's filter beside it: this picks one value for
+            one row, and every roadmap has exactly one topic. `OTHER` is the last option and the
+            default, which is what the column does anyway. */}
+        <Select
+          label={t('roadmap.admin.roadmapCategory')}
+          value={category}
+          onChange={(event) => setCategory(event.target.value as LearningCategory)}
+          options={LEARNING_CATEGORIES.map((option) => ({
+            value: option,
+            label: t(`learningCategory.${option}`),
+          }))}
         />
 
         <div>

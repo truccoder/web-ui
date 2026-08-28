@@ -509,6 +509,10 @@ export const vi: Messages = {
       loadFailed: 'Không tải được lộ trình',
       empty: 'Chưa có lộ trình nào',
       emptyDesc: 'Quản trị viên tạo lộ trình xong thì chúng sẽ hiện ở đây.',
+      categoryLabel: 'Lọc theo chủ đề',
+      allCategories: 'Tất cả chủ đề',
+      emptyCategory: 'Chủ đề này chưa có lộ trình',
+      emptyCategoryDesc: 'Chọn chủ đề khác để xem các lộ trình còn lại.',
     },
     nodes: {
       pickRoadmap: 'Chọn một lộ trình để xem các kỹ năng',
@@ -561,6 +565,7 @@ export const vi: Messages = {
       newRoadmap: 'Lộ trình mới',
       roadmapName: 'Tên',
       roadmapDescription: 'Mô tả',
+      roadmapCategory: 'Chủ đề',
       createRoadmap: 'Tạo lộ trình',
       newNode: 'Kỹ năng mới',
       pickRoadmap: 'Chọn một lộ trình ở trên để thêm kỹ năng vào đó.',
@@ -1078,6 +1083,11 @@ export const vi: Messages = {
       emptyTitle: 'Thư viện còn trống',
       emptyDesc: 'Giải thích một bài viết rồi lưu lại, nó sẽ nằm ở đây.',
       loadError: 'Không tải được thư viện',
+      countFiltered: '${count} trong ${total} giải thích đã lưu',
+      categoryLabel: 'Lọc theo chủ đề',
+      allCategories: 'Tất cả chủ đề',
+      emptyCategoryTitle: 'Chủ đề này chưa lưu gì',
+      emptyCategoryDesc: 'Chọn chủ đề khác để xem phần còn lại trong thư viện.',
     },
     seniority: {
       JUNIOR: 'Junior',
@@ -1293,6 +1303,27 @@ export const vi: Messages = {
     emptyDesc: 'Người bạn chặn sẽ biến mất khỏi bảng tin, tìm kiếm và danh sách bạn bè của bạn.',
     unknownUser: 'Người dùng',
   },
+  /* MỘT BỘ CHỦ ĐỀ, BA MIỀN. `LearningCategory` là enum trong `com.socialapp.common.enums`, được
+     sách (`library`), bản giải thích AI đã lưu (`knowledge`) và lộ trình (`roadmap`) dùng chung,
+     nên chín nhãn viết một lần ở đây thay vì ba lần trong ba khối. Mỗi feature tự khai KIỂU của
+     riêng nó — lý do nằm ở ghi chú `LearningCategory` bên `bookstore` — nhưng thứ thực sự dễ lệch
+     là chữ, và file này là chỗ chặn điều đó.
+
+     `OTHER` là `Khác`, không phải `Chưa phân loại`: mọi hàng có trước khi cột này tồn tại đều mang
+     giá trị đó, nên đây là một kệ có sách thật, và đọc như một chủ đề thì đúng hơn là như một lời
+     thú nhận. */
+  learningCategory: {
+    BACKEND: 'Backend',
+    FRONTEND: 'Frontend',
+    MOBILE: 'Mobile',
+    DEVOPS: 'DevOps',
+    DATA_ML: 'Data / ML',
+    SECURITY: 'Bảo mật',
+    QA: 'QA',
+    CAREER: 'Nghề nghiệp',
+    OTHER: 'Khác',
+  },
+
   library: {
     tabs: {
       browse: 'Duyệt sách',
@@ -1305,6 +1336,10 @@ export const vi: Messages = {
     storageError: 'Không tải được sách: kho lưu trữ tệp đang không truy cập được.',
     emptyTitle: 'Thư viện còn trống',
     emptyDesc: 'Khi có người đăng sách, sách sẽ xuất hiện ở đây.',
+    categoryLabel: 'Lọc theo chủ đề',
+    allCategories: 'Tất cả chủ đề',
+    emptyCategoryTitle: 'Chủ đề này chưa có sách',
+    emptyCategoryDesc: 'Thử một chủ đề khác, hoặc xem tất cả.',
   },
 
   bookDetail: {
@@ -1492,6 +1527,14 @@ export const vi: Messages = {
       'Người này chưa dùng chat bao giờ nên chưa nhắn được. Nhờ họ mở mục Chats một lần.',
     openChat: 'Mở chat',
     expand: 'Mở lại cửa sổ chat',
+    newChatModeLabel: 'Kiểu cuộc trò chuyện',
+    modeDirect: 'Một người',
+    modeGroup: 'Nhóm',
+    groupNamePlaceholder: 'Tên nhóm',
+    createGroup: 'Tạo nhóm',
+    groupSelected: 'Đã chọn ${count} người',
+    groupNeedsMore: 'Chọn thêm ${count} người nữa',
+    groupFailed: 'Không tạo được nhóm. Vui lòng thử lại.',
     info: {
       label: 'Thông tin cuộc trò chuyện',
       verifiedSkills: 'Kỹ năng đã xác minh',

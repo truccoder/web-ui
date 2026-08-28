@@ -60,6 +60,7 @@ export type {
   SavedExplanations,
   PersonalAccessToken,
   PrimaryRole,
+  LearningCategory,
   ProfessionalProfile,
   SaveExplanationInput,
   SeniorityLevel,

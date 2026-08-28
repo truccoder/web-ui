@@ -11,10 +11,12 @@ type Schemas = components['schemas'];
  * casting at each read: this way exactly one place says what our channels carry, and a typo in a
  * field name is a compile error rather than a silent `undefined`.
  *
- * WE NEVER SET IT. Conversations are created member-based and unnamed (see `startConversation`),
- * so in practice this is null for every channel this app makes; it is declared because a channel
- * created elsewhere — Stream's dashboard, a future group-chat feature — legitimately can have one,
- * and the UI should show it when it does rather than ignore it.
+ * WE SET IT ON GROUPS AND NEVER ON DIRECT MESSAGES, and that split is the product's own line
+ * rather than a convention: `POST /chat/groups` requires a `@NotBlank name`, and the backend
+ * treats "has a name" as what makes a channel a group at all. Direct messages stay member-based
+ * and unnamed (see `startConversation`), so `name` is null for every 1:1 this app creates and set
+ * for every group. The paragraph that used to stand here said "WE NEVER SET IT ... a future
+ * group-chat feature" — that future arrived with BE `ba1cfc9`.
  */
 declare module 'stream-chat' {
   interface CustomChannelData {
@@ -23,12 +25,18 @@ declare module 'stream-chat' {
 }
 
 /**
- * Types for ChatController (`GET /v1/api/chat/token`), derived from `schema.gen.ts`.
+ * Types for ChatController (`/v1/api/chat`), derived from `schema.gen.ts`.
  *
- * THE BACKEND'S ROLE IN CHAT IS EXACTLY ONE THING: minting a Stream Chat credential. Messages,
- * channels and membership all live in Stream's infrastructure and are reached from the browser
- * with the SDK — there is no `GET /messages` here to type. That is why a domain with 22 UI
- * components has a one-function API layer.
+ * THE BACKEND'S ROLE IN CHAT IS ALMOST ENTIRELY ONE THING: minting a Stream Chat credential.
+ * Messages, membership and 1:1 channels live in Stream's infrastructure and are reached from the
+ * browser with the SDK — there is no `GET /messages` here to type. That is why a domain with 22 UI
+ * components has a three-function API layer.
+ *
+ * THE ONE EXCEPTION IS A GROUP CHANNEL, and it is an exception for two reasons the browser cannot
+ * cover (BE `ba1cfc9`): a channel's owner is whatever `created_by_id` the client sends, and a
+ * block between two INVITED members is invisible to a client that can only check pairs involving
+ * itself — which is precisely the case that would put two people who blocked each other in one
+ * room. So `POST /chat/groups` settles the whole membership server-side and hands back a handle.
  */
 
 /**
@@ -68,14 +76,70 @@ export type ChatConversation = {
   /** Stream's channel id (`channel.id`), unique within the `messaging` type. */
   id: string;
   name: string | null;
-  /** The other participant in a 1:1 conversation — null in a group, or before members load. */
+  /**
+   * The other participant in a 1:1 conversation.
+   *
+   * NULL FOR A GROUP, AND THE MAPPERS ENFORCE THAT RATHER THAN LEAVING IT TO CHANCE. "The first
+   * member who is not me" is a meaningful answer in a two-person channel and an arbitrary one in a
+   * five-person channel — it would put whichever member Stream happened to list first into the
+   * title bar, the avatar and `ChatInfo`'s reputation lookup, all of them silently wrong. So
+   * `toConversation`/`toHeader` null these three out above `memberCount === 2`, which is what makes
+   * every `name ?? otherMemberName` fall through to the group's own name.
+   */
   otherMemberId: string | null;
   otherMemberName: string | null;
   otherMemberImage: string | null;
+  /**
+   * How many people are in the channel, caller included. `2` is a direct message; more is a group.
+   *
+   * From Stream's own membership rather than from `GroupChatResponse.memberIds`, so it stays right
+   * after somebody is added or leaves — and so a channel this client did not create still reports
+   * it.
+   */
+  memberCount: number;
   lastMessage: string | null;
   /** ISO-8601. Null when the conversation has no messages yet. */
   lastMessageAt: string | null;
   unreadCount: number;
+};
+
+/**
+ * Body for `POST /v1/api/chat/groups`.
+ *
+ * `memberIds` IS EVERYONE EXCEPT THE CALLER, who is added as a member and named as owner from the
+ * authenticated principal. Including yourself is harmless — the backend removes your id along with
+ * any duplicates — but the count the UI enforces is of OTHER people.
+ *
+ * THE FLOOR IS TWO OTHERS, NOT ONE, and it is a product rule rather than a limit: caller + one
+ * other is a direct message wearing a name, and routing it through here would create a SECOND
+ * channel between two people who already have one, splitting their unread badge across the two.
+ *
+ * The ceiling of 99 is Stream's 100-member `messaging` channel minus the caller's seat. Over it,
+ * the whole request is rejected rather than silently truncated — a group missing three people
+ * looks like a bug in the member picker and nobody would think to count.
+ */
+export type CreateGroupChatInput = {
+  name: NonNullable<Schemas['CreateGroupChatRequest']['name']>;
+  memberIds: NonNullable<Schemas['CreateGroupChatRequest']['memberIds']>;
+  imageUrl?: Schemas['CreateGroupChatRequest']['imageUrl'];
+};
+
+/**
+ * What `POST /v1/api/chat/groups` hands back — a HANDLE, not a channel.
+ *
+ * DELIBERATELY NOT THE CHANNEL'S STATE. The client holds a Stream token and calls
+ * `channel.watch()` itself, which returns members, read state and history in the shape the SDK
+ * expects; mirroring any of that through the backend would be a second copy that goes stale the
+ * moment somebody sends a message. So the only thing this feature does with the response is read
+ * `channelId` and watch it.
+ *
+ * Every field is set on every path the builder takes, hence `NonNullable` — the generated type
+ * marks them optional only because Java DTOs carry no nullability annotations. `memberIds` are
+ * STRINGS here (Stream user ids are strings) while the request sends numbers; that asymmetry is
+ * the backend's, and it is the right way round for a caller that hands them straight to the SDK.
+ */
+export type GroupChatHandle = {
+  [K in keyof Required<Schemas['GroupChatResponse']>]: NonNullable<Schemas['GroupChatResponse'][K]>;
 };
 
 /** One message, mapped out of Stream's `MessageResponse`. */

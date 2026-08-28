@@ -1,1 +1,8 @@
-export type { ChatToken, ChatConversation, ChatMessage, ChatConnectionStatus } from './chat';
+export type {
+  ChatToken,
+  ChatConversation,
+  ChatMessage,
+  ChatConnectionStatus,
+  CreateGroupChatInput,
+  GroupChatHandle,
+} from './chat';

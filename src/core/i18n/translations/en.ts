@@ -525,6 +525,10 @@ export const en = {
       loadFailed: 'Could not load the roadmaps',
       empty: 'No roadmaps yet',
       emptyDesc: 'Roadmaps show up here once an admin creates them.',
+      categoryLabel: 'Filter by topic',
+      allCategories: 'All topics',
+      emptyCategory: 'No roadmaps on this topic',
+      emptyCategoryDesc: 'Pick another topic to see the rest of the tracks.',
     },
     nodes: {
       pickRoadmap: 'Pick a roadmap to see its skills',
@@ -577,6 +581,7 @@ export const en = {
       newRoadmap: 'New roadmap',
       roadmapName: 'Name',
       roadmapDescription: 'Description',
+      roadmapCategory: 'Topic',
       createRoadmap: 'Create roadmap',
       newNode: 'New skill',
       pickRoadmap: 'Pick a roadmap above to add a skill to it.',
@@ -1101,6 +1106,11 @@ export const en = {
       emptyTitle: 'Your library is empty',
       emptyDesc: 'Explain a post and save it, and it will show up here.',
       loadError: 'Could not load your library',
+      countFiltered: '${count} of ${total} saved explanations',
+      categoryLabel: 'Filter by topic',
+      allCategories: 'All topics',
+      emptyCategoryTitle: 'Nothing saved on this topic',
+      emptyCategoryDesc: 'Pick another topic to see the rest of your library.',
     },
     seniority: {
       JUNIOR: 'Junior',
@@ -1317,6 +1327,27 @@ export const en = {
     emptyDesc: 'Blocked people disappear from your feed, your search results and your friends.',
     unknownUser: 'User',
   },
+  /* ONE TOPIC TAXONOMY, THREE DOMAINS. `LearningCategory` is a `com.socialapp.common.enums` enum
+     carried by books (`library`), saved AI explanations (`knowledge`) and learning tracks
+     (`roadmap`) alike, so the nine labels live once, here at the top level, rather than three
+     times inside those blocks. Each feature declares its own copy of the TYPE — see the note on
+     `bookstore`'s `LearningCategory` for why — but the wording is what would actually have
+     drifted, and this is the file that prevents it.
+
+     `OTHER` is `Other`, not `Uncategorised`: every row that predates the columns carries it, so it
+     is a shelf with books on it and reads better as a topic than as a confession. */
+  learningCategory: {
+    BACKEND: 'Backend',
+    FRONTEND: 'Frontend',
+    MOBILE: 'Mobile',
+    DEVOPS: 'DevOps',
+    DATA_ML: 'Data / ML',
+    SECURITY: 'Security',
+    QA: 'QA',
+    CAREER: 'Career',
+    OTHER: 'Other',
+  },
+
   library: {
     tabs: {
       browse: 'Browse',
@@ -1329,6 +1360,10 @@ export const en = {
     storageError: 'Books are unavailable: the file storage cannot be reached.',
     emptyTitle: 'The library is empty',
     emptyDesc: 'Books show up here as people publish them.',
+    categoryLabel: 'Filter by topic',
+    allCategories: 'All topics',
+    emptyCategoryTitle: 'No books on this topic yet',
+    emptyCategoryDesc: 'Try another topic, or browse all of them.',
   },
 
   bookDetail: {
@@ -1523,6 +1558,14 @@ export const en = {
       'This person has never used chat, so they cannot be messaged yet. Ask them to open Chats once.',
     openChat: 'Open chat',
     expand: 'Reopen chat window',
+    newChatModeLabel: 'What kind of conversation',
+    modeDirect: 'One person',
+    modeGroup: 'Group',
+    groupNamePlaceholder: 'Group name',
+    createGroup: 'Create group',
+    groupSelected: '${count} selected',
+    groupNeedsMore: 'Pick ${count} more',
+    groupFailed: 'Could not create the group. Please try again.',
     info: {
       label: 'Conversation details',
       verifiedSkills: 'Verified skills',

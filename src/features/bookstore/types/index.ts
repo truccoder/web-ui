@@ -4,6 +4,7 @@ export type {
   BookFileFormat,
   BookReview,
   CreateReviewRequest,
+  LearningCategory,
   PaymentIntent,
   PaymentStatus,
   PresignedUrl,

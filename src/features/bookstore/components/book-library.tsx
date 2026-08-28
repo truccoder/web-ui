@@ -2,14 +2,37 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Badge, EmptyState, Skeleton } from '@/shared/components';
+import { Badge, EmptyState, Select, Skeleton } from '@/shared/components';
 import { cn } from '@/shared/lib/cn';
 import { getErrorMessage, getErrorStatus } from '@/shared/lib/api-error';
 import { formatPriceParts, useIntlLocale } from '@/shared/lib/format';
 import { useT } from '@/core/i18n';
-import type { Book } from '../types/book';
+import type { Book, LearningCategory } from '../types/book';
 import { useLibrary } from '../hooks';
 import { StarRating } from './star-rating';
+
+/**
+ * The nine topics, in the backend enum's own order.
+ *
+ * LISTED RATHER THAN DERIVED, because a TypeScript union has no runtime value to map over — the
+ * same reason `TrendingFilters` lists its eight categories. Order matches `LearningCategory.java`
+ * so the two never look like different sets, and `OTHER` is last there and last here: it is a real
+ * topic holding every row that predates migration V78, not a trailing error case.
+ *
+ * "EVERY TOPIC" IS NOT IN THIS ARRAY. It is the ABSENCE of the parameter, not a tenth value, so it
+ * is prepended in the markup where that is visible.
+ */
+const CATEGORIES: LearningCategory[] = [
+  'BACKEND',
+  'FRONTEND',
+  'MOBILE',
+  'DEVOPS',
+  'DATA_ML',
+  'SECURITY',
+  'QA',
+  'CAREER',
+  'OTHER',
+];
 
 /**
  * The catalogue — every book in the product, newest first.
@@ -73,7 +96,16 @@ function BookRowSkeleton() {
 export function BookLibrary({ className }: BookLibraryProps) {
   const t = useT();
   const localeTag = useIntlLocale();
-  const library = useLibrary();
+
+  /**
+   * COMPONENT STATE, NOT A QUERY PARAMETER, and that is a smaller claim than the tab beside it.
+   * `?tab=mine` exists because a reader lands on `Sách tôi viết` and reloads; a topic is a pass
+   * over the same shelf rather than a place, and the page already owns one search param. If the
+   * owner asks for linkable topics, `useTabParam` is the shape to reach for.
+   */
+  const [category, setCategory] = useState<LearningCategory | undefined>(undefined);
+
+  const library = useLibrary(category);
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = library;
 
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -91,62 +123,92 @@ export function BookLibrary({ className }: BookLibraryProps) {
     return () => observer.disconnect();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  if (library.isLoading) {
-    return (
-      <div className={className}>
+  /**
+   * THE 503 GETS ITS OWN SENTENCE, IN THE READER'S LANGUAGE.
+   *
+   * `getErrorMessage` returns whatever the backend wrote, and for this endpoint that is
+   * `Failed to generate download URL` — English, in a Vietnamese product, on the one screen a
+   * reader hits when the book storage is misconfigured. The cause is known and documented on
+   * `bookApi.getBook`: building the DTO presigns a URL per book, so a single unreachable object
+   * store fails the whole catalogue.
+   *
+   * MATCHED ON STATUS, NOT ON THE MESSAGE TEXT — see `getErrorStatus`. Everything that is not a
+   * 503 still shows the backend's own words, because those are the ones that carry the specifics
+   * and inventing copy for failures we have not seen would be guessing.
+   */
+  const errorMessage = library.isError
+    ? getErrorStatus(library.error) === 503
+      ? t('library.storageError')
+      : getErrorMessage(library.error, t('library.loadError'))
+    : null;
+
+  const books = library.data?.pages.flatMap((page) => page.items) ?? [];
+
+  /**
+   * THE FILTER STAYS ON SCREEN THROUGH EVERY STATE, WHICH IS WHY THIS FUNCTION STOPPED RETURNING
+   * EARLY. Loading, the 503 and the empty shelf each used to return their own tree; with a topic
+   * selected, that would take the control away at exactly the moment it is needed — a reader who
+   * picks a topic with nothing in it would be left on an empty screen with no way back to `Tất cả`
+   * short of reloading the page.
+   */
+  return (
+    <div className={cn('flex flex-col gap-[var(--nx-space-group)]', className)}>
+      <Select
+        size="sm"
+        // `w-fit` — the field is as wide as its longest topic, not as wide as the shelf. `Select`
+        // sizes its wrapper `w-full` unless told otherwise; see `wrapperClassName` there.
+        wrapperClassName="w-fit"
+        aria-label={t('library.categoryLabel')}
+        value={category ?? ''}
+        // '' IS "EVERY TOPIC" IN THE DOM AND `undefined` ON THE WIRE. An `<option>` value is
+        // always a string, and sending an empty `category=` is a 400 — the backend rejects
+        // anything outside the enum on purpose. The conversion happens here, once.
+        onChange={(event) =>
+          setCategory((event.target.value || undefined) as LearningCategory | undefined)
+        }
+        options={[
+          { value: '', label: t('library.allCategories') },
+          ...CATEGORIES.map((option) => ({
+            value: option,
+            label: t(`learningCategory.${option}`),
+          })),
+        ]}
+      />
+
+      {library.isLoading ? (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-[var(--nx-space-element)]">
           {Array.from({ length: 4 }).map((_, i) => (
             <BookRowSkeleton key={i} />
           ))}
         </div>
-      </div>
-    );
-  }
+      ) : errorMessage !== null ? (
+        <p className="text-nx-caption text-nx-status-danger-fg">{errorMessage}</p>
+      ) : books.length === 0 ? (
+        /* TWO EMPTY STATES, BECAUSE THEY MEAN DIFFERENT THINGS. An empty catalogue is a product
+           that has no books yet; an empty topic is a shelf with books on it, none of them this
+           kind — and the reader's next move is to pick another topic, not to wait. */
+        <EmptyState
+          title={category ? t('library.emptyCategoryTitle') : t('library.emptyTitle')}
+          description={category ? t('library.emptyCategoryDesc') : t('library.emptyDesc')}
+        />
+      ) : (
+        <div>
+          {/* 12 between cells — the kit's own grid gap, measured on its library screen. */}
+          <ul className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-[var(--nx-space-element)]">
+            {books.map((book) => (
+              <li key={book.id}>
+                <BookCell book={book} localeTag={localeTag} />
+              </li>
+            ))}
+          </ul>
 
-  if (library.isError) {
-    /**
-     * THE 503 GETS ITS OWN SENTENCE, IN THE READER'S LANGUAGE.
-     *
-     * `getErrorMessage` returns whatever the backend wrote, and for this endpoint that is
-     * `Failed to generate download URL` — English, in a Vietnamese product, on the one screen a
-     * reader hits when the book storage is misconfigured. The cause is known and documented on
-     * `bookApi.getBook`: building the DTO presigns a URL per book, so a single unreachable object
-     * store fails the whole catalogue.
-     *
-     * MATCHED ON STATUS, NOT ON THE MESSAGE TEXT — see `getErrorStatus`. Everything that is not a
-     * 503 still shows the backend's own words, because those are the ones that carry the specifics
-     * and inventing copy for failures we have not seen would be guessing.
-     */
-    const message =
-      getErrorStatus(library.error) === 503
-        ? t('library.storageError')
-        : getErrorMessage(library.error, t('library.loadError'));
+          <div ref={sentinelRef} />
 
-    return <p className="text-nx-caption text-nx-status-danger-fg">{message}</p>;
-  }
-
-  const books = library.data?.pages.flatMap((page) => page.items) ?? [];
-
-  if (books.length === 0) {
-    return <EmptyState title={t('library.emptyTitle')} description={t('library.emptyDesc')} />;
-  }
-
-  return (
-    <div className={className}>
-      {/* 12 between cells — the kit's own grid gap, measured on its library screen. */}
-      <ul className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-[var(--nx-space-element)]">
-        {books.map((book) => (
-          <li key={book.id}>
-            <BookCell book={book} localeTag={localeTag} />
-          </li>
-        ))}
-      </ul>
-
-      <div ref={sentinelRef} />
-
-      {isFetchingNextPage && (
-        <div className="mt-3 grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-[var(--nx-space-element)]">
-          <BookRowSkeleton />
+          {isFetchingNextPage && (
+            <div className="mt-3 grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-[var(--nx-space-element)]">
+              <BookRowSkeleton />
+            </div>
+          )}
         </div>
       )}
     </div>

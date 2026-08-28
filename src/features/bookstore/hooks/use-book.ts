@@ -2,7 +2,7 @@
 
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { bookApi } from '../api';
-import type { CreateReviewRequest } from '../types/book';
+import type { CreateReviewRequest, LearningCategory } from '../types/book';
 import { bookstoreKeys } from './keys';
 
 /**
@@ -54,12 +54,18 @@ export function useBooksByAuthor(authorId: number, enabled = true) {
  * knows a book left some author's list, but the catalogue is a separate branch and a deleted book
  * disappearing from it costs one refetch on the next visit. Sweeping both from a delete would tie
  * the shop's cache to a management action taken on a different screen.
+ *
+ * `category` FILTERS ON THE SERVER, INSIDE THE PAGING QUERY. Narrowing the loaded pages on this
+ * side instead would have been wrong rather than merely slower: a page holds twelve books, so a
+ * topic with nothing in the newest twelve would read as empty, and each further page would be
+ * empty in the same way. It is also what makes the topic part of the query key — see `keys.ts`
+ * for why one shared key would splice two different lists together.
  */
-export function useLibrary(enabled = true) {
+export function useLibrary(category?: LearningCategory, enabled = true) {
   return useInfiniteQuery({
     enabled,
-    queryKey: bookstoreKeys.library,
-    queryFn: ({ pageParam }) => bookApi.getLibrary(pageParam, 12),
+    queryKey: bookstoreKeys.library(category),
+    queryFn: ({ pageParam }) => bookApi.getLibrary(pageParam, 12, category),
     initialPageParam: undefined as number | undefined,
     getNextPageParam: (last) => (last.hasMore ? (last.nextCursor ?? undefined) : undefined),
   });

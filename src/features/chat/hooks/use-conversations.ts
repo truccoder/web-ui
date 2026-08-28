@@ -33,7 +33,14 @@ const CHANNEL_TYPE = 'messaging';
  */
 function toConversation(channel: Channel, myUserId: string): ChatConversation {
   const members = Object.values(channel.state.members);
-  const other = members.find((member) => member.user_id !== myUserId);
+
+  /**
+   * "THE OTHER PERSON" ONLY EXISTS IN A TWO-PERSON CHANNEL. Above that, `find` returns whichever
+   * member Stream happened to list first — an arbitrary answer that would then be shown as the
+   * conversation's title, drawn as its avatar, and looked up for reputation in `ChatInfo`. Groups
+   * report null instead, which is what makes the title fall through to the group's own name.
+   */
+  const other = members.length === 2 ? members.find((member) => member.user_id !== myUserId) : null;
 
   // `state.messages` is ordered oldest-first, so the newest is the last element.
   const lastMessage = channel.state.messages.at(-1);
@@ -44,6 +51,7 @@ function toConversation(channel: Channel, myUserId: string): ChatConversation {
     otherMemberId: other?.user_id ?? null,
     otherMemberName: other?.user?.name ?? null,
     otherMemberImage: (other?.user?.image as string | undefined) ?? null,
+    memberCount: members.length,
     lastMessage: lastMessage?.text ?? null,
     lastMessageAt: lastMessage?.created_at ? new Date(lastMessage.created_at).toISOString() : null,
     unreadCount: channel.countUnread(),
@@ -188,5 +196,47 @@ export function useConversations() {
     [client, userId]
   );
 
-  return { conversations, isLoading, error, startConversation };
+  /**
+   * Opens a named group conversation with two or more other people.
+   *
+   * THE BACKEND CREATES THE CHANNEL, NOT THIS CLIENT, and that is the whole difference from
+   * `startConversation` above. `POST /chat/groups` names the caller as owner from the
+   * authenticated principal, checks blocks across EVERY pair rather than only the pairs involving
+   * the caller, and upserts all the members into Stream in one batch. A client-side version of
+   * this would get the first two wrong and would cost one request per member for the third.
+   *
+   * SO `ensureParticipants` IS NOT CALLED HERE. That is not an oversight to be "fixed" by adding
+   * it for symmetry — the group endpoint already did the upsert, and calling it per member would
+   * reinstate exactly the n-request loop this endpoint exists to remove.
+   *
+   * WATCHED BY ID, NOT BY MEMBERS. A direct message is looked up by its membership so both sides
+   * land in the same channel; a group is not distinct by membership at all — two people can want
+   * two different groups with the same people, which is why the backend mints a random
+   * `grp-<uuid>` rather than deriving one. Passing `members` here would ask Stream for a different
+   * channel than the one just created.
+   */
+  const startGroupConversation = useCallback(
+    async (name: string, otherUserIds: string[], imageUrl?: string): Promise<string> => {
+      if (!client || !userId) {
+        throw new Error('Chat is not connected');
+      }
+
+      const handle = await chatApi.createGroup({
+        name,
+        // Strings on the way in (they came from Stream ids and from the picker's keys), numbers on
+        // the wire — `memberIds` is `List<Integer>` and a string id fails bean validation as a
+        // 422 that names a field the caller never typed.
+        memberIds: otherUserIds.map(Number),
+        imageUrl,
+      });
+
+      const channel = client.channel(CHANNEL_TYPE, handle.channelId);
+      await channel.watch();
+
+      return handle.channelId;
+    },
+    [client, userId]
+  );
+
+  return { conversations, isLoading, error, startConversation, startGroupConversation };
 }

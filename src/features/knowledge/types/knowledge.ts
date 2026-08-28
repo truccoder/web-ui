@@ -24,6 +24,24 @@ export type ExplanationStyle = NonNullable<
 /** Broad discipline. Nine values — `OTHER` is real, not a placeholder. */
 export type PrimaryRole = NonNullable<Schemas['UpdateProfessionalProfileDto']['primaryRole']>;
 
+/**
+ * What a saved explanation is ABOUT — the topic the Archive filters by. BE `15090af`, V77.
+ *
+ * NOT THE SAME ENUM AS `PrimaryRole`, THOUGH SEVEN OF THE NINE NAMES MATCH, and the backend
+ * matched them deliberately so that "suggest content for this person's role" is one day a name
+ * comparison instead of a mapping table nobody maintains. The two differ at exactly two values and
+ * both differences are meaningful: `PrimaryRole` has `FULLSTACK`, because a person can be one,
+ * while `LearningCategory` does not, because a document is about the front or about the back and a
+ * `FULLSTACK` tab would hold whatever nobody could classify. `LearningCategory` has `CAREER` —
+ * interviewing, leading a team — which is a topic to read about and not a job title.
+ *
+ * So do NOT unify them, and do not feed one into a filter typed for the other.
+ *
+ * Declared per-feature like `PrimaryRole` above; `bookstore`'s copy carries the note on why one
+ * backend enum has three frontend declarations and one shared set of labels.
+ */
+export type LearningCategory = NonNullable<Schemas['ExplanationResponseDto']['category']>;
+
 /** `seniorityLevel` is the one required field on the update DTO. */
 export type SeniorityLevel = NonNullable<Schemas['UpdateProfessionalProfileDto']['seniorityLevel']>;
 
@@ -167,6 +185,13 @@ export type SavedExplanations = {
  * warning that saving would drop them. The DTO has the field now, so the links are sent — the
  * warning came down and this went up in the same change, because removing the notice without
  * sending the data would have turned a disclosed limitation into a silent one.
+ *
+ * `category` MUST BE PASSED BACK OR THE SAVED ROW LANDS IN `OTHER`. Gemini now picks the topic
+ * while it writes the explanation and `explainPost` returns it, but `saveExplanation` reads it
+ * from the REQUEST — `ExplanationEntity.category` defaults to `OTHER`, so a caller that keeps the
+ * field to itself files a correctly-classified backend answer under the catch-all, silently, for
+ * every explanation the product ever saves. It is optional on the wire and effectively required
+ * of any caller that has one.
  */
 export type SaveExplanationInput = {
   postId: NonNullable<Schemas['SaveExplanationRequestDto']['postId']>;
@@ -176,4 +201,5 @@ export type SaveExplanationInput = {
   prerequisites?: string[];
   complexityScore?: number;
   externalLinks?: Schemas['ExternalLink'][];
+  category?: LearningCategory;
 };

@@ -44,7 +44,8 @@ export function ChatDock({ className }: ChatDockProps) {
   const t = useT();
   const pathname = usePathname();
   const { status } = useChatClient();
-  const { conversations, isLoading, startConversation } = useConversations();
+  const { conversations, isLoading, startConversation, startGroupConversation } =
+    useConversations();
 
   const [isListOpen, setIsListOpen] = useState(false);
   const [windows, setWindows] = useState<DockWindow[]>([]);
@@ -127,6 +128,7 @@ export function ChatDock({ className }: ChatDockProps) {
                 status={status}
                 onSelect={open}
                 onStartConversation={startConversation}
+                onStartGroupConversation={startGroupConversation}
               />
             </div>
           )}

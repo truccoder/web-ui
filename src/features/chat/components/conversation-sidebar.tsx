@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowLeft, PenSquare, Search } from 'lucide-react';
+import { ArrowLeft, Check, PenSquare, Search, Users } from 'lucide-react';
 import { Avatar, Button, EmptyState, Input, Skeleton, Tabs } from '@/shared/components';
 import { useFriends } from '@/features/friendships';
 import { useT } from '@/core/i18n';
+import { getErrorMessage } from '@/shared/lib/api-error';
 import { cn } from '@/shared/lib/cn';
 import type { ChatConnectionStatus, ChatConversation } from '../types/chat';
 import { ConversationRow } from './conversation-row';
@@ -28,28 +29,63 @@ export interface ConversationSidebarProps {
   onSelect: (conversationId: string) => void;
   /** Resolves to the conversation id, which the caller then opens. */
   onStartConversation: (friendUserId: string) => Promise<string>;
+  /**
+   * Creates a named group and resolves to its conversation id.
+   *
+   * `memberIds` IS EVERYONE BUT THE CALLER and must hold at least two — the panel enforces that
+   * before it calls, because the backend's floor is a product rule (caller + one other is a direct
+   * message wearing a name) and a reader should meet it as a disabled button, not as a 400.
+   */
+  onStartGroupConversation: (name: string, memberIds: string[]) => Promise<string>;
   className?: string;
 }
 
 type Filter = 'all' | 'unread';
 
+/** Which half of the new-message panel is showing. */
+type NewChatMode = 'direct' | 'group';
+
 /**
- * Friend picker for starting a new conversation.
+ * The backend's own floor, restated here because this panel is where a reader meets it.
+ *
+ * Two OTHER people, not two people: the caller is added from the authenticated principal and is
+ * never in `memberIds`. Below it, `POST /chat/groups` answers 400 rather than creating a second
+ * channel between two people who already have a direct message.
+ */
+const MIN_GROUP_MEMBERS = 2;
+
+/**
+ * Friend picker for starting a new conversation — one person, or a named group.
  *
  * A LOCAL COMPONENT RATHER THAN AN EXPORTED ONE: it is a panel of this sidebar, has no other
  * caller, and exporting it would invite one before its props are shaped by a second real use.
+ *
+ * TWO MODES ON ONE LIST RATHER THAN TWO PANELS. Both are "pick from your friends" over the same
+ * search box and the same rows; what differs is whether a tap opens a conversation immediately or
+ * adds to a selection. Splitting them would duplicate the list, the search and its three empty
+ * states to change one line of behaviour.
+ *
+ * A `Tabs` STRIP IS THE RIGHT CONTROL HERE BY THE COMPONENT'S OWN RULE — three or fewer, and the
+ * choice is the panel's subject. It is two.
  */
 function NewChatPanel({
   onBack,
   onStart,
+  onStartGroup,
 }: {
   onBack: () => void;
   onStart: (friendUserId: string) => Promise<void>;
+  onStartGroup: (name: string, memberIds: string[]) => Promise<void>;
 }) {
   const t = useT();
+  const [mode, setMode] = useState<NewChatMode>('direct');
   const [search, setSearch] = useState('');
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const [groupName, setGroupName] = useState('');
+  const [selected, setSelected] = useState<string[]>([]);
+  const [isCreatingGroup, setIsCreatingGroup] = useState(false);
 
   const { data, isLoading } = useFriends();
   const friends = data?.friends ?? [];
@@ -79,6 +115,38 @@ function NewChatPanel({
     }
   };
 
+  const toggle = (friendUserId: string) =>
+    setSelected((current) =>
+      current.includes(friendUserId)
+        ? current.filter((id) => id !== friendUserId)
+        : [...current, friendUserId]
+    );
+
+  const canCreateGroup = groupName.trim().length > 0 && selected.length >= MIN_GROUP_MEMBERS;
+
+  const createGroup = async () => {
+    if (!canCreateGroup) return;
+    setIsCreatingGroup(true);
+    setError(null);
+    try {
+      await onStartGroup(groupName.trim(), selected);
+    } catch (err) {
+      /**
+       * THE BACKEND'S OWN WORDS, UNLIKE THE DIRECT PATH ABOVE, and the asymmetry is the point.
+       * There the only real failure is Stream complaining about a user id, which means nothing to
+       * a reader. Here the failures are things the reader can act on and that only the server
+       * knows: a block standing between two people they invited, an account that no longer exists,
+       * a name over 100 characters. Replacing those with one generic sentence would leave someone
+       * removing people at random to find out which pair the server objected to.
+       */
+      setError(getErrorMessage(err, t('chat.groupFailed')));
+    } finally {
+      setIsCreatingGroup(false);
+    }
+  };
+
+  const busy = pendingId !== null || isCreatingGroup;
+
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-2 border-b border-nx-border-subtle px-3 py-3">
@@ -97,7 +165,34 @@ function NewChatPanel({
         <h2 className="text-nx-ui font-semibold text-nx-text-primary">{t('chat.newChat')}</h2>
       </div>
 
-      <div className="px-3 py-2">
+      <div className="flex flex-col gap-2 px-3 py-2">
+        <Tabs
+          size="sm"
+          aria-label={t('chat.newChatModeLabel')}
+          active={mode}
+          // The error belongs to the mode that produced it: carrying "a group needs at least two
+          // people" into the direct list would be an alert about a control no longer on screen.
+          onChange={(id) => {
+            setMode(id as NewChatMode);
+            setError(null);
+          }}
+          tabs={[
+            { id: 'direct', label: t('chat.modeDirect') },
+            { id: 'group', label: t('chat.modeGroup') },
+          ]}
+        />
+
+        {mode === 'group' && (
+          <Input
+            value={groupName}
+            onChange={(event) => setGroupName(event.target.value)}
+            placeholder={t('chat.groupNamePlaceholder')}
+            // The backend's `@Size(max = 100)`, enforced where it can be met without a round trip.
+            maxLength={100}
+            prefix={<Users className="size-4" />}
+          />
+        )}
+
         <Input
           value={search}
           onChange={(event) => setSearch(event.target.value)}
@@ -131,23 +226,37 @@ function NewChatPanel({
         ) : (
           matches.map((friend) => {
             const friendId = String(friend.userId);
+            const isSelected = mode === 'group' && selected.includes(friendId);
             return (
               <button
                 key={friendId}
                 type="button"
-                disabled={pendingId !== null}
-                onClick={() => start(friendId)}
+                disabled={busy}
+                onClick={() => (mode === 'group' ? toggle(friendId) : start(friendId))}
+                // `aria-pressed` ONLY IN GROUP MODE. In the direct list the same row is a one-shot
+                // action with no on/off state, and a control that reports `aria-pressed="false"`
+                // tells a screen reader it is a toggle that is currently off — which is a lie
+                // about what tapping it does.
+                aria-pressed={mode === 'group' ? isSelected : undefined}
                 className={cn(
                   'flex w-full items-center gap-3 rounded-nx-md px-3 py-2.5 text-left',
                   'transition-colors duration-[var(--nx-duration-fast)] ease-nx-out',
                   'hover:bg-nx-surface-sunken disabled:opacity-60',
-                  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring'
+                  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring',
+                  isSelected && 'bg-nx-accent-soft'
                 )}
               >
                 <Avatar src={friend.profilePictureUrl} name={friend.fullName} size="lg" />
                 <span className="min-w-0 flex-1 truncate text-nx-ui text-nx-text-primary">
                   {friend.fullName}
                 </span>
+
+                {/* The tick is what makes the selection legible without a checkbox column: the
+                    tinted row alone reads as hover on a list where hover already tints. */}
+                {isSelected && (
+                  <Check className="size-4 shrink-0 text-nx-text-accent" aria-hidden />
+                )}
+
                 {pendingId === friendId && (
                   <span className="shrink-0 text-nx-caption text-nx-text-muted">
                     {t('chat.creating')}
@@ -158,6 +267,31 @@ function NewChatPanel({
           })
         )}
       </div>
+
+      {/* THE FOOTER IS THE ONLY PART THAT IS NOT SHARED, and it is pinned rather than living at the
+          end of the scroller: the list is long enough to scroll on any real friend list, and a
+          create button that scrolls away with it is one a reader has to go looking for after they
+          have finished choosing. */}
+      {mode === 'group' && (
+        <div className="flex items-center gap-2 border-t border-nx-border-subtle px-3 py-2">
+          <span className="min-w-0 flex-1 truncate text-nx-caption text-nx-text-muted">
+            {/* SAYS WHAT IS STILL MISSING, NOT JUST WHAT IS DONE. "1 đã chọn" next to a dead
+                button leaves the reader to work out why it is dead; the floor is the reason, so
+                the count states it until it is met. */}
+            {selected.length < MIN_GROUP_MEMBERS
+              ? t('chat.groupNeedsMore', { count: MIN_GROUP_MEMBERS - selected.length })
+              : t('chat.groupSelected', { count: selected.length })}
+          </span>
+          <Button
+            size="sm"
+            loading={isCreatingGroup}
+            disabled={!canCreateGroup}
+            onClick={createGroup}
+          >
+            {t('chat.createGroup')}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
@@ -201,6 +335,7 @@ export function ConversationSidebar({
   activeConversationId,
   onSelect,
   onStartConversation,
+  onStartGroupConversation,
   className,
 }: ConversationSidebarProps) {
   const t = useT();
@@ -223,6 +358,14 @@ export function ConversationSidebar({
           onBack={() => setShowNewChat(false)}
           onStart={async (friendUserId) => {
             const conversationId = await onStartConversation(friendUserId);
+            setShowNewChat(false);
+            onSelect(conversationId);
+          }}
+          // Same shape as `onStart`: the panel awaits, and a rejection stays inside it as an
+          // alert. Closing the panel is deliberately AFTER the await — closing first would drop
+          // the error message on a screen that no longer exists.
+          onStartGroup={async (name, memberIds) => {
+            const conversationId = await onStartGroupConversation(name, memberIds);
             setShowNewChat(false);
             onSelect(conversationId);
           }}

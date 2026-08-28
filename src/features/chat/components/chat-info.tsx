@@ -29,6 +29,12 @@ import type { ConversationHeaderData } from './conversation-view';
  * reputation and a verified-skill list reachable from a chat pane at all — both endpoints key on
  * the numeric user id.
  *
+ * A GROUP HAS NO PEER, so this column becomes the group's own identity — name, avatar, member
+ * count — and nothing else. That falls out rather than being branched for: the mappers report
+ * `otherMemberId: null` above two members, which leaves `userId` null, which is what the two
+ * queries below are already gated on. The alternative, a reputation chip for whichever member
+ * Stream listed first, would be a number about someone the reader never asked about.
+ *
  * THERE IS NO `Xem trang cá nhân` LINK, AND IT IS NOT AN OMISSION I CAN FIX HERE. The public
  * profile endpoint is keyed by **handle** (`GET /users/{username}/profile`), and nothing in this
  * pane's reach resolves an id to a handle: neither `ReputationResponseDto` nor the roadmap
@@ -60,7 +66,10 @@ export function ChatInfo({ header, className }: ChatInfoProps) {
   // accepted, and a pending row here would be counting a cheque before it cleared.
   const verified = (progress ?? []).filter((row) => row.status === 'VERIFIED');
 
-  const name = header?.otherMemberName ?? header?.name ?? t('chat.unknownPerson');
+  // `name` first, the same order the row and the thread header use — see the note on the title in
+  // `ConversationView`.
+  const name = header?.name ?? header?.otherMemberName ?? t('chat.unknownPerson');
+  const isGroup = (header?.memberCount ?? 0) > 2;
 
   return (
     <aside
@@ -80,7 +89,22 @@ export function ChatInfo({ header, className }: ChatInfoProps) {
         <Avatar src={header?.otherMemberImage ?? undefined} name={name} size="xl" />
         <p className="text-nx-heading font-semibold text-nx-text-primary">{name}</p>
 
-        {repPending && !reputation ? (
+        {/* THE ONE THING A GROUP CAN SAY IN THE SLOT THE REPUTATION CHIP LEAVES EMPTY. It is a
+            count and not a member list on purpose: the names would need an avatar each and this
+            column is 300 wide, and the members are one tap away in Stream's own channel state the
+            day a member sheet is worth building. */}
+        {isGroup && (
+          <p className="text-nx-caption text-nx-text-muted">
+            {t('chat.info.memberCount', { count: header?.memberCount ?? 0 })}
+          </p>
+        )}
+
+        {/* `userId != null` GUARDS THE SKELETON, not just the request. A disabled React Query is
+            `isPending: true` forever — it is pending in the sense of "never asked" — so a pane with
+            nobody to ask about would sit under a loading pill that resolves on no event. That was
+            reachable before only in the instant before a header arrived; a group makes it the
+            steady state, which is what turned it from a flicker into a bug. */}
+        {userId != null && repPending && !reputation ? (
           <Skeleton width={72} height={24} radius={999} />
         ) : (
           reputation && (

@@ -53,7 +53,8 @@ export function ChatMessenger({
   className,
 }: ChatMessengerProps) {
   const { userId, status } = useChatClient();
-  const { conversations, isLoading, startConversation } = useConversations();
+  const { conversations, isLoading, startConversation, startGroupConversation } =
+    useConversations();
   const {
     messages,
     header,
@@ -69,6 +70,15 @@ export function ChatMessenger({
       return conversationId;
     },
     [startConversation, onSelect]
+  );
+
+  const handleStartGroup = useCallback(
+    async (name: string, memberIds: string[]) => {
+      const conversationId = await startGroupConversation(name, memberIds);
+      onSelect(conversationId);
+      return conversationId;
+    },
+    [startGroupConversation, onSelect]
   );
 
   return (
@@ -92,6 +102,7 @@ export function ChatMessenger({
           activeConversationId={activeConversationId}
           onSelect={onSelect}
           onStartConversation={handleStart}
+          onStartGroupConversation={handleStartGroup}
         />
       </div>
 
