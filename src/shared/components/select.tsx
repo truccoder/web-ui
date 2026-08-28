@@ -93,7 +93,12 @@ export function Select({
             // eslint-disable-next-line no-restricted-syntax -- footprint, not a rung (see above)
             'py-0 pl-2.5 pr-8 text-nx-text-primary',
             'transition-colors duration-[var(--nx-duration-fast)] ease-nx-out',
-            'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring',
+            // AN INSET RING (matches `Tabs`). This select is dropped into scroll containers —
+            // the composer's `overflow-y-auto` dialog body among them — and `overflow-y: auto`
+            // forces the computed `overflow-x` to `auto` too, so an outset ring on a 34px-tall
+            // field flush against the padding edge is clipped on the near sides. Offset inward
+            // and the whole ring stays on-screen wherever the field sits.
+            'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-nx-focus-ring',
             error ? 'border-nx-status-danger' : 'border-nx-border-default',
             sizeStyles[size],
             className
