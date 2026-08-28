@@ -70,10 +70,10 @@ test.describe('reputation', () => {
     // Opening one shows its stages, its nodes, and a legend naming the three states a node can
     // be in. Nothing is submitted here; see the file note.
     //
-    // ASSERTED ON THE LEGEND RATHER THAN ON THE ROADMAP'S NAME, because the open roadmap does not
-    // print its own name anywhere in the canvas — the context bar carries the section ("Lộ
-    // trình"), not the selection. Worth knowing when reading this test: the obvious assertion is
-    // the one that fails, and it fails on a missing heading rather than on a broken roadmap.
+    // ASSERTED ON THE LEGEND RATHER THAN ON THE ROADMAP'S NAME, because the canvas still does not
+    // print the track's name — the context bar does, and that is asserted separately below. Worth
+    // knowing when reading this test: the obvious in-canvas heading assertion is the one that
+    // fails, and it fails on a missing heading rather than on a broken roadmap.
     for (const state of ['Đã xác minh', 'Chờ duyệt', 'Chưa bắt đầu']) {
       await expect(page.getByText(state, { exact: true }).first()).toBeVisible({ timeout: 15_000 });
     }
@@ -81,5 +81,16 @@ test.describe('reputation', () => {
     // And the nodes themselves, grouped into stages. `Java Core` is the first node of the first
     // stage of roadmap 2001 — content, so a name rather than a count.
     await expect(page.getByText('Java Core').first()).toBeVisible();
+
+    /**
+     * THE TRAIL CARRIES THE SELECTION AND LEADS BACK TO THE INDEX — both halves asserted, because
+     * the pair is the change. The bar used to read `Bảng tin / Lộ trình`: it named the section the
+     * reader could already see and its arrow discarded the list they had just picked from, which
+     * is the one place in this flow there is no other way back to. The rail is hidden in focus
+     * mode, so the `Lộ trình` link on this screen is the trail's and nothing else's.
+     */
+    await expect(page.getByText('Backend Developer').first()).toBeVisible();
+    await page.getByRole('link', { name: 'Lộ trình' }).first().click();
+    await expect(page).toHaveURL(/\/roadmap$/);
   });
 });

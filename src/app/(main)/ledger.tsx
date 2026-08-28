@@ -3,15 +3,29 @@
 import { useMemo } from 'react';
 import Link from 'next/link';
 import { ArrowUpRight, Check } from 'lucide-react';
-import { Button, Card, Skeleton } from '@/shared/components';
+import { Badge, Button, Card, Skeleton } from '@/shared/components';
 import { useT } from '@/core/i18n';
 import { useIntlLocale, useRelativeTime } from '@/shared/lib/format';
 import { ContributionGraph, useGithubStats, isNotLinked } from '@/features/github';
-import { useProjects } from '@/features/matchmaking';
+import { useProjects, useSuggestedProjects, type Project } from '@/features/matchmaking';
 import { RepProgress, useReputation } from '@/features/reputation';
 import { useRoadmapProgress } from '@/features/roadmap';
 import { useAuthHref, useMyProfile } from '@/features/security';
 import { useTrending } from '@/features/trending';
+
+/** Rows in `OpeningsSection`, either mode. Three is what the fold this column shares allows. */
+const LEDGER_ROWS = 3;
+
+/** Matched skills/domains shown per row before the count takes over. */
+const LEDGER_REASONS = 3;
+
+/**
+ * The two limits are `/projects`' own, deliberately — see `OpeningsSection`. `matchmakingKeys`
+ * puts the limit in the key, so asking for `LEDGER_ROWS` here would fork the cache rather than
+ * share it, and this card would pay for a list the board next door already has.
+ */
+const SUGGESTED_LIMIT = 5;
+const BROWSE_LIMIT = 10;
 
 /**
  * The shell's right flank — the ledger.
@@ -52,6 +66,12 @@ import { useTrending } from '@/features/trending';
  * can surface and no other column does: `/projects` is a rail destination you have to decide to
  * visit, and the roles on it expire. It is the world *asking for something from the reader*, which
  * is the counterweight `Bằng chứng` wants — evidence on one side, demand on the other.
+ *
+ * AND IT IS RANKED AGAINST THE READER NOW, so the heading reads `Phù hợp với bạn` whenever the
+ * backend has something to rank: `GET /projects/suggested` (B26) scores every open project against
+ * the reader's own professional profile. That closes the two halves of the column into one
+ * sentence — what this account is (`Năng lực`) and what wants exactly that (`Phù hợp với bạn`).
+ * `Đang tuyển` stays as the honest name for the unranked fallback. See `OpeningsSection`.
  *
  * A GUEST KEEPS `Từ bên ngoài`, REWRITTEN. `GET /projects` answers 401 anonymously (measured), so
  * the hiring card has nothing to render for them, while the crawled column is public — the section
@@ -94,25 +114,36 @@ export function Ledger() {
        * ledger are the same relationship as two cards in the canvas, so they take the same rung.
        */
       /**
-       * PADDING IS SYMMETRIC NOW — `px-5`, not a lone `pr` of one region gutter. The gutter
-       * between the canvas and this flank is the shell's own flex `gap`; spending a second gutter
-       * inside the column was double-counting it, and it left the cards flush against the left
-       * edge of their own region while inset 40 from the right.
+       * PADDING IS SYMMETRIC — and it is `px-2.5` (10), down from `px-5` (20). Symmetry was the
+       * fix in the round before this one: a lone `pr` of one region gutter double-counted the
+       * shell's own flex `gap` and left the cards flush against the left edge of their own region
+       * while inset 40 from the right.
        *
-       * The kit measures `padding: 20px 20px 48px` on the flank's scroller, which puts a 252 card
-       * inside a 300 column at both steps. 48 is the runout at the end of every scroller.
+       * TEN, BECAUSE THE OTHER FLANK'S SCROLLER ALREADY SPENDS TEN. The rail's nav is `px-2.5`,
+       * so 10 is what a flank in this shell insets its content by; the kit's `padding: 20px 20px
+       * 48px` on the ledger scroller was the only 20 of its kind, and it was buying the widest
+       * gutter in the layout twice — 40 of shell gap plus 20 of column padding put 60 between the
+       * canvas's card edge and this column's, on a screen whose two flanks are otherwise 24 and
+       * 34 from what they sit beside.
+       *
+       * WHAT IT BUYS IS CARD WIDTH: 252 → 272 at the 1280 step, 280 → 300 at 1440, without
+       * touching `--spacing-nx-ledger` or the 1300 budget derived from it. The section below now
+       * carries chips of matched skills under each row and had the least room of anything in the
+       * shell to carry them in. 48 (`pb-12`) is the runout at the end of every scroller and stays.
        */
-      className="sticky top-nx-topbar hidden h-[calc(100dvh-var(--spacing-nx-topbar))] w-[var(--spacing-nx-ledger-sm)] shrink-0 flex-col gap-[var(--nx-space-block)] overflow-y-auto px-5 pt-5 pb-12 xl:flex min-[1440px]:w-nx-ledger"
+      className="sticky top-nx-topbar hidden h-[calc(100dvh-var(--spacing-nx-topbar))] w-[var(--spacing-nx-ledger-sm)] shrink-0 flex-col gap-[var(--nx-space-block)] overflow-y-auto px-2.5 pt-5 pb-12 xl:flex min-[1440px]:w-nx-ledger"
     >
       <EvidenceSection userId={profile?.id} />
       {/* MOUNTED ONLY ONCE THERE IS A PROFILE, which is a request-shaping decision rather than a
-          cosmetic one. `GET /projects` is authenticated (401 anonymously, measured), and this
-          column is in the shell — so an ungated `useProjects` fires on every route, including the
-          window where the session has not resolved or has expired. Measured against a stale
-          session that was exactly what happened: `/projects` was the ONLY call the page made, and
-          it 401'd on a retry loop under a heading that never stopped saying it was loading. The
-          profile is the same gate `EvidenceSection` already takes its id from. */}
-      {profile && <HiringSection />}
+          cosmetic one. Both endpoints behind this section are authenticated — `/projects` answers
+          401 anonymously (measured) and `/projects/suggested` scores against `SecurityUtils
+          .getCurrentUserId()`, so it cannot even be asked without a caller — and this column is in
+          the shell, so an ungated section fires on every route, including the window where the
+          session has not resolved or has expired. Measured against a stale session that was
+          exactly what happened: `/projects` was the ONLY call the page made, and it 401'd on a
+          retry loop under a heading that never stopped saying it was loading. The profile is the
+          same gate `EvidenceSection` already takes its id from. */}
+      {profile && <OpeningsSection />}
     </aside>
   );
 }
@@ -144,7 +175,7 @@ export function GuestLedger() {
   return (
     <aside
       aria-label={t('ledger.label')}
-      className="sticky top-nx-topbar hidden h-[calc(100dvh-var(--spacing-nx-topbar))] w-[var(--spacing-nx-ledger-sm)] shrink-0 flex-col gap-[var(--nx-space-block)] overflow-y-auto px-5 pt-5 pb-12 xl:flex min-[1440px]:w-nx-ledger"
+      className="sticky top-nx-topbar hidden h-[calc(100dvh-var(--spacing-nx-topbar))] w-[var(--spacing-nx-ledger-sm)] shrink-0 flex-col gap-[var(--nx-space-block)] overflow-y-auto px-2.5 pt-5 pb-12 xl:flex min-[1440px]:w-nx-ledger"
     >
       <Card className="flex flex-col gap-3">
         <SectionHeading>{t('guest.ledger.overline')}</SectionHeading>
@@ -270,7 +301,40 @@ function EvidenceSection({ userId }: { userId?: number }) {
 }
 
 /**
- * `Đang tuyển` — the roles a signed-in reader could take, three at most.
+ * `Đang tuyển` / `Phù hợp với bạn` — the roles a signed-in reader could take, three at most, and
+ * ranked against their own professional profile when the backend can rank them.
+ *
+ * THE PARAGRAPH THIS REPLACES WAS A CEILING THAT NO LONGER EXISTS, and it is quoted because it is
+ * the reason this card spent a round labelled as something weaker than it is: "IT IS NOT `HỢP VỚI
+ * BẠN`, AND THE NAME SAYS SO. There is no endpoint that ranks projects against a reader's skills:
+ * `GET /positions/{id}/suggested-candidates` runs the other direction (position → people)."
+ *
+ * `GET /v1/api/projects/suggested` RUNS THIS DIRECTION (BE B26). `MatchmakingService.suggestProjects`
+ * crosses the caller's own `knownTechStack` against the OPEN roles of every open project and their
+ * `interestedDomains` against the project's `tags`, drops everything scoring 0, and sorts by score
+ * — and it ships `matchedSkills` / `matchedDomains` with each row so the reason travels with the
+ * recommendation instead of being guessed at here. Projects already applied to, and blocked
+ * authors, are filtered out before scoring runs. So the heading can say `Phù hợp với bạn` and mean
+ * it.
+ *
+ * TWO MODES, ONE CARD, AND THE HEADING IS WHICH MODE IT IS IN. `[]` from the ranking is ORDINARY,
+ * not an error: a reader who has never filled in a professional profile gets it every time, and so
+ * does one whose stack overlaps nothing currently open. The backend's own javadoc names the
+ * remedy — *"clients fall back to `GET /v1/api/projects`, which is the honest answer"* — so the
+ * card falls back to the newest projects still hiring, under the OLD heading. What it must not do
+ * is show that unranked list under a heading that claims a fit, which is the failure the endpoint
+ * exists to make avoidable.
+ *
+ * THE FALLBACK IS GATED ON THE RANKING HAVING ANSWERED, which is what `enabled` is for. Firing
+ * both at once would spend a request on a list that is thrown away for every reader who has a
+ * profile — the case this card is built for — and because the browse key is shared, the gate
+ * usually resolves against pages already in hand rather than into a new request.
+ *
+ * LIMITS ARE CHOSEN TO SHARE KEYS, NOT TO MATCH THE THREE ROWS RENDERED. Both `matchmakingKeys`
+ * entries put the limit in the key, so `useSuggestedProjects(3)` would be a second cached copy of
+ * a ranking `/projects` already holds at 5, and `useProjects(3)` a second copy of the browse list
+ * it holds at 10. Asking for what that screen asks for costs one request across the session and
+ * warms the board this card links into.
  *
  * IT IS THE ONE BLOCK IN THIS COLUMN WITH SOMEWHERE TO GO, and that is deliberate rather than a
  * lapse from the summary rule. `Bằng chứng` is a state of affairs and correctly inert; a role is a
@@ -278,62 +342,69 @@ function EvidenceSection({ userId }: { userId?: number }) {
  * dead end the section it replaced was. A link is navigation, not the "asking you to do things"
  * this file's header rules out — no accept, no reject, no apply lives here.
  *
- * `useProjects()` IS CALLED WITH ITS DEFAULT LIMIT AND NOT WITH `3`, which looks like waste and is
- * the opposite. The key is `matchmakingKeys.projects(limit)`, so `useProjects(3)` would be a
- * *second* cached list that `/projects` cannot reuse; sharing the default means this card costs
- * one request across the whole session and warms the board it links into.
+ * OPEN ROLES ARE COUNTED, NOT ASSUMED, in both modes, and a project with none is dropped. `status`
+ * is per position (`ProjectList` says the same), so an `OPEN` project whose every role is `FILLED`
+ * is a closed door — under either heading it would be a lie the reader only finds out about after
+ * the click. The ranking already scores against open roles alone, so counting only ever removes
+ * rows from the fallback; running it over both keeps the two modes counting the same thing.
  *
- * OPEN ROLES ARE COUNTED, NOT ASSUMED, and a project with none is dropped. `status` is per
- * position (`ProjectList` says the same), so an `OPEN` project whose every role is `FILLED` is a
- * closed door — under a heading that says `Đang tuyển` it would be a lie the reader only finds
- * out about after the click.
- *
- * IT IS NOT "HỢP VỚI BẠN", AND THE NAME SAYS SO. There is no endpoint that ranks projects against
- * a reader's skills: `GET /positions/{id}/suggested-candidates` runs the other direction
- * (position → people), and it matches on "shares at least one skill" with no score even there. So
- * these are the newest three still hiring, honestly labelled — the plain claim the data supports.
- *
- * EVERY PAGE, UNLIKE `ExternalSection`, and the difference is the reason rather than an oversight.
- * `ProjectList` shares this cache and pages it as the reader scrolls `/projects`, so both cards
- * read from a pool that grows underneath them. This one takes the HEAD of a list the server
- * already ordered and pages append to, so the three rows are stable; the crawled card RANKS its
- * pool by score, where one more page can displace a row, which is why it is pinned to page one.
+ * NOTHING RENDERS WHILE EITHER QUERY IS IN FLIGHT — no skeleton, unlike `EvidenceSection`. A
+ * skeleton would have to pick a heading before the data says which of the two it is, and swap it
+ * under the reader a moment later. The card above carries the column's loading state.
  */
-function HiringSection() {
+function OpeningsSection() {
   const t = useT();
-  const { data, isPending } = useProjects();
 
-  const hiring = useMemo(() => {
-    const projects = data?.pages.flatMap((page) => page.items ?? []) ?? [];
+  const { data: suggested, isPending: rankingPending } = useSuggestedProjects(SUGGESTED_LIMIT);
+
+  const matches = useMemo(
+    () =>
+      (suggested ?? [])
+        .flatMap((row) => (row.project ? [{ row, project: row.project }] : []))
+        .map(({ row, project }) => ({
+          project,
+          openCount: countOpenRoles(project),
+          // The reason, in the order the backend scores it: skills first (they carry the heavier
+          // weight there), then domains — never re-sorted here, since the order IS the backend's
+          // account of why this row is where it is. Deduplicated only because "Blockchain" can be
+          // both a skill on a role and a domain on the project, and one word twice in a row of
+          // chips reads as a rendering bug rather than as two matches.
+          reasons: [...new Set([...(row.matchedSkills ?? []), ...(row.matchedDomains ?? [])])],
+        }))
+        .filter((row) => row.openCount > 0)
+        .slice(0, LEDGER_ROWS),
+    [suggested]
+  );
+
+  const ranked = matches.length > 0;
+  const { data: browse, isPending: browsePending } = useProjects(
+    BROWSE_LIMIT,
+    !rankingPending && !ranked
+  );
+
+  const newest = useMemo(() => {
+    const projects = browse?.pages.flatMap((page) => page.items ?? []) ?? [];
 
     return projects
-      .map((project) => ({
-        project,
-        openCount: (project.positions ?? []).filter((p) => p.status === 'OPEN').length,
-      }))
+      .map((project) => ({ project, openCount: countOpenRoles(project), reasons: [] as string[] }))
       .filter((row) => row.openCount > 0)
-      .slice(0, 3);
-  }, [data]);
+      .slice(0, LEDGER_ROWS);
+  }, [browse]);
 
-  if (isPending) {
-    return (
-      <Card className="flex flex-col gap-3">
-        <SectionHeading>{t('ledger.hiring')}</SectionHeading>
-        <Skeleton lines={2} />
-      </Card>
-    );
-  }
+  if (rankingPending) return null;
+  if (!ranked && browsePending) return null;
 
-  if (hiring.length === 0) return null;
+  const rows = ranked ? matches : newest;
+  if (rows.length === 0) return null;
 
   return (
     <Card className="flex flex-col gap-3">
-      <SectionHeading>{t('ledger.hiring')}</SectionHeading>
+      <SectionHeading>{ranked ? t('ledger.matched') : t('ledger.hiring')}</SectionHeading>
 
       <ul className="flex flex-col gap-2.5">
-        {hiring.map(({ project, openCount }) => (
+        {rows.map(({ project, openCount, reasons }) => (
           <li key={project.id} className="flex flex-col gap-0.5">
-            {/* THE TITLE WRAPS TO TWO LINES AND THEN STOPS. A 260px drawable takes roughly four
+            {/* THE TITLE WRAPS TO TWO LINES AND THEN STOPS. A 272px drawable takes roughly four
                 words a line; one long project name allowed to run would push the other two rows
                 off the fold this card shares with the contribution graph above it. */}
             <Link
@@ -347,11 +418,47 @@ function HiringSection() {
             <span className="text-nx-caption text-nx-text-muted">
               {t('projects.openPositions', { count: openCount })}
             </span>
+
+            {/* WHY THIS ROW IS HERE, IN THE READER'S OWN WORDS — their skills and their stated
+                domains, as the backend matched them. A ranking whose order cannot be explained is
+                one nobody trusts, and the other annotation available, `matchScore`, is a number
+                with no scale printed anywhere: 12 means nothing without knowing a skill outweighs
+                a domain. `/projects` has room for both; a 272 column shows the half that reads as
+                language.
+                `Khớp:` IS A REAL TEXT NODE, not an `aria-label` on the wrapper. Three bare pills
+                reading "React · Docker · Fintech" under a project title are ambiguous to everyone
+                and not only to a screen reader — they could as easily be the roles being hired
+                for. */}
+            {reasons.length > 0 && (
+              <div className="mt-1 flex flex-wrap items-center gap-1">
+                <span className="text-nx-caption text-nx-text-muted">{t('ledger.matchedOn')}</span>
+                {reasons.slice(0, LEDGER_REASONS).map((reason) => (
+                  <Badge key={reason} variant="neutral">
+                    {reason}
+                  </Badge>
+                ))}
+                {reasons.length > LEDGER_REASONS && (
+                  <span className="text-nx-caption text-nx-text-faint">
+                    +{reasons.length - LEDGER_REASONS}
+                  </span>
+                )}
+              </div>
+            )}
           </li>
         ))}
       </ul>
     </Card>
   );
+}
+
+/**
+ * How many positions of a project are still open.
+ *
+ * Shared by both modes of `OpeningsSection` so the two cannot drift: `positions` is on the list
+ * read and on the ranked read alike, and `status` is per position rather than per project.
+ */
+function countOpenRoles(project: Project) {
+  return (project.positions ?? []).filter((position) => position.status === 'OPEN').length;
 }
 
 /**

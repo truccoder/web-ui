@@ -37,6 +37,7 @@ import { NotificationBell } from '@/features/notifications';
 // Imported from the module rather than the barrel: the barrel's members were being
 // split into a chunk this route never loaded, so the hook silently never ran.
 import { useNotificationStream } from '@/features/notifications/hooks/use-notification-stream';
+import { useRoadmaps } from '@/features/roadmap';
 import { SearchBar } from '@/features/search';
 import { Ledger, GuestLedger } from './ledger';
 import {
@@ -583,12 +584,8 @@ export function MainShell({ children }: { children: React.ReactNode }) {
    * where it actually lives rather than the route being bent to match a spec's spelling.
    */
   const roadmapId = searchParams.get('id');
-  const isFullBleed =
-    pathname.startsWith('/chats') || (pathname.startsWith('/roadmap') && Boolean(roadmapId));
-
-  // The tenant's name for the context bar, taken from the rail's own item list so the two can
-  // never disagree about what a route is called.
-  const focusLabelKey = pathname.startsWith('/chats') ? 'nav.chats' : 'nav.roadmap';
+  const isChats = pathname.startsWith('/chats');
+  const isFullBleed = isChats || (pathname.startsWith('/roadmap') && Boolean(roadmapId));
 
   useEffect(() => {
     if (!profile) return;
@@ -809,50 +806,9 @@ export function MainShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        {/**
-         * THE CONTEXT BAR — focus mode's second row, and the half of the shape that was missing.
-         *
-         * `layout-r7.md` §3.2 fixes its geometry and gives the reason for each number: **48 tall**
-         * ("the two-line row unit, already in the system — not a new number"), the top bar's own
-         * fill, and **no shadow of its own** because the shadow belongs to the bottom of the pair.
-         * Measured in the kit's `/chats`: a full-width band at `y=56`, `height 48`,
-         * `rgb(255,255,255)`, carrying a trail back to where you came from and the tenant's name.
-         *
-         * IT ONLY EXISTS IN FOCUS MODE. A shell screen already names itself in its own canvas
-         * header beside its primary action (R8 moved it there to buy back 40px on every screen);
-         * a second title in the chrome would be that same string twice.
-         *
-         * THE TITLE COMES FROM THE RAIL'S OWN ITEM LIST rather than a per-page slot. A slot would
-         * be the honest long-term shape — the kit's bar also carries a count ("3 hội thoại") that
-         * only the page knows — but a slot API is a mechanism, and this needs a name. When a
-         * tenant has something to add here, that is the moment to build the slot, not before.
-         */}
-        {isFullBleed && (
-          <div
-            className={cn(
-              'sticky top-nx-topbar z-30 flex h-nx-subnav shrink-0 items-center gap-2',
-              'bg-nx-surface-card px-3 shadow-nx-1 xl:px-5'
-            )}
-          >
-            <Link
-              href="/newsfeed"
-              className={cn(
-                'inline-flex items-center gap-2 text-nx-body-sm text-nx-text-muted',
-                'hover:text-nx-text-primary',
-                'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring'
-              )}
-            >
-              <ArrowLeft className="size-4" aria-hidden />
-              {t('nav.newsfeed')}
-            </Link>
-            <span className="text-nx-text-faint" aria-hidden>
-              /
-            </span>
-            <span className="truncate text-nx-ui font-medium text-nx-text-primary">
-              {t(focusLabelKey)}
-            </span>
-          </div>
-        )}
+        {/* Focus mode's second row. Which trail renders is a mount-time branch, not a prop —
+            see `FocusTrail` at the foot of this file. */}
+        {isFullBleed && (isChats ? <ChatsTrail /> : <RoadmapTrail roadmapId={Number(roadmapId)} />)}
 
         <Drawer
           open={drawerOpen}
@@ -983,5 +939,122 @@ export function MainShell({ children }: { children: React.ReactNode }) {
             in the rail, one click from anywhere, so nothing is lost. */}
       </div>
     </ChatClientProvider>
+  );
+}
+
+/**
+ * THE CONTEXT BAR — focus mode's second row, and the half of the shape that was missing.
+ *
+ * `layout-r7.md` §3.2 fixes its geometry and gives the reason for each number: **48 tall**
+ * ("the two-line row unit, already in the system — not a new number"), the top bar's own
+ * fill, and **no shadow of its own** because the shadow belongs to the bottom of the pair.
+ * Measured in the kit's `/chats`: a full-width band at `y=56`, `height 48`,
+ * `rgb(255,255,255)`, carrying a trail back to where you came from and the tenant's name.
+ *
+ * IT ONLY EXISTS IN FOCUS MODE. A shell screen already names itself in its own canvas
+ * header beside its primary action (R8 moved it there to buy back 40px on every screen);
+ * a second title in the chrome would be that same string twice.
+ *
+ * THE BACK ARROW GOES TO THE PARENT, NOT TO `/newsfeed`. It used to go to the feed from both
+ * tenants, and on the roadmap that was wrong in a way a reader feels immediately: you reach a
+ * track by picking it out of `/roadmap`, so the one place the arrow must not throw you is the
+ * feed — it discards the list you were choosing from and there is no other route back to it.
+ * `/chats` keeps the feed as its parent because it genuinely has none: the rail is where you
+ * came from, and the feed is the rail's first item.
+ *
+ * SO THE TRAIL IS PER TENANT, WHICH IS WHY THIS IS THREE COMPONENTS AND NOT ONE. Each tenant
+ * resolves its own crumbs — the roadmap has to look its track's name up — and a single component
+ * would have to call the roadmap's hooks on `/chats` as well, firing `GET /roadmaps` on a screen
+ * that has no roadmap on it. Hooks cannot be called conditionally; components can be mounted
+ * conditionally, so the branch belongs at the mount rather than inside.
+ */
+function FocusTrailBar({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      className={cn(
+        'sticky top-nx-topbar z-30 flex h-nx-subnav shrink-0 items-center gap-2',
+        'bg-nx-surface-card px-3 shadow-nx-1 xl:px-5'
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+/**
+ * The trail's two parts: a link back to the parent, and where you are now.
+ *
+ * `title` IS OPTIONAL AND ABSENT IS A REAL STATE, not a loading placeholder to fill with dashes.
+ * The roadmap's crumb is the track's own name, which arrives with a request; until it does — and
+ * for an `?id=` that names no track at all — the bar shows the way back and stops. A skeleton or
+ * a repeated tenant name would both be the bar claiming to know something it does not.
+ */
+function FocusTrail({
+  backHref,
+  backLabel,
+  title,
+}: {
+  backHref: string;
+  backLabel: string;
+  title?: string;
+}) {
+  return (
+    <FocusTrailBar>
+      <Link
+        href={backHref}
+        className={cn(
+          'inline-flex items-center gap-2 text-nx-body-sm text-nx-text-muted',
+          'hover:text-nx-text-primary',
+          'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring'
+        )}
+      >
+        <ArrowLeft className="size-4" aria-hidden />
+        {backLabel}
+      </Link>
+      {title && (
+        <>
+          <span className="text-nx-text-faint" aria-hidden>
+            /
+          </span>
+          <span className="truncate text-nx-ui font-medium text-nx-text-primary">{title}</span>
+        </>
+      )}
+    </FocusTrailBar>
+  );
+}
+
+/** `/chats` — no parent of its own, so the trail leads back out to the rail's first item. */
+function ChatsTrail() {
+  const t = useT();
+  return <FocusTrail backHref="/newsfeed" backLabel={t('nav.newsfeed')} title={t('nav.chats')} />;
+}
+
+/**
+ * `/roadmap?id=N` — back to the index the track was picked from, and the track's own name as the
+ * place you are.
+ *
+ * THE NAME COMES OUT OF THE LIST THAT IS ALREADY LOADED. `useRoadmaps` is one unpaginated request
+ * keyed `roadmapKeys.roadmaps`, and `RoadmapList` on the index mounts it — so the ordinary way
+ * into this screen arrives with the answer in cache and the bar names the track on first paint.
+ * A shared link pays for one small request. There is no per-roadmap read to prefer: the API has
+ * `GET /roadmaps` and `GET /roadmaps/{id}/nodes`, and nothing that fetches one roadmap's own row.
+ *
+ * THE SHELL READING A FEATURE'S CACHE IS THE `slot` DECISION DEFERRED, AND IT IS DELIBERATE. The
+ * note that stood here said a per-page slot API "would be the honest long-term shape … when a
+ * tenant has something to add here, that is the moment to build the slot, not before". This is a
+ * second consumer, not a general one: two tenants, each with a fixed trail. A slot — context,
+ * a store, a layout segment — is the change to make when a page needs to put something in this
+ * bar that the URL cannot tell the shell, which is still not the case.
+ */
+function RoadmapTrail({ roadmapId }: { roadmapId: number }) {
+  const t = useT();
+  const { data } = useRoadmaps();
+
+  return (
+    <FocusTrail
+      backHref="/roadmap"
+      backLabel={t('nav.roadmap')}
+      title={data?.find((roadmap) => roadmap.id === roadmapId)?.name}
+    />
   );
 }

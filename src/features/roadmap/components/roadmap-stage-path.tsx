@@ -49,8 +49,23 @@ import type { RoadmapNode, RoadmapProgress } from '../types/roadmap';
  * only. On the seeded `Backend Developer` track that hid the control from four of thirteen nodes;
  * on a FLAT roadmap — which `parentNodeId` being optional makes legal, see the note further down —
  * it hid the control from the entire page, so a reader would conclude the product has no way to
- * claim anything at all. The stage header carries the same `StateMark`, the same `open`-only rule
- * and the same action as a skill row, because a stage is a node and nothing about it is special.
+ * claim anything at all. The stage header carries the same `StateMark` and the same `open`-only
+ * rule as a skill row, because a stage is a node and nothing about it is special.
+ *
+ * BUT THE STAGE'S CLAIM IS A FOOTER, NOT A FOURTH THING IN THE HEADER, and that is this round's
+ * correction — the owner's report was *"node cha đang cầm btn ghi nhận rất xấu"*. Putting it in
+ * the header made that row `mark · name · count · button` inside a card whose basis is 280: the
+ * only elastic thing there is the stage's own name, so the heading of the card truncated to make
+ * room for a control, and a bordered button beside a mono counter read as a toolbar rather than
+ * as a title. It is now a full-width `secondary` under a hairline at the foot of the card, after
+ * the skills it covers — the shape a card uses for an action that applies to the whole card, and
+ * the one position where nothing has to shrink for it.
+ *
+ * IT ALSO GETS ITS OWN WORDS. Two identical `Ghi nhận` buttons a few rows apart, one for the
+ * stage and one for a skill, are a question the reader has to answer by inference; `Ghi nhận giai
+ * đoạn này` says which node it claims. That is what `level` is for — this component decides
+ * placement, the caller decides the control, and the caller cannot pick the right label without
+ * being told which of the two it is rendering.
  *
  * `REJECTED` FOLDS INTO "NOT STARTED" RATHER THAN BECOMING A FOURTH STATE, and that is a product
  * judgement stated rather than hidden: a rejected claim is one you may make again, so the useful
@@ -66,10 +81,21 @@ export interface RoadmapStagePathProps {
    * reading for a signed-out visitor rather than a broken one.
    */
   userId?: number;
-  /** Rendered on a node the viewer may still claim. Omit for a read-only path. */
-  renderNodeAction?: (node: RoadmapNode) => React.ReactNode;
+  /**
+   * Rendered on a node the viewer may still claim. Omit for a read-only path.
+   *
+   * `level` IS PASSED BECAUSE THE TWO PLACEMENTS ARE NOT THE SAME CONTROL. A skill's action sits
+   * at the end of a 32-tall row and must stay small; a stage's fills the width of the card's
+   * footer and names what it claims. Which is which is this component's business — the caller
+   * only needs to be told, and a caller that ignores the parameter still compiles and still gets
+   * one control in each place.
+   */
+  renderNodeAction?: (node: RoadmapNode, level: RoadmapNodeLevel) => React.ReactNode;
   className?: string;
 }
+
+/** Which of the path's two rows a claim control is being rendered into. */
+export type RoadmapNodeLevel = 'stage' | 'skill';
 
 type NodeState = 'verified' | 'pending' | 'open';
 
@@ -224,10 +250,11 @@ export function RoadmapStagePath({
 
                 <li className="min-w-0 flex-1 [flex-basis:var(--nx-path-stage)] [max-width:var(--nx-path-stage-max)]">
                   <Card className="flex h-full flex-col gap-3">
-                    {/* 32 is the row unit — a minimum rather than a height. The header now holds
-                        four things (mark · name · count · claim), so on a stage squeezed to its
-                        280 basis the name is the one that gives: `title` is how the skill rows
-                        below already pay for their own `truncate`, and the stage borrows it. */}
+                    {/* 32 is the row unit — a minimum rather than a height. Three things only
+                        (mark · name · count); the claim moved to the footer, which is what gave
+                        the name back the width it was truncating away. `title` is how the skill
+                        rows below already pay for their own `truncate`, and the stage borrows
+                        it — a long stage name still needs it against a 280 basis. */}
                     <div className="flex min-h-8 items-center gap-2">
                       <StateMark state={stageState} />
                       <h3
@@ -241,8 +268,6 @@ export function RoadmapStagePath({
                           {done}/{skills.length}
                         </span>
                       )}
-                      {/* Same rule as a skill row — see the note there. */}
-                      {stageState === 'open' && renderNodeAction?.(stage)}
                     </div>
 
                     {/**
@@ -279,11 +304,27 @@ export function RoadmapStagePath({
                               </span>
                               {/* Only where a claim is still possible. A verified node has nothing
                                 left to ask for and a pending one has already asked. */}
-                              {state === 'open' && renderNodeAction?.(skill)}
+                              {state === 'open' && renderNodeAction?.(skill, 'skill')}
                             </li>
                           );
                         })}
                       </ul>
+                    )}
+
+                    {/**
+                     * THE STAGE'S OWN CLAIM, under the skills it covers rather than in the title
+                     * row above them. Full-bleed hairline (`-mx-5`, `px-5` back) for the same
+                     * reason the list bleeds: a rule inset from the card's padding draws a line
+                     * that stops short of the box it is dividing.
+                     *
+                     * Same `open`-only rule as every other claim on this screen — a verified node
+                     * has nothing left to ask for and a pending one has already asked — so a fully
+                     * settled stage ends at its last skill with no footer at all.
+                     */}
+                    {stageState === 'open' && renderNodeAction && (
+                      <div className="-mx-5 border-t border-nx-border-subtle px-5 pt-3">
+                        {renderNodeAction(stage, 'stage')}
+                      </div>
                     )}
                   </Card>
                 </li>

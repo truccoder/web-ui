@@ -550,6 +550,9 @@ export const en = {
     },
     verify: {
       claim: 'Claim',
+      // The stage card's footer button. Two identical `Claim` buttons a few rows apart, one for
+      // the stage and one for a skill, leave the reader to infer which node each one claims.
+      claimStage: 'Claim this stage',
       claiming: 'Claiming: ${node}',
       tierLabel: 'How are you backing this up?',
       tier: {
@@ -1201,6 +1204,12 @@ export const en = {
   ledger: {
     label: 'Summary',
     evidence: 'Capability',
+    // Two labels for one card: `matched` when `GET /projects/suggested` can rank against the
+    // reader's professional profile, `hiring` when the list falls back to "newest still hiring" —
+    // see `OpeningsSection`. Never one label for both: calling an unranked list a fit is a promise
+    // the data does not carry.
+    matched: 'Fits you',
+    matchedOn: 'Matched:',
     hiring: 'Hiring now',
     external: 'From outside',
     contributions: 'contributions',

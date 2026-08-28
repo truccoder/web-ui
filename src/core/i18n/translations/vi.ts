@@ -534,6 +534,10 @@ export const vi: Messages = {
     },
     verify: {
       claim: 'Ghi nhận',
+      // Nhãn riêng cho nút ở chân thẻ giai đoạn. Hai nút `Ghi nhận` giống hệt nhau cách nhau vài
+      // dòng — một cho giai đoạn, một cho kỹ năng — bắt người đọc phải tự suy ra nút nào ghi nhận
+      // node nào; câu này nói thẳng.
+      claimStage: 'Ghi nhận giai đoạn này',
       claiming: 'Đang ghi nhận: ${node}',
       tierLabel: 'Bạn chứng minh bằng cách nào?',
       tier: {
@@ -1177,6 +1181,12 @@ export const vi: Messages = {
   ledger: {
     label: 'Tóm lược',
     evidence: 'Năng lực',
+    // Hai nhãn cho cùng một thẻ: `matched` khi `GET /projects/suggested` xếp hạng được theo hồ sơ
+    // nghề nghiệp của người đọc, `hiring` khi danh sách rơi về "mới nhất còn tuyển" — xem
+    // `OpeningsSection`. Không dùng chung một nhãn: gọi danh sách chưa xếp hạng là "phù hợp" là
+    // một lời hứa dữ liệu không đỡ nổi.
+    matched: 'Phù hợp với bạn',
+    matchedOn: 'Khớp:',
     hiring: 'Đang tuyển',
     external: 'Từ bên ngoài',
     contributions: 'đóng góp',

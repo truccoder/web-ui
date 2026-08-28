@@ -35,11 +35,21 @@ export type MatchmakingMutationOptions<TVariables, TData = void> = Omit<
   'mutationFn'
 >;
 
-/** GET /projects — the browse list, cursor-paged. */
-export function useProjects(limit = 10) {
+/**
+ * GET /projects — the browse list, cursor-paged.
+ *
+ * `enabled` IS A SECOND-CHOICE GATE, not a permission one (that is `useProjectApplications`).
+ * `GET /projects/suggested` is the ranked answer and `[]` is its ordinary reply — for a caller
+ * with no professional profile it is the ONLY reply — so a screen that prefers the ranking has to
+ * be able to hold this list back until the ranking has spoken, then let it through. Cached pages
+ * are still served while it is off, which is the point: the shared key means the fallback is
+ * usually already in hand by the time it is wanted.
+ */
+export function useProjects(limit = 10, enabled = true) {
   return useInfiniteQuery({
     queryKey: matchmakingKeys.projects(limit),
     queryFn: ({ pageParam }) => matchmakingApi.getProjects(pageParam, limit),
+    enabled,
     initialPageParam: undefined as number | undefined,
     // `hasMore` is the whole pagination contract — there is no total and no page count, so the
     // cursor is only followed while the server says there is more behind it.

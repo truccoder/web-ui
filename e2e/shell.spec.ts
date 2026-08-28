@@ -94,9 +94,11 @@ test.describe('shell', () => {
      * feed that interleaves those very items. It is a guest-only card now; `guest.spec.ts` covers
      * it there, in its rewritten form.
      *
-     * The signed-in replacement, `Đang tuyển`, is NOT asserted present here, and deliberately:
-     * `HiringSection` renders nothing when the first page of `/projects` holds no project with an
-     * open position, which is a fact about the demo database rather than about the shell. This
+     * The signed-in replacement is NOT asserted present here, and deliberately — nor is its
+     * ranked heading `Phù hợp với bạn`: `OpeningsSection` renders nothing when the profile-ranked
+     * list is empty AND the first page of `/projects` holds no project with an open position,
+     * which is a fact about the demo database rather than about the shell. Which of its two
+     * headings appears is a fact about the seeded professional profile, for the same reason. This
      * test is "the flank is there at 1440" — pinning it to seed data would make it fail for a
      * reason it does not test.
      */

@@ -7,6 +7,7 @@ import {
   RoadmapStagePath,
   SkillVerificationForm,
   type RoadmapNode,
+  type RoadmapNodeLevel,
 } from '@/features/roadmap';
 import { useMyProfile } from '@/features/security';
 import { Button, Dialog } from '@/shared/components';
@@ -62,10 +63,22 @@ function RoadmapContent() {
    * it read as a label, and the owner's report was literally *"tôi không thấy nơi nào để user xác
    * nhận roadmap"* — the one control this whole screen exists to offer. `secondary` gives it the
    * strong border that says "press me" without promoting a per-row action to the page's primary.
+   *
+   * ONE CALLBACK, TWO CONTROLS, AND `level` IS WHAT SEPARATES THEM. `RoadmapStagePath` decides
+   * where a claim goes — a skill's at the end of its row, a stage's across the foot of its card —
+   * and tells the caller which it is asking for; the caller owns what the control looks like and
+   * what it says. So a stage gets the full width its footer gives it and a label naming what it
+   * claims, while a skill keeps the compact button a 32-tall row can hold. Both open the same
+   * dialog on the same node, which is the part that must not diverge and now cannot.
    */
-  const claimAction = (node: RoadmapNode) => (
-    <Button size="sm" variant="secondary" onClick={() => setClaiming(node)}>
-      {t('roadmap.verify.claim')}
+  const claimAction = (node: RoadmapNode, level: RoadmapNodeLevel) => (
+    <Button
+      size="sm"
+      variant="secondary"
+      className={level === 'stage' ? 'w-full' : undefined}
+      onClick={() => setClaiming(node)}
+    >
+      {level === 'stage' ? t('roadmap.verify.claimStage') : t('roadmap.verify.claim')}
     </Button>
   );
 
