@@ -629,13 +629,88 @@
   }
   html {
     @apply font-sans;
-    /* Reserve the scrollbar's width even when the page does not scroll. Without it the whole
-       shell jumps sideways by ~8px whenever navigation moves between a long page and a short one
-       — measured between `/profile` (scrolls) and `/library` (does not), where the rail moved
-       from x=120 to x=128. The shell is centred on the ground, so any change in available width
-       moves every region at once, which makes the jump far more visible than it would be in a
-       left-aligned layout. */
-    scrollbar-gutter: stable;
+    /**
+     * THE DOCUMENT SCROLLBAR IS GONE FROM THE LAYOUT, AND `PageScrollbar` DRAWS IT INSTEAD.
+     *
+     * What stood here was `scrollbar-gutter: stable`, and its reason was real: "the whole shell
+     * jumps sideways by ~8px whenever navigation moves between a long page and a short one —
+     * measured between `/profile` (scrolls) and `/library` (does not), where the rail moved from
+     * x=120 to x=128. The shell is centred on the ground, so any change in available width moves
+     * every region at once."
+     *
+     * It bought that with a permanent 15px strip the page could never paint into, and the owner
+     * saw exactly what it cost: *"khi không cần dùng thì bị hở ra 1 khoảng bên phải"*. The strip
+     * is invisible against the ground, and the top bar is `surface-card` and full-bleed — so on
+     * every screen the white bar stopped 15px short of the glass with a grey sliver beside it.
+     *
+     * A CLASSIC SCROLLBAR RESERVES FROM THE CONTENT BOX; THERE IS NO CSS THAT MAKES IT OVERLAY.
+     * `overflow: overlay` is removed, and `scrollbar-width: thin` only makes the reservation
+     * narrower. So the reservation goes away entirely — the native bar is hidden and the thumb is
+     * painted over the page by a fixed element that occupies no layout at all.
+     *
+     * AND THE JUMP THE GUTTER WAS DEFENDING AGAINST CANNOT HAPPEN ANY MORE, which is the part
+     * worth stating plainly: it happened because a scrollbar appearing changed the width available
+     * to a centred shell. Nothing reserves width now, on a long page or a short one, so there is
+     * no width to change.
+     */
+    scrollbar-width: none;
+  }
+  html::-webkit-scrollbar {
+    display: none;
+  }
+
+  /**
+   * EVERY OTHER SCROLLER KEEPS A REAL SCROLLBAR, IN THE KIT'S OWN 8px FORM — and it is invisible
+   * until something scrolls.
+   *
+   * The DS ships this as `.nx-flank` (`tokens/utilities.css`): `width: 8px`, thumb
+   * `--nx-border-default` at radius 99, transparent track. Ours had no scrollbar styling at all,
+   * so the rail, the ledger, the transcript and every menu drew the platform's 15px bar inside a
+   * 248 or 300 column. This is the kit's rule, applied to every scroller rather than to one class,
+   * because "a panel that scrolls" is not a thing the app marks up specially anywhere.
+   *
+   * THE RESERVATION STAYS HERE AND THAT IS CORRECT. Inside a panel the 8px comes out of the
+   * panel, never out of the window edge, so it cannot produce the sliver this round removed. What
+   * changes is that the thumb is transparent while nothing is moving: the channel is there, it is
+   * simply not drawn until it has something to say.
+   *
+   * `[data-nx-scrolling]` IS STAMPED ON THE ELEMENT THAT SCROLLED, not on the root, so scrolling
+   * the ledger does not light up the rail's scrollbar next to it. `PageScrollbar` owns the stamp
+   * and the timer that removes it.
+   */
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: var(--radius-nx-full);
+    transition: background var(--nx-duration-base) var(--ease-nx-out);
+  }
+  *[data-nx-scrolling]::-webkit-scrollbar-thumb {
+    background: var(--nx-border-default);
+  }
+
+  /**
+   * Firefox and Safari have no `::-webkit-scrollbar` box model to style — Firefox has the standard
+   * two properties instead, and setting them in Chromium would switch it to the same coarse
+   * rendering and throw away the rules above. `@supports selector()` is the only test that tells
+   * the two engines apart here.
+   */
+  @supports not selector(::-webkit-scrollbar) {
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: transparent transparent;
+    }
+    *[data-nx-scrolling] {
+      scrollbar-color: var(--nx-border-default) transparent;
+    }
+    html {
+      scrollbar-width: none;
+    }
   }
   /* Accessibility floor, constitution §9/§12: motion explains state change and
      nothing else, so reduced-motion collapses all of it. */

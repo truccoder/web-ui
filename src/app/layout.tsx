@@ -4,7 +4,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import { Providers } from '@/core/providers';
 import { DEFAULT_LOCALE, LOCALE_COOKIE, isLocale } from '@/core/i18n/locale';
 import { ServiceWorkerRegister } from '@/core/pwa/service-worker-register';
-import { Toaster } from '@/shared/components';
+import { PageScrollbar, Toaster } from '@/shared/components';
 import './globals.css';
 
 const geistSans = Geist({
@@ -80,6 +80,11 @@ export default async function RootLayout({
         <Providers initialLocale={locale}>
           {children}
           <Toaster />
+          {/* The document's scrollbar, drawn over the page rather than reserved beside it — the
+              native one is hidden in `globals.css`. Mounted at the root because every route
+              scrolls, `(auth)` and `(admin)` included, and because it also arms the reveal for
+              every nested scroller in the app. */}
+          <PageScrollbar />
         </Providers>
         <ServiceWorkerRegister />
       </body>

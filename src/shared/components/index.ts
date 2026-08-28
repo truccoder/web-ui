@@ -4,6 +4,7 @@ export { Input, type InputProps } from './input';
 export { Card, type CardProps } from './card';
 export { Dialog, type DialogProps } from './dialog';
 export { toast, Toaster, type ToastVariant } from './toast';
+export { PageScrollbar } from './page-scrollbar';
 export { CommandPalette, type CommandPaletteProps, type CommandAction } from './command-palette';
 export { Drawer, type DrawerProps } from './drawer';
 export { IconButton, type IconButtonProps } from './icon-button';
