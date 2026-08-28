@@ -1,0 +1,101 @@
+'use client';
+
+import { Suspense, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Plus } from 'lucide-react';
+import { Button, Tabs } from '@/shared/components';
+import { useTabParam } from '@/shared/lib/use-tab-param';
+import {
+  CreateProjectDialog,
+  MyApplications,
+  ProjectList,
+  SuggestedProjects,
+} from '@/features/matchmaking';
+import { useT } from '@/core/i18n';
+
+/**
+ * `/projects` — the matchmaking board. Owning domain: `matchmaking`.
+ *
+ * THE ROUTE THIS PROJECT WROTE OFF. `matchmaking` had types, api and hooks since P2.16ab and no
+ * screen at all, recorded in the migration ledger as "không dựng được màn nào mà không bịa dữ
+ * liệu": no endpoint listed projects, positions or applications, so the ids the write endpoints
+ * needed could not be obtained. `GET /projects` and its siblings removed that, and this is the
+ * surface they unlock.
+ *
+ * TWO TABS, LOCAL STATE. `Bảng dự án` is everyone's; `Đơn của tôi` is yours. They are state rather
+ * than routes because neither ever had a URL for anyone to be holding a link to — the opposite of
+ * `/friends`, whose three tabs were three pre-existing routes.
+ *
+ * CREATING OPENS WHAT IT MADE. That is only possible because `createProject` returns the project
+ * with its id now; while it answered `void`, a creator had no way to reach their own project and
+ * the honest UI would have been a form that says "sent" and stops.
+ */
+const TAB_IDS = ['board', 'mine'] as const;
+
+export default function ProjectsPage() {
+  // `useTabParam` reads the query string, which needs a Suspense boundary in the App Router.
+  return (
+    <Suspense>
+      <ProjectsContent />
+    </Suspense>
+  );
+}
+
+function ProjectsContent() {
+  const t = useT();
+  const router = useRouter();
+  const [tab, setTab] = useTabParam(TAB_IDS, 'board');
+  const [creating, setCreating] = useState(false);
+
+  return (
+    <div className="flex flex-col gap-[var(--nx-space-section)]">
+      <div className="flex items-start gap-3">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-nx-title font-semibold tracking-tight text-nx-text-primary">
+            {t('projects.title')}
+          </h1>
+          <p className="mt-1 text-nx-body-sm text-nx-text-muted">{t('projects.subtitle')}</p>
+        </div>
+        <Button size="sm" icon={<Plus />} onClick={() => setCreating(true)}>
+          {t('projects.create.action')}
+        </Button>
+      </div>
+
+      {/* `?tab=mine` rather than state alone. The paragraph above says these two never had URLs of
+          their own, and that stays true of ROUTES — but a reader who submits an application and
+          refreshes was being put back on the board, which is the one tab they were not looking at.
+
+          Grouped with its panel: 16 down, the page's own 40 up. It used to be 40 on both sides,
+          which left the strip stranded between the heading and the list it filters. */}
+      <div className="flex flex-col gap-[var(--nx-space-group)]">
+        <Tabs
+          aria-label={t('projects.title')}
+          active={tab}
+          onChange={setTab}
+          tabs={[
+            { id: 'board', label: t('projects.tabs.board') },
+            { id: 'mine', label: t('projects.tabs.mine') },
+          ]}
+        />
+
+        {tab === 'board' ? (
+          <>
+            {/* Board-only: this is a "for you" cut of the same list, ranked against the
+                caller's own professional profile, which "Đơn của tôi" has no equivalent axis
+                for. Renders nothing itself when there is no match to show. */}
+            <SuggestedProjects />
+            <ProjectList />
+          </>
+        ) : (
+          <MyApplications />
+        )}
+      </div>
+
+      <CreateProjectDialog
+        open={creating}
+        onClose={() => setCreating(false)}
+        onCreated={(projectId) => router.push(`/projects/${projectId}`)}
+      />
+    </div>
+  );
+}
