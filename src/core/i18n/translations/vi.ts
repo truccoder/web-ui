@@ -148,6 +148,9 @@ export const vi: Messages = {
     passwordHide: 'Ẩn mật khẩu',
     fullname: 'Họ và tên',
     fullNamePlaceholder: 'Nguyễn Văn A',
+    // The label on the auth screens' way out — see `(auth)/home-link.tsx`. Names the
+    // destination, not the gesture: the arrow beside it is what says "back".
+    backHome: 'Trang chủ',
     brand: {
       tagline: 'Nơi năng lực được chứng minh, không phải được kể lại',
       subtagline:

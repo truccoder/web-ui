@@ -164,6 +164,9 @@ export const en = {
     passwordHide: 'Hide password',
     fullname: 'Full Name',
     fullNamePlaceholder: 'John Doe',
+    // The label on the auth screens' way out — see `(auth)/home-link.tsx`. Names the
+    // destination, not the gesture: the arrow beside it is what says "back".
+    backHome: 'Home',
     brand: {
       tagline: 'Where ability is proven, not claimed',
       subtagline:

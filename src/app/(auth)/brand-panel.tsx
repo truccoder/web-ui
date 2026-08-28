@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { BrandMark } from '@/shared/components';
 import { useT } from '@/core/i18n';
 
@@ -100,14 +101,28 @@ export function BrandPanel() {
       // would scroll away above the fold.
       className="sticky top-0 hidden h-screen flex-col justify-between bg-nx-brand-ink p-10 lg:flex"
     >
-      <div className="flex items-center gap-2.5">
+      {/* THE LOCKUP IS A LINK NOW, to the same `/newsfeed` the corner's `HomeLink` names.
+          A wordmark at the top-left of a page is the one element every reader already expects to
+          be clickable — the shell's own drawer lockup is — and on these screens it was inert, so
+          the panel introduced the product without offering any way to go and look at it.
+
+          It does not replace `HomeLink`: this half of the screen is not rendered below `lg`, and
+          a logo is a weaker signpost than a labelled arrow even where it is. The two are the
+          conventional affordance and the explicit one, and the small screen only gets the second.
+
+          `w-fit` so the hit area stops at the lockup rather than running the panel's full width —
+          a link is as wide as the thing you clicked. */}
+      <Link
+        href="/newsfeed"
+        className="flex w-fit items-center gap-2.5 rounded-nx-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-nx-focus-ring"
+      >
         {/* `on="dark"` IS LOAD-BEARING — see the prop's own note. Left on `auto` the mark draws
             its ink square on an ink panel in light mode and disappears. */}
         <BrandMark size={32} on="dark" />
         <span className="text-nx-heading font-semibold tracking-tight text-nx-brand-ink-text">
           {t('app.name')}
         </span>
-      </div>
+      </Link>
 
       {/* `gap-5` is the BLOCK rung (20). The tagline and the terminal are two blocks of one
           statement, not two regions — the panel's own 40 of padding is what separates regions

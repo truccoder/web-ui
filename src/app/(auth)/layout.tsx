@@ -1,4 +1,5 @@
 import { BrandPanel } from './brand-panel';
+import { HomeLink } from './home-link';
 import { LocaleToggle } from './locale-toggle';
 
 /**
@@ -41,11 +42,16 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <div className="relative flex items-center justify-center p-4 lg:bg-nx-surface-card">
         {/* OUT OF THE FORM'S FLOW ON PURPOSE. The card is centred on the column, and anything
             added above it in normal flow pushes that centre off. Absolute keeps the form where it
-            is and puts the toggle in the corner the eye already checks for one.
+            is and puts each control in a corner the eye already checks for one.
 
-            It is pinned to THIS COLUMN rather than to the page, so above `lg` it lands on the
-            white half and never crosses onto the panel; below `lg` the column is the page and it
-            sits in the viewport's own corner. */}
+            They are pinned to THIS COLUMN rather than to the page, so above `lg` they land on the
+            white half and never cross onto the panel; below `lg` the column is the page and they
+            sit in the viewport's own corners.
+
+            LEFT IS THE WAY OUT, RIGHT IS THE PREFERENCE. `HomeLink` — see its header for the dead
+            end it closes — takes the left corner because a back-affordance belongs on the side the
+            reading starts from; the locale toggle keeps the right one it already had. */}
+        <HomeLink className="absolute top-4 left-4 lg:top-5 lg:left-5" />
         <LocaleToggle className="absolute top-4 right-4 lg:top-5 lg:right-5" />
 
         <div className="w-full max-w-md">{children}</div>
