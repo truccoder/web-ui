@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
@@ -13,6 +14,7 @@ import { getErrorMessage } from '@/shared/lib/api-error';
 import { useT } from '@/core/i18n';
 import { useLogin } from '../hooks/use-auth';
 import { loginSchema, type LoginFormValues } from '../lib/validation';
+import { forgetSignInEmail, readRememberedSignInEmail } from '../lib/remembered-email';
 import { OAuthButtons } from './oauth-buttons';
 
 export interface LoginFormProps {
@@ -27,11 +29,39 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<LoginFormValues>({ resolver: zodResolver(loginSchema) });
 
+  /**
+   * THE ADDRESS FROM REGISTRATION, PUT BACK IN THE FIELD IT WAS TYPED INTO.
+   *
+   * The commonest arrival at this screen is not a returning reader — it is someone who signed up
+   * ninety seconds ago, clicked the link in their mail, saw "email verified" and pressed continue.
+   * They have typed their address once already and the form used to greet them empty.
+   *
+   * IN AN EFFECT, NOT IN `defaultValues`, because the value comes out of `localStorage`. This page
+   * is prerendered on the server, where that store does not exist; reading it during render would
+   * make the server's HTML and the client's first render disagree, which React reports as a
+   * hydration error. An effect runs only in the browser, after both agree.
+   *
+   * `shouldValidate` is deliberately off: a field the reader has not touched must not open with a
+   * red error under it if the stored value is somehow malformed. The submit still validates.
+   */
+  useEffect(() => {
+    const remembered = readRememberedSignInEmail();
+    if (remembered) setValue('email', remembered);
+  }, [setValue]);
+
   const submit = handleSubmit((values) => {
-    login.mutate(values, { onSuccess: () => onSuccess?.() });
+    login.mutate(values, {
+      onSuccess: () => {
+        // The handoff is over — it existed to carry one address across the verification round
+        // trip, and this browser is not a "remember me". Signing out returns to an empty form.
+        forgetSignInEmail();
+        onSuccess?.();
+      },
+    });
   });
 
   /**

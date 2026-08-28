@@ -18,6 +18,7 @@ import {
   registerSchema,
   type RegisterFormValues,
 } from '../lib/validation';
+import { rememberSignInEmail } from '../lib/remembered-email';
 import { OAuthButtons } from './oauth-buttons';
 
 export function RegisterForm() {
@@ -71,7 +72,18 @@ export function RegisterForm() {
   const submit = handleSubmit((values) => {
     register.mutate(
       { body: values, profilePicture: picture ?? undefined },
-      { onSuccess: () => setSubmittedEmail(values.email) }
+      {
+        onSuccess: () => {
+          setSubmittedEmail(values.email);
+          /**
+           * THE ONE MOMENT THIS ADDRESS IS IN THE APP'S HANDS. From here the reader leaves for
+           * their mail client, comes back on `/verify-email?token=` — which carries a token and
+           * nothing else — and is handed a link to a sign-in form. Written down now, it survives
+           * that round trip and fills the form in; not written down, they type it twice.
+           */
+          rememberSignInEmail(values.email);
+        },
+      }
     );
   });
 
