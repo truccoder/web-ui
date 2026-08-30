@@ -19,9 +19,12 @@ export interface TreeNode extends RoadmapNode {
  * `id`; `Map` preserves insertion order, so the children come out sorted too without sorting a
  * second time.
  *
- * IT LIVES IN `lib/` BECAUSE TWO COMPONENTS NEED IT NOW. `RoadmapNodeTree` owns the nested
- * read-only tree; `RoadmapStagePath` reads the same shape as *stages and their skills*. One copy,
- * because an orphan-handling rule duplicated is an orphan-handling rule that drifts.
+ * IT LIVES IN `lib/` RATHER THAN INSIDE ITS ONE CONSUMER, and the reason changed rather than
+ * expired. Two components used to read this — `RoadmapNodeTree`'s nested read-only tree and
+ * `RoadmapStagePath`'s stages-and-their-skills — and both were deleted when `RoadmapTrack` replaced
+ * them with one vertical rail. What keeps the function here is that the orphan rule below is a
+ * statement about the BACKEND's data, not about any layout: it is the same rule whatever a component
+ * decides to draw, and a rule living inside one component is a rule the next component reinvents.
  */
 export function buildTree(nodes: RoadmapNode[]): TreeNode[] {
   const byId = new Map<number, TreeNode>();
@@ -34,4 +37,22 @@ export function buildTree(nodes: RoadmapNode[]): TreeNode[] {
     else roots.push(node);
   }
   return roots;
+}
+
+/**
+ * Every node in a forest, depth-first, parents before their children.
+ *
+ * IT IS HERE RATHER THAN IN `RoadmapTrack` BECAUSE THE COUNT IT FEEDS IS A CLAIM ABOUT PROGRESS,
+ * and a wrong one is the kind of bug nobody reports — a track that says `3/12` when it means `3/40`
+ * looks perfectly reasonable. In `lib/` it is a pure function over a shape, so the depth cases can
+ * be asserted directly; inside a component the only way to test them is to render one.
+ *
+ * A CYCLE WOULD NOT TERMINATE, and that is deliberate rather than overlooked: `buildTree` cannot
+ * produce one. It assigns each node to at most one parent and only ever descends into `children`
+ * arrays it built itself, so the result is a forest by construction. Guarding here would be
+ * defending against a shape the only producer cannot emit, and the guard would then need its own
+ * explanation for why it exists.
+ */
+export function flattenTree(nodes: TreeNode[]): TreeNode[] {
+  return nodes.flatMap((node) => [node, ...flattenTree(node.children)]);
 }

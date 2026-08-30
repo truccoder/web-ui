@@ -28,11 +28,8 @@ export { roadmapApi, skillVerificationApi, userProgressApi } from './api';
 export {
   RoadmapList,
   type RoadmapListProps,
-  RoadmapNodeTree,
-  type RoadmapNodeTreeProps,
-  RoadmapStagePath,
-  type RoadmapStagePathProps,
-  type RoadmapNodeLevel,
+  RoadmapTrack,
+  type RoadmapTrackProps,
   SkillVerificationForm,
   type SkillVerificationFormProps,
   PendingVerificationQueue,

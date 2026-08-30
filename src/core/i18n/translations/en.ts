@@ -541,18 +541,21 @@ export const en = {
       emptyDesc: 'Skills appear as an admin adds them to the roadmap.',
     },
     path: {
-      hint: 'Claim a stage or a skill to record it on your own word, or send proof for a moderator to review.',
       legend: {
         verified: 'Verified',
         pending: 'Awaiting review',
         open: 'Not started',
       },
     },
+    track: {
+      // Verified count over EVERY node on the track, at every depth — see the note in
+      // `roadmap-track.tsx` on why this is not the top-level count.
+      progress: 'Verified ${done}/${total} skills',
+      progressLabel: 'Track progress',
+      hint: 'Claim a step to record it on your own word, or send proof for a moderator to review.',
+    },
     verify: {
       claim: 'Claim',
-      // The stage card's footer button. Two identical `Claim` buttons a few rows apart, one for
-      // the stage and one for a skill, leave the reader to infer which node each one claims.
-      claimStage: 'Claim this stage',
       claiming: 'Claiming: ${node}',
       tierLabel: 'How are you backing this up?',
       tier: {

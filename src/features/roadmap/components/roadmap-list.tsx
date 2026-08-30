@@ -19,15 +19,18 @@ import { useRoadmaps } from '../hooks/use-roadmap';
  * A TOPIC FILTER, WHICH THIS COMPONENT COULD NOT HAVE HAD. The note that stood here said
  * `RoadmapEntity` had three columns — id, name, description — and no domain of any kind, so
  * grouping tracks would have meant assigning them to domains the backend had never heard of
- * (ds-deviation #23). V76 gave it `category`, and V79 labelled the five seeded tracks, so the
- * deviation is closed.
+ * (ds-deviation #23). V76 gave it `category` and the seed labels every track, so the deviation is
+ * closed.
  *
- * FILTERED, NOT GROUPED, and that is a smaller thing than the design system's
- * `skill-taxonomy.html` asks for. Grouping would put every topic on screen at once under its own
- * heading, which is worth doing over dozens of tracks and is theatre over five — four of the
- * headings would carry one card each. One control that narrows the list says the same thing at
- * this size and keeps the grid whole; grouping is the change to make when the catalogue is large
- * enough to need it.
+ * FILTERED, NOT GROUPED, and the numbers behind that call MOVED, so it is restated rather than
+ * inherited. It used to read "theatre over five — four of the headings would carry one card each",
+ * measured against a five-track seed labelled by `V79`. That migration is gone: the third-generation
+ * seed (`V80`–`V92`) dropped the whole `V50`–`V79` range and `V88` ships **12 tracks across 8 of the
+ * 9 categories**, so grouping would now produce 8 headings over 12 cards — headings averaging 1.5
+ * members each, which is worse theatre than the case the original note rejected, not better. One
+ * control that narrows the list still says the same thing and keeps the grid whole. Grouping becomes
+ * right when a heading has enough members to be worth scanning as a set; the trigger is members per
+ * category, not the total.
  *
  * CLIENT-SIDE, because `GET /roadmaps` takes no `category` parameter and returns every track in
  * one unpaginated response. The list being filtered is the complete list, so nothing can hide

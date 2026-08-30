@@ -27,8 +27,11 @@ export const roadmapApi = {
    * GET /v1/api/roadmaps — every roadmap, unpaginated.
    *
    * `roadmapRepository.findAll()` with no page and no limit, so the whole table arrives in one
-   * response. Fine at the current size (the table is EMPTY on a fresh dev database — there is no
-   * roadmap seed) and worth remembering if it ever fills up.
+   * response. Fine at the size the seed actually ships — `V88__seed_roadmaps.sql` inserts **12
+   * tracks and 103 nodes** — and worth remembering if it ever fills up. The note that used to sit
+   * here said the table was empty on a fresh dev database with no roadmap seed at all; that was
+   * true before the third-generation seed (`V80`–`V92`, 2026-08-28) and is now the opposite of the
+   * truth, which is the sort of stale claim that makes a reader distrust the rest of the file.
    */
   getRoadmaps: () => api.get<Roadmap[]>('/v1/api/roadmaps').then((r) => r.data),
 

@@ -525,19 +525,21 @@ export const vi: Messages = {
       emptyDesc: 'Kỹ năng sẽ xuất hiện khi quản trị viên thêm vào lộ trình.',
     },
     path: {
-      hint: 'Bấm Ghi nhận ở một giai đoạn hoặc một kỹ năng để tự khai, hoặc gửi minh chứng cho kiểm duyệt viên duyệt.',
       legend: {
         verified: 'Đã xác minh',
         pending: 'Chờ duyệt',
         open: 'Chưa bắt đầu',
       },
     },
+    track: {
+      // Số đã xác minh trên tổng số node của CẢ lộ trình, mọi cấp — xem ghi chú trong
+      // `roadmap-track.tsx` về việc vì sao không đếm riêng cấp cao nhất.
+      progress: 'Đã xác minh ${done}/${total} kỹ năng',
+      progressLabel: 'Tiến độ lộ trình',
+      hint: 'Bấm Ghi nhận ở một bước để tự khai, hoặc gửi minh chứng cho kiểm duyệt viên duyệt.',
+    },
     verify: {
       claim: 'Ghi nhận',
-      // Nhãn riêng cho nút ở chân thẻ giai đoạn. Hai nút `Ghi nhận` giống hệt nhau cách nhau vài
-      // dòng — một cho giai đoạn, một cho kỹ năng — bắt người đọc phải tự suy ra nút nào ghi nhận
-      // node nào; câu này nói thẳng.
-      claimStage: 'Ghi nhận giai đoạn này',
       claiming: 'Đang ghi nhận: ${node}',
       tierLabel: 'Bạn chứng minh bằng cách nào?',
       tier: {

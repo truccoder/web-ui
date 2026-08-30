@@ -61,14 +61,23 @@ test.describe('reputation', () => {
   test('the roadmap lists its paths and opens one', async ({ page }) => {
     await page.goto('/roadmap');
 
-    // The script picks `Backend Developer` (id 2001, 13 nodes). Asserting the name rather than the
-    // count: a roadmap gaining a node is content, not a regression.
-    const backend = page.getByText('Backend Developer').first();
+    /**
+     * `Backend cho người mới` (id 2001, 12 nodes). Asserting the name rather than the count: a
+     * roadmap gaining a node is content, not a regression.
+     *
+     * THE NAME CHANGED UNDER THIS TEST, WHICH IS WORTH RECORDING RATHER THAN QUIETLY EDITING. It
+     * read `Backend Developer` and that row no longer exists: the third-generation seed
+     * (`V80`–`V92`, 2026-08-28) dropped the whole `V50`–`V79` range and `V88` rebuilt the tracks
+     * with Vietnamese names. A test naming seeded content is a test that breaks when the seed is
+     * rebuilt, and the alternative — matching a pattern loose enough to survive any seed — would
+     * assert that SOME track exists, which is not what this test is for.
+     */
+    const backend = page.getByText('Backend cho người mới').first();
     await expect(backend).toBeVisible({ timeout: 20_000 });
     await backend.click();
 
-    // Opening one shows its stages, its nodes, and a legend naming the three states a node can
-    // be in. Nothing is submitted here; see the file note.
+    // Opening one shows its steps and a legend naming the three states a node can be in. Nothing is
+    // submitted here; see the file note.
     //
     // ASSERTED ON THE LEGEND RATHER THAN ON THE ROADMAP'S NAME, because the canvas still does not
     // print the track's name — the context bar does, and that is asserted separately below. Worth
@@ -78,9 +87,18 @@ test.describe('reputation', () => {
       await expect(page.getByText(state, { exact: true }).first()).toBeVisible({ timeout: 15_000 });
     }
 
-    // And the nodes themselves, grouped into stages. `Java Core` is the first node of the first
-    // stage of roadmap 2001 — content, so a name rather than a count.
-    await expect(page.getByText('Java Core').first()).toBeVisible();
+    // The steps themselves. `Giao thức HTTP` is node 1 of roadmap 2001 — content, so a name rather
+    // than a count.
+    await expect(page.getByText('Giao thức HTTP').first()).toBeVisible();
+
+    /**
+     * AND ITS DESCRIPTION, which is a new assertion rather than a renamed one. All 103 seeded nodes
+     * carry a hand-written description and none of it reached the screen: the horizontal chain
+     * rendered `name` only, and the one component that did render descriptions was mounted by no
+     * route. It is the only text on this page that says what a skill MEANS, so it is worth a test
+     * that fails if it silently stops being rendered again.
+     */
+    await expect(page.getByText('Phân biệt 401 và 403', { exact: false }).first()).toBeVisible();
 
     /**
      * THE TRAIL CARRIES THE SELECTION AND LEADS BACK TO THE INDEX — both halves asserted, because
@@ -89,7 +107,7 @@ test.describe('reputation', () => {
      * is the one place in this flow there is no other way back to. The rail is hidden in focus
      * mode, so the `Lộ trình` link on this screen is the trail's and nothing else's.
      */
-    await expect(page.getByText('Backend Developer').first()).toBeVisible();
+    await expect(page.getByText('Backend cho người mới').first()).toBeVisible();
     await page.getByRole('link', { name: 'Lộ trình' }).first().click();
     await expect(page).toHaveURL(/\/roadmap$/);
   });

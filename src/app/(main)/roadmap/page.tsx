@@ -4,10 +4,9 @@ import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   RoadmapList,
-  RoadmapStagePath,
+  RoadmapTrack,
   SkillVerificationForm,
   type RoadmapNode,
-  type RoadmapNodeLevel,
 } from '@/features/roadmap';
 import { useMyProfile } from '@/features/security';
 import { Button, Dialog, PageHeader } from '@/shared/components';
@@ -52,33 +51,28 @@ function RoadmapContent() {
   // recipient never opened.
   const [claiming, setClaiming] = useState<RoadmapNode | null>(null);
 
-  // Whose progress the track draws. Undefined while the profile loads, which `RoadmapStagePath`
+  // Whose progress the track draws. Undefined while the profile loads, which `RoadmapTrack`
   // reads as "no state yet" rather than as "nothing verified" — it keeps the query idle instead of
   // asking `/users/NaN/roadmap-progress`.
   const { data: profile } = useMyProfile();
 
   /**
    * `secondary`, NOT `ghost`, and the reason is a reported miss rather than a taste call. A ghost
-   * button is a word with no edges; sitting at the right end of a 32-tall row next to a skill name
-   * it read as a label, and the owner's report was literally *"tôi không thấy nơi nào để user xác
-   * nhận roadmap"* — the one control this whole screen exists to offer. `secondary` gives it the
-   * strong border that says "press me" without promoting a per-row action to the page's primary.
+   * button is a word with no edges; sitting at the right end of a row next to a skill name it read
+   * as a label, and the owner's report was literally *"tôi không thấy nơi nào để user xác nhận
+   * roadmap"* — the one control this whole screen exists to offer. `secondary` gives it the strong
+   * border that says "press me" without promoting a per-row action to the page's primary.
    *
-   * ONE CALLBACK, TWO CONTROLS, AND `level` IS WHAT SEPARATES THEM. `RoadmapStagePath` decides
-   * where a claim goes — a skill's at the end of its row, a stage's across the foot of its card —
-   * and tells the caller which it is asking for; the caller owns what the control looks like and
-   * what it says. So a stage gets the full width its footer gives it and a label naming what it
-   * claims, while a skill keeps the compact button a 32-tall row can hold. Both open the same
-   * dialog on the same node, which is the part that must not diverge and now cannot.
+   * ONE CONTROL FOR EVERY NODE, WHICH IS WHAT THE VERTICAL TRACK MADE POSSIBLE. This used to take a
+   * `level` and render two shapes — a compact button in a skill row, a full-width one in a stage
+   * card's footer — because the horizontal chain put claims in two structurally different places.
+   * `RoadmapTrack` puts every node on one rail, so there is one placement and one control, and the
+   * caller can no longer render the wrong shape for the position. The `claimStage` string went with
+   * it: it existed to tell two identical buttons apart and there is now only one.
    */
-  const claimAction = (node: RoadmapNode, level: RoadmapNodeLevel) => (
-    <Button
-      size="sm"
-      variant="secondary"
-      className={level === 'stage' ? 'w-full' : undefined}
-      onClick={() => setClaiming(node)}
-    >
-      {level === 'stage' ? t('roadmap.verify.claimStage') : t('roadmap.verify.claim')}
+  const claimAction = (node: RoadmapNode) => (
+    <Button size="sm" variant="secondary" onClick={() => setClaiming(node)}>
+      {t('roadmap.verify.claim')}
     </Button>
   );
 
@@ -102,11 +96,7 @@ function RoadmapContent() {
             the bottom is the runout every scroller in this product ends with. `min-h-0` lets the
             region scroll inside the shell's flex column rather than growing past it. */}
         <div className="min-h-0 flex-1 overflow-y-auto px-4 pt-5 pb-12 lg:px-10">
-          <RoadmapStagePath
-            roadmapId={roadmapId}
-            userId={profile?.id}
-            renderNodeAction={claimAction}
-          />
+          <RoadmapTrack roadmapId={roadmapId} userId={profile?.id} renderNodeAction={claimAction} />
         </div>
 
         <ClaimDialog claiming={claiming} onClose={() => setClaiming(null)} />
