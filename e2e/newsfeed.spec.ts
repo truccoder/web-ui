@@ -6,9 +6,9 @@ import { test, expect, type Page } from '@playwright/test';
  * The script makes three claims from this screen, and each is a decision a careless refactor
  * would quietly undo:
  *
- *  - the feed MIXES two shapes — community posts and crawled tech news — and they are told apart
- *    before you read a word, because one opens with a face and a reputation chip and the other
- *    has nobody behind it to show;
+ *  - the product carries two card shapes — community posts and crawled tech news — on two tabs
+ *    (`Bài viết` and `Công nghệ`), and they are told apart before you read a word, because one
+ *    opens with a face and a reputation chip and the other has nobody behind it to show;
  *  - the reaction set is a TECHNICAL vocabulary — Hữu ích · Sáng tỏ · Ghi nhận · Xuất sắc · Khó
  *    hiểu · Không đồng tình — not like-and-heart;
  *  - the post kind is a PARAMETER of one action, eight of them behind one menu, not a row of
@@ -52,26 +52,28 @@ const postPermalinks = (page: Page) => page.locator('main a[href^="/posts/"]');
  * data, so nothing can render it before the app is running.
  */
 async function openFeed(page: Page) {
-  await page.goto('/newsfeed');
+  // `/newsfeed` bare is the `Công nghệ` tab now — crawled items, no posts. The community column
+  // this file tests is `?tab=posts`.
+  await page.goto('/newsfeed?tab=posts');
   await expect(postPermalinks(page).first()).toBeVisible({ timeout: 20_000 });
 }
 
 test.describe('newsfeed', () => {
-  test('mixes community posts with crawled news, and they are shaped differently', async ({
+  test('keeps community posts and crawled news on separate tabs, shaped differently', async ({
     page,
   }) => {
-    await openFeed(page);
-
-    // A community post's own link is internal — it goes to the post.
+    // `Bài viết` is the community column: every card's own link is internal — it goes to the post.
+    await page.goto('/newsfeed?tab=posts');
+    await expect(postPermalinks(page).first()).toBeVisible({ timeout: 20_000 });
     expect(await postPermalinks(page).count()).toBeGreaterThan(0);
 
-    // A crawled item's is not: it leaves for the source. That difference IS the claim — the two
-    // kinds of card are not interchangeable rows with a different badge, they point elsewhere.
-    const externalHeadlines = page.locator('main a[href^="http"]');
-    expect(await externalHeadlines.count()).toBeGreaterThan(0);
-
-    // And the crawled cards name their source, because there is no author to name instead.
+    // `Công nghệ` is the crawler's column. Its cards leave for the source and name that source,
+    // because there is no author to name instead — and it carries no post permalinks at all, which
+    // is the structural proof the two streams are no longer interleaved.
+    await page.getByRole('tab', { name: 'Công nghệ' }).click();
+    await expect(page.locator('main a[href^="http"]').first()).toBeVisible({ timeout: 20_000 });
     await expect(page.getByText(/Hacker News|GitHub|DEV/).first()).toBeVisible();
+    await expect(postPermalinks(page)).toHaveCount(0);
   });
 
   test('the composer offers all eight kinds behind one menu', async ({ page }) => {

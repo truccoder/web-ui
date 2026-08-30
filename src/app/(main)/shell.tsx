@@ -134,15 +134,15 @@ interface NavGroup {
  * replaces (`Dòng chảy` / `Phát triển` / `Mạng lưới`), and it dissolved `Dòng chảy` entirely —
  * with `Bảng tin` moved into the community half that group had no members left.
  *
- * WHY `Cộng đồng` AND NOT `Mạng lưới`: the feed's `Tất cả` tab is every post in the product plus
- * every crawled item, with no filter of any kind. `Mạng lưới` names the friend edge and nothing
- * else, so filing the feed under it would say the feed is your friends — which the product
- * explicitly says it is not. `Cộng đồng` says the wider thing, and it is the honest complement to
- * `Phát triển`: outward, then inward.
+ * WHY `Cộng đồng` AND NOT `Mạng lưới`: the feed spans every post in the product (`Bài viết`) plus
+ * the crawler's whole stream (`Công nghệ`), not just people you know. `Mạng lưới` names the friend
+ * edge and nothing else, so filing the feed under it would say the feed is your friends — which
+ * the product explicitly says it is not. `Cộng đồng` says the wider thing, and it is the honest
+ * complement to `Phát triển`: outward, then inward.
  *
- * `/trending` IS NOT IN THE RAIL, AND IS NOT A DESTINATION ANY MORE EITHER. The DS folds crawled
- * content into the feed's `Tất cả` tab and the ledger's `Từ bên ngoài` section, retiring the
- * separate page (R4); it is now `/newsfeed`'s `Công nghệ` tab, and the route redirects there.
+ * `/trending` IS NOT IN THE RAIL, AND IS NOT A DESTINATION ANY MORE EITHER. R4 retired the
+ * separate page; the crawler's content is now `/newsfeed`'s `Công nghệ` tab (the feed's default),
+ * with the ledger's `Từ bên ngoài` section as a guest-only echo, and the route redirects there.
  * The palette entry below points at the tab, which is the only place the content lives.
  */
 const NAV_GROUPS: NavGroup[] = [

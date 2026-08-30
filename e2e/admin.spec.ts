@@ -132,7 +132,9 @@ test.describe('admin · roadmap', () => {
     await panelSettled(page, approve.first().or(empty));
 
     // The authoring side is reused from the reader's roadmap list — a track has to be selectable
-    // before nodes can be added to it. `Backend Developer` is seeded (id 2001).
-    await expect(page.getByText('Backend Developer').first()).toBeVisible({ timeout: 15_000 });
+    // before nodes can be added to it. `Backend cho người mới` is seeded (id 2001); it read
+    // `Backend Developer` until the third-generation seed (`V88`) rebuilt the tracks with
+    // Vietnamese names.
+    await expect(page.getByText('Backend cho người mới').first()).toBeVisible({ timeout: 15_000 });
   });
 });

@@ -28,7 +28,9 @@ import { test, expect, type Page } from '@playwright/test';
 const KNOWN_HANDLE = 'backend_truc_anh';
 
 async function openGuestFeed(page: Page) {
-  await page.goto('/newsfeed');
+  // `/newsfeed` bare is the `Công nghệ` tab now — crawled items, no posts. The public post column
+  // a guest can read is `?tab=posts`.
+  await page.goto('/newsfeed?tab=posts');
   // Posts are client-side data. Waiting for one is also what proves the interception in
   // `core/api/axios` lets `GET /posts/public` through — a missing entry in that allow-list shows
   // up here as an empty feed, not as an error.

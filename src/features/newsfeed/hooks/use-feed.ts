@@ -33,7 +33,7 @@ export function useNewsfeed(enabled = true, scope: FeedApiScope = 'ALL') {
 }
 
 /**
- * GET /v1/api/posts/public, cursor-paged. The `Tất cả` tab.
+ * GET /v1/api/posts/public, cursor-paged. The `Bài viết` tab.
  *
  * `initialPageParam` IS `undefined`, NOT 0 OR 1. The first request must send no cursor at all —
  * the backend reads "no cursor" as "from the newest", while `cursor=0` would ask for posts after
@@ -103,9 +103,10 @@ export function usePost(postId: number | undefined) {
 export function useRefreshFeed() {
   const queryClient = useQueryClient();
   return () => {
-    // BOTH BRANCHES, because a new post belongs in both tabs: `/feed` fans it out to the author's
-    // own timeline and `/posts/public` is a query that will now match it. Sweeping the shared
-    // `all` prefix is one call and cannot drift as branches are added.
+    // EVERY BRANCH, because a new post belongs in both the fan-out feed and the public one:
+    // `/feed` fans it out to the author's own timeline and `/posts/public` is a query that will
+    // now match it. Sweeping the shared `newsfeed` prefix is one call and cannot drift as branches
+    // are added.
     queryClient.invalidateQueries({ queryKey: newsfeedKeys.all });
   };
 }

@@ -26,19 +26,28 @@ import { useT } from '@/core/i18n';
  * canvas's first block, so it — not the composer — sits on the 28px datum shared with the rail's
  * first group and the ledger's first section.
  *
- * THE THIRD TAB EXISTS NOW. It was specified by the design and could not be built: `/feed` took
+ * THE `skills` TAB EXISTS NOW. It was specified by the design and could not be built: `/feed` took
  * only `page`/`size`, `/posts/public` only a cursor, and `/search` a free-text query — none of
  * them could express "posts touching skills I have". The omission was recorded here rather than
  * papered over with a tab that showed something else. B7 added `scope` to `/feed`, so the tab is
  * one more entry in `TABS` and one more `FeedScope`, exactly as this note predicted.
  *
- * THE FOURTH TAB IS `/trending`, MOVED. Crawled items had a destination of their own in the rail,
- * and it was the wrong shape twice over: a signed-in reader never saw the row (R4 folded crawled
- * content into `Tất cả`, so the page moved to the ⌘K palette and effectively disappeared), while a
- * guest DID see it — promoted into their rail because it was the only other thing they could open.
- * Same content, two different answers, decided by who was asking. As a tab it is one answer for
- * everyone, next to the other three ways of slicing the same column. `/trending` now redirects
- * here.
+ * `Công nghệ` IS `/trending`, MOVED — AND IT LEADS. Crawled items had a destination of their own in
+ * the rail, and it was the wrong shape twice over: a signed-in reader never saw the row (R4 folded
+ * crawled content into the feed, so the page moved to the ⌘K palette and effectively disappeared),
+ * while a guest DID see it — promoted into their rail because it was the only other thing they
+ * could open. Same content, two different answers, decided by who was asking. As a tab it is one
+ * answer for everyone, and it is the DEFAULT: the bare `/newsfeed` opens on the stream nobody has
+ * to be connected to anyone to have, and the community feeds sit behind `?tab=`. `/trending`
+ * redirects here.
+ *
+ * `Tất cả` USED TO LEAD, AND IT IS GONE. It was `GET /posts/public` with the crawler's items
+ * merged in by `publishedAt` on the client — and that merge threw away `TrendingController`'s own
+ * ranking (hotness / per-source percent rank) to interleave by raw recency, so the same items were
+ * ordered one way here and another way on `Công nghệ`. The owner called the inconsistency out.
+ * `Bài viết` replaces it as `GET /posts/public` ALONE — every post in the product, no crawled
+ * content, no re-sort. Crawled items live only on `Công nghệ` now, where the ranking is the
+ * backend's and the filters can narrow it.
  *
  * `tech` IS NOT A `FeedScope`, AND THE TYPES SAY SO. The other three tabs choose between two feed
  * ENDPOINTS (see `Newsfeed`'s `scope` prop); this one reads `TrendingController` instead, which is
@@ -46,15 +55,15 @@ import { useT } from '@/core/i18n';
  * id is a page-level union and the branch below renders a different component, rather than
  * `Newsfeed` growing a scope it cannot fetch.
  */
-const TABS = ['all', 'friends', 'skills', 'tech'] as const;
+const TABS = ['tech', 'posts', 'friends', 'skills'] as const;
 type FeedTab = (typeof TABS)[number];
 
 /**
  * WHAT A SIGNED-OUT READER GETS, AND WHY IT IS TWO ROWS RATHER THAN NONE.
  *
- * `Tất cả` is `GET /posts/public` — a query over the posts table, which the backend permits
- * anonymously — and `Công nghệ` is the crawler's own endpoint, anonymous for the same reason the
- * old `/trending` page was reachable signed out. `Bạn bè` and `Kỹ năng của tôi` are both
+ * `Công nghệ` is the crawler's own endpoint, anonymous for the same reason the old `/trending`
+ * page was reachable signed out, and `Bài viết` is `GET /posts/public` — a query over the posts
+ * table, which the backend permits anonymously. `Bạn bè` and `Kỹ năng của tôi` are both
  * `GET /feed`, a fan-out precomputed per user in Redis: a guest does not have an empty one, they
  * have none, and there is no user for the `SKILLS` scope to intersect with.
  *
@@ -64,7 +73,7 @@ type FeedTab = (typeof TABS)[number];
  * pays for the rail losing its promoted `Xu hướng` row — the second thing a guest can open is on
  * the page they land on, instead of being a row in a rail whose other rows are all locked.
  */
-const GUEST_TABS: readonly FeedTab[] = ['all', 'tech'];
+const GUEST_TABS: readonly FeedTab[] = ['tech', 'posts'];
 
 export default function NewsfeedPage() {
   // `useTabParam` reads the query string, which needs a Suspense boundary in the App Router —
@@ -82,24 +91,24 @@ function NewsfeedContent() {
   const isGuest = useIsGuest();
 
   /**
-   * THE TAB IS IN THE URL NOW, and the fourth tab is what made that necessary rather than nice:
+   * THE TAB IS IN THE URL NOW, and `Công nghệ` is what made that necessary rather than nice:
    * `/trending` redirects to `?tab=tech`, which only lands anywhere if the strip reads the query
    * string. It buys the ordinary thing too — a refresh stays where the reader was.
    *
-   * `all` IS THE DEFAULT, so the canonical address of the feed stays the bare `/newsfeed` — see
-   * the hook, which deletes the parameter rather than writing `?tab=all`.
+   * `tech` IS THE DEFAULT, so the canonical address of the feed stays the bare `/newsfeed` — see
+   * the hook, which deletes the parameter rather than writing `?tab=tech`.
    */
-  const [tabParam, setTab] = useTabParam<FeedTab>(TABS, 'all');
+  const [tabParam, setTab] = useTabParam<FeedTab>(TABS, 'tech');
 
   /**
-   * A GUEST ASKING FOR A TAB THEY CANNOT LOAD GETS `Tất cả`, not an error. `?tab=friends` is a
+   * A GUEST ASKING FOR A TAB THEY CANNOT LOAD GETS `Công nghệ`, not an error. `?tab=friends` is a
    * perfectly ordinary thing to arrive with — someone signed in shared the link — and the honest
-   * answer is the feed they CAN read, not a fan-out that has no rows for a user who does not
+   * answer is a stream they CAN read, not a fan-out that has no rows for a user who does not
    * exist. The URL is left alone; correcting it would rewrite a link the reader may still want
    * after signing in.
    */
   const tabs = isGuest ? GUEST_TABS : TABS;
-  const tab = tabs.includes(tabParam) ? tabParam : 'all';
+  const tab = tabs.includes(tabParam) ? tabParam : 'tech';
 
   /**
    * THE COMPOSER SCROLLS AWAY AND THE FILTER BAR DOES NOT, SO THE FILTER BAR CARRIES THE WAY BACK
@@ -275,9 +284,8 @@ function NewsfeedContent() {
       )}
 
       {/* `TrendingList` BROUGHT ITS FILTERS WITH IT — source, category and time range — which the
-          old rail destination had and the `Tất cả` merge never could. That is the tab's argument
-          for existing beside a feed that already mixes these items in: `Tất cả` is the join,
-          `Công nghệ` is the stream you can actually narrow. */}
+          old rail destination had. It keeps `TrendingController`'s own ranking; `Bài viết` is a
+          separate stream (`GET /posts/public`) with no crawled content in it at all. */}
       {tab === 'tech' ? <TrendingList /> : <Newsfeed scope={tab satisfies FeedScope} />}
     </div>
   );

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { RefreshCw } from 'lucide-react';
 import { Button, Card, EmptyState, Skeleton } from '@/shared/components';
@@ -9,8 +9,8 @@ import { cn } from '@/shared/lib/cn';
 import { newsfeedKeys } from '../hooks/keys';
 import { useNewsfeed, usePublicFeed } from '../hooks/use-feed';
 import { useScrollRestoration } from '../hooks/use-scroll-restoration';
+import { useRecordFeedReturn } from '../hooks/use-feed-return';
 import { useSeenReporter } from '../hooks/use-seen-reporter';
-import { TrendingCard, useTrending } from '@/features/trending';
 import { FeedPost } from './feed-post';
 
 /**
@@ -28,24 +28,19 @@ import { FeedPost } from './feed-post';
  * still works when the viewport is tall enough that no scrolling ever happens.
  */
 /**
- * WHICH FEED. The two scopes are different ENDPOINTS, not a filter applied to one — see
- * `newsfeedApi.getPublicFeed`. `friends` is the Redis fan-out and can only contain posts by
- * people you are connected to; `all` is a query over the posts table with no personalisation.
- * That is why the tab is `Tất cả` rather than `Khám phá`, and why the friends tab can never show
- * crawled content: not because it is filtered out, but because crawled items have no author to
- * be connected to.
- */
-/**
- * `skills` JOINED THIS UNION WHEN THE BACKEND GREW A `scope` PARAMETER (B7).
+ * WHICH FEED. `posts` is a different ENDPOINT from the other two, not a filter applied to one —
+ * see `newsfeedApi.getPublicFeed`. `friends` and `skills` are the Redis fan-out (`GET /feed`) and
+ * can only contain posts by people you are connected to; `posts` is a query over the whole posts
+ * table (`GET /posts/public`) with no personalisation. None of the three carries crawled content:
+ * that lives only on the `Công nghệ` tab, which renders `TrendingList` instead of this component.
  *
- * The tab was designed from the start and could not be built: `/feed` took only `page` and
- * `size`, so there was no way to express "posts touching a skill I have verified" and the
- * newsfeed page recorded the omission rather than render a tab that showed something else.
- *
- * `all` is still a DIFFERENT ENDPOINT (`/posts/public`); `friends` and `skills` are the same
- * fan-out feed under two scopes.
+ * `skills` JOINED THIS UNION WHEN THE BACKEND GREW A `scope` PARAMETER (B7). The tab was designed
+ * from the start and could not be built: `/feed` took only `page` and `size`, so there was no way
+ * to express "posts touching a skill I have verified" and the newsfeed page recorded the omission
+ * rather than render a tab that showed something else. `friends` and `skills` are the same
+ * fan-out feed under two scopes; `posts` is the separate public endpoint.
  */
-export type FeedScope = 'all' | 'friends' | 'skills';
+export type FeedScope = 'posts' | 'friends' | 'skills';
 
 export interface NewsfeedProps {
   /** @default "friends" */
@@ -76,94 +71,41 @@ export function Newsfeed({ scope = 'friends', className }: NewsfeedProps) {
   // calling one or the other conditionally is the classic way to break the rules of hooks. The
   // idle branch costs nothing: react-query does not fetch a query nothing is reading once its
   // `enabled` is false, and switching tabs then finds the other branch already warm in cache.
-  const friendsFeed = useNewsfeed(scope !== 'all', scope === 'skills' ? 'SKILLS' : 'ALL');
-  const publicFeed = usePublicFeed(scope === 'all');
-  const feed = scope === 'all' ? publicFeed : friendsFeed;
+  const fanOutFeed = useNewsfeed(scope !== 'posts', scope === 'skills' ? 'SKILLS' : 'ALL');
+  const publicFeed = usePublicFeed(scope === 'posts');
+  const feed = scope === 'posts' ? publicFeed : fanOutFeed;
 
   /**
-   * KEYED PER TAB. `Tất cả`, `Bạn bè` and `Kỹ năng của tôi` are three different columns of
+   * KEYED PER TAB. `Bài viết`, `Bạn bè` and `Kỹ năng của tôi` are three different columns of
    * different lengths; one shared position would drop the reader into the middle of a list they
-   * were never scrolled through. `ready` waits for data because restoring against an empty feed
-   * would clamp to zero and throw the saved position away.
+   * were never scrolled through. It waits for data because restoring against an empty feed would
+   * clamp to zero and throw the saved position away.
    */
   useScrollRestoration(`newsfeed:${scope}`, Boolean(feed.data));
 
   /**
-   * SEEN-POST REPORTING RUNS ONLY ON THE FAN-OUT FEED. `POST /feed/seen` demotes posts in
-   * `GET /feed`'s Redis ranking; `Tất cả` is `GET /posts/public`, an id-ordered scan with nothing
-   * to demote — and passing `scope !== 'all'` here also keeps the beacon off a guest, who never
-   * reaches another scope. `trackSeen(postId)` is a stable callback ref hung on the wrapper around
-   * each card below.
+   * REMEMBER THIS COLUMN AS THE PLACE A POST PERMALINK RETURNS TO. `/posts/{id}`'s `← Về bảng tin`
+   * link is a bare `/newsfeed`, which now opens on `Công nghệ` — a tab with no posts and no scroll
+   * restoration. Recording the scope here lets that link resolve to `?tab=<scope>` instead, so a
+   * reader who opened a post from `Bạn bè` lands back on `Bạn bè` and `useScrollRestoration` above
+   * has a saved position to replay.
    */
-  const trackSeen = useSeenReporter(scope !== 'all');
+  useRecordFeedReturn(scope);
 
   /**
-   * CRAWLED CONTENT IS MIXED INTO `Tất cả`, AND ONLY INTO IT. This is the design's central claim
-   * about the feed: it is the product's column, not the user's — "every post plus every crawled
-   * item, with no filter of any kind". It also retired `/discover` as a separate destination.
-   *
-   * THE FRIENDS TAB CAN NEVER CONTAIN THESE, and not because they are filtered out: a crawled item
-   * has no author, so there is no edge that could put it in a personalised fan-out. The absence is
-   * structural, which is why no code here excludes them.
-   *
-   * TWO SOURCES, MERGED BY TIME ON THE CLIENT — there is no endpoint that returns both. The merge
-   * is a sort over what has been fetched, so it is correct within the loaded window and makes no
-   * claim beyond it: `hasNextPage` is true while EITHER source has more, and `fetchNextPage` asks
-   * the one whose oldest loaded item is newer, i.e. whichever is holding the join back. Asking both
-   * would double the page size on every scroll.
+   * SEEN-POST REPORTING RUNS ONLY ON THE FAN-OUT FEED. `POST /feed/seen` demotes posts in
+   * `GET /feed`'s Redis ranking; `Bài viết` is `GET /posts/public`, an id-ordered scan with
+   * nothing to demote — and passing `scope !== 'posts'` here also keeps the beacon off a guest,
+   * who never reaches a fan-out scope. `trackSeen(postId)` is a stable callback ref hung on the
+   * wrapper around each card below.
    */
-  const trending = useTrending({});
+  const trackSeen = useSeenReporter(scope !== 'posts');
 
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-  /**
-   * Paging across two sources. `hasNextPage` is true while EITHER has more; the sentinel asks the
-   * one that is holding the join back — whichever's oldest loaded item is NEWER, because that is
-   * the source the merged list runs out of first. Asking both on every scroll would double the
-   * page size and make the join arrive in bursts.
-   */
-  const mixed = scope === 'all';
-  const oldestOf = (times: string[]) => times.reduce((a, b) => (a < b ? a : b), '￿');
-  /**
-   * `page.posts ?? []`, AND THE `??` IS NOT DEFENSIVE PADDING — it is a crash that was reachable
-   * on a brand-new account. `flatMap` over a page whose `posts` is absent yields `[undefined]`
-   * rather than nothing, so the very next `.map((p) => p.createdAt)` dereferences undefined and
-   * takes the whole screen to the error boundary: *Cannot read properties of undefined (reading
-   * 'createdAt')*. The page-level `?? []` already here only ever guarded `data` being absent,
-   * which is the case that could not happen.
-   *
-   * The same guard is applied to the render list below, which read the same shape unguarded.
-   *
-   * IT IS WRITTEN TWICE RATHER THAN HOISTED INTO A SHARED `const`, which looks like the obvious
-   * cleanup and is not: hoisting it puts a freshly-allocated array in the dependency chain of the
-   * `useCallback` below, and the React Compiler then refuses the whole component with *existing
-   * memoization could not be preserved*. Two identical expressions cost nothing at runtime; the
-   * skipped optimisation costs every render of the feed.
-   */
-  const postsOldest = oldestOf(
-    (feed.data?.pages.flatMap((page) => page.posts ?? []) ?? []).map((p) => p.createdAt ?? '')
-  );
-  const externalOldest = oldestOf(
-    (trending.data?.pages.flatMap((p) => p.items ?? []) ?? []).map((i) => i.publishedAt ?? '')
-  );
-
-  // `||`, NOT `??`. Both are booleans, so `??` would only fall through on null/undefined and
-  // `false ?? true` is `false` — the feed running out would have declared the whole list finished
-  // while crawled items were still waiting.
-  const hasNextPage = mixed ? Boolean(feed.hasNextPage || trending.hasNextPage) : feed.hasNextPage;
-  const isFetchingNextPage = feed.isFetchingNextPage || (mixed && trending.isFetchingNextPage);
-
-  const fetchNextPage = useCallback(() => {
-    if (!mixed) {
-      if (feed.hasNextPage) feed.fetchNextPage();
-      return;
-    }
-    // Prefer the source whose tail is newer; fall back to whichever still has pages.
-    const takeExternal =
-      trending.hasNextPage && (!feed.hasNextPage || externalOldest > postsOldest);
-    if (takeExternal) trending.fetchNextPage();
-    else if (feed.hasNextPage) feed.fetchNextPage();
-  }, [mixed, feed, trending, externalOldest, postsOldest]);
+  // `fetchNextPage` is stable across renders (react-query memoises it), so the observer is rebuilt
+  // only when the two flags it reads actually change.
+  const { hasNextPage, isFetchingNextPage, fetchNextPage } = feed;
 
   useEffect(() => {
     const element = sentinelRef.current;
@@ -175,7 +117,7 @@ export function Newsfeed({ scope = 'friends', className }: NewsfeedProps) {
           fetchNextPage();
         }
       },
-      // Fetch before the reader actually reaches the end, so the join is invisible.
+      // Fetch before the reader actually reaches the end, so the append is invisible.
       { rootMargin: '200px' }
     );
 
@@ -218,18 +160,13 @@ export function Newsfeed({ scope = 'friends', className }: NewsfeedProps) {
     );
   }
 
+  // `page.posts ?? []`, AND THE `??` IS NOT DEFENSIVE PADDING — it is a crash that was reachable on
+  // a brand-new account. `flatMap` over a page whose `posts` is absent yields `[undefined]` rather
+  // than nothing, so the next dereference takes the whole screen to the error boundary. The
+  // page-level `?? []` only ever guarded `data` being absent, which is the case that cannot happen.
   const posts = feed.data?.pages.flatMap((page) => page.posts ?? []) ?? [];
-  const external =
-    scope === 'all' ? (trending.data?.pages.flatMap((p) => p.items ?? []) ?? []) : [];
 
-  // One list of two shapes, newest first. `time` is normalised up front so the comparator never
-  // has to know which kind it is holding — the discriminant is carried alongside, not sniffed.
-  const entries = [
-    ...posts.map((post) => ({ kind: 'post' as const, time: post.createdAt ?? '', post })),
-    ...external.map((item) => ({ kind: 'external' as const, time: item.publishedAt ?? '', item })),
-  ].sort((a, b) => b.time.localeCompare(a.time));
-
-  if (entries.length === 0) {
+  if (posts.length === 0) {
     return (
       <EmptyState
         className={className}
@@ -241,18 +178,14 @@ export function Newsfeed({ scope = 'friends', className }: NewsfeedProps) {
 
   return (
     <div className={cn('flex flex-col gap-[var(--nx-space-block)]', className)}>
-      {entries.map((entry) =>
-        entry.kind === 'post' ? (
-          // The wrapper exists for the seen-post observer: `FeedPost` renders a `Card` and
-          // forwards no DOM ref. It is a plain block box, so the flex column's gap is unchanged.
-          // `trackSeen` returns a no-op ref on the `Tất cả` tab, where the hook is inactive.
-          <div key={`p${entry.post.postId}`} ref={trackSeen(entry.post.postId)}>
-            <FeedPost post={entry.post} onChanged={refresh} />
-          </div>
-        ) : (
-          <TrendingCard key={`x${entry.item.id}`} item={entry.item} />
-        )
-      )}
+      {posts.map((post) => (
+        // The wrapper exists for the seen-post observer: `FeedPost` renders a `Card` and forwards
+        // no DOM ref. It is a plain block box, so the flex column's gap is unchanged. `trackSeen`
+        // returns a no-op ref on the `Bài viết` tab, where the hook is inactive.
+        <div key={`p${post.postId}`} ref={trackSeen(post.postId)}>
+          <FeedPost post={post} onChanged={refresh} />
+        </div>
+      ))}
 
       <div ref={sentinelRef} />
 

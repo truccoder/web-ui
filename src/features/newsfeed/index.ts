@@ -28,6 +28,7 @@ export {
   useUserPosts,
   usePost,
   useRefreshFeed,
+  useFeedReturnHref,
 } from './hooks';
 
 export {

@@ -22,7 +22,7 @@ import type {
  *
  * The tie-breaker beyond the cycle: the endpoint IS a feed read. Its operationId is
  * `getPublicFeed`, it returns the same item type as `/feed`, and the design system calls it the
- * feed's `Tất cả` tab. Recorded as a boundary note in the ledger, in the opposite direction from
+ * feed's `Bài viết` tab. Recorded as a boundary note in the ledger, in the opposite direction from
  * the usual ones (those record a controller sitting in a surprising package; this records us
  * declining to follow one).
  */
@@ -43,6 +43,15 @@ export const newsfeedApi = {
    * `scope` narrows the SAME fan-out feed, it does not switch endpoints: `ALL` is everything
    * Redis holds for this user, `SKILLS` keeps only the posts touching a skill they have verified.
    * Both still come from the precomputed set, so neither can contain a stranger's post.
+   *
+   * HOW `SKILLS` FILTERS, and the two gotchas it carries (`NewsfeedService.getSkillFeed`). The
+   * user's VERIFIED skill-node names are folded to hashtag candidates (accents stripped, letters
+   * and digits only, fragments <3 chars dropped) and intersected with real `t_hashtags` rows; the
+   * backend then scans AT MOST the 300 newest posts in this user's Redis feed and keeps any whose
+   * hashtags touch one of those tags (any-match). So: (1) a profile with no verified skill that
+   * resolves to a live hashtag gets an EMPTY tab with no fallback to the plain feed, and (2)
+   * `hasMore` is only honest within that 300-post window — paging can stop early on a feed longer
+   * than 300.
    */
   getFeed: (page = 1, size = 10, scope: FeedApiScope = 'ALL') =>
     api.get<FeedPage>('/v1/api/feed', { params: { page, size, scope } }).then((r) => r.data),
@@ -57,7 +66,7 @@ export const newsfeedApi = {
    * calls it and drops the promise.
    *
    * ONLY MEANINGFUL FOR THE FAN-OUT FEED. It reorders `GET /feed`; `GET /posts/public` is an
-   * id-ordered scan with no per-user ranking, so the `Tất cả` tab never calls this.
+   * id-ordered scan with no per-user ranking, so the `Bài viết` tab never calls this.
    *
    * AT MOST 200 IDS PER CALL (`MarkSeenRequestDto` `@Size(max = 200)`) — over the cap the whole
    * request is a 422, so the hook chunks rather than trusting the batch to stay small. The ids are
@@ -67,12 +76,13 @@ export const newsfeedApi = {
     api.post<void>('/v1/api/feed/seen', { postIds } satisfies MarkSeenInput).then((r) => r.data),
 
   /**
-   * GET /v1/api/posts/public — every post in the product, newest first. The `Tất cả` tab.
+   * GET /v1/api/posts/public — every post in the product, newest first. The `Bài viết` tab.
    *
    * IT IS NOT `/feed` WITH A WIDER NET, and the difference is what makes two tabs worth having.
    * `/feed` is a personalised fan-out precomputed per user in Redis, so it can only ever contain
    * posts by people you are connected to. This one is a query over the posts table with no
-   * personalisation of any kind — which is why the tab is called `Tất cả` and not `Khám phá`.
+   * personalisation of any kind — every author, no edge required. Crawled items are NOT in it:
+   * they live only on the `Công nghệ` tab now.
    *
    * CURSOR-PAGINATED, NOT PAGE-PAGINATED, unlike `/feed`. The two endpoints disagree about
    * pagination because they disagree about what they are reading: a Redis range has a stable

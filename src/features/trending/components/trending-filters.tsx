@@ -24,11 +24,12 @@ import type { TrendingCategory, TrendingTimeRange, TrendingSource } from '../typ
  *
  * THREE THINGS WERE WRONG BEYOND THE HEIGHT, and the fix for each is in this file:
  *
- *  - `Tất cả` SAT UNDER `Tất cả`. The feed's first tab and the first chip were the same word,
- *    forty pixels apart, meaning two unrelated things — and the chip was painted in solid accent,
- *    so it read LOUDER than the tab it was being confused with. The chip is `Mọi chủ đề` now and
- *    a selected chip uses the soft accent every other selected-but-quiet control in the product
- *    uses (`reaction-bar`, `event-rsvp-bar`).
+ *  - `Tất cả` SAT UNDER `Tất cả`. Back when the feed's first tab was also `Tất cả`, it and the
+ *    first chip were the same word forty pixels apart, meaning two unrelated things — and the chip
+ *    was painted in solid accent, so it read LOUDER than the tab it was being confused with. The
+ *    chip is `Mọi chủ đề` now and a selected chip uses the soft accent every other
+ *    selected-but-quiet control in the product uses (`reaction-bar`, `event-rsvp-bar`). The tab
+ *    itself has since been renamed `Bài viết`, but the chip's own name is worth keeping distinct.
  *  - THE LABELS COST A LINE FOR NOTHING. `Tuần này` and `Mọi nguồn` say what they are; a
  *    `Khoảng thời gian` above them was a caption on a caption. Inside the panel the same words
  *    are `<legend>`s, where they group rather than repeat.

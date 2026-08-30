@@ -264,12 +264,16 @@ export const vi: Messages = {
     tabs: {
       skills: 'Kỹ năng của tôi',
       label: 'Lọc bảng tin',
-      all: 'Tất cả',
+      /* `Bài viết` thay cho `Tất cả` cũ. `Tất cả` là `/posts/public` trộn thêm tin crawl theo
+         `publishedAt` ở client — mà phép trộn đó vứt bỏ thứ hạng của `TrendingController` nên cùng
+         một tin lại xếp khác nhau giữa hai tab. `Bài viết` giờ là `/posts/public` THUẦN: mọi bài
+         trong sản phẩm, không tin crawl, không xếp lại. */
+      posts: 'Bài viết',
       friends: 'Bạn bè',
       /* `Công nghệ`, KHÔNG PHẢI `Xu hướng`. Tab này thay cho trang `/trending` cũ, và tên cũ
-         nói về CÁCH xếp (đang hot) chứ không nói nội dung là gì. Đứng cạnh `Tất cả · Bạn bè ·
+         nói về CÁCH xếp (đang hot) chứ không nói nội dung là gì. Đứng cạnh `Bài viết · Bạn bè ·
          Kỹ năng của tôi` — ba cái tên đều trả lời "cột này chứa gì" — thì `Công nghệ` mới cùng
-         một loại câu trả lời. */
+         một loại câu trả lời. Đây cũng là tab MẶC ĐỊNH: `/newsfeed` trần mở vào đây. */
       tech: 'Công nghệ',
     },
     title: 'Bảng tin',
@@ -599,8 +603,9 @@ export const vi: Messages = {
       desc: 'Quay lại sau để xem những bài viết mới nhất.',
     },
     allLoaded: 'Bạn đã xem hết nội dung xu hướng rồi',
-    // `Mọi chủ đề`, KHÔNG PHẢI `Tất cả`: chip này nằm ngay dưới tab `Tất cả` của bảng tin,
-    // cùng một chữ mà hai nghĩa khác hẳn nhau.
+    // `Mọi chủ đề`, KHÔNG PHẢI `Tất cả`: hồi tab đầu của bảng tin còn tên `Tất cả`, chip này nằm
+    // ngay dưới nó — cùng một chữ mà hai nghĩa khác hẳn. Tab đã đổi tên thành `Bài viết` nhưng
+    // vẫn giữ tên chip riêng cho rõ.
     allCategories: 'Mọi chủ đề',
     filters: 'Bộ lọc',
     // Tên cho trình đọc màn hình — con số trên nút là ký hiệu, đứng một mình không nói được

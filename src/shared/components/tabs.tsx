@@ -8,118 +8,53 @@ import { EDGE_FADE, useEdgeMask } from '@/shared/lib/use-edge-mask';
  * Hand-written from the design system's `Tabs.d.ts` + `Tabs.prompt.md` contract and the
  * rendered `navigation.card` specimen. No design-system source was read.
  *
- * TWO VARIANTS, AND THEY DIFFER BY EXACTLY ONE THING: the rail. Both mark the current tab with a
- * 2px accent bar under its label. `underline` also draws a hairline across the whole strip for
- * that bar to sit on; `inline` (the default) draws no rail at all, so the bar is as wide as the
- * label and nothing else is painted. Counts render as mono pills either way (metadata is mono,
- * constitution §7.1).
+ * ONE MARK, DRAWN ONCE AND MOVED. The current tab is named by a 2px `--nx-accent` bar that sits
+ * under its label and SLIDES to the next label when the selection changes — a single absolutely
+ * positioned element in the strip, not a border on each button. The width and offset come from
+ * the active tab, measured after layout; `--nx-duration-fast` / `ease-nx-out` carries it across,
+ * and `prefers-reduced-motion` drops the transition so it simply reappears in place.
  *
- * FOUR SHAPES WERE TRIED BEFORE THIS ONE, and all four are recorded because the survivor is only
- * defensible as the answer to what each of them got wrong:
+ * TWO VARIANTS, DIFFERING BY ONE THING: the rail. `slide` (the default) paints nothing at rest —
+ * the only ink is the bar under one word. `underline` also draws a hairline across the whole
+ * strip for that bar to ride on, and is used where the strip IS the block rather than a control
+ * dropped onto one — today that is `/newsfeed` and nothing else.
  *
- * | shape | what it drew | why it went |
- * | --- | --- | --- |
- * | underline, full rail (DS `navigation.card`) | 2px accent on a full-measure hairline | *don dieu* — a strip that spans the canvas to say which of three words is current |
- * | underline + filled strip | the same, on a `gray-50` band | worse: turned a quiet line into a wide flat band |
- * | segmented control | `gray-200` track, active tab raised as a white card | *xau hon ban dau* — a chunky two-tone block in a system built from hairlines and near-whites |
- * | pill | active tab wearing a tinted rounded fill, the rest plain text | shipped for two rounds and was still not right; see below |
+ * WHY A BAR AND NOT A FILL. Earlier rounds tried a full-measure rail, a filled strip, a segmented
+ * control and a tinted pill; every one of them added a SURFACE, and a surface has to be a colour
+ * that holds on the page ground, on white cards, in dialogs and in both themes at once. A solid
+ * accent bar composites against nothing, so one pair of classes is correct on all of them. It
+ * also points DOWN at the panel it names, which a self-contained pill never did.
  *
- * THE PILL IS THE INTERESTING FAILURE, because on paper it answered everything. It added no shape
- * at rest, it sized to its own label, and once `--nx-surface-selected` became an alpha accent it
- * was legible on every plane the component lands on. The owner's verdict after living with it was
- * still *chua hai long* — and the reason it could not be argued away is that A FILL IS A SHAPE.
- * A tinted rounded rectangle is one more rectangle on a canvas already made of cards, competing
- * with them at the same scale for the sake of a one-of-three choice. Every earlier attempt failed
- * by adding a surface; the pill added a smaller surface and failed the same way, more quietly.
+ * WHY IT SLIDES. The bar used to be a `border-b-2` toggled per button: selecting a tab painted
+ * one border and cleared another, with nothing connecting the two. Moving one element instead
+ * gives the change a direction — the same "progress bar" read a tab strip wants — and it costs
+ * one measured effect, not a layer.
  *
- * WHAT WAS ACTUALLY WRONG WITH THE FIRST ROW OF THAT TABLE WAS THE RAIL, NOT THE UNDERLINE. The
- * recorded complaint is precise — a strip that spans the canvas to say which of three words is
- * current — and it is a complaint about a hairline running past the last tab to the far edge of
- * the measure, not about the mark under the current label. Drop the rail and the objection goes
- * with it: at rest the strip paints NOTHING, which is the subtraction every attempt since has
- * been reaching for, and the only ink on screen is a short bar under one word.
+ * WHY `--nx-accent` AND NOT AMBER. `Tabs.d.ts` and the prompt both said "amber active
+ * indicator"; amber is reserved for reputation (§1.3) and an active tab is interactive state
+ * (§1.2), so the bar is `--nx-accent` in both variants — matching the DS's own `navigation.card`
+ * specimen, which drew a blue `border-bottom`.
  *
- * A BAR SOLVES THE TWO-PLANE PROBLEM OUTRIGHT, where every fill could only negotiate with it.
- * `Tabs` lands on the page ground, on white cards, inside dialogs and in both themes; a fill has
- * to be a colour that contrasts with all four backgrounds, which is what sank `sunken`, then
- * `gray-50`, then blue-50, and what forced `--nx-surface-selected` to become an alpha. A solid
- * accent bar composites against nothing — it reads the same on every one of them, at no cost in
- * tokens.
+ * MECHANICAL RULES THAT STILL HOLD, none of them the mark's doing:
  *
- * AND IT POINTS AT THE PANEL. The vertical rule this component now assumes (see the rhythm note
- * below) is that a strip binds DOWN to the thing it names. A pill is a self-contained object that
- * says nothing about direction; a bar on the bottom edge of the label is aimed at the content 16
- * below it. The control and the spacing argue for the same thing.
+ *  1. ONE FONT WEIGHT IN `slide`. Active `font-semibold` against inactive `font-normal` made the
+ *     strip RE-LAY-OUT on every selection — the tab just clicked grew and shoved its neighbours
+ *     out from under the pointer. `slide` is one weight (`font-medium`); the bar and the text
+ *     colour carry the state, and no tab changes width. `underline` keeps the weight swap: its
+ *     strip is `flex`, not `inline-flex w-fit`, so a tab changing width redistributes inside a
+ *     box whose own width never moves.
+ *  2. AN INSET FOCUS RING, BOTH VARIANTS. `overflow-x: auto` forces the computed `overflow-y` to
+ *     `auto`, so an outset ring on a strip one tab tall is clipped on all four sides at once.
+ *  3. THE STRIP SCROLLS ITSELF AND FADES THE END WITH MORE BEHIND IT (`useEdgeMask`), and the
+ *     active tab scrolls into view — arrow keys and URL-derived selection both land tabs
+ *     off-screen otherwise.
+ *  4. THE COUNT IS A MONO PILL, one treatment for selected and unselected alike; `tracking-normal`
+ *     undoes the overline tracking that CSS adds after the last digit as well as between them.
  *
- * WHY `underline` SURVIVES AS A SEPARATE VARIANT. `/newsfeed` keeps the rail, at the owner's call,
- * and the screen is genuinely a different case. Everywhere else the strip is a control DROPPED
- * INTO a page — it sits under a title, on whatever plane the page has, and the less it occupies
- * the better. On the feed the strip IS a block: it is the canvas's first element, it owns a
- * full-measure `StickyBlock` that parks under the chrome, and it is what the reader scrolls the
- * feed past. There the hairline is not *don dieu*: it runs the block's width and gives the block a
- * reason to be that wide.
- *
- * So the rule is: `underline` when the tabs ARE the block, `inline` when they are a control on
- * one. Today that is exactly one screen, and a variant with one caller is honest here because the
- * alternative — `/newsfeed` reaching in with `className` overrides to undo the default — would put
- * the same decision somewhere it cannot be read.
- *
- * `underline` SCROLLS NOW TOO, AND THIS FILE SAID TWICE THAT IT NEVER WOULD — *"it spans its
- * parent by design, so it has nothing to fit to and nothing to scroll"*. That was true of three
- * short labels and stopped being true at four: `Tất cả · Bạn bè · Kỹ năng của tôi · Công nghệ`
- * measures 371 inside a 343 column at 375, and the feed's strip lives in a `StickyBlock` whose
- * `overflow-hidden` CLIPPED the fourth tab with no way to reach it. The overflow machinery below
- * was already written and already correct; it was gated on the variant rather than on whether
- * anything actually overflowed, which is the bug. Nothing changes for a strip that fits: the mask
- * is `undefined` and the scroller has nothing to scroll.
- *
- * THE 1px THAT PAID FOR IT. `underline`'s tabs carry `-mb-px` so the 2px indicator lands ON the
- * strip's hairline rather than under it — and `overflow-x: auto` forces `overflow-y: auto`, so
- * that one pixel of deliberate overflow turned the strip into a VERTICAL scroller as well
- * (measured: `scrollHeight` 43 against `clientHeight` 42). `pb-px` on the strip absorbs it. The
- * indicator still sits exactly on the hairline — the padding moves the hairline down by the same
- * pixel the tab reaches up — and the strip is one pixel taller for it.
- *
- * FOUR MECHANICAL DEFECTS WERE FIXED ALONGSIDE THE SHAPE and none of them were the shape's fault,
- * so all four are kept:
- *
- *  1. THE STRIP REFLOWED ON EVERY CLICK. Active was `font-semibold` and inactive `font-normal`, so
- *     selecting a tab WIDENED it and shoved its neighbours sideways — out from under the pointer
- *     that had just clicked. `inline` is one weight; the bar and the text colour carry the state.
- *     `underline` keeps the swap, being out of scope by the owner's instruction, and it costs less
- *     there: that strip is `flex`, not `inline-flex w-fit`, so a tab changing width redistributes
- *     inside a box whose own width never moves.
- *  2. THE FOCUS RING WAS CLIPPED. `overflow-x: auto` forces the computed `overflow-y` to `auto`
- *     too, so an `outline-offset-2` ring on a tab in a strip exactly one tab tall was cut off on
- *     all four sides at once. BOTH variants take an INSET ring now — see the next paragraph.
- *  3. NOTHING SAID THE STRIP SCROLLED. Five admin tabs and the three Vietnamese labels on
- *     `/friends` both overflow at 390, the scrollbar is hidden by design, and a tab selected
- *     off-screen — which is what arrowing to it does — left the strip looking unchanged. The ends
- *     now fade while there is more in that direction, and the active tab scrolls itself into view.
- *  4. THE COUNT PILL'S DIGITS SAT OFF CENTRE, because `text-nx-overline` carries tracking that CSS
- *     adds after the last glyph as well as between them.
- *
- * VERTICAL RHYTHM IS THE CALLER'S, AND THE RULE IS THAT TABS BIND DOWN. A strip is the label of
- * the panel under it, so it sits CLOSE to that panel and FAR from whatever precedes it. Every
- * page caller used to space it SYMMETRICALLY — 40 above and 40 below on five of them, 20/20 on
- * the admin page — which orphans the control exactly between the heading and the content it
- * names. Callers now wrap the strip and its panel in one column, and the gap inside that column
- * is ONE STEP TIGHTER than whatever the page puts above it: `--nx-space-group` (16) under the
- * wide canvases' 40, `--nx-space-element` (12) under the admin canvas's 20. What makes the group
- * read is the ratio, not the number — 16 under a 20 is the same symmetric float, just tighter.
- *
- * NOT EVERY CHOICE IS A TAB STRIP, and three callers stopped being one in the same round. A tab
- * strip is for NAVIGATION between two or three panels of a page. A filter with more options than
- * that, or one nested inside a panel a strip already opened, is a `Select`: the reactor dialog's
- * eight reactions and the event attendee list's four now use one, and so does the appeals status
- * filter, which was a strip sitting inside the panel of another strip at the same size.
- * `trending` collapsed two stacked strips into two selects on one row. The rule: three or fewer,
- * and the choice is the page's subject → tabs; otherwise → `Select`.
- *
- * THE DEVIATION THAT USED TO LIVE HERE IS RESOLVED RATHER THAN DROPPED. `Tabs.d.ts` and the prompt
- * both said "amber active indicator"; the DS's own specimen drew a blue `border-bottom`; blue won
- * because amber is reserved for reputation (§1.3) and an active tab is interactive state (§1.2).
- * Both variants carry that ruling — the bar is `--nx-accent` in both.
+ * NOT EVERY CHOICE IS A TAB STRIP. Three or fewer panels and the choice is the page's subject →
+ * `Tabs`; a filter with more options, or one nested inside a panel a strip already opened → a
+ * `Select`. The reactor dialog's reactions, the event attendee list and the appeals status
+ * filter are all `Select` for that reason.
  */
 export interface TabItem {
   id: string;
@@ -167,13 +102,14 @@ export interface TabsProps {
   /** @default "md" */
   size?: 'sm' | 'md';
   /**
-   * `inline` (default) for a control on a page; `underline` when the tab strip is itself the
-   * block, which today means `/newsfeed` and nothing else. The two draw the same accent bar and
-   * differ only in whether a hairline runs the full measure behind it. The header explains why.
+   * `slide` (default) for a control on a page; `underline` when the tab strip is itself the
+   * block, which today means `/newsfeed` and nothing else. Both draw the same sliding accent bar
+   * and differ only in whether a hairline runs the full measure behind it. The header explains
+   * why.
    *
-   * @default "inline"
+   * @default "slide"
    */
-  variant?: 'inline' | 'underline';
+  variant?: 'slide' | 'underline';
   /** Labels the tablist for assistive tech. */
   'aria-label'?: string;
   className?: string;
@@ -183,17 +119,16 @@ export interface TabsProps {
 /**
  * SIZE MEANS TWO DIFFERENT THINGS PER VARIANT, which is why this is a table and not one string.
  *
- * `inline` STATES HEIGHT AS A MINIMUM and takes almost no horizontal padding, because the bar has
- * to READ AS BELONGING TO THE LABEL. At the pill's `px-3` the indicator would run 12 past each end
- * of the word and start looking like a segment of a rail again — the exact thing the rail was
- * dropped for. `px-1` is the smallest padding that still leaves the inset focus ring somewhere to
- * be drawn without touching the glyphs, so the bar is the label plus 4 on each side, which reads
- * as the label. The separation between tabs is then the strip's `gap`, not the tabs' padding.
+ * `slide` STATES HEIGHT AS A MINIMUM and takes almost no horizontal padding, because the bar has
+ * to READ AS BELONGING TO THE LABEL. At a pill's `px-3` the indicator would run 12 past each end
+ * of the word and start looking like a segment of a rail again. `px-1` is the smallest padding
+ * that still leaves the inset focus ring somewhere to be drawn without touching the glyphs, so
+ * the bar is the label plus 4 on each side, which reads as the label. The separation between
+ * tabs is then the strip's `gap`, not the tabs' padding.
  *
- * THE HEIGHT IS WHAT PUTS AIR UNDER THE TEXT. `min-h-8` with a centred label leaves ~5 between the
- * descenders and the bar at `md`, ~4 at `sm` — enough that the bar is under the word rather than
- * attached to it. Padding would have had to be 6 to reach 32 at this line-height, a number on no
- * ladder in the system and one that would drift the moment the type scale moved.
+ * THE HEIGHT IS WHAT PUTS AIR UNDER THE TEXT. `min-h-8` with a centred label leaves ~5 between
+ * the descenders and the bar at `md`, ~4 at `sm` — enough that the bar is under the word rather
+ * than attached to it.
  *
  * `underline` KEEPS THE ORIGINAL PADDING, untouched from the DS specimen. There the bar sits on a
  * rail that runs the full measure, so it is already reading as part of a line rather than as part
@@ -203,7 +138,7 @@ const sizeStyles: Record<
   NonNullable<TabsProps['variant']>,
   Record<NonNullable<TabsProps['size']>, string>
 > = {
-  inline: {
+  slide: {
     sm: 'min-h-7 px-1 text-nx-body-sm',
     md: 'min-h-8 px-1 text-nx-ui',
   },
@@ -227,13 +162,7 @@ const sizeStyles: Record<
  * THE STRIP DOES NOT GROW TALLER THAN ITS TALLEST TAB, and this is why the height goes on the tab
  * rather than on the list: the tablist is a flex row at the default `align-items: stretch`, so
  * one 32-tall icon tab lifts the word tab beside it to 32 as well and the two bars stay on one
- * line. Setting a height on the strip would have done the same thing less honestly.
- *
- * MEASURED AT THE ONE CALLER, ON THE DEVICE THIS RUNG IS FOR: the dialog is 305 wide inside its
- * own padding at 375. `Tất cả` (46) + seven 32s + seven 4-gaps = 298, so the strip fits without
- * scrolling — which is the whole reason it could replace a `<select>`. The 4 is not a fudge; see
- * `ICON_ONLY_GAP`. Going to 36 squares would make it 326 and put the last reaction behind a
- * swipe, which is a worse trade than 4px of ink the glyph already pads for itself.
+ * line.
  */
 const iconOnlySizeStyles: Record<NonNullable<TabsProps['size']>, string> = {
   sm: 'min-h-8 min-w-8 justify-center px-0',
@@ -241,10 +170,8 @@ const iconOnlySizeStyles: Record<NonNullable<TabsProps['size']>, string> = {
 };
 
 /**
- * THE GAP IS THE SEPARATOR NOW, since `inline` tabs carry no padding worth the name. 12 + the two
- * tabs' 4 of padding reads as 20 between labels at `md`, 8 + 8 as 16 at `sm` — the same visual
- * separation the pill got out of `px-3` and `gap-1`, moved from the tabs to the strip so that the
- * indicator stays the width of the word.
+ * THE GAP IS THE SEPARATOR in `slide`, since its tabs carry no padding worth the name. 12 + the
+ * two tabs' 4 of padding reads as 20 between labels at `md`, 8 + 8 as 16 at `sm`.
  *
  * `underline` KEEPS `gap-1`: its tabs still pad themselves, and widening the gap on a strip whose
  * hairline is continuous would only move the tabs apart along a line that does not break.
@@ -253,22 +180,14 @@ const listGap: Record<
   NonNullable<TabsProps['variant']>,
   Record<NonNullable<TabsProps['size']>, string>
 > = {
-  inline: { sm: 'gap-2', md: 'gap-3' },
+  slide: { sm: 'gap-2', md: 'gap-3' },
   underline: { sm: 'gap-1', md: 'gap-1' },
 };
 
 /**
- * A STRIP WITH GLYPH TABS IN IT SEPARATES THEM BY 4, not by the 8 or 12 above, and it is the same
- * padding-beats-gap inversion the post's acting row records on `ACTION_GROUP`. The gaps above are
- * sized for tabs that carry `px-1` and nothing else, so the strip has to supply the whole
- * separation. An `iconOnly` tab is a 32px square around a 16px glyph — it brings 8px of its own
- * padding to each side, so the same 8 of strip gap would be spending the space twice: 24 of air
- * between two glyphs that are 16 wide.
- *
- * IT IS ALSO WHAT MAKES THE STRIP FIT A PHONE, and that is measured rather than hoped: the dialog
- * that holds the only caller is **305 wide inside its padding at 375**, not the ~327 an earlier
- * version of this note assumed. `Tất cả` (46) + seven 32s + seven 8-gaps came to 326 and scrolled;
- * at 4 it is 298 and does not. See `iconOnlySizeStyles` for why the square is 32 and not smaller.
+ * A STRIP WITH GLYPH TABS IN IT SEPARATES THEM BY 4, not by the 8 or 12 above. An `iconOnly` tab
+ * is a 32px square around a 16px glyph — it brings 8px of its own padding to each side, so the
+ * same 8 of strip gap would be spending the space twice.
  */
 const ICON_ONLY_GAP = 'gap-1';
 
@@ -280,7 +199,7 @@ export function Tabs({
   active,
   onChange,
   size = 'md',
-  variant = 'inline',
+  variant = 'slide',
   'aria-label': ariaLabel,
   className,
   style,
@@ -293,19 +212,57 @@ export function Tabs({
    * explains why a strip has to be remeasured when a count or a label lands after the first paint.
    *
    * COUNTS AND LABEL TEXT BOTH, because a label can arrive late too: every caller reads its labels
-   * through `t()`, and the locale is switchable at runtime.
+   * through `t()`, and the locale is switchable at runtime. The label only lands in the key when
+   * it is a string — an element child cannot be compared this cheaply, and none of the callers
+   * pass one that also changes width silently.
    */
-  const widthKey = items.map((item) => `${item.id}:${item.count ?? ''}`).join('|');
+  const widthKey = items
+    .map(
+      (item) => `${item.id}:${item.count ?? ''}:${typeof item.label === 'string' ? item.label : ''}`
+    )
+    .join('|');
 
   /**
    * THE STRIP SCROLLS ITSELF AND FADES THE END THAT HAS MORE BEHIND IT. Both halves moved to
-   * `useEdgeMask` when the trending chips became the second caller; `active` is deliberately NOT
-   * in its dependency string, because selecting a tab no longer changes any tab's width.
+   * `useEdgeMask` when the trending chips became the second caller.
    *
    * `relative` IS LOAD-BEARING on the element this ref lands on, not a habit: the auto-scroll
-   * effect below reads `offsetLeft`, which is measured from the nearest positioned ancestor.
+   * effect and the indicator effect below both read `offsetLeft`, which is measured from the
+   * nearest positioned ancestor.
    */
   const { ref: listRef, maskStyle } = useEdgeMask<HTMLDivElement>(widthKey);
+
+  /**
+   * THE SLIDING BAR'S GEOMETRY. `null` until the active tab has been measured, and whenever there
+   * is no active tab — the bar's own element is not rendered until this is set, so it never
+   * paints in the wrong place and never slides in from the origin on mount.
+   *
+   * DEPS: `active` moves it to another tab; `widthKey` covers a count or a label that lands late
+   * and shifts the current tab's edges without changing which tab is active; `variant`/`size`
+   * change the tab box itself. A `ResizeObserver` on the strip catches everything else — a locale
+   * swap that only widens `underline`'s tabs, the column reflowing around it.
+   */
+  const [indicator, setIndicator] = React.useState<{ left: number; width: number } | null>(null);
+
+  React.useEffect(() => {
+    const list = listRef.current;
+    const tab = list?.querySelector<HTMLElement>('[data-nx-tab-active="true"]');
+    if (!list || !tab) {
+      setIndicator(null);
+      return;
+    }
+
+    const measure = () =>
+      setIndicator((prev) => {
+        const next = { left: tab.offsetLeft, width: tab.offsetWidth };
+        return prev && prev.left === next.left && prev.width === next.width ? prev : next;
+      });
+
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(list);
+    return () => observer.disconnect();
+  }, [active, widthKey, variant, size, listRef]);
 
   /**
    * THE SELECTED TAB PULLS ITSELF INTO VIEW. Selection does not always come from a click on
@@ -314,13 +271,8 @@ export function Tabs({
    * tab off-screen and the strip looking like nothing is selected.
    *
    * THE ARITHMETIC IS DONE BY HAND RATHER THAN WITH `scrollIntoView`, whose `inline: 'nearest'`
-   * would do exactly this — and would also scroll every ANCESTOR that can scroll, i.e. yank the
-   * page vertically to bring a tab strip into view that was already perfectly visible.
-   * `offsetLeft` is measured against the strip because the strip is `relative`.
-   *
-   * `widthKey` IS A DEPENDENCY ALONGSIDE `active`: a count that lands after the first paint moves
-   * the active tab's right edge without changing which tab is active, and the scroll has to
-   * follow it. See the note on `widthKey` itself.
+   * would also scroll every ANCESTOR that can scroll, i.e. yank the page vertically to bring a
+   * tab strip into view that was already perfectly visible.
    */
   React.useEffect(() => {
     const list = listRef.current;
@@ -376,67 +328,30 @@ export function Tabs({
        */
       style={{ ...style, ...maskStyle }}
       /**
-       * IN `pill`, NOTHING IS PAINTED AT THIS LEVEL. No fill, no border, no padding — the element
-       * is a positioning box for the tabs and an ARIA landmark, and that is all. Everything the
-       * variant says visually is said by the one active pill inside it. `underline` is the
-       * opposite: the strip owns the hairline and the tabs only put an indicator on it.
+       * IN `slide`, NOTHING IS PAINTED AT THIS LEVEL. No fill, no border, no padding — the element
+       * is a positioning box for the tabs and the bar, and an ARIA landmark. `underline` owns the
+       * hairline the bar rides on.
        *
-       * MOST OF WHAT FOLLOWS IS ABOUT `pill`'s SIZING. The scrolling half now applies to both — see
-       * the header — but the width rules do not: `underline` spans its parent, so it has nothing
-       * to fit to.
+       * `w-fit` IS NOT REDUNDANT NEXT TO `inline-flex`. Most callers put this inside a
+       * `flex flex-col`, and a flex item is STRETCHED to the line by default — without `w-fit`
+       * the strip sizes to the full measure instead of to its tabs, and `overflow-x-auto` then
+       * has nothing to scroll against. `max-w-full` caps it at the column so a strip wider than
+       * the phone scrolls inside itself instead of pushing the page sideways.
        *
-       * `w-fit` IS NOT REDUNDANT NEXT TO `inline-flex`, which is what it looks like. Most callers
-       * put this inside a `flex flex-col`, and a flex item is STRETCHED to the line by default —
-       * `align-items: stretch` beats the intrinsic width `inline-flex` would otherwise take, so
-       * without it `/friends` sized to the full measure while the identical control on the feed (a
-       * block parent) sized to its tabs. It matters less now that there is no fill to stretch, but
-       * it still decides where `overflow-x-auto` starts scrolling.
-       *
-       * IT SCROLLS ITSELF RATHER THAN PUSHING THE PAGE. Measured at 390: `Lời mời kết bạn · Gợi ý
-       * kết bạn · Tất cả bạn bè` is wider than the phone, and a `w-fit` child wider than its parent
-       * overflows the CANVAS — the last tab clipped at the viewport edge with the page scrolling
-       * sideways to reach it. `max-w-full` caps the strip at the column and the scroll moves
-       * inside it, so the tabs stay on one line instead of wrapping and shoving the page down.
-       *
-       * THE SCROLLBAR IS HIDDEN via Tailwind 4's own `scrollbar-none` (`scrollbar-width: none`),
-       * not the old `::-webkit-scrollbar` hack: a 32-tall strip cannot spare the ~12 an
-       * always-visible bar takes on Windows.
-       *
-       * THE CLAIM THAT USED TO END THAT SENTENCE — "a half-visible last tab is its own
-       * affordance" — WAS FALSE, and it was the whole reason nothing said the strip scrolled. It
-       * is only true when the strip happens to be scrolled such that a tab straddles the edge.
-       * Land on `/friends/all` at 390 and the strip opens scrolled hard to one side with a
-       * complete label flush against the boundary: nothing is half-visible, so nothing hints that
-       * two more tabs exist to the left. The fade is on when — and only when — there is something
-       * in that direction, which is the same information a scrollbar would have carried.
+       * THE SCROLLBAR IS HIDDEN via Tailwind 4's `scrollbar-none`: a 32-tall strip cannot spare
+       * the ~12 an always-visible bar takes on Windows.
        */
       className={cn(
-        'font-sans',
+        'relative font-sans',
         items.some((item) => item.iconOnly) ? ICON_ONLY_GAP : listGap[variant][size],
-        variant === 'inline'
-          ? // `relative` IS LOAD-BEARING, not a habit: the auto-scroll effect reads `offsetLeft`,
-            // which is measured from the nearest positioned ancestor. Without it the numbers come
-            // from whatever card or dialog happens to be positioned further up, and the strip
-            // scrolls to an offset that has nothing to do with itself.
-            'relative inline-flex w-fit max-w-full overflow-x-auto scrollbar-none'
-          : // THE RAIL, which is what this branch is for.
-            //
-            // R15: the rail the underline tabs sit on is `border-subtle`, not `border-default`.
-            // `border-default` climbed the ramp that round to become a line you can actually see;
-            // a tab strip's baseline is not that — it is the faintest possible hint of a shared
-            // edge, and at the louder value it competed with the 2px indicator sitting on it.
-            //
-            // PLAIN `flex`, NOT `inline-flex w-fit`: this variant is supposed to span its block,
-            // because the hairline running the full measure is the whole point of it. That is also
-            // why it needs no `max-w-full` — it is already exactly its parent's width, so the
-            // scroller starts at the right place without being told.
-            //
-            // `relative` is read by the auto-scroll effect (`offsetLeft`); `pb-px` absorbs the
-            // tabs' `-mb-px` so `overflow-y` has nothing to scroll. Both are argued in the header.
-            cn(
-              'relative flex overflow-x-auto scrollbar-none pb-px',
-              'border-b border-nx-border-subtle'
-            ),
+        variant === 'slide'
+          ? 'inline-flex w-fit max-w-full overflow-x-auto scrollbar-none'
+          : // THE RAIL. `border-nx-border-subtle`, not `border-default`: a tab strip's baseline is
+            // the faintest possible hint of a shared edge, and at a louder value it competes with
+            // the bar sitting on it. Plain `flex`, not `inline-flex w-fit` — this variant spans
+            // its block, which is the whole point of the full-measure hairline, so it needs no
+            // `max-w-full` either.
+            'flex overflow-x-auto scrollbar-none border-b border-nx-border-subtle',
         className
       )}
     >
@@ -449,9 +364,10 @@ export function Tabs({
             role="tab"
             aria-selected={isActive}
             tabIndex={isActive ? 0 : -1}
-            // Read by the auto-scroll effect. `aria-selected` would have served, but a selector on
-            // an ARIA attribute makes the attribute load-bearing for layout, and someone tidying
-            // the a11y later would have no way to know they were also moving the scroller.
+            // Read by both the auto-scroll effect and the indicator effect. `aria-selected` would
+            // have served, but a selector on an ARIA attribute makes the attribute load-bearing
+            // for layout, and someone tidying the a11y later would have no way to know they were
+            // also moving the bar.
             data-nx-tab-active={isActive}
             // Undefined on every ordinary tab, so nothing is announced twice: a tab whose label is
             // on screen already says what it is. See `TabItem.title`.
@@ -462,57 +378,23 @@ export function Tabs({
             onClick={() => onChange?.(item.id)}
             className={cn(
               'inline-flex items-center gap-2 whitespace-nowrap',
-              // COLOUR ONLY (§2.1) — no lift, no scale, no shadow, in either variant.
+              // COLOUR ONLY (§2.1) — no lift, no scale, no shadow.
               'transition-colors duration-[var(--nx-duration-fast)] ease-nx-out',
               item.iconOnly ? iconOnlySizeStyles[size] : sizeStyles[variant][size],
-              variant === 'inline'
-                ? cn(
-                    // ONE WEIGHT FOR BOTH STATES. `font-semibold` active against `font-normal`
-                    // inactive meant the strip RE-LAID-OUT on every selection: the tab just
-                    // clicked grew by a few pixels and shoved its neighbours out from under the
-                    // pointer, so a second click landed on a different tab than the one aimed at.
-                    // Medium reads as deliberate at 14/1.5 without being a state, and the bar
-                    // plus the text colour already say which tab is current without changing
-                    // anyone's width.
-                    'font-medium',
-                    // AN INSET RING ON THIS VARIANT ONLY. It lives in an `overflow-x-auto` box,
-                    // and `overflow-x: auto` forces the computed `overflow-y` to `auto` as well —
-                    // so an outset ring was clipped on all four sides at once: top and bottom by a
-                    // strip exactly one tab tall, left and right by the scroll boundary. Pulling
-                    // the ring inside the border box removes the clipping without giving the strip
-                    // padding it would then have to cancel with a negative margin. `underline`
-                    // does not scroll and keeps the system's outset ring.
-                    'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-nx-focus-ring',
-                    // THE BAR IS ALWAYS THERE, TRANSPARENT WHEN OFF. Toggling the border WIDTH
-                    // between 0 and 2 would move every label two pixels up on selection; only its
-                    // colour changes, so nothing in the strip shifts.
-                    'border-b-2',
-                    isActive
-                      ? // NO FILL, AND THAT IS THE WHOLE POINT — an unselected tab is text on
-                        // whatever plane it was dropped on, and a selected one is the same text
-                        // with a short accent bar under it. Nothing here composites against a
-                        // background, so this one pair of classes is correct on the page ground,
-                        // on a white card, inside a dialog and in both themes.
-                        'border-nx-accent text-nx-text-primary'
-                      : // Hover moves the label from secondary to primary and leaves the bar off.
-                        // There is deliberately no hover FILL: a tint behind an unselected tab was
-                        // the one thing that could still be mistaken for a selection, which is
-                        // exactly how the pill's hover competed with its own active state.
-                        'border-transparent text-nx-text-secondary hover:text-nx-text-primary'
-                  )
-                : cn(
-                    // INSET, since this strip scrolls too — an outset ring inside an
-                    // `overflow-x: auto` box is clipped on all four sides at once. Same fix, same
-                    // reason as the `inline` branch above.
-                    'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-nx-focus-ring',
-                    // Untouched this round — see the `inline` weight note above.
-                    isActive ? 'font-semibold' : 'font-normal',
-                    // -1px pulls the indicator onto the tablist hairline instead of below it.
-                    '-mb-px border-b-2 bg-transparent',
-                    isActive
-                      ? 'border-nx-accent text-nx-text-primary'
-                      : 'border-transparent text-nx-text-secondary hover:text-nx-text-primary'
-                  )
+              // AN INSET RING, BOTH VARIANTS. The strip is an `overflow-x-auto` box, and
+              // `overflow-x: auto` forces the computed `overflow-y` to `auto` — so an outset ring
+              // on a box one tab tall is clipped on all four sides at once.
+              'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-nx-focus-ring',
+              variant === 'slide'
+                ? // ONE WEIGHT FOR BOTH STATES — `font-semibold` active against `font-normal`
+                  // inactive re-laid-out the strip on every selection. The bar and the text
+                  // colour say which tab is current without changing anyone's width.
+                  isActive
+                  ? 'font-medium text-nx-text-primary'
+                  : 'font-medium text-nx-text-secondary hover:text-nx-text-primary'
+                : isActive
+                  ? 'font-semibold text-nx-text-primary'
+                  : 'font-normal text-nx-text-secondary hover:text-nx-text-primary'
             )}
           >
             {item.icon && (
@@ -525,23 +407,13 @@ export function Tabs({
                 never opens beside an invisible label. */}
             {item.iconOnly ? <span className="sr-only">{item.label}</span> : item.label}
             {item.count !== undefined && (
-              // ONE TREATMENT FOR SELECTED AND UNSELECTED ALIKE, which is a simplification the
-              // shape change paid for. The active tab used to give its count an accent fill,
-              // because `--nx-tint` is a NEUTRAL alpha and laying it over the pill's blue
-              // desaturated exactly the patch it covered — a grey smudge punched through the
-              // fill. With no fill behind anything, that problem does not exist, and a count that
-              // changed colour on selection would be a second state signal competing with the
-              // bar for a piece of metadata that means the same thing either way.
+              // ONE TREATMENT FOR SELECTED AND UNSELECTED ALIKE. `tint`, not a step off the ramp,
+              // because the count sits on whatever plane the strip landed on — white card, page
+              // ground, dialog, dark — so any fixed grey is invisible on one of them.
               //
-              // `tint`, NOT A STEP OFF THE RAMP, for the same reason it always was: the count sits
-              // on whatever plane the strip landed on — white card, page ground, dialog, dark — so
-              // any fixed grey is invisible on one of them.
-              //
-              // `tracking-normal` IS A FIX, not a preference. `text-nx-overline` carries
-              // `letter-spacing: 0.08em`, and CSS adds tracking AFTER the last glyph as well as
-              // between them, so a symmetrically padded pill rendered its digits visibly left of
-              // centre by a gap that grew with the digit count. Overline tracking exists to open
-              // up set capitals; on one or two mono digits it only pushed them off centre.
+              // `tracking-normal` IS A FIX: `text-nx-overline` carries `letter-spacing: 0.08em`,
+              // and CSS adds tracking AFTER the last glyph as well as between them, so a
+              // symmetrically padded pill rendered its digits left of centre.
               <span className="inline-flex justify-center rounded-nx-full bg-nx-tint px-2 font-mono text-nx-overline tracking-normal text-nx-text-muted">
                 {item.count}
               </span>
@@ -549,6 +421,27 @@ export function Tabs({
           </button>
         );
       })}
+
+      {/* THE MARK. One element, positioned from the active tab and moved by `transform` so the
+          browser animates it on the compositor. `bottom-0` puts it on the tabs' shared bottom
+          edge — which in `underline` is exactly where the rail is.
+
+          IT DOES NOT SLIDE IN ON MOUNT: the span is only rendered once `indicator` has been
+          measured, so React inserts it with its final position already set and CSS has no "from"
+          to animate. Every move after that is a real selection change, and those transition. */}
+      {indicator && (
+        <span
+          aria-hidden
+          className={cn(
+            'pointer-events-none absolute bottom-0 left-0 h-0.5 rounded-nx-full bg-nx-accent',
+            'transition-[transform,width] duration-[var(--nx-duration-fast)] ease-nx-out motion-reduce:transition-none'
+          )}
+          style={{
+            width: `${indicator.width}px`,
+            transform: `translateX(${indicator.left}px)`,
+          }}
+        />
+      )}
     </div>
   );
 }

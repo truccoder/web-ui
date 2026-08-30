@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { Card, EmptyState, Skeleton } from '@/shared/components';
-import { FeedPost, usePost } from '@/features/newsfeed';
+import { FeedPost, useFeedReturnHref, usePost } from '@/features/newsfeed';
 import { useT } from '@/core/i18n';
 
 /**
@@ -34,6 +34,15 @@ export default function PostPermalinkPage() {
 
   const { data: post, isPending, isError, refetch } = usePost(postId);
 
+  /**
+   * WHERE `← Về bảng tin` GOES. Bare `/newsfeed` now opens on `Công nghệ` — the crawler's stream,
+   * which holds no posts and restores no scroll — so returning there drops a reader who came from
+   * a feed column onto the wrong tab at the top. `useFeedReturnHref` reads the column the feed
+   * last recorded and resolves to `/newsfeed?tab=<scope>`; it stays `/newsfeed` when the permalink
+   * was reached from a shared link or a notification instead.
+   */
+  const backHref = useFeedReturnHref();
+
   return (
     /* THE BLOCK RUNG, NOT THE SECTION RUNG. `--nx-space-section` (40) is "section ↔ section
        within one canvas" — it separates two things that each stand on their own. This page has
@@ -50,7 +59,7 @@ export default function PostPermalinkPage() {
           leaves exactly one thing setting the position, which is the hook that knows where the
           reader was. Every other link into the feed keeps the default. */}
       <Link
-        href="/newsfeed"
+        href={backHref}
         scroll={false}
         className="inline-flex w-fit items-center gap-2 text-nx-body-sm text-nx-text-muted hover:text-nx-text-primary"
       >

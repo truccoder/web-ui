@@ -24,10 +24,10 @@ import { newsfeedApi } from '../api/feed';
  * demotion and nothing they can see. So the promise is swallowed and nothing waits on it — the
  * same reason there is no react-query mutation here, just a call.
  *
- * ONLY FOR THE FAN-OUT FEED. `POST /feed/seen` reorders `GET /feed`; the `Tất cả` tab is
+ * ONLY FOR THE FAN-OUT FEED. `POST /feed/seen` reorders `GET /feed`; the `Bài viết` tab is
  * `GET /posts/public`, an id-ordered table scan with no ranking to demote and no seen-set keyed
  * for it. The caller passes `active: false` there and no observer is ever created — which also
- * keeps the beacon off a guest, who only ever sees that tab.
+ * keeps the beacon off a guest, who never reaches a fan-out scope.
  */
 
 /** Half the card's box inside the viewport — the backend's "covering at least half its area". */

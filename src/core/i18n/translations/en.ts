@@ -279,10 +279,13 @@ export const en = {
     tabs: {
       skills: 'My skills',
       label: 'Filter the feed',
-      all: 'All',
+      // Replaces the old `All` tab, which merged crawled items into `/posts/public` by
+      // `publishedAt` and lost `TrendingController`'s own ranking in the process. `Posts` is
+      // `/posts/public` alone now — every post in the product, no crawled content, no re-sort.
+      posts: 'Posts',
       friends: 'Friends',
       // Names the CONTENT, the way its three neighbours do — the old `/trending` named a sort
-      // order instead.
+      // order instead. Also the default tab: bare `/newsfeed` opens here.
       tech: 'Tech',
     },
     title: 'Newsfeed',
@@ -615,8 +618,9 @@ export const en = {
       desc: 'Check back later for the latest stories.',
     },
     allLoaded: "You've seen all trending items",
-    // `All topics`, not `All`: this chip sits directly under the feed's `All` tab, one word
-    // meaning two unrelated things.
+    // `All topics`, not `All`: back when the feed's first tab was also `All`, this chip sat
+    // directly under it — one word meaning two unrelated things. The tab is `Posts` now, but the
+    // chip keeps its own distinct name.
     allCategories: 'All topics',
     filters: 'Filters',
     // The screen-reader name — the numeral on the button is a glyph, and alone it does not

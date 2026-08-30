@@ -114,7 +114,7 @@ export type PublicFeedPage = {
 
 /**
  * The backend's own scope enum for `/feed`. Distinct from the UI's `FeedScope`, which also has
- * an `all` meaning "the public timeline" — a different endpoint entirely.
+ * a `posts` value meaning "the public timeline" — a different endpoint entirely.
  */
 export type FeedApiScope = NonNullable<
   NonNullable<paths['/v1/api/feed']['get']['parameters']['query']>['scope']

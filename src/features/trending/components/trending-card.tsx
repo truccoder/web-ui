@@ -221,9 +221,11 @@ export function TrendingCard({ item, className }: TrendingCardProps) {
        * half — you cannot react to it, comment on it or answer it — so there is nothing for a rule
        * to divide, and drawing one anyway claims a symmetry that is not there.
        *
-       * The two kinds sit in one column on the `Tất cả` tab and are told apart by STRUCTURE, never
-       * by a border, a tint or a label. This absence is half of that structure; the other half is
-       * height — two to three lines against a post's six to twelve.
+       * This card and `PostCard` are told apart by STRUCTURE, never by a border, a tint or a label
+       * — the distinction that mattered while the two shared one column, and still the reason the
+       * shapes stay this far apart now that `Công nghệ` and `Bài viết` are separate tabs. This
+       * absence is half of that structure; the other half is height — two to three lines against a
+       * post's six to twelve.
        */}
       <div className="flex items-center gap-2 text-nx-caption text-nx-text-muted">
         {item.author && (
