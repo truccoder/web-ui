@@ -75,7 +75,12 @@ export function FriendsList() {
     );
   }
 
-  const friends = data?.pages.flatMap((page) => page.friends) ?? [];
+  // Deduped by userId: the cursor-paginated endpoint can hand back the same friend at a page
+  // boundary (the last row of one page reappearing as the first of the next), which otherwise
+  // surfaces as a duplicate React key rather than a visible bug.
+  const friends = Array.from(
+    new Map((data?.pages.flatMap((page) => page.friends) ?? []).map((f) => [f.userId, f])).values()
+  );
   const totalCount = data?.pages[0]?.totalCount ?? 0;
 
   if (friends.length === 0) {

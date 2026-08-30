@@ -1557,7 +1557,7 @@ export const en = {
   library: {
     tabs: {
       browse: 'Browse',
-      mine: 'Written by me',
+      mine: 'My library',
     },
     title: 'Library',
     subtitle: 'Books written by community members',

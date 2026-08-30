@@ -1530,7 +1530,7 @@ export const vi: Messages = {
   library: {
     tabs: {
       browse: 'Duyệt sách',
-      mine: 'Sách tôi viết',
+      mine: 'Kho sách của tôi',
     },
     title: 'Thư viện',
     subtitle: 'Sách do thành viên cộng đồng viết',

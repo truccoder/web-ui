@@ -212,29 +212,26 @@ export type SaveExplanationInput = {
  * VAULT NOTES — the owner's view of what their Obsidian vault has synced up.
  * ---------------------------------------------------------------------------------------------
  *
- * HAND-WRITTEN RATHER THAN DERIVED FROM `Schemas`, and that is temporary. `VaultNoteSummaryDto`,
- * `VaultNoteDetailDto` and `VaultNotePageResponseDto` were added to the backend on 28/08 and
- * `schema.gen.ts` has not been regenerated since — every other type in this file reads from the
- * generated schema, and these should too the moment it is. They are written to match the Java
- * records field for field so that the switch is a rename and nothing else.
+ * DERIVED FROM `Schemas` since `schema.gen.ts` was regenerated 30/08 — see B29 in
+ * `docs/backend-plan.md`, which is what the regeneration was actually for; these types were
+ * sitting in the same gap. `VaultNoteSummaryDto`, `VaultNoteDetailDto` and
+ * `VaultNotePageResponseDto` landed on the backend 28/08, two days before the schema caught up, so
+ * until now these were hand-typed to match the Java records field for field.
  *
- * The nullability follows the rest of this file's convention: Jackson emits every key, so every
- * field is widened rather than assumed present.
+ * The nullability still follows the rest of this file's convention: Jackson emits every key, so
+ * every field is widened rather than assumed present.
  */
 
 /** One row of the synced-notes list. **No `content`** — see `vaultApi.listNotes`. */
 export type VaultNoteSummary = {
-  id: number | null;
-  filename: string | null;
-  tags: string[] | null;
-  links: string[] | null;
-  createdAt: string | null;
-  updatedAt: string | null;
+  [K in keyof Required<Schemas['VaultNoteSummaryDto']>]:
+    | Required<Schemas['VaultNoteSummaryDto']>[K]
+    | null;
 };
 
 /** One note with its body, fetched when the reader opens it. */
 export type VaultNoteDetail = VaultNoteSummary & {
-  content: string | null;
+  content: Required<Schemas['VaultNoteDetailDto']>['content'] | null;
 };
 
 /**
@@ -247,8 +244,8 @@ export type VaultNoteDetail = VaultNoteSummary & {
  */
 export type VaultNotePage = {
   items: VaultNoteSummary[];
-  nextCursor: number | null;
-  hasMore: boolean;
+  nextCursor: Required<Schemas['VaultNotePageResponseDto']>['nextCursor'] | null;
+  hasMore: Required<Schemas['VaultNotePageResponseDto']>['hasMore'];
 };
 
 /**
@@ -256,8 +253,8 @@ export type VaultNotePage = {
  * VAULT CONTEXT SETTINGS — which synced notes the AI is allowed to see.
  * ---------------------------------------------------------------------------------------------
  *
- * Hand-written for the same reason as the note types above: `VaultContextSettingsDto` landed on
- * the backend on 28/08 and `schema.gen.ts` predates it.
+ * Derived from `Schemas` since the same 30/08 regeneration above — `VaultContextSettingsDto`
+ * landed on the backend 28/08, `schema.gen.ts` caught up two days later.
  *
  * BOTH LISTS EMPTY IS THE DEFAULT AND MEANS NO FILTERING — every synced note is eligible, which
  * is what the product did before these settings existed. `excludeTags` is applied AFTER
@@ -270,8 +267,9 @@ export type VaultNotePage = {
  * typed if what was typed was `"#Private "`.
  */
 export type VaultContextSettings = {
-  includeTags: string[] | null;
-  excludeTags: string[] | null;
+  [K in keyof Required<Schemas['VaultContextSettingsDto']>]:
+    | Required<Schemas['VaultContextSettingsDto']>[K]
+    | null;
 };
 
 /**
@@ -279,8 +277,8 @@ export type VaultContextSettings = {
  * server reads an omitted list as empty, not as "unchanged".
  */
 export type UpdateVaultContextSettingsInput = {
-  includeTags: string[];
-  excludeTags: string[];
+  includeTags: NonNullable<Schemas['UpdateVaultContextSettingsDto']['includeTags']>;
+  excludeTags: NonNullable<Schemas['UpdateVaultContextSettingsDto']['excludeTags']>;
 };
 
 /**

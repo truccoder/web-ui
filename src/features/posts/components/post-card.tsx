@@ -162,8 +162,11 @@ export function PostCard({
   const relativeTime = useRelativeTime();
 
   /**
-   * A post that was never edited comes back with `updatedAt` equal to `createdAt` — measured on
-   * the live payload, the same shape comments have. So equality is the test, not presence.
+   * B28 (`docs/backend-plan.md`) closed 30/08: the field is now sourced from `PostEntity#editedAt`,
+   * set only by an author's `PUT`, so a never-edited post carries `updatedAt: null` — it is no
+   * longer `@UpdateTimestamp` and no longer flips true on the async moderation write ~1-2s after
+   * creation. The `!== createdAt` half is now redundant (kept as a no-cost second guard) rather
+   * than load-bearing the way it was before this closed.
    */
   const isEdited = updatedAt != null && updatedAt !== createdAt;
 

@@ -26,10 +26,12 @@ import { CreateTokenDialog } from './create-token-dialog';
  *
  * THE ROW NOW ANSWERS "WHICH ONE IS THIS?" BEFORE IT OFFERS TO DESTROY IT. It used to carry a name
  * and a last-used line and nothing else, which is not enough to tell two tokens apart when both are
- * called "laptop" — and the button beside them is irreversible. `createdAt` and `expiresAt` have
- * both been on `PersonalAccessTokenResponseDto` all along; nothing was reading either. A token
- * prefix would settle it outright, but the backend does not return one (recorded in
- * `docs/backend-plan.md`).
+ * called "laptop" — and the button beside them is irreversible. `createdAt` and `expiresAt` settled
+ * it for tokens made on different days; `tokenPrefix` (B29, closed 30/08) is what settles it
+ * outright even for two same-named tokens created the same day — the row shows it in monospace
+ * right under the name, ellipsised because it is deliberately a fragment, not the whole secret.
+ * `null` on a token created before that column existed, in which case the row falls back to
+ * `createdAt`/`expiresAt` alone, same as before.
  */
 export function TokenList() {
   const t = useT();
@@ -118,6 +120,11 @@ export function TokenList() {
                     and revoke, so it has to stay legible while reading as inactive. */}
                 <div className={`min-w-0 flex-1 ${expired ? 'opacity-60' : ''}`}>
                   <div className="truncate text-nx-body-sm text-nx-text-primary">{token.name}</div>
+                  {token.tokenPrefix && (
+                    <div className="truncate font-mono text-nx-caption text-nx-text-muted">
+                      {token.tokenPrefix}…
+                    </div>
+                  )}
                   <div className="text-nx-caption text-nx-text-muted">{meta.join(' · ')}</div>
                 </div>
 
