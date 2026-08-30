@@ -1029,6 +1029,11 @@ export const en = {
     profileMovedLink: 'Open profile',
     title: 'Archive',
     subtitle: 'Your access tokens and saved explanations',
+    tabs: {
+      library: 'Library',
+      vault: 'Synced notes',
+      settings: 'Settings',
+    },
     profile: {
       title: 'Professional profile',
       notSetUp:
@@ -1062,6 +1067,11 @@ export const en = {
     },
     tokens: {
       title: 'Personal access tokens',
+      /* Stays on screen whether or not tokens exist. `emptyDesc` used to be the only place that
+         said what these are for, so the explanation vanished the moment somebody created their
+         first one — exactly when they still needed it. */
+      sectionHint:
+        'A token lets the Obsidian plugin sync with your library. Point the plugin at ${url}.',
       create: 'Create token',
       createTitle: 'Create access token',
       createHint: 'For an external app (the Obsidian plugin) to sync your notes.',
@@ -1071,13 +1081,49 @@ export const en = {
       name: 'Token name',
       nameHint: 'Name it so you can tell later which device it belongs to.',
       permission: 'Permission',
+      /* The backend has no PATCH for a token, so this really is permanent. Saying so beats
+         letting someone hunt for an edit control that was never built. */
+      permissionLocked:
+        'Permission cannot be changed later — to change it, revoke this token and create a new one.',
+      expiry: 'Expires',
+      expiryHint: 'A shorter life limits the damage if the token ever leaks.',
+      expiry30: 'In 30 days',
+      expiry90: 'In 90 days',
+      expiry365: 'In a year',
+      expiryNever: 'Never',
       copy: 'Copy',
       copied: 'Copied',
+      /* The clipboard call can be denied outright. It used to fail into an empty catch, so the
+         button simply did not react — indistinguishable from a click that worked, and the secret
+         is gone once the dialog closes. */
+      copyFailed: 'Could not copy — select the value above and copy it manually.',
       done: 'Done',
       cancel: 'Cancel',
+      closeUncopiedTitle: 'Token not copied yet',
+      closeUncopiedDesc:
+        'You have not copied this token. Closing loses it for good — the only way to get another is to revoke this one and create a new token.',
+      closeUncopiedCancel: 'Back to copying',
+      closeUncopiedConfirm: 'Close anyway',
+      nextSteps: 'Next steps',
+      nextStep1: 'Open the Obsidian plugin settings.',
+      nextStep2: 'Paste this token into the API token field.',
+      nextStep3: 'Set the server address to ${url}.',
       revoke: 'Revoke',
+      revokeAria: 'Revoke token ${name}',
+      revokeTitle: 'Revoke this token?',
+      revokeDesc:
+        'Any app using "${name}" stops syncing immediately. This cannot be undone — you would have to create a new token and set the app up again.',
+      revokeCancel: 'Keep token',
+      revokeConfirm: 'Revoke',
+      createdOn: 'Created ${date}',
       lastUsed: 'Last used ${date}',
       neverUsed: 'Never used',
+      expiresOn: 'Expires ${date}',
+      expiresInDays: 'Expires in ${days} days',
+      expiresToday: 'Expires today',
+      expired: 'Expired',
+      expiredHint: 'Revoke it to tidy the list.',
+      neverExpires: 'No expiry',
       emptyTitle: 'No tokens yet',
       emptyDesc: 'Create one so an external app can sync your library.',
       loadError: 'Could not load your tokens',
@@ -1106,6 +1152,25 @@ export const en = {
       concepts: 'Concepts',
       prerequisites: 'Prerequisites',
       links: 'Further reading',
+      /* Regenerating spends Gemini quota. Without a note saying what was wrong, the second call
+         asks the same question and bills for the same answer — `feedbackNote` has been on
+         `ExplainRequestDto` all along and nothing was sending it. */
+      feedbackLabel: 'What was unclear?',
+      feedbackPlaceholder: 'e.g. the caching part stayed abstract — show me code',
+      feedbackHint: 'Optional, but a regeneration without it usually returns the same answer.',
+      feedbackSubmit: 'Regenerate',
+      feedbackCancel: 'Cancel',
+      download: 'Download .md',
+      /* The switch makes visible a decision the product has been taking silently: whether the
+         model is told what the reader already has notes about. */
+      useVault: 'Use my vault notes',
+      useVaultOn: 'The AI will see your note filenames, tags and links — not their contents.',
+      useVaultOff: 'A plain explanation, with no reference to what you have already noted down.',
+      referencedNotes: {
+        title: 'Based on ${count} notes in your Vault',
+        desc: 'The vault notes this answer draws on.',
+        concept: 'concept: ${concept}',
+      },
     },
     library: {
       title: 'Saved explanations',
@@ -1118,6 +1183,109 @@ export const en = {
       allCategories: 'All topics',
       emptyCategoryTitle: 'Nothing saved on this topic',
       emptyCategoryDesc: 'Pick another topic to see the rest of your library.',
+    },
+    /**
+     * Downloading an explanation as a `.md` file, for readers who never install the plugin.
+     *
+     * The template is applied HERE, in the browser. A server-side template would only matter if
+     * the Obsidian plugin read it, and `/sync/pull` returns JSON rather than markdown — the
+     * plugin is what assembles the file, and it lives in another repository.
+     */
+    export: {
+      title: 'Markdown download template',
+      desc: 'Applied to the .md files you download from this page. Stored in this browser only.',
+      templateLabel: 'Template',
+      /* Placeholders are `{{name}}`, deliberately NOT `${name}`: the i18n `interpolate` would
+         eat a `${...}` in this very hint and print it empty. */
+      templateHint: 'Placeholders: ${placeholders}',
+      reset: 'Reset to default',
+      saved: 'Template saved',
+    },
+    /**
+     * The notes the Obsidian plugin has pushed up.
+     *
+     * Until this screen existed, `push` stored up to 500 notes per request and nothing anywhere
+     * let the person they belong to see them or remove them. The copy leans on saying what is and
+     * is not true: this is the SERVER'S COPY, deleting it does not touch their own vault, and the
+     * plugin will push the note again on its next sync.
+     */
+    vault: {
+      title: 'Synced notes',
+      desc: 'What your Obsidian plugin has pushed to the server. The AI uses these filenames, tags and links as context — never the note bodies.',
+      count: '${count} notes',
+      view: 'View',
+      viewAria: 'View ${name}',
+      delete: 'Delete',
+      deleteAria: 'Delete ${name} from the server',
+      deleteTitle: 'Delete this note from the server?',
+      deleteDesc:
+        'Removes the server\'s copy of "${name}". Your own vault is untouched — and the plugin will push this note back on its next sync unless you stop syncing it there.',
+      deleteCancel: 'Keep it',
+      deleteConfirm: 'Delete',
+      deleteAll: 'Delete all',
+      deleteAllTitle: 'Delete every synced note?',
+      deleteAllDesc:
+        "Removes the server's copy of all ${count} notes. Your own vault is untouched, and a token with two-way permission will push them all back on the next sync.",
+      deleteAllConfirm: 'Delete all',
+      deleted: 'Removed ${count} notes',
+      loadMore: 'Load more',
+      noTags: 'No tags',
+      syncedOn: 'Synced ${date}',
+      emptyTitle: 'Nothing synced yet',
+      emptyDesc:
+        'Notes appear here after a token with two-way permission pushes them from your vault.',
+      loadError: 'Could not load your synced notes',
+      noteError: 'Could not open that note',
+      deleteError: 'Could not delete the note',
+      viewLabel: 'View',
+      viewList: 'List',
+      viewGraph: 'Link graph',
+      graph: {
+        ariaLabel: 'Graph of links between your synced notes',
+        openNoteAria: 'View note ${name}',
+        unresolvedLinks: '${count} links point to notes that are not synced',
+        truncated:
+          'Showing the first ${count} notes — your vault has more; the graph may be incomplete.',
+      },
+    },
+    /**
+     * The tag filter: which vault notes may enter the AI's context.
+     *
+     * WHY THE WORDING IS CAREFUL. Before this filter the only choice a user had was binary and
+     * lived somewhere else entirely — whether a token carried two-way permission. Somebody who
+     * wanted the AI to see their technical notes but not their journal had to stop syncing the
+     * whole vault.
+     *
+     * "EXCLUDE WINS" IS SAID OUT LOUD rather than left to be inferred. A note carrying both a tag
+     * chosen above and a tag chosen below is dropped; the other way round would let a broad
+     * inclusion quietly undo a deliberate exclusion, which on a privacy control is the mistake
+     * that matters.
+     *
+     * Tags are stored WITHOUT a leading `#` and lower-cased — the server normalises on write.
+     */
+    vaultFilter: {
+      title: 'Which notes the AI may use',
+      desc: 'Pick by tag. Choosing nothing means every synced note is eligible — what this page did before the filter existed.',
+      includeLabel: 'Only use notes tagged',
+      includeHint: 'Leave empty for no restriction.',
+      excludeLabel: 'Never use notes tagged',
+      excludeHint:
+        'Always beats the field above: a note picked there and excluded here is excluded.',
+      allowAll: 'Right now: every synced note is eligible.',
+      summaryInclude: 'Only notes carrying one of ${tags}.',
+      summaryExclude: 'Skipping notes carrying ${tags}.',
+      save: 'Save filter',
+      saving: 'Saving…',
+      saved: 'Filter saved',
+      clear: 'Clear filter',
+      /* Click a selected tag to unselect it — spelled out because a chip reads more like a static
+         label than a button. */
+      toggleAria: '${tag} — click to change',
+      loadError: 'Could not load your filter',
+      saveError: 'Could not save the filter',
+      emptyTitle: 'No tags to filter on yet',
+      emptyDesc:
+        'The filter works on the tags in your notes. Once your vault pushes up tagged notes they appear here.',
     },
     seniority: {
       JUNIOR: 'Junior',
@@ -1143,9 +1311,27 @@ export const en = {
       CODE_HEAVY: 'Code-heavy',
       ANALOGY_HEAVY: 'Analogy-heavy',
     },
+    /**
+     * THESE LABELS DESCRIBE BEHAVIOUR, AND THE BEHAVIOUR IS BIGGER THAN "SYNC DIRECTION".
+     *
+     * `ExplanationService.loadVaultContext` returns null unless the user holds at least one
+     * BIDIRECTIONAL token, so this field is also the on/off switch for "may the AI see my vault
+     * at all". Nothing in the UI used to say that. The long labels do.
+     */
     vaultPermission: {
-      WRITE_ONLY: 'Read from app only',
+      WRITE_ONLY: 'One-way — only pull explanations into the vault',
+      BIDIRECTIONAL: 'Two-way — the vault sends notes up, the AI uses them as context',
+    },
+    /** For the list badge, where the row has no space for the sentence. */
+    vaultPermissionShort: {
+      WRITE_ONLY: 'One-way',
       BIDIRECTIONAL: 'Two-way',
+    },
+    vaultPermissionDesc: {
+      WRITE_ONLY:
+        'The app reads nothing from your vault. The AI explains without knowing what you have already noted down.',
+      BIDIRECTIONAL:
+        'Note filenames, tags and links are sent to the AI as context (note contents are not).',
     },
   },
 

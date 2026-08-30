@@ -1008,6 +1008,11 @@ export const vi: Messages = {
     profileMovedLink: 'Mở trang cá nhân',
     title: 'Kho lưu trữ',
     subtitle: 'Token truy cập và những giải thích bạn đã lưu',
+    tabs: {
+      library: 'Thư viện',
+      vault: 'Ghi chú đã đồng bộ',
+      settings: 'Cài đặt',
+    },
     profile: {
       title: 'Hồ sơ nghề nghiệp',
       notSetUp: 'Bạn chưa tạo hồ sơ nghề nghiệp. Điền và lưu để tạo mới.',
@@ -1040,6 +1045,10 @@ export const vi: Messages = {
     },
     tokens: {
       title: 'Token truy cập cá nhân',
+      /* Ở lại trên màn hình bất kể có token hay chưa. Trước đây `emptyDesc` là chỗ DUY NHẤT nói
+         token dùng để làm gì, nên lời giải thích biến mất ngay khi người dùng tạo token đầu
+         tiên — đúng lúc họ vẫn còn cần nó. */
+      sectionHint: 'Token để plugin Obsidian đồng bộ với thư viện của bạn. Trỏ plugin về ${url}.',
       create: 'Tạo token',
       createTitle: 'Tạo token truy cập',
       createHint: 'Dùng cho ứng dụng ngoài (plugin Obsidian) để đồng bộ ghi chú.',
@@ -1049,13 +1058,49 @@ export const vi: Messages = {
       name: 'Tên token',
       nameHint: 'Đặt tên để sau này biết token nào của thiết bị nào.',
       permission: 'Quyền',
+      /* Backend không có endpoint PATCH cho token nên đây đúng là vĩnh viễn. Nói thẳng ra vẫn
+         hơn để người dùng đi tìm nút sửa chưa từng được viết. */
+      permissionLocked:
+        'Không đổi được quyền sau khi tạo — muốn đổi thì thu hồi token này rồi tạo token mới.',
+      expiry: 'Hạn dùng',
+      expiryHint: 'Hạn ngắn giúp giới hạn thiệt hại nếu token lỡ bị lộ.',
+      expiry30: '30 ngày',
+      expiry90: '90 ngày',
+      expiry365: '1 năm',
+      expiryNever: 'Không hết hạn',
       copy: 'Sao chép',
       copied: 'Đã sao chép',
+      /* Trình duyệt có thể từ chối quyền clipboard. Trước đây lỗi rơi vào catch rỗng nên nút
+         không phản ứng gì — không phân biệt được với một cú bấm thành công, mà token thì mất
+         ngay khi đóng dialog. */
+      copyFailed: 'Không sao chép được — hãy bôi đen chuỗi trên và copy thủ công.',
       done: 'Xong',
       cancel: 'Huỷ',
+      closeUncopiedTitle: 'Chưa sao chép token',
+      closeUncopiedDesc:
+        'Bạn chưa sao chép token này. Đóng lại là mất vĩnh viễn — muốn có token khác thì phải thu hồi token này và tạo token mới.',
+      closeUncopiedCancel: 'Quay lại sao chép',
+      closeUncopiedConfirm: 'Vẫn đóng',
+      nextSteps: 'Bước tiếp theo',
+      nextStep1: 'Mở phần cài đặt của plugin Obsidian.',
+      nextStep2: 'Dán token này vào ô API token.',
+      nextStep3: 'Đặt địa chỉ máy chủ là ${url}.',
       revoke: 'Thu hồi',
+      revokeAria: 'Thu hồi token ${name}',
+      revokeTitle: 'Thu hồi token này?',
+      revokeDesc:
+        'Ứng dụng đang dùng "${name}" sẽ ngừng đồng bộ ngay lập tức. Không khôi phục được — bạn sẽ phải tạo token mới và cài đặt lại ứng dụng đó.',
+      revokeCancel: 'Giữ token',
+      revokeConfirm: 'Thu hồi',
+      createdOn: 'Tạo ngày ${date}',
       lastUsed: 'Dùng lần cuối ${date}',
       neverUsed: 'Chưa từng được dùng',
+      expiresOn: 'Hết hạn ${date}',
+      expiresInDays: 'Hết hạn sau ${days} ngày',
+      expiresToday: 'Hết hạn hôm nay',
+      expired: 'Đã hết hạn',
+      expiredHint: 'Thu hồi để dọn danh sách.',
+      neverExpires: 'Không hết hạn',
       emptyTitle: 'Chưa có token nào',
       emptyDesc: 'Tạo token để ứng dụng ngoài đồng bộ được thư viện của bạn.',
       loadError: 'Không tải được danh sách token',
@@ -1084,6 +1129,25 @@ export const vi: Messages = {
       concepts: 'Khái niệm',
       prerequisites: 'Cần biết trước',
       links: 'Đọc thêm',
+      /* Tạo lại là tốn quota Gemini. Không kèm ghi chú nói chỗ nào chưa ổn thì lần gọi thứ hai
+         hỏi đúng câu cũ và trả tiền cho đúng câu trả lời cũ — `feedbackNote` nằm sẵn trên
+         `ExplainRequestDto` từ đầu mà không ai gửi. */
+      feedbackLabel: 'Chỗ nào chưa rõ?',
+      feedbackPlaceholder: 'Ví dụ: phần cache còn trừu tượng, cho mình ví dụ code',
+      feedbackHint: 'Không bắt buộc, nhưng tạo lại mà không có nó thường ra đúng kết quả cũ.',
+      feedbackSubmit: 'Tạo lại',
+      feedbackCancel: 'Huỷ',
+      download: 'Tải về .md',
+      /* Công tắc này làm hiện ra một quyết định mà sản phẩm vẫn đang tự quyết trong im lặng: mô
+         hình có được biết người đọc đã ghi chú về những gì hay không. */
+      useVault: 'Dùng ghi chú trong vault',
+      useVaultOn: 'AI sẽ thấy tên file, thẻ và liên kết của ghi chú — không thấy nội dung.',
+      useVaultOff: 'Giải thích thuần, không tham chiếu tới những gì bạn đã ghi chú.',
+      referencedNotes: {
+        title: 'Dựa trên ${count} ghi chú trong Vault của bạn',
+        desc: 'Những ghi chú trong vault mà câu trả lời này có tham chiếu tới.',
+        concept: 'khái niệm: ${concept}',
+      },
     },
     library: {
       title: 'Giải thích đã lưu',
@@ -1096,6 +1160,106 @@ export const vi: Messages = {
       allCategories: 'Tất cả chủ đề',
       emptyCategoryTitle: 'Chủ đề này chưa lưu gì',
       emptyCategoryDesc: 'Chọn chủ đề khác để xem phần còn lại trong thư viện.',
+    },
+    /**
+     * Tải một bản giải thích về dạng file `.md`, dành cho người không cài plugin.
+     *
+     * Template được áp Ở ĐÂY, trong trình duyệt. Template lưu phía server chỉ có nghĩa nếu plugin
+     * Obsidian đọc nó, mà `/sync/pull` trả JSON chứ không trả markdown — người ráp file là
+     * plugin, và plugin nằm ở một repo khác.
+     */
+    export: {
+      title: 'Mẫu file Markdown khi tải về',
+      desc: 'Áp dụng cho các file .md tải từ trang này. Chỉ lưu trong trình duyệt này.',
+      templateLabel: 'Mẫu',
+      /* Placeholder viết kiểu `{{name}}`, cố ý KHÔNG dùng `${name}`: hàm `interpolate` của i18n
+         sẽ nuốt mất `${...}` ngay trong chính dòng hint này và in ra rỗng. */
+      templateHint: 'Placeholder: ${placeholders}',
+      reset: 'Về mặc định',
+      saved: 'Đã lưu mẫu',
+    },
+    /**
+     * Ghi chú mà plugin Obsidian đã đẩy lên.
+     *
+     * Trước khi có màn này, `push` lưu tối đa 500 note mỗi lần gọi mà không có chỗ nào cho chính
+     * chủ nhân của chúng xem hay xoá. Chữ ở đây bám vào việc nói đúng sự thật: đây là BẢN SAO TRÊN
+     * MÁY CHỦ, xoá nó không đụng vào vault của người dùng, và plugin sẽ đẩy note đó lên lại ở lần
+     * đồng bộ kế tiếp.
+     */
+    vault: {
+      title: 'Ghi chú đã đồng bộ',
+      desc: 'Những gì plugin Obsidian đã đẩy lên máy chủ. AI dùng tên file, thẻ và liên kết của chúng làm ngữ cảnh — không bao giờ dùng nội dung note.',
+      count: '${count} ghi chú',
+      view: 'Xem',
+      viewAria: 'Xem ${name}',
+      delete: 'Xoá',
+      deleteAria: 'Xoá ${name} khỏi máy chủ',
+      deleteTitle: 'Xoá ghi chú này khỏi máy chủ?',
+      deleteDesc:
+        'Xoá bản sao của "${name}" trên máy chủ. Vault của bạn không bị đụng tới — và plugin sẽ đẩy note này lên lại ở lần đồng bộ sau, trừ khi bạn ngừng đồng bộ nó ở phía đó.',
+      deleteCancel: 'Giữ lại',
+      deleteConfirm: 'Xoá',
+      deleteAll: 'Xoá tất cả',
+      deleteAllTitle: 'Xoá toàn bộ ghi chú đã đồng bộ?',
+      deleteAllDesc:
+        'Xoá bản sao trên máy chủ của cả ${count} ghi chú. Vault của bạn không bị đụng tới, và một token quyền hai chiều sẽ đẩy tất cả lên lại ở lần đồng bộ sau.',
+      deleteAllConfirm: 'Xoá tất cả',
+      deleted: 'Đã xoá ${count} ghi chú',
+      loadMore: 'Tải thêm',
+      noTags: 'Không có thẻ',
+      syncedOn: 'Đồng bộ ${date}',
+      emptyTitle: 'Chưa đồng bộ gì',
+      emptyDesc:
+        'Ghi chú sẽ xuất hiện ở đây sau khi một token quyền hai chiều đẩy chúng lên từ vault của bạn.',
+      loadError: 'Không tải được danh sách ghi chú',
+      noteError: 'Không mở được ghi chú đó',
+      deleteError: 'Không xoá được ghi chú',
+      viewLabel: 'Chế độ xem',
+      viewList: 'Danh sách',
+      viewGraph: 'Sơ đồ liên kết',
+      graph: {
+        ariaLabel: 'Sơ đồ liên kết giữa các ghi chú đã đồng bộ',
+        openNoteAria: 'Xem ghi chú ${name}',
+        unresolvedLinks: '${count} liên kết trỏ tới ghi chú chưa đồng bộ',
+        truncated:
+          'Đã tải ${count} ghi chú đầu tiên — vault còn nhiều hơn, sơ đồ có thể chưa đầy đủ.',
+      },
+    },
+    /**
+     * Bộ lọc thẻ: ghi chú nào trong vault được phép vào ngữ cảnh AI.
+     *
+     * VÌ SAO CẦN CHỮ CẨN THẬN Ở ĐÂY. Trước khi có bộ lọc, lựa chọn duy nhất người dùng có là nhị
+     * phân và nằm ở chỗ khác hẳn: token có quyền hai chiều hay không. Ai muốn AI thấy ghi chú kỹ
+     * thuật nhưng không thấy nhật ký cá nhân thì chỉ còn cách ngừng đồng bộ cả vault.
+     *
+     * "LOẠI TRỪ THẮNG" PHẢI NÓI THÀNH LỜI, không để người dùng tự suy ra. Một note vừa mang thẻ
+     * được chọn ở ô trên vừa mang thẻ ở ô dưới thì bị loại — nếu ngược lại, một lựa chọn rộng ở ô
+     * trên sẽ âm thầm phá một quyết định hẹp ở ô dưới, đúng kiểu lỗi tai hại nhất với quyền riêng
+     * tư.
+     *
+     * Thẻ được lưu KHÔNG có dấu `#` và viết thường — máy chủ tự chuẩn hoá khi ghi.
+     */
+    vaultFilter: {
+      title: 'Ghi chú nào AI được dùng',
+      desc: 'Chọn theo thẻ. Không chọn gì nghĩa là mọi ghi chú đã đồng bộ đều được dùng — như trước khi có mục này.',
+      includeLabel: 'Chỉ dùng ghi chú có thẻ',
+      includeHint: 'Để trống nghĩa là không giới hạn.',
+      excludeLabel: 'Không bao giờ dùng ghi chú có thẻ',
+      excludeHint: 'Luôn thắng ô trên: note vừa được chọn ở trên vừa bị loại ở đây thì bị loại.',
+      allowAll: 'Hiện tại: mọi ghi chú đã đồng bộ đều được dùng.',
+      summaryInclude: 'Chỉ ghi chú mang một trong ${tags}.',
+      summaryExclude: 'Bỏ qua ghi chú mang ${tags}.',
+      save: 'Lưu bộ lọc',
+      saving: 'Đang lưu…',
+      saved: 'Đã lưu bộ lọc',
+      clear: 'Bỏ lọc',
+      /* Bấm vào thẻ đang bật để tắt — nói ra vì chip trông giống nhãn tĩnh hơn là nút. */
+      toggleAria: '${tag} — bấm để đổi',
+      loadError: 'Không tải được bộ lọc',
+      saveError: 'Không lưu được bộ lọc',
+      emptyTitle: 'Chưa có thẻ nào để lọc',
+      emptyDesc:
+        'Bộ lọc chạy theo thẻ trong ghi chú. Khi vault đẩy lên ghi chú có thẻ, chúng sẽ hiện ở đây.',
     },
     seniority: {
       JUNIOR: 'Junior',
@@ -1121,9 +1285,27 @@ export const vi: Messages = {
       CODE_HEAVY: 'Nhiều ví dụ code',
       ANALOGY_HEAVY: 'Nhiều ví von',
     },
+    /**
+     * NHÃN MÔ TẢ HÀNH VI, VÀ HÀNH VI ĐÓ LỚN HƠN "CHIỀU ĐỒNG BỘ".
+     *
+     * `ExplanationService.loadVaultContext` trả null trừ khi người dùng có ít nhất một token
+     * BIDIRECTIONAL, nên trường này còn là công tắc bật/tắt "AI có được nhìn vault của tôi hay
+     * không". Trước đây không có chữ nào trong UI nói điều đó. Nhãn dài nói ra.
+     */
     vaultPermission: {
-      WRITE_ONLY: 'Chỉ đọc từ app',
+      WRITE_ONLY: 'Một chiều — chỉ tải giải thích về vault',
+      BIDIRECTIONAL: 'Hai chiều — vault gửi ghi chú lên, AI dùng làm ngữ cảnh',
+    },
+    /** Dùng cho badge trong danh sách, nơi không đủ chỗ cho cả câu. */
+    vaultPermissionShort: {
+      WRITE_ONLY: 'Một chiều',
       BIDIRECTIONAL: 'Hai chiều',
+    },
+    vaultPermissionDesc: {
+      WRITE_ONLY:
+        'App không đọc gì từ vault. AI sẽ giải thích mà không biết bạn đã ghi chú những gì.',
+      BIDIRECTIONAL:
+        'Tên file, thẻ và liên kết của ghi chú sẽ được gửi cho AI làm ngữ cảnh (không gửi nội dung note).',
     },
   },
 

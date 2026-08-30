@@ -2,12 +2,14 @@
 
 import * as React from 'react';
 import { ExternalLink as ExternalLinkIcon } from 'lucide-react';
-import { ChevronDown, ChevronUp, Sparkles, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, Download, Sparkles, X } from 'lucide-react';
 import { Badge, Card, IconButton } from '@/shared/components';
 import Link from 'next/link';
 import { useT } from '@/core/i18n';
+import { useDownloadExplanation } from '../hooks';
 import type { Explanation } from '../types/knowledge';
 import { ExplanationMarkdown } from './explanation-markdown';
+import { ReferencedNotes } from './referenced-notes';
 
 /**
  * One AI explanation, whether freshly generated or read back from the library.
@@ -69,6 +71,7 @@ export function ExplanationCard({
   onDismiss,
 }: ExplanationCardProps) {
   const t = useT();
+  const download = useDownloadExplanation();
   // Opens expanded: the reader just asked for this, so hiding it behind a second click would
   // undo the request. The toggle is for afterwards.
   const [open, setOpen] = React.useState(true);
@@ -76,6 +79,7 @@ export function ExplanationCard({
   const concepts = explanation.concepts ?? [];
   const prerequisites = explanation.prerequisites ?? [];
   const links = explanation.externalLinks ?? [];
+  const referencedNotes = explanation.referencedNotes ?? [];
 
   return (
     /**
@@ -117,6 +121,17 @@ export function ExplanationCard({
               {collapsed ? <ChevronDown /> : <ChevronUp />}
             </IconButton>
           )}
+
+          {/* THE WAY OUT FOR EVERYONE WHO NEVER INSTALLS THE PLUGIN. Syncing was the only route
+              from this card to a file on disk, and it needs a token, an external app and a vault.
+              A download needs a click. */}
+          <IconButton
+            size="sm"
+            label={t('knowledge.explain.download')}
+            onClick={() => download(explanation)}
+          >
+            <Download />
+          </IconButton>
 
           {onDismiss && (
             <IconButton size="sm" label={t('knowledge.explain.dismiss')} onClick={onDismiss}>
@@ -219,6 +234,8 @@ export function ExplanationCard({
                 </ul>
               </div>
             )}
+
+            {referencedNotes.length > 0 && <ReferencedNotes notes={referencedNotes} />}
 
             {actions && <div className="flex items-center justify-end gap-2 pt-1">{actions}</div>}
           </>

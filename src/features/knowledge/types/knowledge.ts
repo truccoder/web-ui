@@ -159,6 +159,9 @@ export type Explanation = {
   [K in keyof Required<Schemas['ExplanationResponseDto']>]: K extends 'externalLinks'
     ? ExternalLink[] | null
     : Required<Schemas['ExplanationResponseDto']>[K] | null;
+} & {
+  /** Not on `ExplanationResponseDto` yet — see `ReferencedVaultNote` above. Always `null` today. */
+  referencedNotes: ReferencedVaultNote[] | null;
 };
 
 /**
@@ -202,4 +205,102 @@ export type SaveExplanationInput = {
   complexityScore?: number;
   externalLinks?: Schemas['ExternalLink'][];
   category?: LearningCategory;
+};
+
+/**
+ * ---------------------------------------------------------------------------------------------
+ * VAULT NOTES — the owner's view of what their Obsidian vault has synced up.
+ * ---------------------------------------------------------------------------------------------
+ *
+ * HAND-WRITTEN RATHER THAN DERIVED FROM `Schemas`, and that is temporary. `VaultNoteSummaryDto`,
+ * `VaultNoteDetailDto` and `VaultNotePageResponseDto` were added to the backend on 28/08 and
+ * `schema.gen.ts` has not been regenerated since — every other type in this file reads from the
+ * generated schema, and these should too the moment it is. They are written to match the Java
+ * records field for field so that the switch is a rename and nothing else.
+ *
+ * The nullability follows the rest of this file's convention: Jackson emits every key, so every
+ * field is widened rather than assumed present.
+ */
+
+/** One row of the synced-notes list. **No `content`** — see `vaultApi.listNotes`. */
+export type VaultNoteSummary = {
+  id: number | null;
+  filename: string | null;
+  tags: string[] | null;
+  links: string[] | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+};
+
+/** One note with its body, fetched when the reader opens it. */
+export type VaultNoteDetail = VaultNoteSummary & {
+  content: string | null;
+};
+
+/**
+ * A cursor page of notes.
+ *
+ * `nextCursor` is the id of the last row and is null when nothing follows. Descending **id**, not
+ * descending `updatedAt`: a vault push writes hundreds of rows in one transaction and they all
+ * land on the same timestamp, so a timestamp cursor would repeat or skip rows at every page
+ * boundary.
+ */
+export type VaultNotePage = {
+  items: VaultNoteSummary[];
+  nextCursor: number | null;
+  hasMore: boolean;
+};
+
+/**
+ * ---------------------------------------------------------------------------------------------
+ * VAULT CONTEXT SETTINGS — which synced notes the AI is allowed to see.
+ * ---------------------------------------------------------------------------------------------
+ *
+ * Hand-written for the same reason as the note types above: `VaultContextSettingsDto` landed on
+ * the backend on 28/08 and `schema.gen.ts` predates it.
+ *
+ * BOTH LISTS EMPTY IS THE DEFAULT AND MEANS NO FILTERING — every synced note is eligible, which
+ * is what the product did before these settings existed. `excludeTags` is applied AFTER
+ * `includeTags` and always wins: a note tagged both `tech` and `private` is excluded. That order
+ * is the safe one; the other way round would let a broad include quietly override a deliberate
+ * exclusion, which on a privacy control is the mistake that matters.
+ *
+ * Tags are stored WITHOUT a leading `#` and folded to lower case — the server normalises on write
+ * (trim, strip `#`, lower-case, de-duplicate), so a value read back here will not match what was
+ * typed if what was typed was `"#Private "`.
+ */
+export type VaultContextSettings = {
+  includeTags: string[] | null;
+  excludeTags: string[] | null;
+};
+
+/**
+ * Body for the settings PUT. **Both lists, every time** — see `vaultApi.updateSettings`: the
+ * server reads an omitted list as empty, not as "unchanged".
+ */
+export type UpdateVaultContextSettingsInput = {
+  includeTags: string[];
+  excludeTags: string[];
+};
+
+/**
+ * ---------------------------------------------------------------------------------------------
+ * REFERENCED VAULT NOTES — which of the reader's own notes an explanation drew on.
+ * ---------------------------------------------------------------------------------------------
+ *
+ * HAND-WRITTEN AND NOT YET REAL. `ExplanationResponseDto` has no field for this today —
+ * `loadVaultContext` builds a flat string for the Gemini prompt and nothing on the way back says
+ * which of those notes the model actually used. This type exists so the frontend shell
+ * (`ReferencedNotes`) can be built and reviewed now; every value it describes will read as
+ * `undefined` from a real response until the backend adds the field, which is why `Explanation`
+ * widens it to `| null` rather than assuming it is present.
+ *
+ * `noteId` IS DELIBERATELY ABSENT FROM THE SHAPE BELOW. Without it, opening a referenced note from
+ * this list means matching `filename` against the reader's synced notes by hand — workable, but
+ * fragile against a renamed or duplicate filename. Backend backlog: add `noteId: number | null`
+ * alongside `filename` so a click can go straight to `useVaultNote(noteId)`.
+ */
+export type ReferencedVaultNote = {
+  filename: string | null;
+  concept: string | null;
 };

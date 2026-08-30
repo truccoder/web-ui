@@ -2,6 +2,7 @@
 
 import { AxiosError } from 'axios';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useI18n } from '@/core/i18n';
 import { explanationApi, professionalProfileApi, tokenApi } from '../api';
 import type {
   CreateTokenInput,
@@ -162,9 +163,24 @@ export function useKnowledgeLibrary(enabled = true) {
  * The 404 for an unknown post id happens before the model call, so that branch is free.
  */
 export function useExplainPost() {
+  // THE LOCALE IS FILLED IN HERE, NOT BY THE CALLER. The endpoint ignores `Accept-Language`, so
+  // the reader's VI/EN choice reaches the model only if this parameter is sent — and a caller that
+  // forgets gets a card whose body silently disagrees with the labels around it. One place to get
+  // it right beats one place per call site to get it wrong.
+  const { locale } = useI18n();
+
   return useMutation({
-    mutationFn: ({ postId, feedbackNote }: { postId: number; feedbackNote?: string }) =>
-      explanationApi.explainPost(postId, feedbackNote),
+    mutationFn: ({
+      postId,
+      feedbackNote,
+      useVaultContext,
+    }: {
+      postId: number;
+      feedbackNote?: string;
+      // Tri-state on purpose: undefined means the caller expressed no preference, which the
+      // backend reads as "yes". Only an explicit false switches the vault context off.
+      useVaultContext?: boolean;
+    }) => explanationApi.explainPost(postId, feedbackNote, locale, useVaultContext),
     retry: 0,
   });
 }

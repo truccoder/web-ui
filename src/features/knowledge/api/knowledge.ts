@@ -23,12 +23,31 @@ export const explanationApi = {
    * `feedbackNote` re-asks with a correction ("too advanced", "show me code"). The body is
    * `required = false` on the controller, so omitting it entirely is fine.
    *
+   * `language` IS A BCP-47 TAG AND THE FRONTEND WAS NOT SENDING IT. `ExplainRequestDto` has carried
+   * the field since the backend fixed the mixed-language card: without it the prompt's only
+   * instruction is "respond in the same language as the original post", which produced a Vietnamese
+   * post explained in English underneath Vietnamese section labels. The endpoint does not read
+   * `Accept-Language`, so this parameter is the only channel — see `useExplainPost`, which fills it
+   * from the app's own locale so no caller can forget.
+   *
+   * The value is validated server-side against `^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$` and then
+   * resolved through `Locale` before it reaches the prompt, because it is concatenated into one.
+   *
    * NOTHING IS PERSISTED HERE. The result is returned and forgotten; `saveExplanation` is what puts
    * it in the library. So a generated explanation has no `id` until it is saved.
    */
-  explainPost: (postId: number, feedbackNote?: string) =>
+  explainPost: (
+    postId: number,
+    feedbackNote?: string,
+    language?: string,
+    useVaultContext?: boolean
+  ) =>
     api
-      .post<Explanation>(`/v1/api/knowledge/posts/${postId}/explain`, { feedbackNote })
+      .post<Explanation>(`/v1/api/knowledge/posts/${postId}/explain`, {
+        feedbackNote,
+        language,
+        useVaultContext,
+      })
       .then((r) => r.data),
 
   /**
@@ -70,8 +89,10 @@ export const explanationApi = {
    * data that `getMyLibrary` already returns with the session it already has. The omission is the
    * correct implementation, not a gap.
    *
-   * The frontend's role in the vault flow is issuing and revoking the tokens (`tokenApi`), not
-   * syncing. Counted at Phase 4.7 alongside `POST /payments/momo/webhook` and
-   * `GET /events/google/callback` as endpoints with no frontend consumer by design.
+   * The frontend's role in the vault flow is issuing and revoking the tokens (`tokenApi`) and
+   * letting the owner read and delete what was synced (`vaultApi`, added 28/08 against the new
+   * session-authenticated `/knowledge/vault/**` endpoints) — never the syncing itself. Counted at
+   * Phase 4.7 alongside `POST /payments/momo/webhook` and `GET /events/google/callback` as
+   * endpoints with no frontend consumer by design.
    */
 };

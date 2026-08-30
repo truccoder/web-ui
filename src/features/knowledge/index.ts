@@ -18,7 +18,7 @@
  * "Invalid token"). Reasoning in full on `explanationApi`.
  */
 
-export { explanationApi, professionalProfileApi, tokenApi } from './api';
+export { explanationApi, professionalProfileApi, tokenApi, vaultApi } from './api';
 
 export {
   CreateTokenDialog,
@@ -27,9 +27,19 @@ export {
   type ExplainPostActionProps,
   ExplanationCard,
   type ExplanationCardProps,
+  ExportTemplateSettings,
   KnowledgeLibrary,
+  NoteViewerDialog,
+  type NoteViewerDialogProps,
   ProfessionalProfileForm,
+  ReferencedNotes,
+  type ReferencedNotesProps,
   TokenList,
+  VaultFilterSettings,
+  VaultNoteGraph,
+  VaultNoteGraphWithViewer,
+  type VaultNoteGraphProps,
+  VaultNoteList,
 } from './components';
 
 export {
@@ -37,7 +47,11 @@ export {
   isProfileRequired,
   knowledgeKeys,
   useCreateToken,
+  useDeleteAllVaultNotes,
+  useDeleteVaultNote,
+  useDownloadExplanation,
   useExplainPost,
+  useExportTemplate,
   useKnowledgeLibrary,
   usePersonalAccessTokens,
   useProfessionalProfile,
@@ -45,6 +59,12 @@ export {
   useRoleLine,
   useSaveExplanation,
   useUpdateProfessionalProfile,
+  useUpdateVaultContextSettings,
+  useVaultContextSettings,
+  useVaultNote,
+  useVaultNoteGraph,
+  useVaultNotes,
+  useVaultTags,
 } from './hooks';
 
 /* Beside its hook rather than in the type block below, because it is the hook's argument shape
@@ -62,9 +82,15 @@ export type {
   PrimaryRole,
   LearningCategory,
   ProfessionalProfile,
+  ReferencedVaultNote,
   SaveExplanationInput,
   SeniorityLevel,
   UpdateProfessionalProfileInput,
+  UpdateVaultContextSettingsInput,
+  VaultContextSettings,
+  VaultNoteDetail,
+  VaultNotePage,
+  VaultNoteSummary,
   VaultPermission,
   WorkExperience,
 } from './types';
