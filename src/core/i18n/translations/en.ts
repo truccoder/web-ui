@@ -355,6 +355,8 @@ export const en = {
     empty: 'No results for "${query}"',
     usersSection: 'People (${count})',
     postsSection: 'Posts (${count})',
+    projectsSection: 'Projects (${count})',
+    roadmapsSection: 'Roadmaps (${count})',
     title: 'Search',
     resultsFor: 'Results for "${query}"',
     prompt: 'Type something and press Enter to search',
@@ -367,6 +369,36 @@ export const en = {
     free: 'Free',
     price: '${price} đ',
     priceUnknown: 'Price unavailable',
+    /* The result tabs. `all` keeps the stacked people/posts/books sections; the rest narrow to
+       one kind. Projects and roadmaps are filtered on this side — the backend's `/search` only
+       covers people, posts and books (see docs/backend-plan.md B33). */
+    tabs: {
+      all: 'All',
+      people: 'People',
+      posts: 'Posts',
+      books: 'Books',
+      projects: 'Projects',
+      roadmaps: 'Roadmaps',
+    },
+    filters: {
+      sortLabel: 'Sort',
+      sortRelevance: 'As found',
+      sortRep: 'Highest reputation',
+      kindLabel: 'Post type',
+      kindAll: 'All types',
+      priceLabel: 'Price',
+      priceAll: 'Any price',
+      priceFree: 'Free',
+      pricePaid: 'Paid',
+      statusLabel: 'Status',
+      statusAll: 'Any status',
+      categoryLabel: 'Topic',
+      categoryAll: 'All topics',
+    },
+    /* Shown on the Projects tab when the client filter could not see the whole board — the list
+       endpoint is cursor-paged and this searched only the newest slice of it. */
+    projectsTruncated: 'Only searched the ${count} most recent projects',
+    openPositions: '${count} open',
   },
 
   github: {

@@ -25,6 +25,8 @@
 
 export { roadmapApi, skillVerificationApi, userProgressApi } from './api';
 
+export { LEARNING_CATEGORIES } from './lib/categories';
+
 export {
   RoadmapList,
   type RoadmapListProps,

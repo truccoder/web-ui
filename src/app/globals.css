@@ -712,6 +712,20 @@
       scrollbar-width: none;
     }
   }
+  /**
+   * NO NATIVE CLEAR AFFORDANCE ON `type="search"`. Chromium paints its own
+   * `::-webkit-search-cancel-button` once such a field holds a value; `SearchBar` already draws a
+   * clear button over the field's trailing edge, so the two rendered side by side. The type is
+   * kept `search` for the on-screen keyboard and form semantics — only the browser's glyph goes.
+   * One such field exists in the product (the shell's search bar), but this is scoped by selector
+   * rather than by class so a second one cannot reintroduce the doubling.
+   */
+  input[type='search']::-webkit-search-cancel-button,
+  input[type='search']::-webkit-search-decoration {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
   /* Accessibility floor, constitution §9/§12: motion explains state change and
      nothing else, so reduced-motion collapses all of it. */
   @media (prefers-reduced-motion: reduce) {

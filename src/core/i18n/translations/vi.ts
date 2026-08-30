@@ -344,6 +344,8 @@ export const vi: Messages = {
     empty: 'Không có kết quả cho "${query}"',
     usersSection: 'Mọi người (${count})',
     postsSection: 'Bài viết (${count})',
+    projectsSection: 'Dự án (${count})',
+    roadmapsSection: 'Lộ trình (${count})',
     title: 'Tìm kiếm',
     resultsFor: 'Kết quả cho "${query}"',
     prompt: 'Nhập nội dung và nhấn Enter để tìm kiếm',
@@ -356,6 +358,36 @@ export const vi: Messages = {
     free: 'Miễn phí',
     price: '${price} đ',
     priceUnknown: 'Chưa có giá',
+    /* Các tab kết quả. `all` giữ nguyên các mục mọi người/bài viết/sách xếp chồng; các tab còn
+       lại thu về một loại. Dự án và lộ trình được lọc ở phía này — `/search` của backend chỉ
+       phủ mọi người, bài viết và sách (xem docs/backend-plan.md B33). */
+    tabs: {
+      all: 'Tất cả',
+      people: 'Người dùng',
+      posts: 'Bài viết',
+      books: 'Sách',
+      projects: 'Dự án',
+      roadmaps: 'Lộ trình',
+    },
+    filters: {
+      sortLabel: 'Sắp xếp',
+      sortRelevance: 'Theo kết quả',
+      sortRep: 'Uy tín cao nhất',
+      kindLabel: 'Loại bài',
+      kindAll: 'Mọi loại',
+      priceLabel: 'Giá',
+      priceAll: 'Mọi mức giá',
+      priceFree: 'Miễn phí',
+      pricePaid: 'Trả phí',
+      statusLabel: 'Trạng thái',
+      statusAll: 'Mọi trạng thái',
+      categoryLabel: 'Chủ đề',
+      categoryAll: 'Tất cả chủ đề',
+    },
+    /* Hiện ở tab Dự án khi bộ lọc phía client chưa thấy hết bảng dự án — endpoint danh sách phân
+       trang bằng cursor và chỗ này chỉ tìm trong phần mới nhất. */
+    projectsTruncated: 'Chỉ tìm trong ${count} dự án mới nhất',
+    openPositions: '${count} vị trí đang mở',
   },
 
   github: {
