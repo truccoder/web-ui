@@ -289,6 +289,23 @@ export const vi: Messages = {
        `aria-label` + tooltip, không hiện thành chữ — vì vậy nó phải nói đủ một hành động
        (`Viết bài mới`) chứ không phải một từ (`Viết`). */
     composeInBar: 'Viết bài mới',
+    /* Bộ lọc `?hashtag=` trên tab `Bài viết` (B31). */
+    hashtag: {
+      filteredBy: 'Đang lọc theo',
+      clear: 'Bỏ lọc #${tag}',
+      emptyTitle: 'Chưa có bài viết nào gắn #${tag}',
+      emptyDesc: 'Chưa ai đăng bài với hashtag này, hoặc những bài có thì bạn không xem được.',
+    },
+  },
+
+  hashtags: {
+    /* "12 bài viết" — số đứng cạnh mỗi hashtag trong danh sách gợi ý. */
+    postCount: '${count} bài viết',
+    search: {
+      placeholder: 'Tìm hashtag',
+      placeholderActive: 'Đang xem #${tag} — tìm hashtag khác',
+      trendingLabel: 'Phổ biến tuần này',
+    },
   },
 
   notifications: {
@@ -1156,6 +1173,12 @@ export const vi: Messages = {
       saved: 'Đã lưu',
       saveError: 'Không lưu được giải thích',
       error: 'Không tạo được giải thích',
+      // 429 từ endpoint explain (B32) — bấm lại chỉ tốn nốt lượt còn lại để lỗi y hệt, nên nhánh
+      // này không có nút "Thử lại".
+      rateLimited: 'AI đang quá tải hoặc đã hết lượt lúc này — thử lại sau ít phút.',
+      // 503 — Gemini quá tải/timeout. Đo 30/08: có lúc kéo dài nhiều phút nên không hứa "giây
+      // lát"; vẫn giữ nút "Thử lại" vì đây là lỗi thoáng qua, không phải tường quota.
+      unavailable: 'AI đang quá tải, chưa tạo được giải thích lúc này. Thử lại sau ít phút.',
       profileRequired:
         'Cần có hồ sơ nghề nghiệp trước khi dùng AI giải thích — điền hồ sơ ở trên rồi thử lại.',
       byAi: 'Giải thích bằng AI',

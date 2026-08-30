@@ -301,12 +301,18 @@ export function PostCard({
                 </Badge>
               )}
               {hashtags?.map((tag) => (
-                // Still not links: `SearchController` has no hashtag handling, so "#kafka" is not
-                // a filter the backend understands and an anchor would promise a tag feed that
-                // does not exist.
-                <Badge key={tag} variant="accent">
-                  {tag}
-                </Badge>
+                // LINKS NOW (B31). The note here used to say an anchor "would promise a tag feed
+                // that does not exist" — `GET /posts/public?hashtag=` exists as of B31, so the
+                // badge points at it. `/newsfeed?tab=posts&hashtag=` is the same route the card's
+                // timestamp and author name already hardcode; the feed folds the tag itself, so a
+                // raw `tag` from the payload is a valid value to pass straight through.
+                <Link
+                  key={tag}
+                  href={`/newsfeed?tab=posts&hashtag=${encodeURIComponent(tag)}`}
+                  className="rounded-nx-full hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
+                >
+                  <Badge variant="accent">{tag}</Badge>
+                </Link>
               ))}
             </div>
           ) : null}

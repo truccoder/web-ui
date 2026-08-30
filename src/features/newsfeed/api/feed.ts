@@ -89,10 +89,16 @@ export const newsfeedApi = {
    * index, a table ordered by id does not, and offset paging over a table that is being written
    * to shows the reader the same post twice. `nextCursor` is the last id of the page, and `null`
    * once `hasMore` is false.
+   *
+   * `hashtag` NARROWS THE SAME QUERY, it does not switch endpoints (B31). When set, the backend
+   * adds one `EXISTS` predicate on `t_post_hashtags` — the cursor and page shape are unchanged, so
+   * a tag feed is this feed with a filter, not a second thing to keep in step. The value must be
+   * folded the way the backend stored it (`normalizeHashtag`); axios drops it when `undefined`, so
+   * the unfiltered call is unchanged.
    */
-  getPublicFeed: (cursor?: number, limit = 10) =>
+  getPublicFeed: (cursor?: number, limit = 10, hashtag?: string) =>
     api
-      .get<PublicFeedPage>('/v1/api/posts/public', { params: { cursor, limit } })
+      .get<PublicFeedPage>('/v1/api/posts/public', { params: { cursor, limit, hashtag } })
       .then((r) => r.data),
 
   /**

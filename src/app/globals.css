@@ -504,9 +504,16 @@
    apparatus, not product. Only the DEFAULT fitting (R9 spacing, R4 surfaces) comes across.
    If a comparison is ever needed again, it belongs in the kit, not in the app's CSS. */
 @theme {
-  /* The shell's regions. R4's skeleton: one 56px bar, a 248px rail that paints nothing,
-     a hard-capped reading column, and a 300px ledger. The budget is
-     248 + 40 + 672 + 40 + 300 = 1300, which the DS calls `--nx-shell-max`.
+  /* The shell's regions. R4's skeleton: one 56px bar, a rail that paints nothing,
+     a hard-capped reading column, and the ledger. The budget is
+     210 + 40 + 672 + 40 + 338 = 1300, which the DS calls `--nx-shell-max`.
+
+     THE RAIL↔LEDGER SPLIT WAS REBALANCED (owner's call): the rail gave 38px to the ledger
+     (248→210, 300→338) without touching the reading measure or the shell cap. The rail holds
+     two short nav groups and a locale toggle — nothing in it needs 248 — while the ledger's
+     `Phù hợp với bạn` card carries a project title, a role count and a row of matched-skill
+     chips per row and was the tightest column in the shell. `1300 = 210 + 40 + 672 + 40 + 338`
+     still, and the 1280 step below is `210 + 24 + 672 + 24 + 310 = 1240` still.
 
      DELIBERATELY RENAMED into Tailwind's `--spacing-*` namespace. The DS declares these as
      raw `:root` vars (`--nx-canvas-measure`, `--nx-ledger-width`, `--nx-topbar-height`, …)
@@ -525,15 +532,15 @@
   /* Mirrors the pre-existing raw `--nx-sidebar-width` into the spacing namespace so the rail can
      be sized with `w-nx-sidebar` like every other region. Both names are kept: the raw one is
      referenced by older code and by the DS's own docs. */
-  --spacing-nx-sidebar: 248px;
+  --spacing-nx-sidebar: 210px;
   --spacing-nx-topbar: 56px;
   /* 48, not 40. `layout-r7.md` §3.2 sets the context bar at the TWO-LINE ROW UNIT — "already in
      the system (§3.4 gives request rows 48). Not a new number." Measured in the kit's `/chats`:
      a band at y=56 exactly 48 tall. The 40 here had no consumer, so nothing moved when it was
      wrong — it was simply waiting to be believed. */
   --spacing-nx-subnav: 48px;
-  --spacing-nx-ledger: 300px;
-  --spacing-nx-ledger-sm: 272px;
+  --spacing-nx-ledger: 338px;
+  --spacing-nx-ledger-sm: 310px;
   --spacing-nx-canvas: 672px;
   --spacing-nx-shell-max: 1300px;
   --spacing-nx-region-gutter: 40px;
@@ -613,7 +620,7 @@
   --nx-duration-base: 200ms;
   --nx-duration-slow: 300ms;
   --nx-duration-exit: 80ms;
-  --nx-sidebar-width: 248px;
+  --nx-sidebar-width: 210px;
 }
 
 @layer base {

@@ -150,16 +150,19 @@ export function MySkillsCard({ userId, readOnly = false }: MySkillsCardProps) {
               <span className="text-nx-body-sm font-medium text-nx-text-primary">
                 {row.nodeName}
               </span>
-              <div className="flex flex-wrap items-center gap-2">
-                {/* The tier says HOW it was backed up, which is what makes one verified skill
-                    different from another — a GitHub-certified node is a stronger claim than a
-                    self-declared one, and collapsing them to a single tick throws that away. */}
-                <Badge variant="neutral">
-                  {t(`roadmap.verify.tier.${TIER_LABEL_KEY[row.tier]}`)}
-                </Badge>
-                <Badge variant={STATUS_VARIANT[row.status]}>
+              {/* ONE STATUS BADGE, THEN THE TIER AS A QUIET CAPTION — not two peer pills. The
+                  status (verified / pending / rejected) is the fact worth a coloured pill; the
+                  tier only qualifies HOW that fact was backed, so it rides alongside as muted
+                  text rather than competing for the same weight. Two full pills — a grey blob
+                  and an amber-ringed one — read as unrelated tags and let the ring outshout the
+                  skill name it annotates. `dot` keeps the badge itself light. */}
+              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                <Badge variant={STATUS_VARIANT[row.status]} dot>
                   {t(`profile.skills.status.${STATUS_LABEL_KEY[row.status]}`)}
                 </Badge>
+                <span className="text-nx-caption text-nx-text-muted">
+                  {t(`roadmap.verify.tier.${TIER_LABEL_KEY[row.tier]}`)}
+                </span>
               </div>
             </Card>
           </li>

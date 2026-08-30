@@ -300,6 +300,24 @@ export const en = {
     // Icon-only button in the sticky filter bar, so this string is the `aria-label` and the
     // tooltip rather than a visible label — it names the whole action, not one word.
     composeInBar: 'Write a new post',
+    // The `?hashtag=` filter on the `Posts` tab (B31).
+    hashtag: {
+      filteredBy: 'Filtered by',
+      clear: 'Clear the #${tag} filter',
+      emptyTitle: 'No posts tagged #${tag}',
+      emptyDesc:
+        'Nobody has posted with this hashtag yet, or the ones that exist are not visible to you.',
+    },
+  },
+
+  hashtags: {
+    // "12 posts" — the count beside a tag in the suggestion list.
+    postCount: '${count} posts',
+    search: {
+      placeholder: 'Search hashtags',
+      placeholderActive: 'Showing #${tag} — search another hashtag',
+      trendingLabel: 'Popular this week',
+    },
   },
 
   notifications: {
@@ -1179,6 +1197,13 @@ export const en = {
       saved: 'Saved',
       saveError: 'Could not save the explanation',
       error: 'Could not generate an explanation',
+      // 429 from the explain endpoint (B32) — retrying just spends whatever allowance is left to
+      // fail the same way, so this branch has no "Try again" button.
+      rateLimited: 'The AI is overloaded or out of quota right now — try again in a few minutes.',
+      // 503 — Gemini overloaded / timed out. Measured 30/08: can persist for minutes, so no
+      // "in a moment" promise; the "Try again" button stays — this is a blip, not the quota wall.
+      unavailable:
+        "The AI is overloaded and couldn't generate the explanation right now. Try again in a few minutes.",
       profileRequired:
         'You need a professional profile before using AI explanations — fill in the form above and try again.',
       byAi: 'Explained by AI',

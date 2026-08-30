@@ -1,9 +1,11 @@
 'use client';
 
 import { Suspense, useEffect, useRef, useState } from 'react';
-import { SquarePen } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Hash, SquarePen, X } from 'lucide-react';
 import { IconButton, StickyBlock, Tabs } from '@/shared/components';
 import { Newsfeed, useRefreshFeed, type FeedScope } from '@/features/newsfeed';
+import { HashtagSearchBox, normalizeHashtag } from '@/features/hashtags';
 import { PostComposer, PostTypeMenu, type PostComposerHandle } from '@/features/posts';
 import { useIsGuest } from '@/features/security';
 import { TrendingList } from '@/features/trending';
@@ -87,6 +89,8 @@ export default function NewsfeedPage() {
 
 function NewsfeedContent() {
   const t = useT();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const refreshFeed = useRefreshFeed();
   const isGuest = useIsGuest();
 
@@ -108,7 +112,42 @@ function NewsfeedContent() {
    * after signing in.
    */
   const tabs = isGuest ? GUEST_TABS : TABS;
-  const tab = tabs.includes(tabParam) ? tabParam : 'tech';
+  const baseTab = tabs.includes(tabParam) ? tabParam : 'tech';
+
+  /**
+   * A HASHTAG FILTER IS A SECOND URL KEY, LAYERED ON `?tab=` (B31). `?hashtag=kafka` arrives from
+   * the search box on this tab and from a badge on any post card, and it only means anything on
+   * the `Bài viết` stream — `GET /posts/public` is the one feed that takes the filter. So its
+   * presence forces the rendered tab to `posts` regardless of `?tab=`, the way a guest's missing
+   * fan-out forces `tech`.
+   *
+   * It is read straight off `useSearchParams` (reactive) and folded the way the backend stored the
+   * tag, so `#Kafka`, `kafka` and a raw badge all resolve to one feed. `useTabParam`'s own state
+   * is left stale on purpose — `tab` below is derived, and the transition helpers call `setTab` so
+   * it catches up.
+   */
+  const activeHashtag = normalizeHashtag(searchParams.get('hashtag') ?? '') ?? undefined;
+  const tab: FeedTab = activeHashtag ? 'posts' : baseTab;
+
+  const openHashtag = (next: string) => {
+    setTab('posts');
+    router.push(`/newsfeed?tab=posts&hashtag=${encodeURIComponent(next)}`);
+  };
+
+  const clearHashtag = () => {
+    setTab('posts');
+    router.push('/newsfeed?tab=posts');
+  };
+
+  /**
+   * Clicking a tab while a hashtag is applied has to DROP the filter, not just restyle the strip —
+   * otherwise the rendered tab (forced to `posts` above) would not move. A real navigation so
+   * `useSearchParams` updates; `setTab` keeps the hook's state in step for the non-hashtag case.
+   */
+  const selectTab = (next: string) => {
+    setTab(next);
+    if (activeHashtag) router.push(next === 'tech' ? '/newsfeed' : `/newsfeed?tab=${next}`);
+  };
 
   /**
    * THE COMPOSER SCROLLS AWAY AND THE FILTER BAR DOES NOT, SO THE FILTER BAR CARRIES THE WAY BACK
@@ -133,8 +172,10 @@ function NewsfeedContent() {
   const [composerOffscreen, setComposerOffscreen] = useState(false);
 
   // `tech` has no composer at all (nothing it publishes would land there) and a guest never gets
-  // one, so on those the bar has nothing to offer and the button is not rendered.
-  const hasComposer = !isGuest && tab !== 'tech';
+  // one, so on those the bar has nothing to offer and the button is not rendered. A hashtag view
+  // hides it too: a new post is not guaranteed to carry that tag, so "write" under a `#kafka`
+  // filter would promise a placement it cannot keep.
+  const hasComposer = !isGuest && tab !== 'tech' && !activeHashtag;
 
   /**
    * The button appears only once the card it stands in for has passed UNDER THE CHROME — the same
@@ -204,7 +245,7 @@ function NewsfeedContent() {
           <Tabs
             tabs={tabs.map((id) => ({ id, label: t(`newsfeed.tabs.${id}`) }))}
             active={tab}
-            onChange={setTab}
+            onChange={selectTab}
             aria-label={t('newsfeed.tabs.label')}
             variant="underline"
             className="min-w-0 flex-1 px-2.5"
@@ -286,7 +327,38 @@ function NewsfeedContent() {
       {/* `TrendingList` BROUGHT ITS FILTERS WITH IT — source, category and time range — which the
           old rail destination had. It keeps `TrendingController`'s own ranking; `Bài viết` is a
           separate stream (`GET /posts/public`) with no crawled content in it at all. */}
-      {tab === 'tech' ? <TrendingList /> : <Newsfeed scope={tab satisfies FeedScope} />}
+      {tab === 'tech' ? (
+        <TrendingList />
+      ) : (
+        <>
+          {/* HASHTAG DISCOVERY LIVES ON `Bài viết` AND NOWHERE ELSE, because `?hashtag=` filters
+              only `GET /posts/public` — the fan-out feeds cannot take it. The box suggests the
+              tags people actually use (`GET /hashtags/trending` before a keystroke,
+              `/hashtags/suggest` after); picking one, or clicking a badge on any card, lands
+              here with the filter applied. */}
+          {tab === 'posts' && (
+            <div className="flex flex-col gap-[var(--nx-space-tight)]">
+              <HashtagSearchBox onSelect={openHashtag} activeTag={activeHashtag} />
+              {activeHashtag && (
+                <div className="flex items-center gap-[var(--nx-space-pair)] text-nx-caption text-nx-text-muted">
+                  <span>{t('newsfeed.hashtag.filteredBy')}</span>
+                  <button
+                    type="button"
+                    onClick={clearHashtag}
+                    className="inline-flex items-center gap-1 rounded-nx-full bg-nx-accent-soft px-2 py-0.5 font-medium text-nx-text-accent hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
+                    aria-label={t('newsfeed.hashtag.clear', { tag: activeHashtag })}
+                  >
+                    <Hash className="size-3" aria-hidden />
+                    {activeHashtag}
+                    <X className="size-3.5" aria-hidden />
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+          <Newsfeed scope={tab satisfies FeedScope} hashtag={activeHashtag} />
+        </>
+      )}
     </div>
   );
 }

@@ -13,8 +13,13 @@ import { useRoadmapProgress } from '@/features/roadmap';
 import { useAuthHref, useMyProfile } from '@/features/security';
 import { useTrending } from '@/features/trending';
 
-/** Rows in `OpeningsSection`, either mode. Three is what the fold this column shares allows. */
-const LEDGER_ROWS = 3;
+/**
+ * Rows in `OpeningsSection`, either mode. Five since the rail↔ledger rebalance (`globals.css`
+ * shell-budget note) — the wider column earns its keep by showing more of what it ranked, and
+ * `Phù hợp với bạn` at three rows was a card too short to read as a list. The column scrolls, so
+ * this is not bounded by a fold the way it was when the ledger was 300.
+ */
+const LEDGER_ROWS = 5;
 
 /** Matched skills/domains shown per row before the count takes over. */
 const LEDGER_REASONS = 3;
@@ -38,8 +43,8 @@ const BROWSE_LIMIT = 10;
  * > *own name, own state* — *it had a route until r13 deleted that screen, and the card survived,
  * > which is the test: a route is one way to be addressable, never the reason.*
  *
- * The measured kit agrees and it is not ambiguous: two `252 · rgb(255,255,255) · 16px 20px ·
- * radius 8` cards, gap 20, inside a 300 flank that paints nothing itself. Ours drew both sections
+ * The measured kit agrees and it is not ambiguous: two `rgb(255,255,255) · 16px 20px · radius 8`
+ * cards, gap 20, inside a flank that paints nothing itself. Ours drew both sections
  * straight onto the ground, which is half of the owner's report that things are left with no
  * background — and it is what made the 4px level track effectively invisible, since a hairline
  * tint on recessed ground has nothing to sit against.
@@ -100,9 +105,11 @@ export function Ledger() {
        */
       /**
        * WIDTH AND PADDING STEP AT 1440, VISIBILITY AT 1280. Three different numbers that were all
-       * pinned to `xl`. The DS's own table gives the ledger 272 at 1280, 300 at 1440, and folds it
-       * below 1280 — so `xl:w-nx-ledger` was spending 300 in the step that budgets 272, and the
-       * 28px came out of the canvas measure next door.
+       * pinned to `xl`. The DS's own table gave the ledger 272 at 1280 and 300 at 1440 and folds
+       * it below 1280 — so `xl:w-nx-ledger` was spending 300 in the step that budgets 272, and the
+       * 28px came out of the canvas measure next door. The two width tokens now carry 310 / 338
+       * after the rail↔ledger rebalance (`globals.css` shell-budget note); the STEP is unchanged,
+       * only the values, and the canvas measure is still untouched.
        *
        * `pt-5` is the datum: all three regions start their first block at `56 + 20 = 76`. This
        * was `pt-4` (72, out of line with the others), then briefly `pt-7` — I took "datum 28" from
@@ -126,10 +133,11 @@ export function Ledger() {
        * canvas's card edge and this column's, on a screen whose two flanks are otherwise 24 and
        * 34 from what they sit beside.
        *
-       * WHAT IT BUYS IS CARD WIDTH: 252 → 272 at the 1280 step, 280 → 300 at 1440, without
-       * touching `--spacing-nx-ledger` or the 1300 budget derived from it. The section below now
-       * carries chips of matched skills under each row and had the least room of anything in the
-       * shell to carry them in. 48 (`pb-12`) is the runout at the end of every scroller and stays.
+       * WHAT IT BUYS IS CARD WIDTH: `px-2.5` (10 a side) leaves the card at the ledger token less
+       * 20 — 290 at the 1280 step, 318 at 1440 after the rail↔ledger rebalance (see
+       * `globals.css`'s shell-budget note; the token moved, the 1300 budget did not). The section
+       * below carries chips of matched skills under each row and had the least room of anything in
+       * the shell to carry them in. 48 (`pb-12`) is the runout at the end of every scroller and stays.
        */
       className="sticky top-nx-topbar hidden h-[calc(100dvh-var(--spacing-nx-topbar))] w-[var(--spacing-nx-ledger-sm)] shrink-0 flex-col gap-[var(--nx-space-block)] overflow-y-auto px-2.5 pt-5 pb-12 xl:flex min-[1440px]:w-nx-ledger"
     >
@@ -266,8 +274,9 @@ function EvidenceSection({ userId }: { userId?: number }) {
             </span>{' '}
             {t('ledger.contributions')}
           </p>
-          {/* 18 weeks at an 11px cell: 18×11 + 17×3 = 249 inside the 300px ledger's 260 drawable,
-              and 10px at the 272 step. Fixed count, derived cell — see `ContributionGraph`. */}
+          {/* 18 weeks at an 11px cell: 18×11 + 17×3 = 249, comfortably inside the ledger's drawable
+              at both steps (≈290 at 1280, ≈318 at 1440). Fixed count, derived cell — see
+              `ContributionGraph`. */}
           <ContributionGraph calendar={calendar} weeks={18} legend={false} cellSize={11} />
           <p className="text-nx-caption text-nx-text-muted">{t('ledger.recentWeeks')}</p>
         </div>
@@ -301,7 +310,7 @@ function EvidenceSection({ userId }: { userId?: number }) {
 }
 
 /**
- * `Đang tuyển` / `Phù hợp với bạn` — the roles a signed-in reader could take, three at most, and
+ * `Đang tuyển` / `Phù hợp với bạn` — the roles a signed-in reader could take, `LEDGER_ROWS` at most, and
  * ranked against their own professional profile when the backend can rank them.
  *
  * THE PARAGRAPH THIS REPLACES WAS A CEILING THAT NO LONGER EXISTS, and it is quoted because it is
@@ -330,11 +339,12 @@ function EvidenceSection({ userId }: { userId?: number }) {
  * profile — the case this card is built for — and because the browse key is shared, the gate
  * usually resolves against pages already in hand rather than into a new request.
  *
- * LIMITS ARE CHOSEN TO SHARE KEYS, NOT TO MATCH THE THREE ROWS RENDERED. Both `matchmakingKeys`
- * entries put the limit in the key, so `useSuggestedProjects(3)` would be a second cached copy of
- * a ranking `/projects` already holds at 5, and `useProjects(3)` a second copy of the browse list
- * it holds at 10. Asking for what that screen asks for costs one request across the session and
- * warms the board this card links into.
+ * LIMITS ARE CHOSEN TO SHARE KEYS, NOT TO MATCH THE ROWS RENDERED — even though `LEDGER_ROWS` (5)
+ * now equals `SUGGESTED_LIMIT`, that is a coincidence and not a coupling. Both `matchmakingKeys`
+ * entries put the limit in the key, so `useSuggestedProjects(LEDGER_ROWS)` with a different number
+ * would be a second cached copy of a ranking `/projects` already holds at 5, and `useProjects` the
+ * same for the browse list it holds at 10. Asking for what that screen asks for costs one request
+ * across the session and warms the board this card links into.
  *
  * IT IS THE ONE BLOCK IN THIS COLUMN WITH SOMEWHERE TO GO, and that is deliberate rather than a
  * lapse from the summary rule. `Bằng chứng` is a state of affairs and correctly inert; a role is a
@@ -404,9 +414,9 @@ function OpeningsSection() {
       <ul className="flex flex-col gap-2.5">
         {rows.map(({ project, openCount, reasons }) => (
           <li key={project.id} className="flex flex-col gap-0.5">
-            {/* THE TITLE WRAPS TO TWO LINES AND THEN STOPS. A 272px drawable takes roughly four
-                words a line; one long project name allowed to run would push the other two rows
-                off the fold this card shares with the contribution graph above it. */}
+            {/* THE TITLE WRAPS TO TWO LINES AND THEN STOPS. The drawable takes roughly four to five
+                words a line; one long project name allowed to run would push the rows below it
+                down the column and past the contribution graph this card shares a fold with. */}
             <Link
               href={`/projects/${project.id}`}
               className="line-clamp-2 text-nx-body-sm text-nx-text-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
@@ -423,7 +433,7 @@ function OpeningsSection() {
                 domains, as the backend matched them. A ranking whose order cannot be explained is
                 one nobody trusts, and the other annotation available, `matchScore`, is a number
                 with no scale printed anywhere: 12 means nothing without knowing a skill outweighs
-                a domain. `/projects` has room for both; a 272 column shows the half that reads as
+                a domain. `/projects` has room for both; this column shows the half that reads as
                 language.
                 `Khớp:` IS A REAL TEXT NODE, not an `aria-label` on the wrapper. Three bare pills
                 reading "React · Docker · Fintech" under a project title are ambiguous to everyone

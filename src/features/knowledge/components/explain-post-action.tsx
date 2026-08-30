@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { Sparkles } from 'lucide-react';
 import { Button, Skeleton, Switch, Textarea } from '@/shared/components';
-import { getErrorMessage } from '@/shared/lib/api-error';
+import { getErrorMessage, getErrorStatus } from '@/shared/lib/api-error';
 import { useT } from '@/core/i18n';
 import {
   isProfileRequired,
@@ -98,20 +98,49 @@ export function ExplainPostAction({ postId, postContent }: ExplainPostActionProp
   }
 
   if (explain.isError) {
-    return isProfileRequired(explain.error) ? (
-      <p className="text-nx-caption text-nx-text-secondary">
-        {t('knowledge.explain.profileRequired')}
-      </p>
-    ) : (
-      <div className="space-y-2">
-        <p className="text-nx-caption text-nx-status-danger-fg">
-          {getErrorMessage(explain.error, t('knowledge.explain.error'))}
+    if (isProfileRequired(explain.error)) {
+      return (
+        <p className="text-nx-caption text-nx-text-secondary">
+          {t('knowledge.explain.profileRequired')}
         </p>
+      );
+    }
+
+    /**
+     * THE MODEL CALL FAILED UPSTREAM, and the two ways it does are worth telling apart — matched
+     * on STATUS, never on message text (`getErrorStatus`, and the note it carries in `api-error`).
+     *
+     * B32 (BE, 30/08): the endpoint used to answer a flat 500 "Failed to generate content from
+     * Gemini" for every Gemini failure, so a Vietnamese reader got an English sentence that named
+     * the vendor and nothing actionable. It now separates the quota wall from a one-off blip:
+     *
+     *  - 429 — quota or rate limit. Retrying spends whatever allowance is left to fail the same
+     *    way, so this branch has NO retry button: waiting is the only fix, and the copy says so.
+     *  - 503 — Gemini timed out or refused this one completion. Transient, so the manual retry
+     *    stays.
+     *
+     * Anything else keeps the backend's own words + retry: inventing copy for failures we have not
+     * seen would be guessing, the same rule `BookLibrary` follows for its 503.
+     */
+    const status = getErrorStatus(explain.error);
+    const rateLimited = status === 429;
+    const message = rateLimited
+      ? t('knowledge.explain.rateLimited')
+      : status === 503
+        ? t('knowledge.explain.unavailable')
+        : getErrorMessage(explain.error, t('knowledge.explain.error'));
+
+    return (
+      <div className="space-y-2">
+        <p className="text-nx-caption text-nx-status-danger-fg">{message}</p>
         {/* Deliberate, user-initiated. An automatic retry here would bill a second generation for
-            a request that may already have succeeded on the server. */}
-        <Button size="sm" variant="secondary" onClick={() => run()}>
-          {t('knowledge.explain.retry')}
-        </Button>
+            a request that may already have succeeded on the server — and against a 429 it cannot
+            help at all, so it is withheld on that branch. */}
+        {!rateLimited && (
+          <Button size="sm" variant="secondary" onClick={() => run()}>
+            {t('knowledge.explain.retry')}
+          </Button>
+        )}
       </div>
     );
   }

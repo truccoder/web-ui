@@ -44,12 +44,16 @@ export function useNewsfeed(enabled = true, scope: FeedApiScope = 'ALL') {
  * the server owns the position entirely, which is the property that makes it safe against posts
  * being written while the reader pages. `?? undefined` because the DTO says null and react-query
  * reads undefined as "no more pages".
+ *
+ * `hashtag` NARROWS THE SAME ENDPOINT (B31) and is part of the query key, so switching the filter
+ * on or off swaps cached lists rather than refetching one. Pass it already folded
+ * (`normalizeHashtag`); `undefined` is the unfiltered feed.
  */
-export function usePublicFeed(enabled = true) {
+export function usePublicFeed(enabled = true, hashtag?: string) {
   return useInfiniteQuery({
     enabled,
-    queryKey: newsfeedKeys.publicFeed(),
-    queryFn: ({ pageParam }) => newsfeedApi.getPublicFeed(pageParam, PAGE_SIZE),
+    queryKey: newsfeedKeys.publicFeed(hashtag),
+    queryFn: ({ pageParam }) => newsfeedApi.getPublicFeed(pageParam, PAGE_SIZE, hashtag),
     initialPageParam: undefined as number | undefined,
     getNextPageParam: (lastPage) =>
       lastPage.hasMore ? (lastPage.nextCursor ?? undefined) : undefined,

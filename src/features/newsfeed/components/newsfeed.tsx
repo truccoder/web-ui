@@ -45,6 +45,12 @@ export type FeedScope = 'posts' | 'friends' | 'skills';
 export interface NewsfeedProps {
   /** @default "friends" */
   scope?: FeedScope;
+  /**
+   * Restrict the `posts` scope to one hashtag (B31). Ignored on the fan-out scopes — `GET /feed`
+   * takes no tag filter, and a Redis range cannot be narrowed by one after the fact. Pass it
+   * already folded (`normalizeHashtag`).
+   */
+  hashtag?: string;
   className?: string;
 }
 
@@ -64,15 +70,18 @@ function PostSkeleton() {
   );
 }
 
-export function Newsfeed({ scope = 'friends', className }: NewsfeedProps) {
+export function Newsfeed({ scope = 'friends', hashtag, className }: NewsfeedProps) {
   const t = useT();
   const queryClient = useQueryClient();
+  // The tag only applies to the public scope; passing it on any other scope would just be dead
+  // state in the query key.
+  const activeHashtag = scope === 'posts' ? hashtag : undefined;
   // BOTH HOOKS RUN, and the unused one is what keeps hook order stable across a tab switch —
   // calling one or the other conditionally is the classic way to break the rules of hooks. The
   // idle branch costs nothing: react-query does not fetch a query nothing is reading once its
   // `enabled` is false, and switching tabs then finds the other branch already warm in cache.
   const fanOutFeed = useNewsfeed(scope !== 'posts', scope === 'skills' ? 'SKILLS' : 'ALL');
-  const publicFeed = usePublicFeed(scope === 'posts');
+  const publicFeed = usePublicFeed(scope === 'posts', activeHashtag);
   const feed = scope === 'posts' ? publicFeed : fanOutFeed;
 
   /**
@@ -81,7 +90,10 @@ export function Newsfeed({ scope = 'friends', className }: NewsfeedProps) {
    * were never scrolled through. It waits for data because restoring against an empty feed would
    * clamp to zero and throw the saved position away.
    */
-  useScrollRestoration(`newsfeed:${scope}`, Boolean(feed.data));
+  useScrollRestoration(
+    `newsfeed:${scope}${activeHashtag ? `:#${activeHashtag}` : ''}`,
+    Boolean(feed.data)
+  );
 
   /**
    * REMEMBER THIS COLUMN AS THE PLACE A POST PERMALINK RETURNS TO. `/posts/{id}`'s `← Về bảng tin`
@@ -167,6 +179,17 @@ export function Newsfeed({ scope = 'friends', className }: NewsfeedProps) {
   const posts = feed.data?.pages.flatMap((page) => page.posts ?? []) ?? [];
 
   if (posts.length === 0) {
+    // A tag that folds to a real prefix but no visible post is an ordinary outcome, not the
+    // "nobody has posted yet" case the plain copy describes.
+    if (activeHashtag) {
+      return (
+        <EmptyState
+          className={className}
+          title={t('newsfeed.hashtag.emptyTitle', { tag: activeHashtag })}
+          description={t('newsfeed.hashtag.emptyDesc')}
+        />
+      );
+    }
     return (
       <EmptyState
         className={className}

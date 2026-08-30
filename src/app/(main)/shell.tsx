@@ -838,7 +838,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
          * cap is ground, so it reads as page margin rather than as an over-wide layout.
          *
          * THE GUTTER STEPS AT 1440, NOT AT 1280 — corrected after measuring. The budget is
-         * `248 + 40 + 672 + 40 + 300 = 1300` at the full step and `248 + 24 + 672 + 24 + 272 =
+         * `210 + 40 + 672 + 40 + 338 = 1300` at the full step and `210 + 24 + 672 + 24 + 310 =
          * 1240` at the next one down, and the DS assigns 1240 to **1280**. Tailwind's `xl` is
          * 1280, so `xl:gap-nx-region-gutter` was spending the 1300 budget in a 1265 viewport
          * (1280 less the scrollbar). Something had to give, and `flex-1` gave it out of the
@@ -868,7 +868,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
           <aside
             className={cn(
               // `lg` (1024), not `md` (768): the DS gives 768 a **Drawer** and only starts the
-              // 248 rail at 1024. Showing it at 768 left 768 − 248 − 24 = 496 for a 672 measure.
+              // 210 rail at 1024. Showing it at 768 left 768 − 210 − 24 = 534 for a 672 measure.
               'sticky top-nx-topbar hidden h-[calc(100dvh-var(--spacing-nx-topbar))] w-nx-sidebar',
               'shrink-0',
               // FOCUS MODE IS "top bar 56 + context bar 48 + ONE REGION" (`layout-r7.md` §3.1).
