@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import {
   Avatar,
   Badge,
@@ -70,17 +71,39 @@ export function ProjectDetail({ projectId, viewerId }: ProjectDetailProps) {
 
   const positions = project.positions ?? [];
 
+  // `authorUsername` — B35 in `docs/backend-plan.md`, closed the same way B13 closed it for the
+  // feed: absent still means plain text, for a payload that predates the field.
+  const authorHref = project.authorUsername
+    ? `/u/${encodeURIComponent(project.authorUsername)}`
+    : undefined;
+
   return (
     <div className="flex flex-col gap-[var(--nx-space-section)]">
       <Card className="flex flex-col gap-[var(--nx-space-group)]">
         <div className="flex items-start gap-3">
-          <Avatar src={project.authorProfilePictureUrl} name={project.authorFullName} size="lg" />
+          {authorHref ? (
+            <Link href={authorHref} className="shrink-0 rounded-nx-full">
+              <Avatar
+                src={project.authorProfilePictureUrl}
+                name={project.authorFullName}
+                size="lg"
+              />
+            </Link>
+          ) : (
+            <Avatar src={project.authorProfilePictureUrl} name={project.authorFullName} size="lg" />
+          )}
           <div className="min-w-0 flex-1">
             <h1 className="text-nx-title font-semibold tracking-tight text-nx-text-primary">
               {project.title}
             </h1>
             <p className="text-nx-caption text-nx-text-muted">
-              {project.authorFullName}
+              {authorHref ? (
+                <Link href={authorHref} className="hover:text-nx-text-primary hover:underline">
+                  {project.authorFullName}
+                </Link>
+              ) : (
+                project.authorFullName
+              )}
               {project.createdAt && ` · ${formatDate(project.createdAt, localeTag)}`}
             </p>
           </div>
@@ -384,59 +407,87 @@ function OwnerInbox({
         </p>
       )}
 
-      {rows.map((application) => (
-        <div
-          key={application.id}
-          className="flex flex-col gap-[var(--nx-space-tight)] rounded-nx-md bg-nx-surface-card px-5 py-3"
-        >
-          <div className="flex items-center gap-3">
-            <Avatar
-              src={application.applicantProfilePictureUrl}
-              name={application.applicantFullName}
-              size="md"
-            />
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-nx-ui font-medium text-nx-text-primary">
-                {application.applicantFullName}
-              </p>
-              <p className="truncate text-nx-caption text-nx-text-muted">
-                {application.positionTitle}
-                {application.createdAt && ` · ${formatDate(application.createdAt, localeTag)}`}
-              </p>
+      {rows.map((application) => {
+        // `applicantUsername` — same B35, and it was always the applicant half of that gap
+        // rather than a separate one: `ProjectApplicationResponseDto` got the field alongside
+        // `ProjectResponseDto.authorUsername`.
+        const applicantHref = application.applicantUsername
+          ? `/u/${encodeURIComponent(application.applicantUsername)}`
+          : undefined;
+
+        return (
+          <div
+            key={application.id}
+            className="flex flex-col gap-[var(--nx-space-tight)] rounded-nx-md bg-nx-surface-card px-5 py-3"
+          >
+            <div className="flex items-center gap-3">
+              {applicantHref ? (
+                <Link href={applicantHref} className="shrink-0 rounded-nx-full">
+                  <Avatar
+                    src={application.applicantProfilePictureUrl}
+                    name={application.applicantFullName}
+                    size="md"
+                  />
+                </Link>
+              ) : (
+                <Avatar
+                  src={application.applicantProfilePictureUrl}
+                  name={application.applicantFullName}
+                  size="md"
+                />
+              )}
+              <div className="min-w-0 flex-1">
+                {applicantHref ? (
+                  <Link
+                    href={applicantHref}
+                    className="block truncate text-nx-ui font-medium text-nx-text-primary hover:underline"
+                  >
+                    {application.applicantFullName}
+                  </Link>
+                ) : (
+                  <p className="truncate text-nx-ui font-medium text-nx-text-primary">
+                    {application.applicantFullName}
+                  </p>
+                )}
+                <p className="truncate text-nx-caption text-nx-text-muted">
+                  {application.positionTitle}
+                  {application.createdAt && ` · ${formatDate(application.createdAt, localeTag)}`}
+                </p>
+              </div>
+
+              {application.status === 'PENDING' ? (
+                <div className="flex shrink-0 items-center gap-2">
+                  <Button
+                    size="sm"
+                    disabled={busy}
+                    onClick={() => application.id != null && accept.mutate(application.id)}
+                  >
+                    {t('projects.accept')}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    disabled={busy}
+                    onClick={() => application.id != null && reject.mutate(application.id)}
+                  >
+                    {t('projects.reject')}
+                  </Button>
+                </div>
+              ) : (
+                <Badge variant={application.status === 'ACCEPTED' ? 'success' : 'neutral'}>
+                  {t(`projects.applicationStatus.${application.status ?? 'PENDING'}`)}
+                </Badge>
+              )}
             </div>
 
-            {application.status === 'PENDING' ? (
-              <div className="flex shrink-0 items-center gap-2">
-                <Button
-                  size="sm"
-                  disabled={busy}
-                  onClick={() => application.id != null && accept.mutate(application.id)}
-                >
-                  {t('projects.accept')}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  disabled={busy}
-                  onClick={() => application.id != null && reject.mutate(application.id)}
-                >
-                  {t('projects.reject')}
-                </Button>
-              </div>
-            ) : (
-              <Badge variant={application.status === 'ACCEPTED' ? 'success' : 'neutral'}>
-                {t(`projects.applicationStatus.${application.status ?? 'PENDING'}`)}
-              </Badge>
+            {application.message && (
+              <p className="whitespace-pre-wrap text-nx-body-sm text-nx-text-secondary">
+                {application.message}
+              </p>
             )}
           </div>
-
-          {application.message && (
-            <p className="whitespace-pre-wrap text-nx-body-sm text-nx-text-secondary">
-              {application.message}
-            </p>
-          )}
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
