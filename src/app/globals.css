@@ -1,130 +1,903 @@
 @import 'tailwindcss';
-@import 'tw-animate-css';
-@import 'shadcn/tailwind.css';
 
-@custom-variant dark (&:is(.dark *));
+/* next-themes writes `data-theme` on <html> — measured, not assumed: at P4.3 the live document
+   carried `data-theme="light"` and an empty class list. The `.dark` CLASS SELECTOR THAT USED TO
+   SIT HERE IS GONE with shadcn; its only stated reason was "so the shadcn block below still
+   resolves during coexistence", and there is no shadcn block any more. */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   SHADCN WAS REMOVED HERE, AT P4.3 — the last step of Constraint #1.
+
+   What went: `@import 'shadcn/tailwind.css'`, the `@theme inline` block that mapped
+   `--color-background`/`--color-primary`/`--color-sidebar-*`/`--color-chart-*` and overrode
+   Tailwind's `--radius-*` scale, and the two oklch variable blocks (`:root` + `.dark`) those
+   names pointed at. `@import 'tw-animate-css'` went with them: it existed for shadcn's
+   `animate-in`/`fade-in` utilities and grep found **zero** uses of any of them.
+
+   It was safe because nothing was left pointing at it, measured rather than assumed: every
+   `bg-background`/`text-muted-foreground`/`border-input`-style class had already gone when
+   `src/components/ui/` was deleted at P3.4c, and the only surviving matches for those names in
+   `src/` are inside comments. `rounded-full` (3 uses) is Tailwind core, not the overridden scale.
+
+   WHAT WAS KEPT out of the old block: the three `--font-*` mappings below. They are not shadcn —
+   they wire next/font's generated variables, and one of them fixes a real bug (see the comment).
+   ══════════════════════════════════════════════════════════════════════════════ */
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  /* Was `var(--font-sans)` — a self-reference that resolved to empty, so `@apply font-sans` on
+     <html> fell through to the browser's serif default and the whole app rendered in Times New
+     Roman. next/font defines --font-geist-sans in layout.tsx. */
+  --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --font-heading: var(--font-geist-sans);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   Elite Nexus design tokens
+   Transcribed verbatim from D:\DATN\elite-nexus-design-system\project\tokens\
+   (colors.css, spacing.css, typography.css, effects.css) — plain data, per
+   CLAUDE.md §1. No design-system component source was read or ported.
+   Mapping rationale lives in docs/design-tokens-map.md.
+
+   Everything is prefixed `nx-`. The original reason is gone as of P4.3 — shadcn's `--accent`
+   is no longer here to be clobbered by the DS one — but THE PREFIX STAYS, deliberately. It
+   still keeps Tailwind's own defaults (`rounded-md`, `ease-out`, `text-sm`) meaning what
+   Tailwind says they mean, so a bare utility is never a token in disguise; and dropping it now
+   would be a rename across every file in `src/` that buys nothing a reader can see. Do it, if
+   ever, as its own mechanical pass with nothing else in the commit.
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Ink neutrals — cool charcoal ramp derived from brand ink #101820 ── */
+  --nx-gray-0: #ffffff;
+  --nx-gray-25: #fcfcfd;
+  --nx-gray-50: #f6f7f8;
+  --nx-gray-100: #eceef0;
+  --nx-gray-200: #dee1e5;
+  --nx-gray-300: #c8cdd3;
+  --nx-gray-400: #9aa2ac;
+  --nx-gray-500: #6c7681;
+  --nx-gray-600: #4d5760;
+  --nx-gray-700: #37414a;
+  --nx-gray-800: #232c34;
+  --nx-gray-900: #161e26;
+  --nx-gray-950: #101820;
+
+  /* ── Elite Blue — actions, links, selection, focus ── */
+  --nx-blue-50: #eef4fb;
+  --nx-blue-100: #d9e7f7;
+  --nx-blue-200: #b4cfee;
+  --nx-blue-300: #82ade0;
+  --nx-blue-400: #4e87cf;
+  --nx-blue-500: #2e6fc2;
+  --nx-blue-600: #2459a6;
+  --nx-blue-700: #1d4a8a;
+  --nx-blue-800: #173a6c;
+
+  /* ── Amber — reputation ONLY. Never buttons, nav, or core actions. ── */
+  --nx-amber-50: #fbf4e7;
+  --nx-amber-100: #f6e6c8;
+  --nx-amber-200: #eed49f;
+  --nx-amber-300: #e7be7a;
+  --nx-amber-400: #dda64f;
+  --nx-amber-500: #d18f2e;
+  --nx-amber-600: #b47624;
+  --nx-amber-700: #8f5d1d;
+  --nx-amber-800: #6b4516;
+
+  /* ── Status ramps — calm, desaturated ── */
+  --nx-green-50: #ecf7f0;
+  --nx-green-100: #d3ecdd;
+  --nx-green-300: #8fd4ab;
+  --nx-green-500: #2e9e5b;
+  --nx-green-600: #26854c;
+  --nx-green-700: #1f6c3e;
+  --nx-red-50: #fbeeee;
+  --nx-red-100: #f5d8d8;
+  --nx-red-500: #d64545;
+  --nx-red-600: #b93a3a;
+  --nx-red-700: #992f2f;
+
+  /* ── Semantic aliases — light ── */
+  /* R15: gray-50 → gray-100. The ground is recessed a step further so a card can sit ON it
+     without a border doing the separating. This is the R4 surface model: recessed ground,
+     raised cards. Everything reads one notch deeper as a result. */
+  --nx-surface-page: var(--nx-gray-100);
+  --nx-surface-card: var(--nx-gray-0);
+  --nx-surface-sunken: var(--nx-gray-100);
+  /* R15, NEW: the chrome regions — top bar, rail, ledger. Deliberately EQUAL to the page:
+     R4's answer to the owner's "∩" complaint is that chrome is not painted at all. The
+     rejected alternative (three painted regions) survives in the kit as `--nx-r3-*` and is
+     NOT transcribed here — see the round-15 block further down. */
+  --nx-surface-chrome: var(--nx-surface-page);
+  /* R15, NEW: the one fill/border that must read on EVERY plane, hence an alpha rather than
+     a step off the ramp — it darkens a white card and lightens a sunken well by the same
+     perceptual amount. `--nx-border-subtle` is now defined as this. */
+  --nx-tint: rgba(16, 24, 32, 0.08);
+  --nx-surface-raised: var(--nx-gray-0);
+  --nx-surface-inverse: var(--nx-gray-950);
+  /* ── The brand ink, for the auth screens' panel ──────────────────────────────────────────
+     A SURFACE THAT DOES NOT FLIP WITH THE THEME, which is the whole reason it cannot be
+     `--nx-surface-inverse`. That token means "the opposite of the current ground", so in dark
+     it resolves to gray-50 — a WHITE panel, in dark mode, carrying the wordmark. The brand
+     panel is not an inverse of anything; it is ink in both themes, the same ink the mark's own
+     square is drawn in.
+
+     NOTHING HERE STEPS BETWEEN THEMES, AND IT USED TO. The dark block carried `ink: gray-900`
+     because the panel then sat beside a `surface-page` column, which in dark is gray-950 — a 950
+     panel would have dissolved into it. Since the form column became `surface-card` above `lg`
+     the neighbour is gray-0 in light and gray-800 in dark, and 950 contrasts with both. Keeping
+     the step made the panel LIGHTER than the form beside it in dark, inverting the one
+     relationship the split is built on: ink brand, lit form.
+
+     The text values never stepped either. They sit on ink in both themes and would fail contrast
+     the moment they followed the theme instead of the surface under them. */
+  --nx-brand-ink: var(--nx-gray-950);
+  --nx-brand-ink-block: var(--nx-gray-900);
+  --nx-brand-ink-line: var(--nx-gray-800);
+  --nx-brand-ink-text: var(--nx-gray-50);
+  --nx-brand-ink-muted: var(--nx-gray-400);
+
+  /* ── Syntax colours — GitHub's own palette, `highlight.js/styles/github.css` ──────────────
+     WHY THE VALUES ARE VENDOR AND THE MECHANISM IS NOT. The first pass mapped `highlight.js`'s
+     token classes onto this product's own five ramps. It was defensible and the owner asked the
+     obvious question: why not use the library's support? So the seven roles now carry GitHub's
+     published values — the same ones the library's `github` / `github-dark` themes ship — and
+     the argument for not `@import`ing those files verbatim is narrower than "we have our own
+     palette":
+
+      1. THEY SET A BACKGROUND. `.hljs { background: #fff }` / `#0d1117` would paint a plane
+         inside a card whose fill is already `surface-card`, and in dark it is a DIFFERENT dark
+         from ours — two near-blacks, one inside the other.
+      2. THEY SET LAYOUT. `pre code.hljs { display:block; overflow-x:auto; padding:1em }` fights
+         the figure's own padding and the clamp `ExpandableBlock` puts on the block.
+      3. CSS CANNOT SCOPE AN `@import` TO AN ATTRIBUTE. There is no way to load `github.css` and
+         `github-dark.css` behind `[data-theme]` from a stylesheet, so one of the two would have
+         to be transcribed regardless. Transcribing both, as values, keeps them switching through
+         the same mechanism as every other colour in this file.
+
+     Comments are the one deliberate deviation: GitHub's `#6a737d` on our `surface-card` is
+     lighter than our own `text-muted`, and a comment that recedes further than the DS's quietest
+     text reads as disabled. Ours holds at `gray-500`, which is the same hue family. */
+  --nx-syntax-comment: var(--nx-gray-500);
+  --nx-syntax-keyword: #d73a49;
+  --nx-syntax-string: #032f62;
+  --nx-syntax-number: #005cc5;
+  --nx-syntax-title: #6f42c1;
+  --nx-syntax-type: #e36209;
+  --nx-syntax-meta: #005cc5;
+  --nx-surface-overlay: rgba(16, 24, 32, 0.55);
+  --nx-surface-hover: rgba(16, 24, 32, 0.04);
+  --nx-surface-pressed: rgba(16, 24, 32, 0.08);
+  /* AN ALPHA BLUE, NOT A STEP OFF THE RAMP — the light twin of the dark value below, which was
+     already an alpha and had been right all along.
+
+     blue-50 (#eef4fb) WAS UNUSABLE ON THE GROUND. Against `surface-page` (gray-100, #eceef0) the
+     step is (+2, +6, +11) — a hue shift at the same lightness, which is the one difference a
+     glance does not register. `Card`'s selected state was therefore legible only because a
+     `border-nx-accent` sat beside it doing the work; the fill itself said nothing on any screen
+     where a card sits on the ground rather than on another card.
+
+     IT ALSO LOST TO ITS OWN HOVER. `--nx-surface-hover` (4% black) over gray-100 lands on #e5e7e9
+     — a step of ~7 per channel, i.e. MORE visible than the selected fill it is supposed to sit
+     beneath.
+
+     0.12 OF THE ACCENT FIXES BOTH AT ONCE because an alpha composites against whatever is under
+     it: #e6eef8 on a white card (a touch stronger than blue-50 was, still soft) and #d5dfea on the
+     ground (an unmistakable step, and now clearly ahead of hover's #e5e7e9). One value, every
+     plane — the same reason `--nx-tint` is an alpha two blocks up.
+
+     `Tabs` DROVE THIS CHANGE AND THEN STOPPED USING IT, which is worth saying rather than
+     quietly leaving the token looking unmotivated. The tab strip was the caller that exposed how
+     little blue-50 carried on the ground; the fix that round was this token, and the round after
+     that the strip dropped its fill entirely for an accent bar. The token change survives on its
+     own merits — `Card` still selects with it, and it was wrong before for the same reason it is
+     right now. */
+  --nx-surface-selected: rgba(46, 111, 194, 0.12);
+
+  --nx-text-primary: var(--nx-gray-950);
+  --nx-text-secondary: var(--nx-gray-600);
+  --nx-text-muted: var(--nx-gray-500);
+  --nx-text-faint: var(--nx-gray-400);
+  --nx-text-inverse: var(--nx-gray-50);
+  --nx-text-accent: var(--nx-blue-600);
+  /* R15: blue-500 → blue-600. A link sits in running prose on a now-deeper ground; 500 was
+     carrying too little contrast against body text at 15/1.6. */
+  --nx-text-link: var(--nx-blue-600);
+  --nx-text-link-hover: var(--nx-blue-700);
+  /* text/glyphs on saturated fills — constant across themes */
+  --nx-text-on-color: #ffffff;
+
+  /* R15 RE-VALUES ALL THREE BORDERS, and this is the single most visible change in the
+     round. gray-200/300 were hairlines that vanished against a gray-50 page; with the
+     ground at gray-100 they would have vanished completely. A border in this system is now
+     something you can actually see — it is used sparingly (constitution: not on cards, not
+     on the feed, not on the flanks) precisely because it carries weight where it appears. */
+  --nx-border-default: var(--nx-gray-500);
+  --nx-border-strong: var(--nx-gray-600);
+  --nx-border-subtle: var(--nx-tint);
+
+  --nx-accent: var(--nx-blue-500);
+  --nx-accent-hover: var(--nx-blue-600);
+  --nx-accent-soft: var(--nx-blue-50);
+  --nx-accent-strong: var(--nx-blue-700);
+  --nx-focus-ring: var(--nx-blue-500);
+  --nx-action-primary: var(--nx-blue-600);
+  --nx-action-primary-hover: var(--nx-blue-700);
+  --nx-action-primary-text: #ffffff;
+
+  /* ── Reputation aliases — the ONLY sanctioned amber surfaces ── */
+  --nx-rep: var(--nx-amber-500);
+  --nx-rep-soft: var(--nx-amber-50);
+  --nx-rep-text: var(--nx-amber-700);
+  --nx-rep-strong: var(--nx-amber-600);
+  --nx-rep-border: var(--nx-amber-200);
+
+  /* ── Status ── */
+  --nx-status-info-bg: var(--nx-blue-50);
+  --nx-status-info-fg: var(--nx-blue-700);
+  --nx-status-info: var(--nx-blue-500);
+  --nx-status-success-bg: var(--nx-green-50);
+  --nx-status-success-fg: var(--nx-green-700);
+  --nx-status-success: var(--nx-green-500);
+  --nx-status-warning-bg: var(--nx-amber-50);
+  --nx-status-warning-fg: var(--nx-amber-700);
+  --nx-status-warning: var(--nx-amber-500);
+  --nx-status-danger-bg: var(--nx-red-50);
+  --nx-status-danger-fg: var(--nx-red-700);
+  --nx-status-danger: var(--nx-red-500);
+
+  /* ── LOCAL EXTENSION, not from the design system ──────────────────────────
+     The DS ships hover/pressed tints for light surfaces (--surface-hover at 4%,
+     --surface-pressed at 8%) but no equivalent for the *inverse* surface, which
+     is what an ink-filled primary button uses. These are the next steps up the
+     ink ramp rather than invented colours, so the button still climbs the state
+     ladder without hardcoding hex. Recorded as a DS deviation in the ledger. */
+  --nx-surface-inverse-hover: var(--nx-gray-800);
+  --nx-surface-inverse-pressed: var(--nx-gray-700);
+
+  /* Same gap as above, for the translucent scrim a control wears when it floats over a
+     photograph (the cover-photo buttons). The DS ships `--surface-overlay` but no hover step, and
+     an overlay button with no state change reads as a label rather than a control. One notch more
+     opaque — the scrim's own colour, not an invented one. Recorded as a DS deviation in the ledger. */
+  --nx-surface-overlay-hover: rgba(16, 24, 32, 0.72);
+}
+
+/* Dark theme — remap semantic aliases only; the ramps never move.
+   `.dark` dropped at P4.3 with shadcn: next-themes is configured with
+   `attribute="data-theme"` and writes nothing else. */
+[data-theme='dark'] {
+  --nx-surface-page: var(--nx-gray-950);
+  /* R15 LIFTS THE WHOLE RAISED SET ONE STEP: card 900 → 800, raised 800 → 700, and sunken
+     goes from the one-off #0b1219 back onto the ramp at 950. In dark, a card cannot be
+     separated from the ground by a shadow — there is no light to cast one — so the step has
+     to be luminance, and 950-vs-900 was not a step anyone could see. This is the same
+     complaint, in dark, that gray-50 → gray-100 answers in light. */
+  --nx-surface-card: var(--nx-gray-800);
+  --nx-surface-sunken: var(--nx-gray-950);
+  --nx-surface-raised: var(--nx-gray-700);
+  /* R15, NEW — unpainted, exactly as in light. */
+  --nx-surface-chrome: var(--nx-surface-page);
+  /* R15, NEW — the light tint's dark twin: lightens rather than darkens, same 0.1 alpha
+     everywhere so one rule reads on card, ground and well alike. */
+  --nx-tint: rgba(236, 238, 240, 0.1);
+  --nx-surface-inverse: var(--nx-gray-50);
+  --nx-surface-overlay: rgba(0, 0, 0, 0.6);
+  --nx-surface-overlay-hover: rgba(0, 0, 0, 0.75);
+  --nx-surface-hover: rgba(236, 238, 240, 0.06);
+  --nx-surface-pressed: rgba(236, 238, 240, 0.1);
+  --nx-surface-selected: rgba(46, 111, 194, 0.18);
+
+  /* `github-dark`'s published values, mapped onto the same seven roles as the light block. The
+     comment colour is again ours rather than GitHub's `#8b949e`, for the same reason. */
+  --nx-syntax-comment: var(--nx-gray-400);
+  --nx-syntax-keyword: #ff7b72;
+  --nx-syntax-string: #a5d6ff;
+  --nx-syntax-number: #79c0ff;
+  --nx-syntax-title: #d2a8ff;
+  --nx-syntax-type: #ffa657;
+  --nx-syntax-meta: #79c0ff;
+
+  --nx-text-primary: #eceeec;
+  --nx-text-secondary: var(--nx-gray-300);
+  --nx-text-muted: var(--nx-gray-400);
+  --nx-text-faint: var(--nx-gray-500);
+  --nx-text-inverse: var(--nx-gray-950);
+  --nx-text-accent: #6ba3d8;
+  --nx-text-link: #6ba3d8;
+  --nx-text-link-hover: #8fbce5;
+
+  /* R15: borders climb the ramp in dark for the same reason they descend it in light — a
+     border must be visible against the surface it divides. The old #2c343b was a one-off
+     that sat almost exactly on gray-800, i.e. on the old card colour. */
+  --nx-border-default: var(--nx-gray-400);
+  --nx-border-strong: var(--nx-gray-300);
+  --nx-border-subtle: var(--nx-tint);
+
+  --nx-accent: var(--nx-blue-400);
+  --nx-accent-hover: var(--nx-blue-300);
+  --nx-accent-soft: rgba(46, 111, 194, 0.18);
+  --nx-accent-strong: #8fbce5;
+  --nx-focus-ring: var(--nx-blue-400);
+  --nx-action-primary: #3d7ecb;
+  --nx-action-primary-hover: #5591d6;
+
+  --nx-rep: var(--nx-amber-500);
+  --nx-rep-soft: rgba(209, 143, 46, 0.14);
+  --nx-rep-text: var(--nx-amber-400);
+  --nx-rep-strong: var(--nx-amber-300);
+  --nx-rep-border: rgba(209, 143, 46, 0.4);
+
+  --nx-status-info-bg: rgba(47, 109, 178, 0.18);
+  --nx-status-info-fg: #8fbce5;
+  --nx-status-success-bg: rgba(46, 158, 91, 0.16);
+  --nx-status-success-fg: #7cc99a;
+  --nx-status-warning-bg: rgba(209, 143, 46, 0.16);
+  --nx-status-warning-fg: var(--nx-amber-300);
+  --nx-status-danger-bg: rgba(214, 69, 69, 0.16);
+  --nx-status-danger-fg: #e89393;
+
+  /* Local extension (see light block). Inverse is a light surface in dark mode,
+     so the tints walk *down* the ramp instead of up. */
+  --nx-surface-inverse-hover: var(--nx-gray-100);
+  --nx-surface-inverse-pressed: var(--nx-gray-200);
+}
+
+/* Only the semantic aliases become utilities. The ramps stay raw variables on
+   purpose: exposing bg-nx-blue-300 would invite exactly the raw-colour use that
+   the constitution (§10) forbids. `inline` keeps the var() indirection so the
+   dark remap above resolves at runtime. */
+@theme inline {
+  --color-nx-surface-page: var(--nx-surface-page);
+  --color-nx-surface-card: var(--nx-surface-card);
+  /* R15. Equal to page today, but it is a SEPARATE utility on purpose: `bg-nx-surface-chrome`
+     on the rail states "this is chrome", so if chrome ever gets painted again it is one token
+     away rather than a hunt for which `bg-nx-surface-page` meant which thing. */
+  --color-nx-surface-chrome: var(--nx-surface-chrome);
+  --color-nx-surface-sunken: var(--nx-surface-sunken);
+  --color-nx-surface-raised: var(--nx-surface-raised);
+  --color-nx-surface-inverse: var(--nx-surface-inverse);
+  --color-nx-brand-ink: var(--nx-brand-ink);
+  --color-nx-brand-ink-block: var(--nx-brand-ink-block);
+  --color-nx-brand-ink-line: var(--nx-brand-ink-line);
+  --color-nx-brand-ink-text: var(--nx-brand-ink-text);
+  --color-nx-brand-ink-muted: var(--nx-brand-ink-muted);
+  --color-nx-surface-overlay: var(--nx-surface-overlay);
+  --color-nx-surface-overlay-hover: var(--nx-surface-overlay-hover);
+  --color-nx-surface-hover: var(--nx-surface-hover);
+  --color-nx-surface-pressed: var(--nx-surface-pressed);
+  --color-nx-surface-selected: var(--nx-surface-selected);
+  --color-nx-surface-inverse-hover: var(--nx-surface-inverse-hover);
+  --color-nx-surface-inverse-pressed: var(--nx-surface-inverse-pressed);
+
+  --color-nx-text-primary: var(--nx-text-primary);
+  --color-nx-text-secondary: var(--nx-text-secondary);
+  --color-nx-text-muted: var(--nx-text-muted);
+  --color-nx-text-faint: var(--nx-text-faint);
+  --color-nx-text-inverse: var(--nx-text-inverse);
+  --color-nx-text-accent: var(--nx-text-accent);
+  --color-nx-text-link: var(--nx-text-link);
+  --color-nx-text-link-hover: var(--nx-text-link-hover);
+  --color-nx-text-on-color: var(--nx-text-on-color);
+
+  --color-nx-border-default: var(--nx-border-default);
+  --color-nx-border-strong: var(--nx-border-strong);
+  --color-nx-border-subtle: var(--nx-border-subtle);
+
+  /* `--nx-tint` had NO `--color-` alias, so every `bg-nx-tint` in the app compiled to nothing.
+     Tailwind v4 generates a colour utility only for names declared in `@theme`; the raw variable
+     existing on `:root` is what makes the omission silent — the class is emitted, it just carries
+     no declaration, and the element renders transparent instead of erroring.
+
+     What that cost: the level progress track in the ledger and on `/profile`. The amber fill has
+     `--color-nx-rep` and rendered; the track behind it did not, so a bar at 8% was a short amber
+     stub floating on the ground with nothing to measure it against — which is why it read as
+     "there is no progress bar". Reported by the owner, found by grepping the theme block for the
+     token rather than by reading the component, which looked correct and was correct. */
+  --color-nx-tint: var(--nx-tint);
+
+  --color-nx-accent: var(--nx-accent);
+  --color-nx-accent-hover: var(--nx-accent-hover);
+  --color-nx-accent-soft: var(--nx-accent-soft);
+  --color-nx-accent-strong: var(--nx-accent-strong);
+  --color-nx-focus-ring: var(--nx-focus-ring);
+  --color-nx-action-primary: var(--nx-action-primary);
+  --color-nx-action-primary-hover: var(--nx-action-primary-hover);
+  --color-nx-action-primary-text: var(--nx-action-primary-text);
+
+  --color-nx-rep: var(--nx-rep);
+  --color-nx-rep-soft: var(--nx-rep-soft);
+  --color-nx-rep-text: var(--nx-rep-text);
+  --color-nx-rep-strong: var(--nx-rep-strong);
+  --color-nx-rep-border: var(--nx-rep-border);
+
+  --color-nx-status-info-bg: var(--nx-status-info-bg);
+  --color-nx-status-info-fg: var(--nx-status-info-fg);
+  --color-nx-status-info: var(--nx-status-info);
+  --color-nx-status-success-bg: var(--nx-status-success-bg);
+  --color-nx-status-success-fg: var(--nx-status-success-fg);
+  --color-nx-status-success: var(--nx-status-success);
+  --color-nx-status-warning-bg: var(--nx-status-warning-bg);
+  --color-nx-status-warning-fg: var(--nx-status-warning-fg);
+  --color-nx-status-warning: var(--nx-status-warning);
+  --color-nx-status-danger-bg: var(--nx-status-danger-bg);
+  --color-nx-status-danger-fg: var(--nx-status-danger-fg);
+  --color-nx-status-danger: var(--nx-status-danger);
+}
+
+/* Static tokens — no theme remap, so a plain @theme block.
+   The 4pt spacing grid is NOT transcribed: DS stops (2/4/6/8/10/12/14/16/20/24/
+   32/40/48/64/96px) already equal Tailwind's default scale multipliers, so p-2.5
+   is 10px and p-24 is 96px out of the box. Keeping Tailwind's rem basis rather
+   than forcing px, because constitution §12 makes accessibility a floor and rem
+   honours the user's font-size setting. */
+@theme {
+  /* Radius — same names as Tailwind's defaults but different values, hence nx-. */
+  --radius-nx-xs: 4px;
+  --radius-nx-sm: 6px;
+  --radius-nx-md: 8px;
+  --radius-nx-lg: 12px;
+  --radius-nx-xl: 16px;
+  --radius-nx-full: 9999px;
+
+  /* Type scale — closed set (constitution §7.2); new sizes need an amendment. */
+  --text-nx-display: 32px;
+  --text-nx-display--line-height: 1.2;
+  --text-nx-display--font-weight: 600;
+  --text-nx-display--letter-spacing: -0.02em;
+  --text-nx-title: 24px;
+  --text-nx-title--line-height: 1.25;
+  --text-nx-title--font-weight: 600;
+  --text-nx-title--letter-spacing: -0.015em;
+  --text-nx-title-sm: 20px;
+  --text-nx-title-sm--line-height: 1.3;
+  --text-nx-title-sm--font-weight: 600;
+  --text-nx-title-sm--letter-spacing: -0.01em;
+  --text-nx-heading: 18px;
+  --text-nx-heading--line-height: 1.35;
+  --text-nx-heading--font-weight: 600;
+  --text-nx-heading--letter-spacing: -0.01em;
+  --text-nx-subhead: 15px;
+  --text-nx-subhead--line-height: 1.45;
+  --text-nx-subhead--font-weight: 600;
+  --text-nx-body: 15px;
+  --text-nx-body--line-height: 1.6;
+  --text-nx-ui: 14px;
+  --text-nx-ui--line-height: 1.5;
+  --text-nx-body-sm: 13px;
+  --text-nx-body-sm--line-height: 1.55;
+  --text-nx-code: 13px;
+  --text-nx-code--line-height: 1.6;
+  --text-nx-caption: 12px;
+  --text-nx-caption--line-height: 1.4;
+  --text-nx-micro: 11px;
+  --text-nx-micro--line-height: 1.3;
+  --text-nx-overline: 11px;
+  --text-nx-overline--line-height: 1.3;
+  --text-nx-overline--letter-spacing: 0.08em;
+
+  /* Elevation — hairline first; shadows only on genuinely floating surfaces. */
+  --shadow-nx-1: 0 1px 2px rgba(16, 24, 32, 0.05);
+  --shadow-nx-2: 0 1px 2px rgba(16, 24, 32, 0.05), 0 4px 12px rgba(16, 24, 32, 0.07);
+  --shadow-nx-3: 0 2px 4px rgba(16, 24, 32, 0.06), 0 12px 32px rgba(16, 24, 32, 0.12);
+
+  /* Motion — closed set. Exits ≤80ms, no bounce, no scale, no parallax. */
+  --ease-nx-out: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Layout */
+  --container-nx-content: 960px;
+  --container-nx-wide: 1200px;
+}
+
+/* ── Round-15 shell + spacing tokens ──────────────────────────────────────────
+   TRANSCRIBED VERBATIM as plain data (Constraint #1) from the round-15 delivery at
+   `D:\DATN\Elite Nexus Design System`: `handoff/theme.css` and `tokens/layout.css`.
+   Values copied, nothing re-derived, no component source read.
+
+   WHAT THE DELIVERY ACTUALLY CHANGES — measured, and NOT what a first glance suggests.
+   `handoff/globals.reference.css` is byte-identical to this file as it stood before round
+   15, so the system was built on top of what already shipped. That makes the token NAME
+   set purely additive: 46 new, none removed. It does NOT make the delivery value-neutral —
+   `tokens/colors.css` re-values 11 existing tokens (5 light, 6 dark), listed at their
+   definitions below. Those 11 move every screen at once, which is the point of a reskin,
+   but it is why this block alone is not the whole of R1.
+
+   THIS @theme BLOCK is the additive half: new names only, no existing value touched.
+
+   WHAT IS DELIBERATELY NOT TRANSCRIBED: the kit's archive ladders. `tokens/layout.css`
+   carries four spacing fittings (r4/r5/r8/r9) and `tokens/colors.css` a whole rejected
+   surface model (`--nx-r3-*`), all switchable via `[data-nx-space]` / `[data-nx-surfaces]`.
+   That machinery exists so the project owner can compare rounds by clicking; it is kit
+   apparatus, not product. Only the DEFAULT fitting (R9 spacing, R4 surfaces) comes across.
+   If a comparison is ever needed again, it belongs in the kit, not in the app's CSS. */
+@theme {
+  /* The shell's regions. R4's skeleton: one 56px bar, a rail that paints nothing,
+     a hard-capped reading column, and the ledger. The budget is
+     210 + 40 + 672 + 40 + 338 = 1300, which the DS calls `--nx-shell-max`.
+
+     THE RAIL↔LEDGER SPLIT WAS REBALANCED (owner's call): the rail gave 38px to the ledger
+     (248→210, 300→338) without touching the reading measure or the shell cap. The rail holds
+     two short nav groups and a locale toggle — nothing in it needs 248 — while the ledger's
+     `Phù hợp với bạn` card carries a project title, a role count and a row of matched-skill
+     chips per row and was the tightest column in the shell. `1300 = 210 + 40 + 672 + 40 + 338`
+     still, and the 1280 step below is `210 + 24 + 672 + 24 + 310 = 1240` still.
+
+     DELIBERATELY RENAMED into Tailwind's `--spacing-*` namespace. The DS declares these as
+     raw `:root` vars (`--nx-canvas-measure`, `--nx-ledger-width`, `--nx-topbar-height`, …)
+     because its kit writes plain CSS; in Tailwind v4 the same values under `--spacing-nx-*`
+     also generate `w-nx-canvas`, `max-w-nx-shell-max`, `h-nx-topbar` and friends, which is
+     how the rest of this file already treats layout (`--container-nx-*`). The name mapping,
+     for anyone reading the DS docs and grepping here:
+
+       DS --nx-topbar-height   → --spacing-nx-topbar        DS --nx-canvas-measure  → --spacing-nx-canvas
+       DS --nx-subnav-height   → --spacing-nx-subnav        DS --nx-shell-max       → --spacing-nx-shell-max
+       DS --nx-ledger-width    → --spacing-nx-ledger        DS --nx-region-gutter   → --spacing-nx-region-gutter
+       DS --nx-chat-measure    → --spacing-nx-chat-measure  DS --nx-context-bar-…   → --spacing-nx-context-bar
+
+     The proximity ladder below is NOT renamed: those are read via `var()` inside arbitrary
+     values and gap/padding utilities alike, and a `--spacing-nx-space-pad` would be absurd. */
+  /* Mirrors the pre-existing raw `--nx-sidebar-width` into the spacing namespace so the rail can
+     be sized with `w-nx-sidebar` like every other region. Both names are kept: the raw one is
+     referenced by older code and by the DS's own docs. */
+  --spacing-nx-sidebar: 210px;
+  --spacing-nx-topbar: 56px;
+  /* 48, not 40. `layout-r7.md` §3.2 sets the context bar at the TWO-LINE ROW UNIT — "already in
+     the system (§3.4 gives request rows 48). Not a new number." Measured in the kit's `/chats`:
+     a band at y=56 exactly 48 tall. The 40 here had no consumer, so nothing moved when it was
+     wrong — it was simply waiting to be believed. */
+  --spacing-nx-subnav: 48px;
+  --spacing-nx-ledger: 338px;
+  --spacing-nx-ledger-sm: 310px;
+  --spacing-nx-canvas: 672px;
+  --spacing-nx-shell-max: 1300px;
+  --spacing-nx-region-gutter: 40px;
+  --spacing-nx-region-gutter-sm: 24px;
+  --spacing-nx-chat-measure: 600px;
+  --spacing-nx-context-bar: 48px;
+  /* Focus mode's two companion columns, mirrored into the spacing namespace so they can be sized
+     with `w-nx-focus-aside` / `w-nx-focus-panel`. The raw `--nx-focus-aside` above has carried the
+     value since round 7 and had no consumer, because the tenants that use it were not built:
+     `/chats`'s info column (300, measured) and `/kho/{id}`'s panel. `layout-r7.md:123` asserted
+     280 for the aside and is annotated in the DS as superseded — the kit renders 300, and the
+     render is the specimen. */
+  --spacing-nx-focus-aside: var(--nx-focus-aside);
+  --spacing-nx-focus-panel: var(--nx-focus-panel);
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  /* THE PROXIMITY LADDER. Five rungs, and the point of it is that each rung names a
+     RELATIONSHIP rather than a size — "content to its container edge" is `--nx-space-pad`
+     whatever 20 happens to be this round. The kit refitted these twice (R5 → R8 → R9)
+     without a single component changing, which is the whole argument for naming them.
+
+     READ PER AXIS since R8: horizontal padding is paid once, vertical padding is paid
+     again at every block boundary down the feed. Hence pad and pad-y differ (20 / 16).
+
+     NOTHING IN A REBUILT COMPONENT MAY SET A SPACING VALUE THAT IS NOT ONE OF THESE. That
+     is the rule the kit enforces on itself, and it is what makes the ladder refittable —
+     one `gap={14}` outside the ladder and the next refitting silently skips that spot. */
+  --nx-space-hit: 2px; /* hit-area only; never a visible gap */
+  --nx-space-pair: 4px; /* two glyphs that read as one thing */
+  --nx-space-utterance: 6px; /* consecutive bubbles from one speaker */
+  --nx-space-tight: 8px; /* inside one component — icon ↔ its label */
+  --nx-space-pad-half: 10px; /* = pad / 2, for the inset split rule */
+  --nx-space-element: 12px; /* element ↔ element inside a container */
+  --nx-space-group: 16px; /* group ↔ group, VERTICAL only */
+  --nx-space-pad-y: 16px; /* content ↔ container edge, VERTICAL */
+  --nx-space-turn: 16px; /* one speaker's turn ↔ the next */
+  --nx-space-pad: 20px; /* content ↔ container edge, HORIZONTAL */
+  --nx-space-block: 20px; /* block ↔ block */
+  --nx-space-datum: 20px; /* a labelled figure ↔ the next */
+  --nx-space-row: 32px; /* the row unit — a MINIMUM, not a fixed height */
+  --nx-space-region: 40px; /* region ↔ region. Equals the shell gutter, on purpose */
+  --nx-space-section: 40px; /* section ↔ section within one canvas */
+  --nx-space-runout: 48px; /* clearance under a scroller's last item */
+
+  /* Set-inset. `--nx-space-pad-half` (10) above IS the inset split — round 5.1 defines it as
+     "half a rung, for the inset split": the set insets 10 and the member's own 10 completes the
+     20 line to its text.
+
+     A `--nx-space-bare-pad: 12px` / `--nx-space-set-inset: 12px` pair used to sit here. Both had
+     ZERO consumers anywhere in `src/`, and both carried 12 where round 5.1 says 10 — a leftover
+     from an earlier fitting. Unused tokens that contradict the spec are worse than no tokens:
+     the next person to reach for one would have written the wrong number believing it was the
+     DS's. `--nx-space-pad-half` is the live token for the inset split. */
+  --nx-space-set-inset-text: 8px;
+
+  /* Flanks hang below the bar and own their own scrollers. `--nx-sticky-offset` is the
+     escape hatch for a surface that stacks something above the bar; it defaults to the
+     bar's own height, so the common case needs no override. */
+  --nx-flank-height: calc(100dvh - var(--nx-sticky-offset, 56px));
+  --nx-focus-aside: 300px;
+  --nx-focus-panel: 300px;
+
+  /* The roadmap's horizontal stage. */
+  --nx-path-stage: 280px;
+  --nx-path-stage-max: 360px;
+  --nx-path-connector: 48px;
+
+  /* The reading measure, in characters rather than px — it has to track the font. */
+  --measure-nx-read: 68ch;
 }
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+:root {
+  /* Durations: Tailwind v4 generates no utilities from a --duration-* namespace,
+     so these stay raw vars, used as duration-[var(--nx-duration-fast)]. */
+  --nx-duration-fast: 120ms;
+  --nx-duration-base: 200ms;
+  --nx-duration-slow: 300ms;
+  --nx-duration-exit: 80ms;
+  --nx-sidebar-width: 210px;
 }
 
 @layer base {
+  /* These three used to be `@apply border-border outline-ring/50` and
+     `@apply bg-background text-foreground` — shadcn utility names, repointed at the DS tokens at
+     P4.3. Tailwind v4 has no default border colour, so the `*` rule is load-bearing: without it
+     every `border` utility falls back to `currentColor` and borders take the text colour. */
   * {
-    @apply border-border outline-ring/50;
+    @apply border-nx-border-default outline-nx-focus-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-nx-surface-page text-nx-text-primary;
   }
   html {
     @apply font-sans;
+    /**
+     * THE DOCUMENT SCROLLBAR IS GONE FROM THE LAYOUT, AND `PageScrollbar` DRAWS IT INSTEAD.
+     *
+     * What stood here was `scrollbar-gutter: stable`, and its reason was real: "the whole shell
+     * jumps sideways by ~8px whenever navigation moves between a long page and a short one —
+     * measured between `/profile` (scrolls) and `/library` (does not), where the rail moved from
+     * x=120 to x=128. The shell is centred on the ground, so any change in available width moves
+     * every region at once."
+     *
+     * It bought that with a permanent 15px strip the page could never paint into, and the owner
+     * saw exactly what it cost: *"khi không cần dùng thì bị hở ra 1 khoảng bên phải"*. The strip
+     * is invisible against the ground, and the top bar is `surface-card` and full-bleed — so on
+     * every screen the white bar stopped 15px short of the glass with a grey sliver beside it.
+     *
+     * A CLASSIC SCROLLBAR RESERVES FROM THE CONTENT BOX; THERE IS NO CSS THAT MAKES IT OVERLAY.
+     * `overflow: overlay` is removed, and `scrollbar-width: thin` only makes the reservation
+     * narrower. So the reservation goes away entirely — the native bar is hidden and the thumb is
+     * painted over the page by a fixed element that occupies no layout at all.
+     *
+     * AND THE JUMP THE GUTTER WAS DEFENDING AGAINST CANNOT HAPPEN ANY MORE, which is the part
+     * worth stating plainly: it happened because a scrollbar appearing changed the width available
+     * to a centred shell. Nothing reserves width now, on a long page or a short one, so there is
+     * no width to change.
+     */
+    scrollbar-width: none;
   }
+  html::-webkit-scrollbar {
+    display: none;
+  }
+
+  /**
+   * EVERY OTHER SCROLLER KEEPS A REAL SCROLLBAR, IN THE KIT'S OWN 8px FORM — and it is invisible
+   * until something scrolls.
+   *
+   * The DS ships this as `.nx-flank` (`tokens/utilities.css`): `width: 8px`, thumb
+   * `--nx-border-default` at radius 99, transparent track. Ours had no scrollbar styling at all,
+   * so the rail, the ledger, the transcript and every menu drew the platform's 15px bar inside a
+   * 248 or 300 column. This is the kit's rule, applied to every scroller rather than to one class,
+   * because "a panel that scrolls" is not a thing the app marks up specially anywhere.
+   *
+   * THE RESERVATION STAYS HERE AND THAT IS CORRECT. Inside a panel the 8px comes out of the
+   * panel, never out of the window edge, so it cannot produce the sliver this round removed. What
+   * changes is that the thumb is transparent while nothing is moving: the channel is there, it is
+   * simply not drawn until it has something to say.
+   *
+   * `[data-nx-scrolling]` IS STAMPED ON THE ELEMENT THAT SCROLLED, not on the root, so scrolling
+   * the ledger does not light up the rail's scrollbar next to it. `PageScrollbar` owns the stamp
+   * and the timer that removes it.
+   */
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: var(--radius-nx-full);
+    transition: background var(--nx-duration-base) var(--ease-nx-out);
+  }
+  *[data-nx-scrolling]::-webkit-scrollbar-thumb {
+    background: var(--nx-border-default);
+  }
+
+  /**
+   * Firefox and Safari have no `::-webkit-scrollbar` box model to style — Firefox has the standard
+   * two properties instead, and setting them in Chromium would switch it to the same coarse
+   * rendering and throw away the rules above. `@supports selector()` is the only test that tells
+   * the two engines apart here.
+   */
+  @supports not selector(::-webkit-scrollbar) {
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: transparent transparent;
+    }
+    *[data-nx-scrolling] {
+      scrollbar-color: var(--nx-border-default) transparent;
+    }
+    html {
+      scrollbar-width: none;
+    }
+  }
+  /**
+   * NO NATIVE CLEAR AFFORDANCE ON `type="search"`. Chromium paints its own
+   * `::-webkit-search-cancel-button` once such a field holds a value; `SearchBar` already draws a
+   * clear button over the field's trailing edge, so the two rendered side by side. The type is
+   * kept `search` for the on-screen keyboard and form semantics — only the browser's glyph goes.
+   * One such field exists in the product (the shell's search bar), but this is scoped by selector
+   * rather than by class so a second one cannot reintroduce the doubling.
+   */
+  input[type='search']::-webkit-search-cancel-button,
+  input[type='search']::-webkit-search-decoration {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  /**
+   * NO BLUE AUTOFILL WASH. Chromium paints a remembered value on its own pale-blue (dark: navy)
+   * ground and keeps repainting it for a second after focus, which overrode the field's
+   * `surface-raised` box and every token on it. There is no property that turns the fill off, so
+   * the standard move: an inset shadow the size of the box in the field's own colour, and
+   * `-webkit-text-fill-color` because autofill also forces the text colour. Scoped to the fields
+   * the app actually renders on that surface.
+   */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    -webkit-text-fill-color: var(--nx-text-primary) !important;
+    box-shadow: inset 0 0 0 1000px var(--nx-surface-raised) !important;
+    caret-color: var(--nx-text-primary);
+    transition: background-color 600000s 0s;
+  }
+
+  /* Accessibility floor, constitution §9/§12: motion explains state change and
+     nothing else, so reduced-motion collapses all of it. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/* ── Design-system keyframes ──────────────────────────────────────────────────
+   Transcribed verbatim from the DS `tokens/base.css` (plain data, §1). The
+   sanctioned entrance/feedback set — no others. reduced-motion (above) collapses
+   them all. */
+@keyframes nx-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes nx-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes nx-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+@keyframes nx-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* Skeleton shimmer: a quiet sunken→card→sunken sweep, calm in both themes. The
+   1.6s pace is the DS default (Skeleton.prompt.md). */
+.nx-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--nx-surface-sunken) 25%,
+    var(--nx-surface-card) 50%,
+    var(--nx-surface-sunken) 75%
+  );
+  background-size: 200% 100%;
+  animation: nx-shimmer 1.6s linear infinite;
+}
+
+/* EmptyState's blinking cursor — the one sanctioned non-reputation amber (brand
+   motif from the logo), per EmptyState.prompt.md. */
+.nx-cursor {
+  animation: nx-blink 1s step-end infinite;
+}
+
+/* ────────────────────────────────────────────────────────────────────────────────────────────
+   `highlight.js` token classes → the seven roles above.
+
+   THE GROUPING IS GITHUB'S, NOT ONE THIS FILE INVENTED — each block below is the selector list
+   from `highlight.js/styles/github.css`, so a token coloured one way on github.com is coloured
+   the same way here. Only the VALUES are read from the tokens above, which is what lets the
+   whole set switch at `[data-theme='dark']` without a second stylesheet.
+
+   What is deliberately NOT copied from those files: `.hljs { background }` and
+   `pre code.hljs { padding }`. Both are in the vendor theme and both would fight the card the
+   block sits in — see the token block above.
+   ──────────────────────────────────────────────────────────────────────────────────────────── */
+.hljs-doctag,
+.hljs-keyword,
+.hljs-meta .hljs-keyword,
+.hljs-template-tag,
+.hljs-template-variable,
+.hljs-type,
+.hljs-variable.language_ {
+  color: var(--nx-syntax-keyword);
+}
+
+.hljs-title,
+.hljs-title.class_,
+.hljs-title.class_.inherited__,
+.hljs-title.function_ {
+  color: var(--nx-syntax-title);
+}
+
+.hljs-attr,
+.hljs-attribute,
+.hljs-literal,
+.hljs-meta,
+.hljs-number,
+.hljs-operator,
+.hljs-variable,
+.hljs-selector-attr,
+.hljs-selector-class,
+.hljs-selector-id {
+  color: var(--nx-syntax-number);
+}
+
+.hljs-regexp,
+.hljs-string,
+.hljs-meta .hljs-string {
+  color: var(--nx-syntax-string);
+}
+
+.hljs-built_in,
+.hljs-symbol {
+  color: var(--nx-syntax-type);
+}
+
+.hljs-comment,
+.hljs-code,
+.hljs-formula {
+  color: var(--nx-syntax-comment);
+}
+
+.hljs-name,
+.hljs-quote,
+.hljs-selector-tag,
+.hljs-selector-pseudo {
+  color: var(--nx-syntax-meta);
+}
+
+/* Emphasis marks a highlighter can emit, kept as weight rather than as more colour. */
+.hljs-strong {
+  font-weight: 600;
+}
+
+.hljs-emphasis {
+  font-style: italic;
 }
