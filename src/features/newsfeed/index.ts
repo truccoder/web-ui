@@ -29,6 +29,11 @@ export {
   usePost,
   useRefreshFeed,
   useFeedReturnHref,
+  /**
+   * The shell's brand mark calls this: pressing it is a request to be back at the start of the
+   * feed, and a stored position would otherwise pull the reader straight back down.
+   */
+  clearFeedScroll,
 } from './hooks';
 
 export {

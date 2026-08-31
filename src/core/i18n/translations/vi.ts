@@ -370,14 +370,17 @@ export const vi: Messages = {
     emptyTitle: 'Không có kết quả',
     errorTitle: 'Tìm kiếm thất bại',
     clear: 'Xoá nội dung tìm kiếm',
+    backToResults: 'Kết quả tìm kiếm',
+    /* Dòng dưới thẻ dự án: dự án khớp "${query}" ở kỹ năng của vị trí (thứ không hiện trên thẻ),
+       không phải ở tiêu đề — đúng chỗ gây nhầm với matchmaking/4034. */
+    projectMatch: 'Khớp "${query}":',
     unknownPerson: 'Người dùng',
     untitledBook: 'Sách chưa có tiêu đề',
     free: 'Miễn phí',
     price: '${price} đ',
     priceUnknown: 'Chưa có giá',
     /* Các tab kết quả. `all` giữ nguyên các mục mọi người/bài viết/sách xếp chồng; các tab còn
-       lại thu về một loại. Dự án và lộ trình được lọc ở phía này — `/search` của backend chỉ
-       phủ mọi người, bài viết và sách (xem docs/backend-plan.md B33). */
+       lại thu về một loại. Từ B33, cả năm tab đọc chung một lượt gọi `/search`. */
     tabs: {
       all: 'Tất cả',
       people: 'Người dùng',
@@ -401,9 +404,6 @@ export const vi: Messages = {
       categoryLabel: 'Chủ đề',
       categoryAll: 'Tất cả chủ đề',
     },
-    /* Hiện ở tab Dự án khi bộ lọc phía client chưa thấy hết bảng dự án — endpoint danh sách phân
-       trang bằng cursor và chỗ này chỉ tìm trong phần mới nhất. */
-    projectsTruncated: 'Chỉ tìm trong ${count} dự án mới nhất',
     openPositions: '${count} vị trí đang mở',
   },
 

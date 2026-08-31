@@ -5,28 +5,32 @@ import { Badge, Card } from '@/shared/components';
 import { useT } from '@/core/i18n';
 import { cn } from '@/shared/lib/cn';
 import type { Roadmap } from '@/features/roadmap';
+import { withBackTo } from '../lib/search-return';
 
 /**
  * One learning track in the results — the same `Card` the roadmap index draws (`RoadmapList`),
  * not the bespoke row this used to be. The owner's note was "dùng style có sẵn … thay vì random".
  *
- * Links to `/roadmap?id={id}` — the shape `roadmap/page.tsx` reads to open a track in focus mode.
+ * Links to `/roadmap?id={id}` — the shape `roadmap/page.tsx` reads to open a track in focus mode —
+ * with `?backTo=` so the focus-mode trail leads back to these results, not the roadmap index.
  * `RoadmapList` uses a button + `onSelect` because selection there is route state it owns; here a
  * plain link is right. The category badge is hidden for `OTHER` for the same reason it is there:
  * as a chip it would print "Khác" and say nothing.
  */
 export interface RoadmapResultCardProps {
   roadmap: Roadmap;
+  /** The results URL to send the reader back to from the track's focus-mode trail. */
+  backTo: string;
   className?: string;
 }
 
-export function RoadmapResultCard({ roadmap, className }: RoadmapResultCardProps) {
+export function RoadmapResultCard({ roadmap, backTo, className }: RoadmapResultCardProps) {
   const t = useT();
 
   return (
     <Card interactive padding={12} className={cn('h-full', className)}>
       <Link
-        href={`/roadmap?id=${roadmap.id}`}
+        href={withBackTo(`/roadmap?id=${roadmap.id}`, backTo)}
         className="flex w-full flex-col gap-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
       >
         <span className="flex items-center gap-2">

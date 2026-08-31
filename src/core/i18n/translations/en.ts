@@ -382,14 +382,18 @@ export const en = {
     emptyTitle: 'No results',
     errorTitle: 'Search failed',
     clear: 'Clear search',
+    backToResults: 'Search results',
+    /* The line under a project result: it matched "${query}" on a position's skill (which the
+       card does not otherwise show), not on the title — the exact thing that confused
+       matchmaking/4034. */
+    projectMatch: 'Matched "${query}":',
     unknownPerson: 'Unknown user',
     untitledBook: 'Untitled book',
     free: 'Free',
     price: '${price} đ',
     priceUnknown: 'Price unavailable',
     /* The result tabs. `all` keeps the stacked people/posts/books sections; the rest narrow to
-       one kind. Projects and roadmaps are filtered on this side — the backend's `/search` only
-       covers people, posts and books (see docs/backend-plan.md B33). */
+       one kind. Since B33 all five tabs read the one `/search` call. */
     tabs: {
       all: 'All',
       people: 'People',
@@ -413,9 +417,6 @@ export const en = {
       categoryLabel: 'Topic',
       categoryAll: 'All topics',
     },
-    /* Shown on the Projects tab when the client filter could not see the whole board — the list
-       endpoint is cursor-paged and this searched only the newest slice of it. */
-    projectsTruncated: 'Only searched the ${count} most recent projects',
     openPositions: '${count} open',
   },
 

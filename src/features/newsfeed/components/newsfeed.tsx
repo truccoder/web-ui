@@ -8,7 +8,7 @@ import { useT } from '@/core/i18n';
 import { cn } from '@/shared/lib/cn';
 import { newsfeedKeys } from '../hooks/keys';
 import { useNewsfeed, usePublicFeed } from '../hooks/use-feed';
-import { useScrollRestoration } from '../hooks/use-scroll-restoration';
+import { feedScrollKey, useScrollRestoration } from '../hooks/use-scroll-restoration';
 import { useRecordFeedReturn } from '../hooks/use-feed-return';
 import { useSeenReporter } from '../hooks/use-seen-reporter';
 import { FeedPost } from './feed-post';
@@ -89,11 +89,12 @@ export function Newsfeed({ scope = 'friends', hashtag, className }: NewsfeedProp
    * different lengths; one shared position would drop the reader into the middle of a list they
    * were never scrolled through. It waits for data because restoring against an empty feed would
    * clamp to zero and throw the saved position away.
+   *
+   * THE KEY IS BUILT BY THE HOOK'S OWN HELPER rather than spelled out here, so that the reset the
+   * brand mark and a reload perform (`clearFeedScroll`) can recognise every column's key by its
+   * prefix without this file and that one agreeing on a string twice.
    */
-  useScrollRestoration(
-    `newsfeed:${scope}${activeHashtag ? `:#${activeHashtag}` : ''}`,
-    Boolean(feed.data)
-  );
+  useScrollRestoration(feedScrollKey(scope, activeHashtag), Boolean(feed.data));
 
   /**
    * REMEMBER THIS COLUMN AS THE PLACE A POST PERMALINK RETURNS TO. `/posts/{id}`'s `← Về bảng tin`

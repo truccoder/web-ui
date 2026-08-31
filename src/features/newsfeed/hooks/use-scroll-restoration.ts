@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 
 /**
  * Puts the feed back where the reader left it after they open a post and come back.
@@ -37,8 +37,110 @@ const MAX_FRAMES = 30;
  *  scroll-to-top animation without silencing a reader who clicked something harmless. */
 const FREEZE_MS = 1000;
 
+/**
+ * Every position this hook stores lives under one prefix, so a reset can clear the whole set
+ * without knowing which columns have been read. It is deliberately NOT the bare `newsfeed:`:
+ * `useFeedReturn` keeps its own key in that namespace, and a reset that wiped the return scope
+ * would send a permalink's `← Về bảng tin` back to the default tab instead of the column it
+ * was opened from.
+ */
+const SCROLL_PREFIX = 'newsfeed:scroll:';
+
+/** The storage key for one column, narrowed by a hashtag when one is applied. */
+export function feedScrollKey(scope: string, hashtag?: string) {
+  return `${SCROLL_PREFIX}${scope}${hashtag ? `:#${hashtag}` : ''}`;
+}
+
+/**
+ * Forget every stored feed position. Called when the reader asks for a fresh start — a reload,
+ * or the brand mark in the top bar — so no column comes back mid-scroll afterwards.
+ */
+export function clearFeedScroll() {
+  try {
+    for (let i = sessionStorage.length - 1; i >= 0; i -= 1) {
+      const stored = sessionStorage.key(i);
+      if (stored?.startsWith(SCROLL_PREFIX)) sessionStorage.removeItem(stored);
+    }
+  } catch {
+    // Private mode and blocked site data throw on any access. There is then nothing stored to
+    // clear either, so the reader gets the top of the feed regardless.
+  }
+}
+
+/**
+ * A RELOAD IS NOT A RETURN, AND TREATING IT AS ONE IS THE BUG THIS GUARD FIXES.
+ *
+ * Reported by the owner: refresh (and hard refresh) on `Bài viết` left the feed exactly where it
+ * had been left, instead of opening at the top. Two separate mechanisms were doing it.
+ *
+ * OURS. The position is recorded on every scroll into `sessionStorage`, which by design survives
+ * a reload — that is what makes "reload a post, then press back to the feed" work. So the feed
+ * mounted on a fresh document, found a position and replayed it. But the trip that position was
+ * saved for never happened: F5 is a request for the page, not a return from somewhere.
+ *
+ * THE BROWSER'S. `history.scrollRestoration` is `auto` and the App Router leaves it that way, so
+ * the engine puts the document back on its own as the feed grows — which is why the position came
+ * back even after the stored one was cleared. It is turned off for the length of THIS load only
+ * and handed straight back, so back/forward keeps restoring the way it should.
+ *
+ * WHAT COUNTS AS A FRESH LOAD IS "the document was opened ON this page". The navigation entry
+ * carries the URL the document was loaded with, so a reload of `/newsfeed` matches and a reload of
+ * `/posts/{id}` followed by the back link does not — the second is still a return, and still
+ * restores. `back_forward` is excluded outright: there the reader is walking history, and history
+ * is exactly what they asked to see again.
+ */
+let entryLoadHandled = false;
+
+function isFreshLoadOfThisPage() {
+  try {
+    const [nav] = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[];
+    if (!nav || nav.type === 'back_forward') return false;
+    return new URL(nav.name).pathname === window.location.pathname;
+  } catch {
+    return false;
+  }
+}
+
 export function useScrollRestoration(key: string, ready: boolean) {
   const restored = useRef(false);
+
+  /**
+   * Runs before paint and before `ready`, because both halves of the reset are races: the stored
+   * value has to be gone before the replay effect below can read it, and the browser's own
+   * restoration lands as soon as the document is tall enough to hold the old position.
+   *
+   * ONE-SHOT PER DOCUMENT, via a module flag rather than a ref — the flag has to outlive this
+   * component so the SECOND time the feed mounts (the reader opened a post and came back) the
+   * replay works normally. It is module state in a client bundle, so a real reload resets it,
+   * which is precisely the lifetime wanted.
+   */
+  useLayoutEffect(() => {
+    if (entryLoadHandled) return;
+    entryLoadHandled = true;
+    if (!isFreshLoadOfThisPage()) return;
+
+    // Nothing to replay on this visit, and the replay effect must not try: it would only find a
+    // stale position if a write landed between here and there.
+    restored.current = true;
+    clearFeedScroll();
+
+    const wasAuto = window.history.scrollRestoration === 'auto';
+    if (wasAuto) window.history.scrollRestoration = 'manual';
+    window.scrollTo(0, 0);
+
+    if (!wasAuto) return;
+    // Given back once the load is over: `manual` is scoped to a document, and leaving it on would
+    // silently disable scroll restoration for every back/forward taken in this tab afterwards.
+    const release = () => {
+      window.history.scrollRestoration = 'auto';
+    };
+    if (document.readyState === 'complete') {
+      const timer = setTimeout(release, 0);
+      return () => clearTimeout(timer);
+    }
+    window.addEventListener('load', release, { once: true });
+    return () => window.removeEventListener('load', release);
+  }, []);
 
   /**
    * Record continuously rather than on unmount only: a hard navigation (a real link click that

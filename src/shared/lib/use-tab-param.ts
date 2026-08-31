@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 
 /**
@@ -38,16 +38,37 @@ export function useTabParam<T extends string>(
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const initial = searchParams.get(param);
-  const [tab, setTab] = useState<T>(
-    (ids as readonly string[]).includes(initial ?? '') ? (initial as T) : fallback
-  );
+  const fromUrl = searchParams.get(param);
+  const urlTab: T = (ids as readonly string[]).includes(fromUrl ?? '') ? (fromUrl as T) : fallback;
+  const [tab, setTab] = useState<T>(urlTab);
+
+  /**
+   * THE URL WINS WHEN THE URL ITSELF MOVES — a `<Link>` or a `router.push` to the same page with a
+   * different (or no) `?tab=`. Without this the strip kept whatever `select` last put in state, so
+   * pressing the brand mark from `/newsfeed?tab=posts` rewrote the address to the bare feed and
+   * left the `Bài viết` column rendered underneath it: the page and its URL disagreeing about
+   * which tab you are on.
+   *
+   * IT ONLY ADOPTS A CHANGED URL VALUE, never a merely different one, and that is what keeps it
+   * from fighting `select`. `select` writes with `replaceState`; if that propagates a new snapshot
+   * the value here has already caught up and the ref matches, and if it does not, this effect
+   * never fires at all. Either way a reader's own tab press is not undone a tick later.
+   */
+  const lastUrlTab = useRef(urlTab);
+  useEffect(() => {
+    if (lastUrlTab.current === urlTab) return;
+    lastUrlTab.current = urlTab;
+    setTab(urlTab);
+  }, [urlTab]);
 
   const select = useCallback(
     (next: string) => {
       // An id the caller does not own is a bug upstream, not something to write to the URL.
       if (!(ids as readonly string[]).includes(next)) return;
       setTab(next as T);
+      // The URL is about to say this too, so record it as already adopted — otherwise the snapshot
+      // arriving from `replaceState` would look like an external change and re-set the same value.
+      lastUrlTab.current = next as T;
 
       // Read from `window` rather than from the `searchParams` snapshot: `replaceState` does not
       // always propagate a new snapshot to this closure, so two tab switches in a row would build

@@ -37,8 +37,9 @@ import { NotificationBell } from '@/features/notifications';
 // Imported from the module rather than the barrel: the barrel's members were being
 // split into a chunk this route never loaded, so the hook silently never ran.
 import { useNotificationStream } from '@/features/notifications/hooks/use-notification-stream';
+import { clearFeedScroll } from '@/features/newsfeed';
 import { useRoadmaps } from '@/features/roadmap';
-import { SearchBar } from '@/features/search';
+import { BACK_TO_PARAM, safeBackTo, SearchBar } from '@/features/search';
 import { Ledger, GuestLedger } from './ledger';
 import {
   AuthRequiredPrompt,
@@ -87,6 +88,35 @@ import { useI18n, useT } from '@/core/i18n';
  * routes are three ordinary rows. This is the "rebuild the shell with the warning in view rather
  * than patch it" the finding asked for; confirm it is gone when the browser extension is back.
  */
+
+/**
+ * WHAT THE BRAND MARK DOES WHEN YOU ARE ALREADY HOME.
+ *
+ * It is an `<a href="/newsfeed">` in both places it appears — the top bar and the mobile Drawer —
+ * and pressing a link to the page you are on is, to the router, nothing to do. So a reader deep in
+ * `Bài viết` who pressed the one control that means "take me back to the start" stayed exactly
+ * where they were. Reported alongside the reload case, and it is the same underlying position:
+ * the feed's own saved scroll (see `clearFeedScroll`).
+ *
+ * SO THE MARK CLEARS THAT POSITION FIRST, ALWAYS — from any page. Leaving it behind would mean
+ * pressing home from `/chats` opened the feed halfway down a column, which is the same complaint
+ * one navigation later.
+ *
+ * AND WHEN THE PATH IS ALREADY `/newsfeed` IT SCROLLS ITSELF, because there is no navigation to
+ * scroll for it. The href is left to do the rest: a reader on `?tab=posts&hashtag=kafka` is on a
+ * different URL, so the ordinary link navigation runs, drops both parameters and lands them on the
+ * feed's default column — the address the mark points at.
+ */
+function useBrandHome() {
+  const pathname = usePathname();
+
+  return () => {
+    clearFeedScroll();
+    // Only the same-URL case needs help; anything else is a real navigation, and the App Router
+    // already scrolls a forward navigation to the top.
+    if (pathname === '/newsfeed') window.scrollTo(0, 0);
+  };
+}
 
 interface NavItem {
   href: string;
@@ -419,6 +449,7 @@ function GuestAuthActions() {
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const t = useT();
+  const brandHome = useBrandHome();
   const { locale, setLocale } = useI18n();
   const pathname = usePathname();
   const isGuest = useIsGuest();
@@ -445,7 +476,10 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           is shown INSTEAD of the bar's rail affordance and needs to say what app it belongs to. */}
       <Link
         href="/newsfeed"
-        onClick={onNavigate}
+        onClick={() => {
+          brandHome();
+          onNavigate?.();
+        }}
         className={cn(
           'flex items-center gap-2.5 px-4 py-4 lg:hidden',
           'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-nx-focus-ring'
@@ -553,6 +587,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const brandHome = useBrandHome();
   const { data: profile } = useMyProfile();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -740,6 +775,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
                */}
               <Link
                 href="/newsfeed"
+                onClick={brandHome}
                 className={cn(
                   'flex shrink-0 items-center gap-2.5',
                   'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring'
@@ -821,7 +857,10 @@ export function MainShell({ children }: { children: React.ReactNode }) {
           (isChats ? (
             <ChatsTrail onOpenMenu={() => setDrawerOpen(true)} />
           ) : (
-            <RoadmapTrail roadmapId={Number(roadmapId)} />
+            <RoadmapTrail
+              roadmapId={Number(roadmapId)}
+              backTo={safeBackTo(searchParams.get(BACK_TO_PARAM))}
+            />
           ))}
 
         <Drawer
@@ -1093,15 +1132,19 @@ function ChatsTrail({ onOpenMenu }: { onOpenMenu: () => void }) {
  * second consumer, not a general one: two tenants, each with a fixed trail. A slot — context,
  * a store, a layout segment — is the change to make when a page needs to put something in this
  * bar that the URL cannot tell the shell, which is still not the case.
+ *
+ * `backTo` IS THE ONE EXCEPTION THE URL DOES CARRY: a track opened from `/search` (B33) leaves a
+ * `?backTo=` naming the results it came from, and the trail leads back there instead of to the
+ * index. `safeBackTo` upstream has already pinned it to a `/search?` path.
  */
-function RoadmapTrail({ roadmapId }: { roadmapId: number }) {
+function RoadmapTrail({ roadmapId, backTo }: { roadmapId: number; backTo: string | null }) {
   const t = useT();
   const { data } = useRoadmaps();
 
   return (
     <FocusTrail
-      backHref="/roadmap"
-      backLabel={t('nav.roadmap')}
+      backHref={backTo ?? '/roadmap'}
+      backLabel={backTo ? t('search.backToResults') : t('nav.roadmap')}
       title={data?.find((roadmap) => roadmap.id === roadmapId)?.name}
     />
   );

@@ -1,11 +1,11 @@
 /**
- * Diacritics- and case-insensitive substring matching, for the two result tabs the backend
- * cannot search for us.
+ * Diacritics- and case-insensitive substring matching.
  *
- * `/v1/api/search` covers people, posts and books only (`docs/backend-plan.md` B33). The Projects
- * and Roadmaps tabs therefore filter their list endpoints on this side, and they have to fold
- * accents the same way the server's `unaccent(...)` does for everything else — a page that found
- * `Lộ trình` for `lo trinh` in one tab and not the next would be the app disagreeing with itself.
+ * The client no longer *filters* results with this — B33 moved projects and roadmaps onto
+ * `/search` so every tab reads the one server call. What is left is EXPLAINING a hit: a project
+ * matches `java` on a position's skill, not on its title, and the results card says which. The
+ * fold has to mirror the server's `f_unaccent(...)` on both sides so "khớp «kiểm thử»" lights up
+ * for a query typed `kiem thu` exactly as the backend's own match did.
  *
  * The transform is the same one `shared/components/command-palette.tsx` runs for the same reason;
  * a shared extraction is a bigger change than this warrants, so the two are kept in step by hand.
@@ -29,4 +29,10 @@ export function matchesQuery(
 ): boolean {
   if (!needleFolded) return true;
   return fields.some((field) => field != null && foldQuery(field).includes(needleFolded));
+}
+
+/** The subset of `values` that contain the already-folded `needle` — the reason a row matched. */
+export function pickMatching(needleFolded: string, values: Array<string | null | undefined>) {
+  if (!needleFolded) return [];
+  return values.filter((v): v is string => v != null && foldQuery(v).includes(needleFolded));
 }

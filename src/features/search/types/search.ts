@@ -1,12 +1,17 @@
 import type { components } from '@/core/api/schema.gen';
+import type { Project } from '@/features/matchmaking';
+import type { Roadmap } from '@/features/roadmap';
 
 type Schemas = components['schemas'];
 
 /**
  * Types for SearchController (`GET /v1/api/search`), derived from `schema.gen.ts`.
  *
- * ONE ENDPOINT, ONE CALL, THREE LISTS. The backend searches `t_users`, `t_posts` and `t_books`
- * directly in Postgres — there is no search index.
+ * ONE ENDPOINT, ONE CALL, FIVE LISTS. The backend searches `t_users`, `t_posts`, `t_books`,
+ * `t_projects` (title/description/tags **and** each position's `required_skills`) and `t_roadmaps`
+ * (name/description) directly in Postgres — there is no search index. `projects` / `roadmaps`
+ * landed in B33 (`docs/backend-plan.md`); before that the results page filtered the two domains'
+ * list endpoints on this side, bounded to the newest slice of the project board.
  *
  * BOOKS BECAME A LIST OF THEIR OWN IN B3. They used to reach the screen only as the post they
  * were attached to, because `SearchResponse` had no `books` branch — so a title that matched but
@@ -67,15 +72,21 @@ export type SearchPost = {
 };
 
 /**
- * The whole response: both lists, always present, possibly empty.
+ * The whole response: every list always present, each possibly empty.
  *
  * Named after the backend DTO (`SearchResponse`) rather than "SearchResults", which is the
  * component that renders it — one name for the payload, one for the UI.
+ *
+ * `projects` and `roadmaps` reuse the matchmaking / roadmap domain types verbatim — the backend
+ * answers `ProjectResponseDto[]` and `RoadmapDto[]` here, the same shapes those domains' own list
+ * endpoints return, so their result cards take them without a translation layer.
  */
 export type SearchResponse = {
   users: SearchUser[];
   posts: SearchPost[];
   books: SearchBook[];
+  projects: Project[];
+  roadmaps: Roadmap[];
 };
 
 /**

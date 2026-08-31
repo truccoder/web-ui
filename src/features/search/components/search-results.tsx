@@ -6,9 +6,10 @@ import { EmptyState, Skeleton, Tabs } from '@/shared/components';
 import { useT } from '@/core/i18n';
 import { useTabParam } from '@/shared/lib/use-tab-param';
 import { cn } from '@/shared/lib/cn';
-import { MIN_QUERY_LENGTH, useProjectSearch, useRoadmapSearch, useSearch } from '../hooks';
+import { MIN_QUERY_LENGTH, useSearch } from '../hooks';
 import { SEARCH_TABS, type SearchTab } from '../lib/tabs';
 import { derivePostKind, presentPostKinds } from '../lib/post-kind';
+import { buildSearchReturn } from '../lib/search-return';
 import { PostResultCard } from './post-result-card';
 import { UserResultCard } from './user-result-card';
 import { BookResultCard } from './book-result-card';
@@ -32,6 +33,10 @@ import { DEFAULT_FILTERS, SearchFilters, type SearchFiltersState } from './searc
  * note, "dùng style có sẵn … thay vì random"): people get the friends-tab person card, posts get
  * `PostCard`, books get the `/library` cover cell in a grid, projects get the board's `ProjectCard`
  * and roadmaps get the roadmap-index `Card`. This component only lays them out.
+ *
+ * ALL FIVE TABS READ THE ONE `/search` CALL. `projects` and `roadmaps` used to run their own
+ * client-side filter over the domains' list endpoints; B33 folded both into `/search`, so there
+ * is nothing tab-specific to fetch any more and every count is known as soon as the call answers.
  */
 export interface SearchResultsProps {
   query: string;
@@ -108,8 +113,6 @@ export function SearchResults({ query, className }: SearchResultsProps) {
   const [filters, setFilters] = useState<SearchFiltersState>(DEFAULT_FILTERS);
 
   const { data, status, fetchStatus } = useSearch(trimmed);
-  const projectSearch = useProjectSearch(trimmed, isQueryable && tab === 'projects');
-  const roadmapSearch = useRoadmapSearch(trimmed, isQueryable && tab === 'roadmaps');
 
   /**
    * "Type something" is decided by the TERM, not by the query state. A disabled React Query sits
@@ -137,23 +140,24 @@ export function SearchResults({ query, className }: SearchResultsProps) {
   const users = data?.users ?? [];
   const posts = data?.posts ?? [];
   const books = data?.books ?? [];
+  const projects = data?.projects ?? [];
+  const roadmaps = data?.roadmaps ?? [];
 
   const postKinds = presentPostKinds(posts);
 
-  // Counts for the tab pills. Undefined until the source has actually answered, so a pill shows a
-  // number or nothing — never a misleading 0 while a fetch is still in flight.
+  // Where a project / roadmap result sends the reader back to — this same results view, query and
+  // tab intact. Stamped onto the outbound link; the detail screen reads it off `?backTo=`.
+  const backTo = buildSearchReturn(trimmed, tab);
+
+  // Counts for the tab pills. Undefined until the call has actually answered, so a pill shows a
+  // number or nothing — never a misleading 0 while the fetch is still in flight. One call feeds
+  // every tab now, so every count lands at once.
   const counts: Partial<Record<SearchTab, number>> = {
     people: searchReady ? users.length : undefined,
     posts: searchReady ? posts.length : undefined,
     books: searchReady ? books.length : undefined,
-    projects:
-      tab === 'projects' && !projectSearch.isLoading && !projectSearch.isError
-        ? projectSearch.items.length
-        : undefined,
-    roadmaps:
-      tab === 'roadmaps' && !roadmapSearch.isLoading && !roadmapSearch.isError
-        ? roadmapSearch.items.length
-        : undefined,
+    projects: searchReady ? projects.length : undefined,
+    roadmaps: searchReady ? roadmaps.length : undefined,
   };
 
   const errorState = <EmptyState title={t('search.errorTitle')} description={t('search.error')} />;
@@ -182,13 +186,13 @@ export function SearchResults({ query, className }: SearchResultsProps) {
 
   const filteredProjects =
     filters.projectStatus === 'all'
-      ? projectSearch.items
-      : projectSearch.items.filter((p) => p.status === filters.projectStatus);
+      ? projects
+      : projects.filter((p) => p.status === filters.projectStatus);
 
   const filteredRoadmaps =
     filters.roadmapCategory === 'all'
-      ? roadmapSearch.items
-      : roadmapSearch.items.filter((r) => r.category === filters.roadmapCategory);
+      ? roadmaps
+      : roadmaps.filter((r) => r.category === filters.roadmapCategory);
 
   return (
     <div className={cn('flex flex-col gap-[var(--nx-space-group)]', className)}>
@@ -317,36 +321,29 @@ export function SearchResults({ query, className }: SearchResultsProps) {
           </BookGrid>
         ))}
 
-      {/* ── projects (client-filtered, B33) ──────────────────────────────────────────────── */}
+      {/* ── projects ─────────────────────────────────────────────────────────────────────── */}
       {tab === 'projects' &&
-        (projectSearch.isLoading ? (
+        (searchLoading ? (
           <RowSkeletons />
-        ) : projectSearch.isError ? (
+        ) : searchErrored ? (
           errorState
         ) : filteredProjects.length === 0 ? (
           emptyState
         ) : (
-          <div className="flex flex-col gap-[var(--nx-space-tight)]">
-            {projectSearch.truncated && (
-              <p className="px-1 text-nx-caption text-nx-text-muted">
-                {t('search.projectsTruncated', { count: projectSearch.items.length })}
-              </p>
-            )}
-            <CardColumn>
-              {filteredProjects.map((project) => (
-                <li key={project.id}>
-                  <ProjectResultCard project={project} />
-                </li>
-              ))}
-            </CardColumn>
-          </div>
+          <CardColumn>
+            {filteredProjects.map((project) => (
+              <li key={project.id}>
+                <ProjectResultCard project={project} query={trimmed} backTo={backTo} />
+              </li>
+            ))}
+          </CardColumn>
         ))}
 
-      {/* ── roadmaps (client-filtered, B33) ──────────────────────────────────────────────── */}
+      {/* ── roadmaps ─────────────────────────────────────────────────────────────────────── */}
       {tab === 'roadmaps' &&
-        (roadmapSearch.isLoading ? (
+        (searchLoading ? (
           <RowSkeletons />
-        ) : roadmapSearch.isError ? (
+        ) : searchErrored ? (
           errorState
         ) : filteredRoadmaps.length === 0 ? (
           emptyState
@@ -354,7 +351,7 @@ export function SearchResults({ query, className }: SearchResultsProps) {
           <RoadmapGrid>
             {filteredRoadmaps.map((roadmap) => (
               <li key={roadmap.id}>
-                <RoadmapResultCard roadmap={roadmap} />
+                <RoadmapResultCard roadmap={roadmap} backTo={backTo} />
               </li>
             ))}
           </RoadmapGrid>
