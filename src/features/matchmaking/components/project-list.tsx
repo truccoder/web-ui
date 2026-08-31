@@ -94,26 +94,59 @@ export function ProjectList() {
   );
 }
 
-export function ProjectCard({ project }: { project: Project }) {
+/**
+ * `href` overrides where the title links (default `/projects/{id}`) — the search results page
+ * passes the same path with a `?backTo=` so the detail screen's back control returns to the
+ * results rather than the board. Everywhere else omits it and gets the plain path.
+ */
+export function ProjectCard({ project, href }: { project: Project; href?: string }) {
   const t = useT();
   const positions = project.positions ?? [];
   const openCount = positions.filter((position) => position.status === 'OPEN').length;
 
+  /**
+   * `authorUsername` (BE, B35 in `docs/backend-plan.md`, closed). The gap this note used to
+   * describe — `ProjectResponseDto` carrying `authorId`/`authorFullName` with no handle, so a
+   * project's author could not link to `/u/{username}` the way a post's finally could (B13) — is
+   * paid off; the backend added the field the same way it added `authorUsername` to the feed.
+   * Still optional, same guard as `PostCard`'s `authorHref`: absent means plain text rather than
+   * an anchor to `/u/undefined`, for a payload that predates the field.
+   */
+  const authorHref = project.authorUsername
+    ? `/u/${encodeURIComponent(project.authorUsername)}`
+    : undefined;
+
+  const authorAvatar = (
+    <Avatar src={project.authorProfilePictureUrl} name={project.authorFullName} size="md" />
+  );
+
   return (
     <Card className="flex flex-col gap-[var(--nx-space-group)]">
       <div className="flex items-start gap-3">
-        {/* The author cannot link to `/u/{username}`: `ProjectResponseDto` carries `authorId` and
-            `authorFullName` with no handle, the same gap the feed has (B28). Avatar and name, no
-            anchor — a link that 404s is worse than none. */}
-        <Avatar src={project.authorProfilePictureUrl} name={project.authorFullName} size="md" />
+        {authorHref ? (
+          <Link href={authorHref} className="shrink-0 rounded-nx-full">
+            {authorAvatar}
+          </Link>
+        ) : (
+          authorAvatar
+        )}
         <div className="min-w-0 flex-1">
           <Link
-            href={`/projects/${project.id}`}
+            href={href ?? `/projects/${project.id}`}
             className="text-nx-heading font-semibold text-nx-text-primary hover:underline"
           >
             {project.title}
           </Link>
-          <p className="truncate text-nx-caption text-nx-text-muted">{project.authorFullName}</p>
+          {authorHref ? (
+            <Link
+              href={authorHref}
+              className="block truncate text-nx-caption text-nx-text-muted hover:text-nx-text-primary hover:underline"
+            >
+              {project.authorFullName}
+            </Link>
+          ) : (
+            <p className="truncate text-nx-caption text-nx-text-muted">{project.authorFullName}</p>
+          )}
         </div>
 
         {/* A closed project keeps its badge; an open one does not get one. `OPEN` is the default

@@ -2946,6 +2946,7 @@ export interface components {
             /** Format: int32 */
             applicantId?: number;
             applicantProfilePictureUrl?: string;
+            applicantUsername?: string;
             /** Format: date-time */
             createdAt?: string;
             /** Format: int32 */
@@ -2996,6 +2997,7 @@ export interface components {
             /** Format: int32 */
             authorId?: number;
             authorProfilePictureUrl?: string;
+            authorUsername?: string;
             bannerUrl?: string;
             /** Format: date-time */
             createdAt?: string;
