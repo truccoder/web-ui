@@ -43,12 +43,15 @@ export function Disclosure({
           aria-expanded={open}
           aria-controls={panelId}
           onClick={() => setOpen((value) => !value)}
-          className="flex w-full items-center justify-between gap-[var(--nx-space-element)] text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
+          className="group flex w-full items-center justify-between gap-[var(--nx-space-element)] text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
         >
           {title}
+          {/* The header text stays put on hover — it is a heading, not a link — so the affordance
+              rides on the chevron: muted at rest, full-strength ink while the pointer is on the
+              row. Colour only (§2.1). */}
           <ChevronDown
             className={cn(
-              'size-4 shrink-0 text-nx-text-muted transition-transform duration-[var(--nx-duration-fast)] ease-nx-out',
+              'size-4 shrink-0 text-nx-text-muted transition-[transform,color] duration-[var(--nx-duration-fast)] ease-nx-out group-hover:text-nx-text-primary',
               open && 'rotate-180'
             )}
             aria-hidden

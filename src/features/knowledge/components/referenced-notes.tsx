@@ -39,7 +39,7 @@ export function ReferencedNotes({ notes }: ReferencedNotesProps) {
           aria-expanded={open}
           aria-controls={panelId}
           onClick={() => setOpen((value) => !value)}
-          className="flex items-center gap-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
+          className="flex items-center gap-1 transition-colors duration-[var(--nx-duration-fast)] ease-nx-out hover:text-nx-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
         >
           {t('knowledge.explain.referencedNotes.title', { count: notes.length })}
           <ChevronDown

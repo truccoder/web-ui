@@ -256,6 +256,12 @@
      ladder without hardcoding hex. Recorded as a DS deviation in the ledger. */
   --nx-surface-inverse-hover: var(--nx-gray-800);
   --nx-surface-inverse-pressed: var(--nx-gray-700);
+
+  /* Same gap as above, for the translucent scrim a control wears when it floats over a
+     photograph (the cover-photo buttons). The DS ships `--surface-overlay` but no hover step, and
+     an overlay button with no state change reads as a label rather than a control. One notch more
+     opaque — the scrim's own colour, not an invented one. Recorded as a DS deviation in the ledger. */
+  --nx-surface-overlay-hover: rgba(16, 24, 32, 0.72);
 }
 
 /* Dark theme — remap semantic aliases only; the ramps never move.
@@ -278,6 +284,7 @@
   --nx-tint: rgba(236, 238, 240, 0.1);
   --nx-surface-inverse: var(--nx-gray-50);
   --nx-surface-overlay: rgba(0, 0, 0, 0.6);
+  --nx-surface-overlay-hover: rgba(0, 0, 0, 0.75);
   --nx-surface-hover: rgba(236, 238, 240, 0.06);
   --nx-surface-pressed: rgba(236, 238, 240, 0.1);
   --nx-surface-selected: rgba(46, 111, 194, 0.18);
@@ -357,6 +364,7 @@
   --color-nx-brand-ink-text: var(--nx-brand-ink-text);
   --color-nx-brand-ink-muted: var(--nx-brand-ink-muted);
   --color-nx-surface-overlay: var(--nx-surface-overlay);
+  --color-nx-surface-overlay-hover: var(--nx-surface-overlay-hover);
   --color-nx-surface-hover: var(--nx-surface-hover);
   --color-nx-surface-pressed: var(--nx-surface-pressed);
   --color-nx-surface-selected: var(--nx-surface-selected);

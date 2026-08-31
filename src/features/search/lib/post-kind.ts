@@ -8,8 +8,9 @@ import type { SearchPost } from '../types/search';
  * here is the priority a post with more than one populated field would be filed under: a book
  * post and an event post are those things first, whatever text also rides along.
  *
- * The values are the keys of `post.type.*`, so a caller labels a filter option with
- * `t('post.type.' + kind)` and never needs a second table.
+ * The values are the keys of `createPost.type.*` — the same table the composer's type menu
+ * labels itself from — so a caller labels a filter option with `t('createPost.type.' + kind)`
+ * and never needs a second table.
  */
 export type SearchPostKind =
   | 'REGULAR'

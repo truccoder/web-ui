@@ -119,7 +119,7 @@ export function ProfileCoverControl() {
             disabled={disabled}
             aria-label={t('profile.cover.remove')}
             title={t('profile.cover.remove')}
-            className="flex size-8 items-center justify-center rounded-nx-sm bg-nx-surface-overlay text-nx-text-on-color transition-colors duration-[var(--nx-duration-fast)] ease-nx-out hover:bg-nx-surface-overlay focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex size-8 items-center justify-center rounded-nx-sm bg-nx-surface-overlay text-nx-text-on-color transition-colors duration-[var(--nx-duration-fast)] ease-nx-out hover:bg-nx-surface-overlay-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Trash2 className="size-4" aria-hidden />
           </button>
@@ -131,7 +131,7 @@ export function ProfileCoverControl() {
           disabled={disabled}
           aria-label={hasCover ? t('profile.cover.change') : t('profile.cover.add')}
           title={t('profile.cover.hint')}
-          className="flex h-8 items-center gap-2 rounded-nx-sm bg-nx-surface-overlay px-2.5 text-nx-caption text-nx-text-on-color transition-colors duration-[var(--nx-duration-fast)] ease-nx-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex h-8 items-center gap-2 rounded-nx-sm bg-nx-surface-overlay px-2.5 text-nx-caption text-nx-text-on-color transition-colors duration-[var(--nx-duration-fast)] ease-nx-out hover:bg-nx-surface-overlay-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring disabled:cursor-not-allowed disabled:opacity-60"
         >
           {busy ? (
             <Loader2 className="size-4 animate-spin" aria-hidden />

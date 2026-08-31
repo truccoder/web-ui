@@ -3174,6 +3174,8 @@ export interface components {
         SearchResponse: {
             books?: components["schemas"]["BookDto"][];
             posts?: components["schemas"]["PostDto"][];
+            projects?: components["schemas"]["ProjectResponseDto"][];
+            roadmaps?: components["schemas"]["RoadmapDto"][];
             users?: components["schemas"]["UserDto"][];
         };
         SentFriendRequestDto: {
@@ -3529,6 +3531,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -3629,6 +3640,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3743,6 +3763,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -3840,6 +3869,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3954,6 +3992,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -4054,6 +4101,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4166,6 +4222,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -4264,6 +4329,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4372,6 +4446,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -4468,6 +4551,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4580,6 +4672,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -4674,6 +4775,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4786,6 +4896,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -4880,6 +4999,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4992,6 +5120,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -5095,6 +5232,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -5191,6 +5337,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5303,6 +5458,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -5401,6 +5565,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5515,6 +5688,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -5611,6 +5793,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5721,6 +5912,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -5815,6 +6015,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5923,6 +6132,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -6017,6 +6235,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6129,6 +6356,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -6225,6 +6461,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6335,6 +6580,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -6429,6 +6683,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6539,6 +6802,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -6642,6 +6914,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -6738,6 +7019,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6852,6 +7142,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -6948,6 +7247,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -7060,6 +7368,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -7154,6 +7471,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -7262,6 +7588,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -7356,6 +7691,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -7465,6 +7809,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -7566,6 +7919,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -7660,6 +8022,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -7772,6 +8143,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -7868,6 +8248,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -7978,6 +8367,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -8074,6 +8472,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -8186,6 +8593,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -8282,6 +8698,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -8393,6 +8818,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -8490,6 +8924,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -8601,6 +9044,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -8695,6 +9147,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -8803,6 +9264,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -8904,6 +9374,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -8998,6 +9477,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9108,6 +9596,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -9202,6 +9699,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9312,6 +9818,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -9406,6 +9921,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9516,6 +10040,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -9615,6 +10148,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -9707,6 +10249,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9818,6 +10369,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -9922,6 +10482,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -10016,6 +10585,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -10130,6 +10708,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -10228,6 +10815,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -10340,6 +10936,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -10438,6 +11043,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -10549,6 +11163,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -10643,6 +11266,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -10753,6 +11385,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -10854,6 +11495,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -10948,6 +11598,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -11060,6 +11719,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -11154,6 +11822,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -11259,6 +11936,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -11373,6 +12059,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -11467,6 +12162,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -11579,6 +12283,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -11673,6 +12386,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -11785,6 +12507,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -11889,6 +12620,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -11983,6 +12723,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -12095,6 +12844,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -12187,6 +12945,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -12295,6 +13062,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -12389,6 +13165,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -12497,6 +13282,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -12593,6 +13387,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -12705,6 +13508,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -12808,6 +13620,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -12904,6 +13725,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -13020,6 +13850,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -13118,6 +13957,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -13230,6 +14078,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -13326,6 +14183,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -13438,6 +14304,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -13532,6 +14407,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -13645,6 +14529,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -13743,6 +14636,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -13856,6 +14758,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -13951,6 +14862,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -14066,6 +14986,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -14165,6 +15094,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -14274,6 +15212,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -14368,6 +15315,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -14477,6 +15433,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -14573,6 +15538,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -14687,6 +15661,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -14787,6 +15770,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -14899,6 +15891,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -14993,6 +15994,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -15096,6 +16106,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -15208,6 +16227,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -15306,6 +16334,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -15414,6 +16451,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -15510,6 +16556,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -15625,6 +16680,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -15719,6 +16783,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -15831,6 +16904,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -15928,6 +17010,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -16040,6 +17131,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -16134,6 +17234,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -16242,6 +17351,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -16336,6 +17454,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -16448,6 +17575,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -16546,6 +17682,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -16656,6 +17801,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -16752,6 +17906,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -16862,6 +18025,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -16956,6 +18128,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -17068,6 +18249,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -17164,6 +18354,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -17278,6 +18477,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -17375,6 +18583,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -17486,6 +18703,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -17590,6 +18816,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -17684,6 +18919,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -17794,6 +19038,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -17888,6 +19141,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -17996,6 +19258,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -18090,6 +19361,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -18202,6 +19482,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -18296,6 +19585,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -18410,6 +19708,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -18509,6 +19816,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -18619,6 +19935,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -18722,6 +20047,15 @@ export interface operations {
                     "*/*": components["schemas"]["ErrorResponseDto"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -18818,6 +20152,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -74,7 +74,7 @@ export function SearchFilters({ tab, postKinds, value, onChange }: SearchFilters
           onChange={(e) => set('postKind', e.target.value as SearchPostKind | 'all')}
           options={[
             { value: 'all', label: t('search.filters.kindAll') },
-            ...postKinds.map((kind) => ({ value: kind, label: t(`post.type.${kind}`) })),
+            ...postKinds.map((kind) => ({ value: kind, label: t(`createPost.type.${kind}`) })),
           ]}
         />
       )}
