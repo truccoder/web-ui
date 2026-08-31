@@ -28,10 +28,10 @@ import { DEFAULT_FILTERS, SearchFilters, type SearchFiltersState } from './searc
  * are plain `useState`, the same call `RoadmapList` makes — a control that narrows a list it did
  * not fetch does not need to be a shareable URL.
  *
- * THE `all` TAB IS THE ORIGINAL SCREEN, UNCHANGED: people, then posts, then books, each an
- * unranked section (the backend does substring matching with no relevance score). The narrow tabs
- * add a per-kind view with a filter; Projects and Roadmaps are filtered on this side because
- * `/v1/api/search` does not cover them (`docs/backend-plan.md` B33).
+ * EACH KIND IS DRAWN BY ITS OWN DOMAIN'S CARD, not a bespoke row in a bordered group (owner's
+ * note, "dùng style có sẵn … thay vì random"): people get the friends-tab person card, posts get
+ * `PostCard`, books get the `/library` cover cell in a grid, projects get the board's `ProjectCard`
+ * and roadmaps get the roadmap-index `Card`. This component only lays them out.
  */
 export interface SearchResultsProps {
   query: string;
@@ -48,19 +48,34 @@ function SectionHeading({ icon, label }: { icon: React.ReactNode; label: string 
   );
 }
 
-function ResultGroup({ children }: { children: React.ReactNode }) {
+/** A column of cards — people, posts, projects. The gap is the block rung the feed and the
+    project board use between cards. */
+function CardColumn({ children }: { children: React.ReactNode }) {
+  return <ul className="flex flex-col gap-[var(--nx-space-block)]">{children}</ul>;
+}
+
+/** The book grid — `auto-fill minmax(150px, …)`, the same track `/library` lays covers on. */
+function BookGrid({ children }: { children: React.ReactNode }) {
   return (
-    <div className="divide-y divide-nx-border-subtle overflow-hidden rounded-nx-lg border border-nx-border-subtle">
+    <ul className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-[var(--nx-space-element)]">
       {children}
-    </div>
+    </ul>
   );
+}
+
+/** The roadmap grid — `auto-fit minmax(260px, …)`, matching `RoadmapList`. */
+function RoadmapGrid({ children }: { children: React.ReactNode }) {
+  return <ul className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-3">{children}</ul>;
 }
 
 function RowSkeletons() {
   return (
     <div className="flex flex-col gap-3">
       {Array.from({ length: 4 }).map((_, index) => (
-        <div key={index} className="flex items-center gap-3 px-3 py-3">
+        <div
+          key={index}
+          className="flex items-center gap-3 rounded-nx-md bg-nx-surface-card px-5 py-4"
+        >
           <Skeleton circle height={40} />
           <div className="flex flex-1 flex-col gap-2">
             <Skeleton width={160} height={12} />
@@ -69,6 +84,18 @@ function RowSkeletons() {
         </div>
       ))}
     </div>
+  );
+}
+
+function BookGridSkeletons() {
+  return (
+    <BookGrid>
+      {Array.from({ length: 6 }).map((_, index) => (
+        <li key={index}>
+          <Skeleton className="aspect-[2/3] w-full rounded-nx-md" />
+        </li>
+      ))}
+    </BookGrid>
   );
 }
 
@@ -174,7 +201,7 @@ export function SearchResults({ query, className }: SearchResultsProps) {
 
       <SearchFilters tab={tab} postKinds={postKinds} value={filters} onChange={setFilters} />
 
-      {/* ── all: the original stacked layout, kept verbatim ───────────────────────────────── */}
+      {/* ── all: people, then posts, then books, each an unranked section ──────────────────── */}
       {tab === 'all' &&
         (searchLoading ? (
           <RowSkeletons />
@@ -183,18 +210,22 @@ export function SearchResults({ query, className }: SearchResultsProps) {
         ) : users.length === 0 && posts.length === 0 && books.length === 0 ? (
           emptyState
         ) : (
-          <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-[var(--nx-space-section)]">
+            {/* `section` rung between the three groups — a people card, a post card and a book
+                grid are genuinely different kinds of thing, and 20px let them read as one list. */}
             {users.length > 0 && (
               <section>
                 <SectionHeading
                   icon={<Users className="size-4" />}
                   label={t('search.usersSection', { count: users.length })}
                 />
-                <ResultGroup>
+                <CardColumn>
                   {users.map((user) => (
-                    <UserResultCard key={user.id} user={user} />
+                    <li key={user.id}>
+                      <UserResultCard user={user} />
+                    </li>
                   ))}
-                </ResultGroup>
+                </CardColumn>
               </section>
             )}
 
@@ -204,25 +235,29 @@ export function SearchResults({ query, className }: SearchResultsProps) {
                   icon={<FileText className="size-4" />}
                   label={t('search.postsSection', { count: posts.length })}
                 />
-                <ResultGroup>
+                <CardColumn>
                   {posts.map((post) => (
-                    <PostResultCard key={post.id} post={post} />
+                    <li key={post.id}>
+                      <PostResultCard post={post} />
+                    </li>
                   ))}
-                </ResultGroup>
+                </CardColumn>
               </section>
             )}
 
             {books.length > 0 && (
-              <section>
+              <section className="flex flex-col gap-[var(--nx-space-tight)]">
                 <SectionHeading
                   icon={<BookOpen className="size-4" />}
                   label={t('search.booksSection', { count: books.length })}
                 />
-                <ResultGroup>
+                <BookGrid>
                   {books.map((book) => (
-                    <BookResultCard key={book.id} book={book} />
+                    <li key={book.id}>
+                      <BookResultCard book={book} />
+                    </li>
                   ))}
-                </ResultGroup>
+                </BookGrid>
               </section>
             )}
           </div>
@@ -237,11 +272,13 @@ export function SearchResults({ query, className }: SearchResultsProps) {
         ) : sortedUsers.length === 0 ? (
           emptyState
         ) : (
-          <ResultGroup>
+          <CardColumn>
             {sortedUsers.map((user) => (
-              <UserResultCard key={user.id} user={user} />
+              <li key={user.id}>
+                <UserResultCard user={user} />
+              </li>
             ))}
-          </ResultGroup>
+          </CardColumn>
         ))}
 
       {/* ── posts ────────────────────────────────────────────────────────────────────────── */}
@@ -253,27 +290,31 @@ export function SearchResults({ query, className }: SearchResultsProps) {
         ) : filteredPosts.length === 0 ? (
           emptyState
         ) : (
-          <ResultGroup>
+          <CardColumn>
             {filteredPosts.map((post) => (
-              <PostResultCard key={post.id} post={post} />
+              <li key={post.id}>
+                <PostResultCard post={post} />
+              </li>
             ))}
-          </ResultGroup>
+          </CardColumn>
         ))}
 
       {/* ── books ────────────────────────────────────────────────────────────────────────── */}
       {tab === 'books' &&
         (searchLoading ? (
-          <RowSkeletons />
+          <BookGridSkeletons />
         ) : searchErrored ? (
           errorState
         ) : filteredBooks.length === 0 ? (
           emptyState
         ) : (
-          <ResultGroup>
+          <BookGrid>
             {filteredBooks.map((book) => (
-              <BookResultCard key={book.id} book={book} />
+              <li key={book.id}>
+                <BookResultCard book={book} />
+              </li>
             ))}
-          </ResultGroup>
+          </BookGrid>
         ))}
 
       {/* ── projects (client-filtered, B33) ──────────────────────────────────────────────── */}
@@ -285,17 +326,19 @@ export function SearchResults({ query, className }: SearchResultsProps) {
         ) : filteredProjects.length === 0 ? (
           emptyState
         ) : (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-[var(--nx-space-tight)]">
             {projectSearch.truncated && (
               <p className="px-1 text-nx-caption text-nx-text-muted">
                 {t('search.projectsTruncated', { count: projectSearch.items.length })}
               </p>
             )}
-            <ResultGroup>
+            <CardColumn>
               {filteredProjects.map((project) => (
-                <ProjectResultCard key={project.id} project={project} />
+                <li key={project.id}>
+                  <ProjectResultCard project={project} />
+                </li>
               ))}
-            </ResultGroup>
+            </CardColumn>
           </div>
         ))}
 
@@ -308,11 +351,13 @@ export function SearchResults({ query, className }: SearchResultsProps) {
         ) : filteredRoadmaps.length === 0 ? (
           emptyState
         ) : (
-          <ResultGroup>
+          <RoadmapGrid>
             {filteredRoadmaps.map((roadmap) => (
-              <RoadmapResultCard key={roadmap.id} roadmap={roadmap} />
+              <li key={roadmap.id}>
+                <RoadmapResultCard roadmap={roadmap} />
+              </li>
             ))}
-          </ResultGroup>
+          </RoadmapGrid>
         ))}
     </div>
   );

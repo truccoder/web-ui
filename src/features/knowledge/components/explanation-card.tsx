@@ -7,6 +7,7 @@ import { Badge, Card, IconButton } from '@/shared/components';
 import Link from 'next/link';
 import { useT } from '@/core/i18n';
 import { useDownloadExplanation } from '../hooks';
+import { followableLinks } from '../lib/explanation-links';
 import type { Explanation } from '../types/knowledge';
 import { ExplanationMarkdown } from './explanation-markdown';
 import { ReferencedNotes } from './referenced-notes';
@@ -78,7 +79,10 @@ export function ExplanationCard({
   const collapsed = collapsible && !open;
   const concepts = explanation.concepts ?? [];
   const prerequisites = explanation.prerequisites ?? [];
-  const links = explanation.externalLinks ?? [];
+  // The model invents these URLs and nobody fetches them; `followableLinks` drops the ones that
+  // will not resolve — a syntax check, but it catches the mid-generation corruption that happens
+  // (a URL with non-ASCII spliced into it). See `lib/explanation-links.ts`.
+  const links = followableLinks(explanation.externalLinks);
   const referencedNotes = explanation.referencedNotes ?? [];
 
   return (

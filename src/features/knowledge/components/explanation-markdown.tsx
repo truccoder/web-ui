@@ -2,6 +2,7 @@
 
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { fixSingleSpaceNesting } from '../lib/markdown-nesting';
 
 /**
  * The model's answer, rendered as the Markdown it actually is.
@@ -104,7 +105,7 @@ export function ExplanationMarkdown({ children }: { children: string }) {
           ),
         }}
       >
-        {children}
+        {fixSingleSpaceNesting(children)}
       </ReactMarkdown>
     </div>
   );

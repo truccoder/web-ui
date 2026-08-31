@@ -733,6 +733,24 @@
     appearance: none;
   }
 
+  /**
+   * NO BLUE AUTOFILL WASH. Chromium paints a remembered value on its own pale-blue (dark: navy)
+   * ground and keeps repainting it for a second after focus, which overrode the field's
+   * `surface-raised` box and every token on it. There is no property that turns the fill off, so
+   * the standard move: an inset shadow the size of the box in the field's own colour, and
+   * `-webkit-text-fill-color` because autofill also forces the text colour. Scoped to the fields
+   * the app actually renders on that surface.
+   */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    -webkit-text-fill-color: var(--nx-text-primary) !important;
+    box-shadow: inset 0 0 0 1000px var(--nx-surface-raised) !important;
+    caret-color: var(--nx-text-primary);
+    transition: background-color 600000s 0s;
+  }
+
   /* Accessibility floor, constitution §9/§12: motion explains state change and
      nothing else, so reduced-motion collapses all of it. */
   @media (prefers-reduced-motion: reduce) {
