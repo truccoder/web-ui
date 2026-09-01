@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, EmptyState, Pagination, Skeleton } from '@/shared/components';
+import { ApiErrorNotice, Card, EmptyState, Pagination, Skeleton } from '@/shared/components';
 import { useT } from '@/core/i18n';
-import { getErrorMessage } from '@/shared/lib/api-error';
+import { usePagination } from '@/shared/lib/use-pagination';
 import { cn } from '@/shared/lib/cn';
 import { useModerationLogs } from '../hooks/use-moderation';
 import type { ModerationStatus } from '../types/moderation';
@@ -30,7 +30,7 @@ export function ModerationLogsTab({ className }: ModerationLogsTabProps) {
   const [postId, setPostId] = useState('');
   const [userId, setUserId] = useState('');
   const [status, setStatus] = useState<ModerationStatus | ''>('');
-  const [page, setPage] = useState(1);
+  const { page, setPage, bindFilter } = usePagination();
 
   const query = useModerationLogs({
     postId: postId ? Number(postId) : undefined,
@@ -40,13 +40,6 @@ export function ModerationLogsTab({ className }: ModerationLogsTabProps) {
     size: PAGE_SIZE,
   });
 
-  const onFilter =
-    <T,>(setter: (value: T) => void) =>
-    (value: T) => {
-      setter(value);
-      setPage(1);
-    };
-
   return (
     <div className={cn('flex flex-col gap-4', className)}>
       {/* `userId` filters by the POST's author, not by who performed the review — the backend
@@ -54,17 +47,17 @@ export function ModerationLogsTab({ className }: ModerationLogsTabProps) {
           does not record a moderator id at all. */}
       <ModerationFilters
         postId={postId}
-        onPostIdChange={onFilter(setPostId)}
+        onPostIdChange={bindFilter(setPostId)}
         userId={userId}
-        onUserIdChange={onFilter(setUserId)}
+        onUserIdChange={bindFilter(setUserId)}
         status={status}
-        onStatusChange={onFilter(setStatus)}
+        onStatusChange={bindFilter(setStatus)}
       />
 
       {query.isLoading ? (
         <Skeleton lines={6} />
       ) : query.isError ? (
-        <EmptyState title={t('moderation.loadFailed')} description={getErrorMessage(query.error)} />
+        <ApiErrorNotice error={query.error} onRetry={() => query.refetch()} />
       ) : (query.data?.content.length ?? 0) === 0 ? (
         <EmptyState title={t('moderation.log.empty')} />
       ) : (

@@ -151,6 +151,33 @@ function notifyAccountBanned(ban: AccountBanInfo) {
 }
 
 /**
+ * Subscribe to "a request just came back 428" — the account is missing a prerequisite the
+ * endpoint required, which in this app is always the Professional Profile (the AI-explain and
+ * matchmaking calls answer 428 until it exists).
+ *
+ * SAME LISTENER SHAPE AS THE THREE ABOVE, and for the same reason: throwing a redirect from inside
+ * an interceptor loses the page a person was on and reads as a crash. `features/knowledge` mounts
+ * one listener in the shell that routes to `/onboarding/professional` with a `?next=` back; core
+ * stays ignorant of what the UI does. `explain-post-action.tsx` keeps its own inline 428 branch —
+ * that is the in-context handler, this is the safety net for a 428 from anywhere else.
+ *
+ * NO REPLAY, unlike `onAccountBanned`. The shell mounts its listener before any request can fire,
+ * so nothing is missed; and a sticky "profile was required once" flag would re-fire the redirect
+ * after the reader has filled the profile in.
+ */
+type ProfileRequiredListener = () => void;
+const profileRequiredListeners = new Set<ProfileRequiredListener>();
+
+export function onProfileRequired(listener: ProfileRequiredListener) {
+  profileRequiredListeners.add(listener);
+  return () => profileRequiredListeners.delete(listener);
+}
+
+function notifyProfileRequired() {
+  profileRequiredListeners.forEach((listener) => listener());
+}
+
+/**
  * Path only: callers pass relative URLs, but an absolute one must not smuggle a query past this.
  *
  * EXPORTED FOR `axios.test.ts`, and that is the only reason it is not module-private. The pair
@@ -235,6 +262,12 @@ api.interceptors.response.use(
     const banDetails = error.response?.data?.banDetails;
     if (error.response?.status === 403 && banDetails && typeof banDetails === 'object') {
       notifyAccountBanned(banDetails as AccountBanInfo);
+    }
+
+    // A 428 means a prerequisite is missing — in this app, always the Professional Profile. The
+    // in-context callers (explain) handle their own; this covers a 428 from anywhere else.
+    if (error.response?.status === 428) {
+      notifyProfileRequired();
     }
 
     if (error.response?.status === 401 && !originalRequest._retry) {

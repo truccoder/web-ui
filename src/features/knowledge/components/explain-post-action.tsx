@@ -100,13 +100,14 @@ export function ExplainPostAction({ postId, postContent }: ExplainPostActionProp
 
   if (explain.isError) {
     if (isProfileRequired(explain.error)) {
-      // A 428 cannot be retried — the explainer is built from the professional profile, so the
-      // fix is to fill one in. Point straight at the form rather than leaving the reader to find it.
+      // A 428 cannot be retried — the explainer is built from the professional profile, so the fix
+      // is to fill one in. Straight to the onboarding wizard, carrying a `?next=` back to this post
+      // so finishing returns the reader to the explanation they were after.
       return (
         <p className="text-nx-caption text-nx-text-secondary">
           {t('knowledge.explain.profileRequired')}{' '}
           <Link
-            href="/profile?tab=professional"
+            href={`/onboarding/professional?next=/posts/${postId}`}
             className="font-medium text-nx-text-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
           >
             {t('knowledge.explain.profileRequiredCta')}

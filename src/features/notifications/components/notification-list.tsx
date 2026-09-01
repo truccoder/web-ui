@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
 import { CheckCheck, RefreshCw } from 'lucide-react';
 import { Button, Card, EmptyState, Skeleton, toast } from '@/shared/components';
 import { useT } from '@/core/i18n';
 import { cn } from '@/shared/lib/cn';
 import { getErrorMessage } from '@/shared/lib/api-error';
+import { useInfiniteScroll } from '@/shared/lib/use-infinite-scroll';
 import {
   useMarkAllNotificationsAsRead,
   useMarkNotificationAsRead,
@@ -20,9 +20,9 @@ import { NotificationItem } from './notification-item';
  * IT OWNS THE MUTATIONS, THE ROWS DO NOT. A row that invalidated the cache itself would have to
  * know this feature's key layout, and there would be two places to fix when paging changes.
  *
- * INFINITE SCROLL VIA A SENTINEL, matching the feed. Worth knowing when this looks broken: an
- * `IntersectionObserver` does not fire at all while `document.visibilityState === 'hidden'`, so
- * a background tab that "will not load more" is usually a hidden tab, not a bug here.
+ * INFINITE SCROLL VIA `useInfiniteScroll`, matching the feed. Worth knowing when this looks
+ * broken: its observer does not fire at all while `document.visibilityState === 'hidden'`, so a
+ * background tab that "will not load more" is usually a hidden tab, not a bug here.
  */
 export interface NotificationListProps {
   className?: string;
@@ -49,26 +49,8 @@ export function NotificationList({ className }: NotificationListProps) {
   const markAsRead = useMarkNotificationAsRead();
   const markAllAsRead = useMarkAllNotificationsAsRead();
 
-  const sentinelRef = useRef<HTMLDivElement>(null);
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = list;
-
-  useEffect(() => {
-    const element = sentinelRef.current;
-    if (!element) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
-          fetchNextPage();
-        }
-      },
-      // Fetch before the reader reaches the end, so the join is invisible.
-      { rootMargin: '200px' }
-    );
-
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  const sentinelRef = useInfiniteScroll({ hasNextPage, isFetchingNextPage, fetchNextPage });
 
   const notifications = list.data?.pages.flatMap((page) => page.content) ?? [];
 

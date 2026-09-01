@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { Button, Card, EmptyState, Skeleton } from '@/shared/components';
 import { useT } from '@/core/i18n';
 import { cn } from '@/shared/lib/cn';
+import { useInfiniteScroll } from '@/shared/lib/use-infinite-scroll';
 import { useTrending } from '../hooks';
 import type { TrendingCategory, TrendingTimeRange, TrendingSource } from '../types/trending';
 import { TrendingCard } from './trending-card';
@@ -61,25 +62,7 @@ export function TrendingList({ className }: TrendingListProps) {
   const { data, status, fetchStatus, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useTrending({ category, source, timeRange });
 
-  const sentinelRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const element = sentinelRef.current;
-    if (!element) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
-          fetchNextPage();
-        }
-      },
-      // Fetch before the reader reaches the end, so the join is invisible. Same margin as the feed.
-      { rootMargin: '200px' }
-    );
-
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  const sentinelRef = useInfiniteScroll({ hasNextPage, isFetchingNextPage, fetchNextPage });
 
   const items = data?.pages.flatMap((page) => page.items) ?? [];
 

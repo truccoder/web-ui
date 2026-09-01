@@ -1,4 +1,5 @@
 export { moderationKeys } from './keys';
+export { useBanCountdown, type BanCountdown } from './use-ban-countdown';
 export {
   useReportPost,
   useModerationPosts,

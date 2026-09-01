@@ -13,8 +13,10 @@ import { getBanDetails, getErrorMessage, getErrorStatus } from '@/shared/lib/api
 // security passes the extraction test cleanly.
 import { useT } from '@/core/i18n';
 import { useLogin } from '../hooks/use-auth';
+import { useRequestMagicLink } from '../hooks/use-recovery';
 import { loginSchema, type LoginFormValues } from '../lib/validation';
 import { forgetSignInEmail, readRememberedSignInEmail } from '../lib/remembered-email';
+import { AccountBannedCard } from './account-banned-card';
 import { OAuthButtons } from './oauth-buttons';
 
 export interface LoginFormProps {
@@ -23,35 +25,24 @@ export interface LoginFormProps {
 }
 
 /**
- * The three ways login fails, told apart by STATUS, never by message text (`getErrorStatus`):
+ * The two remaining ways login fails once a ban has been split off to `AccountBannedCard`, told
+ * apart by STATUS, never by message text (`getErrorStatus`):
  *
- *  - **403 with `banDetails`** — the account is banned. Show when the ban lifts; no retry, a retry
- *    cannot succeed until then.
  *  - **400** — from `/auth/login` this is the "email not verified" branch (bad credentials are a
  *    401). The account cannot be rescued with a password, only with a magic link, which sets
- *    `emailVerified` as a side effect — so this branch points there rather than just repeating the
- *    server's sentence.
+ *    `emailVerified` as a side effect — so this branch offers one inline rather than just
+ *    repeating the server's sentence.
  *  - anything else — the generic line.
  */
-function LoginError({ error }: { error: unknown }) {
+interface ResendState {
+  pending: boolean;
+  sent: boolean;
+  onResend: () => void;
+}
+
+function LoginError({ error, resend }: { error: unknown; resend: ResendState }) {
   const t = useT();
   const status = getErrorStatus(error);
-  const ban = status === 403 ? getBanDetails(error) : undefined;
-
-  if (ban) {
-    const until = ban.bannedUntil ? new Date(ban.bannedUntil).toLocaleString() : undefined;
-    return (
-      <div
-        role="alert"
-        className="flex flex-col gap-1 rounded-nx-sm bg-nx-status-danger-bg px-3 py-2 text-nx-body-sm text-nx-status-danger-fg"
-      >
-        <span className="font-medium">
-          {until ? t('auth.login.banned.title', { until }) : t('auth.login.banned.titleNoTime')}
-        </span>
-        {ban.reason && <span className="opacity-90">{ban.reason}</span>}
-      </div>
-    );
-  }
 
   if (status === 400) {
     return (
@@ -60,9 +51,20 @@ function LoginError({ error }: { error: unknown }) {
         className="flex flex-col gap-2 rounded-nx-sm bg-nx-status-warning-bg px-3 py-2 text-nx-body-sm text-nx-status-warning-fg"
       >
         <span>{getErrorMessage(error, t('auth.login.unverifiedHint'))}</span>
-        <Link href="/magic-link" className="w-fit font-medium underline hover:no-underline">
-          {t('auth.login.useMagicLink')}
-        </Link>
+        {resend.sent ? (
+          // Deliberately generic — a 200 is not proof the address exists, so this never says
+          // "sent to you". Same contract as the standalone magic-link screen.
+          <span className="font-medium">{t('auth.login.magicSent')}</span>
+        ) : (
+          <button
+            type="button"
+            disabled={resend.pending}
+            onClick={resend.onResend}
+            className="w-fit font-medium underline hover:no-underline disabled:no-underline disabled:opacity-60"
+          >
+            {resend.pending ? t('auth.login.magicSending') : t('auth.login.useMagicLink')}
+          </button>
+        )}
       </div>
     );
   }
@@ -81,10 +83,13 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
   const t = useT();
   const login = useLogin();
 
+  const magic = useRequestMagicLink();
+
   const {
     register,
     handleSubmit,
     setValue,
+    getValues,
     formState: { errors },
   } = useForm<LoginFormValues>({ resolver: zodResolver(loginSchema) });
 
@@ -107,6 +112,11 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
     const remembered = readRememberedSignInEmail();
     if (remembered) setValue('email', remembered);
   }, [setValue]);
+
+  // The account is banned — a full screen, not a red strip over a form that cannot help.
+  if (login.isError && getBanDetails(login.error)) {
+    return <AccountBannedCard error={login.error} onRetry={() => login.reset()} />;
+  }
 
   const submit = handleSubmit((values) => {
     login.mutate(values, {
@@ -214,7 +224,19 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
           />
         </div>
 
-        {login.isError && <LoginError error={login.error} />}
+        {login.isError && (
+          <LoginError
+            error={login.error}
+            resend={{
+              pending: magic.isPending,
+              sent: magic.isSuccess,
+              onResend: () => {
+                const email = getValues('email');
+                if (email) magic.mutate({ email });
+              },
+            }}
+          />
+        )}
 
         <Button type="submit" loading={login.isPending} className="w-full">
           {login.isPending ? t('auth.login.submitting') : t('auth.login.submit')}

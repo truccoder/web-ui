@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSyncRoleFromProfile } from '@/features/security';
+import { safeNext } from '@/shared/lib/safe-next';
 
 /**
  * Where to send someone the moment they are signed in.
@@ -29,28 +30,6 @@ import { useSyncRoleFromProfile } from '@/features/security';
  * `useSyncRoleFromProfile`, so nothing in `src/app` touches the data layer — which is exactly what
  * P3.6 exists to confirm.
  */
-/**
- * Whether `next` may be navigated to.
- *
- * A REDIRECT TARGET OUT OF A QUERY STRING IS AN OPEN REDIRECT IF ANYONE TRUSTS IT. `?next=https://
- * evil.example/login` on a link that looks like this app's own sign-in page is the classic
- * phishing shape, and `//evil.example` is the same attack spelled as a protocol-relative URL — so
- * the test is not "does it start with `/`" but "does it start with exactly one `/`".
- *
- * The auth routes are excluded as well: `next=/login` after a successful sign-in bounces the
- * reader straight back into the form they just completed (the middleware would then send them to
- * the feed, so it is a loop that resolves — badly — rather than one that hangs).
- */
-function safeNext(next: string | null) {
-  if (!next) return null;
-  if (!next.startsWith('/') || next.startsWith('//')) return null;
-  const path = next.split('?')[0];
-  if (['/login', '/register', '/forgot-password', '/reset-password', '/oauth'].includes(path)) {
-    return null;
-  }
-  return next;
-}
-
 export function usePostAuthRedirect() {
   const router = useRouter();
   const searchParams = useSearchParams();

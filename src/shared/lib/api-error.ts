@@ -34,6 +34,23 @@ export function getErrorMessage(error: unknown, fallback = 'Something went wrong
 }
 
 /**
+ * The backend's own `message` string, or `undefined`.
+ *
+ * NARROWER THAN `getErrorMessage` ON PURPOSE. That one falls through to `error.message` — the
+ * axios "Request failed with status code 500" string — so it can always produce *something* for a
+ * label. This returns only what the server wrote in `ErrorResponseDto.message`, so a caller that
+ * wants to show the backend's sentence verbatim (the atlas's F4 rule for a 400) does not
+ * accidentally print an axios internal instead.
+ */
+export function getBackendMessage(error: unknown): string | undefined {
+  if (error instanceof AxiosError && error.response?.data) {
+    const { message } = error.response.data as BackendError;
+    if (typeof message === 'string' && message) return message;
+  }
+  return undefined;
+}
+
+/**
  * The HTTP status a rejected request came back with, or `undefined` if it never got a response.
  *
  * IT EXISTS SO A CALLER CAN TRANSLATE. `getErrorMessage` returns the backend's own `message`,

@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { Avatar, Badge, Card, EmptyState, Skeleton } from '@/shared/components';
-import { getErrorMessage } from '@/shared/lib/api-error';
+import { ApiErrorNotice, Avatar, Badge, Card, EmptyState, Skeleton } from '@/shared/components';
+import { useInfiniteScroll } from '@/shared/lib/use-infinite-scroll';
 import { useT } from '@/core/i18n';
 import type { Project, SuggestedProject } from '../types/matchmaking';
 import { useProjects, useSuggestedProjects } from '../hooks/use-matchmaking';
@@ -31,20 +30,7 @@ export function ProjectList() {
   const projects = useProjects();
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = projects;
 
-  const sentinelRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const element = sentinelRef.current;
-    if (!element) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) fetchNextPage();
-      },
-      { rootMargin: '200px' }
-    );
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  const sentinelRef = useInfiniteScroll({ hasNextPage, isFetchingNextPage, fetchNextPage });
 
   if (projects.isLoading) {
     return (
@@ -60,11 +46,7 @@ export function ProjectList() {
   }
 
   if (projects.isError) {
-    return (
-      <p className="text-nx-caption text-nx-status-danger-fg">
-        {getErrorMessage(projects.error, t('projects.loadError'))}
-      </p>
-    );
+    return <ApiErrorNotice error={projects.error} onRetry={() => projects.refetch()} />;
   }
 
   const items = projects.data?.pages.flatMap((page) => page.items ?? []) ?? [];

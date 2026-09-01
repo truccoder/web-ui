@@ -52,6 +52,7 @@ export {
   ResetPasswordForm,
   ProfileIdentityCard,
   type ProfileIdentityCardProps,
+  PictureSettings,
   ProfileInfoForm,
   ChangePasswordForm,
   SessionPresenceProvider,

@@ -39,8 +39,18 @@ import { useMyProfile, useUpdateProfile } from '../hooks/use-profile';
  * thing on the page and sits under the reader's name for as long as they are on it, which puts it
  * on the avatar's side of that line. The restriction is this picker's, not the store's: the same
  * endpoint still takes GIFs from the composer.
+ *
+ * ── `variant` ───────────────────────────────────────────────────────────────────────────────
+ * `overlay` (default) is the hero corner — `absolute`, so the hero's geometry never shifts.
+ * `panel` is `/settings/picture`, where the control stands on its own: the same two-step upload
+ * and the same invariants, laid out as a labelled row of buttons instead of a floating overlay.
  */
-export function ProfileCoverControl() {
+export interface ProfileCoverControlProps {
+  /** @default "overlay" */
+  variant?: 'overlay' | 'panel';
+}
+
+export function ProfileCoverControl({ variant = 'overlay' }: ProfileCoverControlProps = {}) {
   const t = useT();
   const { data: profile } = useMyProfile();
   const upload = useUploadMedia();
@@ -94,6 +104,64 @@ export function ProfileCoverControl() {
       onError: () => setError(t('profile.cover.error')),
     });
   };
+
+  if (variant === 'panel') {
+    return (
+      <div className="flex flex-col gap-[var(--nx-space-element)]">
+        <div className="aspect-[4/1] w-full overflow-hidden rounded-nx-sm border border-nx-border-subtle bg-nx-surface-sunken">
+          {profile?.coverImageUrl && (
+            /* eslint-disable-next-line @next/next/no-img-element -- object-storage host */
+            <img src={profile.coverImageUrl} alt="" className="h-full w-full object-cover" />
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={disabled}
+            title={t('profile.cover.hint')}
+            className="inline-flex h-8 items-center gap-2 rounded-nx-sm border border-nx-border-strong bg-nx-surface-card px-2.5 text-nx-caption text-nx-text-primary hover:bg-nx-surface-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {busy ? (
+              <Loader2 className="size-4 animate-spin" aria-hidden />
+            ) : (
+              <ImagePlus className="size-4" aria-hidden />
+            )}
+            {hasCover ? t('profile.cover.change') : t('profile.cover.add')}
+          </button>
+          {hasCover && (
+            <button
+              type="button"
+              onClick={() => {
+                setError(null);
+                save('');
+              }}
+              disabled={disabled}
+              className="inline-flex h-8 items-center gap-2 rounded-nx-sm px-2.5 text-nx-caption text-nx-text-secondary hover:text-nx-text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Trash2 className="size-4" aria-hidden />
+              {t('profile.cover.remove')}
+            </button>
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={acceptedTypes.join(',')}
+            className="hidden"
+            onChange={onPickFile}
+          />
+        </div>
+        {upload.isPending && (
+          <ProgressBar
+            value={upload.progress}
+            label={t('profile.cover.add')}
+            className="max-w-xs"
+          />
+        )}
+        {error && <p className="text-nx-caption text-nx-status-danger-fg">{error}</p>}
+      </div>
+    );
+  }
 
   return (
     <>

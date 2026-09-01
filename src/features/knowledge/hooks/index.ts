@@ -15,6 +15,17 @@ export {
 
 export { useRoleLine, type RoleLineInput } from './use-role-line';
 
+export {
+  useProfessionalProfileDraft,
+  toProfessionalDraft,
+  professionalDraftToPayload,
+  listToText,
+  textToList,
+  EMPTY_PROFESSIONAL_DRAFT,
+  type ProfessionalProfileDraft,
+  type ProfessionalProfileDraftControls,
+} from './use-professional-profile-draft';
+
 export { useDownloadExplanation, useExportTemplate } from './use-markdown-export';
 
 export {

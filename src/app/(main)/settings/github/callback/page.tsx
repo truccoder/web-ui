@@ -45,10 +45,9 @@ function GithubLinkCallback() {
   const denied = params.get('error');
 
   const link = useLinkGithub({
-    // `?tab=professional` rather than a bare `/profile`: the page is three tabs now and the
-    // GitHub card lives on that one, so a default landing would drop the reader on a panel with
-    // no trace of what they just linked.
-    onSuccess: () => router.replace('/profile?tab=professional'),
+    // Back to the GitHub settings panel the reader started from — where the freshly linked
+    // account, its sync button and its unlink button all are.
+    onSuccess: () => router.replace('/settings/github'),
   });
 
   /**

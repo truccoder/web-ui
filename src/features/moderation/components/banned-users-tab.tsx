@@ -1,10 +1,17 @@
 'use client';
 
-import { useState } from 'react';
 import { ShieldAlert, ShieldCheck } from 'lucide-react';
-import { Badge, Button, Card, EmptyState, Pagination, Skeleton } from '@/shared/components';
+import {
+  ApiErrorNotice,
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  Pagination,
+  Skeleton,
+} from '@/shared/components';
 import { useT } from '@/core/i18n';
-import { getErrorMessage } from '@/shared/lib/api-error';
+import { usePagination } from '@/shared/lib/use-pagination';
 import { cn } from '@/shared/lib/cn';
 import { useBannedUsers } from '../hooks/use-moderation';
 
@@ -51,7 +58,7 @@ function formatRemaining(seconds: number): string {
 
 export function BannedUsersTab({ onViewPost, className }: BannedUsersTabProps) {
   const t = useT();
-  const [page, setPage] = useState(1);
+  const { page, setPage } = usePagination();
 
   const query = useBannedUsers(page, PAGE_SIZE);
 
@@ -61,11 +68,7 @@ export function BannedUsersTab({ onViewPost, className }: BannedUsersTabProps) {
 
   if (query.isError) {
     return (
-      <EmptyState
-        className={className}
-        title={t('moderation.loadFailed')}
-        description={getErrorMessage(query.error)}
-      />
+      <ApiErrorNotice className={className} error={query.error} onRetry={() => query.refetch()} />
     );
   }
 

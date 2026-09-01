@@ -18,6 +18,128 @@ export const vi: Messages = {
     digest: 'Mã lỗi: ${digest}',
   },
 
+  /* Bảng F4 của atlas — mã HTTP → người đọc thấy gì — viết thành chữ. `ApiErrorNotice` hiển thị,
+     `shared/lib/resolve-api-error.ts` quyết định lỗi nào rơi vào đâu. Đặt cạnh `error` vì cả hai
+     đều là ngôn ngữ của khung ứng dụng cho "chỗ này hỏng", không thuộc miền nào.
+
+     CHỮ KHÔNG BAO GIỜ ĐỔ LỖI cho người đọc và không lộ cơ chế. "Không tải được" kèm nút thử lại,
+     không phải "GET trả về 500". Chỉ `generic` và `invalid` mới hiện câu của máy chủ, vì đó là chỗ
+     máy chủ viết ra thứ người dùng làm được gì đó với nó. */
+  apiError: {
+    retry: 'Thử lại',
+    network: {
+      title: 'Máy chủ không phản hồi',
+      description: 'Kiểm tra kết nối rồi thử lại.',
+    },
+    auth: {
+      title: 'Đăng nhập để xem mục này',
+      description: 'Phần này cần một tài khoản.',
+    },
+    banned: {
+      title: 'Tài khoản của bạn đang bị khoá',
+    },
+    forbidden: {
+      title: 'Mục này không mở cho bạn',
+      description: 'Tài khoản của bạn không có quyền truy cập.',
+    },
+    notFound: {
+      title: 'Không tìm thấy',
+      description: 'Mục này không tồn tại, hoặc đã bị gỡ.',
+    },
+    conflict: {
+      title: 'Mục này vừa thay đổi',
+      description: 'Có người vừa cập nhật. Tải lại để xem bản mới nhất.',
+    },
+    invalid: {
+      title: 'Một vài chỗ cần sửa lại',
+    },
+    profileRequired: {
+      title: 'Thiết lập hồ sơ chuyên môn trước đã',
+      description: 'Tính năng AI và gợi ý dựa trên hồ sơ này. Chỉ mất một phút.',
+      cta: 'Thiết lập',
+    },
+    rateLimited: {
+      title: 'Thử lại sau ít phút',
+      description: 'Bạn thao tác hơi nhanh. Đợi một lát rồi thử lại.',
+    },
+    unavailable: {
+      title: 'Tạm thời gián đoạn',
+      description: 'Một dịch vụ bên ngoài đang lỗi. Thử lại sau giây lát.',
+    },
+    generic: {
+      title: 'Đã có lỗi xảy ra',
+    },
+  },
+
+  /* MediaUploader dùng chung (`features/media`). Một picker đứng sau lưới ảnh của composer, ảnh bìa
+     hồ sơ, ô minh chứng kỹ năng và banner dự án — nên chữ để ở đây, không nhét vào miền nào. Mỗi
+     câu đều là quy tắc máy chủ cũng kiểm — mục đích là báo lỗi bằng một câu thay vì một round trip. */
+  mediaUploader: {
+    add: 'Thêm ảnh',
+    replace: 'Đổi ảnh',
+    remove: 'Gỡ',
+    failed: 'Tải lên không thành công. Thử lại.',
+    wrongType: 'Định dạng file này không được hỗ trợ.',
+    fileTooLarge: 'File này vượt quá 20MB.',
+    batchTooLarge: 'Các file vượt quá 25MB cho một lần tải lên.',
+    tooMany: 'Tối đa ${count} ảnh.',
+    cropTitle: 'Căn khung ảnh',
+    cropCancel: 'Huỷ',
+    cropConfirm: 'Dùng ảnh này',
+  },
+
+  /* `/settings/*` — trung tâm cấu hình. Sáu panel trước đây rải rác ở `/profile` và `/knowledge`;
+     hub là chỗ để "cấu hình một thứ", nên chữ để ở đây chứ không nhét vào miền nào. */
+  settings: {
+    title: 'Cài đặt',
+    tabs: {
+      notifications: 'Thông báo',
+      github: 'GitHub',
+      tokens: 'Access token',
+      vault: 'Vault',
+      calendar: 'Lịch',
+      picture: 'Ảnh',
+    },
+    notifications: {
+      title: 'Thông báo',
+      desc: 'Sự kiện nào đến với bạn, và bằng cách nào.',
+    },
+    github: {
+      title: 'GitHub',
+      desc: 'Liên kết tài khoản để đóng góp của bạn hiện trên trang cá nhân.',
+    },
+    tokens: {
+      title: 'Access token',
+      desc: 'Dành cho client Obsidian vault. Token chỉ hiện một lần — sao chép ngay lúc đó.',
+    },
+    vault: {
+      title: 'Ghi chú đã đồng bộ',
+      desc: 'Những gì client vault đã đẩy lên, và phần nào trong đó AI được đọc.',
+    },
+    exportTemplate: {
+      title: 'Mẫu xuất',
+      desc: 'Định dạng file mà nút tải bản giải thích tạo ra.',
+    },
+    calendar: {
+      title: 'Google Calendar',
+      desc: 'Kết nối một lần để "Thêm vào lịch" chạy được trên mọi sự kiện.',
+      connected: 'Đã kết nối',
+      notConnected: 'Chưa kết nối',
+      connectHint: 'Bạn sẽ được chuyển sang Google để cấp quyền, rồi quay lại đây.',
+      reconnectHint:
+        'Token có thể ngừng hoạt động mà mục này không đổi. Kết nối lại nếu thêm sự kiện bị lỗi.',
+      connect: 'Kết nối Google Calendar',
+      reconnect: 'Kết nối lại',
+    },
+    picture: {
+      avatarTitle: 'Ảnh đại diện',
+      avatarDesc: 'JPEG, PNG hoặc WEBP, tối đa 5MB.',
+      avatarChange: 'Đổi ảnh đại diện',
+      coverTitle: 'Ảnh bìa',
+      coverDesc: 'Dải nền sau tên bạn trên trang cá nhân.',
+    },
+  },
+
   /* Tiêu đề tab trình duyệt, cho những route mà chữ trên trang không dùng làm tiêu đề được.
      Chỉ `core/i18n/server.ts` đọc, không component nào đọc — xem ghi chú ở đó về lý do đây là
      danh từ chứ không phải tiêu đề trang. */
@@ -176,9 +298,17 @@ export const vi: Messages = {
       banned: {
         title: 'Tài khoản này bị khoá đến ${until}.',
         titleNoTime: 'Tài khoản này đang bị khoá.',
+        remaining: 'Còn ${remaining}',
+        violationType: 'Ghi nhận là',
+        reason: 'Lý do',
+        appealHint:
+          'Khi hết khoá, bạn có thể đăng nhập và khiếu nại từ trang kiểm duyệt. Khiếu nại gửi trong lúc bị khoá vẫn được nhận, nhưng chưa có màn hình cho người chưa đăng nhập.',
+        retry: 'Thử đăng nhập lại',
       },
       unverifiedHint: 'Email của bạn chưa được xác thực.',
       useMagicLink: 'Xác thực và đăng nhập bằng Magic Link',
+      magicSending: 'Đang gửi…',
+      magicSent: 'Nếu địa chỉ đó có tài khoản, một magic link đang được gửi đi.',
     },
     register: {
       title: 'Tạo tài khoản',
@@ -1096,11 +1226,44 @@ export const vi: Messages = {
     },
   },
 
+  /* `/onboarding/professional` — cổng 428 đi từng bước một. Đặt cạnh `knowledge` vì hồ sơ nghề
+     nghiệp thuộc miền đó, nhưng đây là route riêng với giao diện riêng (wizard, không phải form
+     tóm tắt trước). */
+  onboarding: {
+    professional: {
+      stepOf: 'Bước ${step} / ${total}',
+      progressLabel: 'Tiến độ thiết lập',
+      back: 'Quay lại',
+      next: 'Tiếp',
+      skip: 'Để sau',
+      finish: 'Hoàn tất',
+      steps: {
+        '1': {
+          title: 'Bạn đang làm gì',
+          hint: 'Trình giải thích điều chỉnh câu trả lời theo vai trò và cấp bậc của bạn. Đây là phần nó dựa vào nhiều nhất.',
+        },
+        '2': {
+          title: 'Bạn làm việc với gì',
+          hint: 'Công nghệ và lĩnh vực, ngăn cách bằng dấu phẩy. Cũng dùng cho gợi ý bạn bè và dự án.',
+        },
+        '3': {
+          title: 'Bạn thích giải thích kiểu nào',
+          hint: 'Không bắt buộc — đặt giọng mặc định cho AI khi trả lời. Đổi lúc nào cũng được.',
+        },
+        '4': {
+          title: 'Bạn đã làm ở đâu',
+          hint: 'Không bắt buộc. Muốn thêm sau thì bấm Hoàn tất luôn.',
+        },
+      },
+    },
+  },
+
   knowledge: {
     profileMoved:
       'Hồ sơ nghề nghiệp đã chuyển sang trang cá nhân — thiếu nó thì trình giải thích không chạy.',
     profileMovedLink: 'Mở trang cá nhân',
     title: 'Kho lưu trữ',
+    libraryDesc: 'Các bản giải thích AI bạn đã lưu, nhóm theo chủ đề.',
     tabs: {
       library: 'Thư viện',
       vault: 'Ghi chú đã đồng bộ',
@@ -1489,9 +1652,15 @@ export const vi: Messages = {
 
   moderationMine: {
     title: 'Vi phạm & khiếu nại',
+    tabs: {
+      violations: 'Vi phạm của tôi',
+      appeals: 'Khiếu nại',
+    },
     loadError: 'Không tải được lịch sử kiểm duyệt của bạn',
     emptyTitle: 'Chưa có ghi nhận nào',
     emptyDesc: 'Khi một bài của bạn bị gỡ, ghi nhận và quyền khiếu nại sẽ xuất hiện ở đây.',
+    appealsEmptyTitle: 'Chưa có khiếu nại nào',
+    appealsEmptyDesc: 'Khiếu nại bạn gửi từ tab vi phạm sẽ hiện ở đây kèm kết quả.',
     appeal: 'Khiếu nại',
     appealPending: 'Đã gửi khiếu nại, đang chờ xét',
     appealsTitle: 'Khiếu nại của bạn',
@@ -1675,15 +1844,15 @@ export const vi: Messages = {
   },
 
   publicProfile: {
-    /* Ba tab, và cố ý KHÔNG trùng ba tab của `profile.tabs`: ở đây không có tài khoản nào để
-       quản trị, còn thứ người lạ vào xem — người này đã làm ra cái gì — đáng một tab riêng chứ
-       không phải một phần ba tab. */
+    /* Ba tab — Bài viết, Kỹ năng, GitHub — theo Plate 03 của atlas. Bài viết đứng đầu vì người lạ
+       theo link được chia sẻ vào để xem người này viết gì, không phải xem bản tóm tắt. */
     tabs: {
-      overview: 'Tổng quan',
-      work: 'Công trình',
       posts: 'Bài viết',
+      skills: 'Kỹ năng',
+      github: 'GitHub',
     },
     skillsTitle: 'Kỹ năng đã xác minh',
+    reputationTitle: 'Uy tín',
     postsEmpty: 'Không có bài viết nào bạn xem được',
     postsError: 'Không tải được bài viết',
     notFoundTitle: 'Không tìm thấy người này',
@@ -1758,9 +1927,11 @@ export const vi: Messages = {
     },
     github: {
       desc: 'Những gì mã nguồn công khai của bạn cho thấy.',
+      moved: 'Kết nối, đồng bộ và huỷ liên kết GitHub giờ nằm trong Cài đặt.',
     },
     professionalHint: 'Trình giải thích dùng hồ sơ này để nói vừa tầm bạn.',
-    professionalHintLink: 'Sang mục Kiến thức',
+    moderationPointer: 'Bài của bạn từng bị gỡ, và khiếu nại bạn đã gửi, giờ nằm ở trang riêng.',
+    moderationPointerCta: 'Mở trang kiểm duyệt',
     /* `title` vẫn còn hai nơi đọc — tiêu đề tab trình duyệt trong `profile/layout.tsx` và
        `aria-label` của dải tab — nhưng không còn là tiêu đề hiển thị: `<h1>` của hero là tên
        người dùng. `subtitle` đi theo tiêu đề mà nó thuộc về; "quản lý cài đặt tài khoản" giờ chỉ

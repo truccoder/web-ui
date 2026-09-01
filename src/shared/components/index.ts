@@ -13,6 +13,7 @@ export { Avatar, type AvatarProps } from './avatar';
 export { Badge, type BadgeProps } from './badge';
 export { Skeleton, type SkeletonProps } from './skeleton';
 export { EmptyState, type EmptyStateProps } from './empty-state';
+export { ApiErrorNotice, type ApiErrorNoticeProps } from './api-error-notice';
 export { Tabs, type TabsProps, type TabItem } from './tabs';
 export { Pagination, type PaginationProps } from './pagination';
 export { ProgressBar, type ProgressBarProps } from './progress-bar';

@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
 import { EmptyState } from '@/shared/components';
 import { cn } from '@/shared/lib/cn';
 import { getErrorMessage, getErrorStatus } from '@/shared/lib/api-error';
 import { useIntlLocale } from '@/shared/lib/format';
+import { useInfiniteScroll } from '@/shared/lib/use-infinite-scroll';
 import { useT } from '@/core/i18n';
 import { usePurchasedBooks } from '../hooks';
 import { BookCell, BookRowSkeleton } from './book-library';
@@ -38,20 +38,7 @@ export function PurchasedBooksList({ className }: PurchasedBooksListProps) {
   const purchased = usePurchasedBooks();
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = purchased;
 
-  const sentinelRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const element = sentinelRef.current;
-    if (!element) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) fetchNextPage();
-      },
-      { rootMargin: '200px' }
-    );
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  const sentinelRef = useInfiniteScroll({ hasNextPage, isFetchingNextPage, fetchNextPage });
 
   // Same 503 treatment as `BookLibrary`: building the DTO presigns one URL per book, so one broken
   // storage object takes down the whole page, catalogue or purchased alike.

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import {
+  ApiErrorNotice,
   Badge,
   Button,
   Card,
@@ -14,6 +15,7 @@ import {
 } from '@/shared/components';
 import { cn } from '@/shared/lib/cn';
 import { getErrorMessage } from '@/shared/lib/api-error';
+import { usePagination } from '@/shared/lib/use-pagination';
 import { formatDateTime, useIntlLocale } from '@/shared/lib/format';
 import { useT } from '@/core/i18n';
 import type { Appeal, AppealStatus } from '../types/moderation';
@@ -58,7 +60,7 @@ const STATUSES: AppealStatus[] = ['PENDING', 'APPROVED', 'REJECTED'];
 export function AppealsTab({ className }: AppealsTabProps) {
   const t = useT();
   const [status, setStatus] = useState<AppealStatus>('PENDING');
-  const [page, setPage] = useState(1);
+  const { page, setPage, bindFilter } = usePagination();
 
   const query = useAppeals(status, page, PAGE_SIZE);
 
@@ -71,12 +73,9 @@ export function AppealsTab({ className }: AppealsTabProps) {
         wrapperClassName="w-52"
         label={t('moderation.filters.status')}
         value={status}
-        onChange={(event) => {
-          setStatus(event.target.value as AppealStatus);
-          // Page 3 of PENDING is not page 3 of APPROVED — keeping the number would show an empty
-          // page for a filter that has results.
-          setPage(1);
-        }}
+        // `bindFilter` also returns to page 1 — page 3 of PENDING is not page 3 of APPROVED, and
+        // keeping the number would show an empty page for a filter that has results.
+        onChange={(event) => bindFilter(setStatus)(event.target.value as AppealStatus)}
         options={STATUSES.map((value) => ({
           value,
           label: t(`moderationMine.status.${value}`),
@@ -87,9 +86,7 @@ export function AppealsTab({ className }: AppealsTabProps) {
         {query.isLoading ? (
           <Skeleton lines={5} />
         ) : query.isError ? (
-          <p className="text-nx-caption text-nx-status-danger-fg">
-            {getErrorMessage(query.error, t('moderation.appeals.loadError'))}
-          </p>
+          <ApiErrorNotice error={query.error} onRetry={() => query.refetch()} />
         ) : (query.data?.content.length ?? 0) === 0 ? (
           <EmptyState compact title={t('moderation.appeals.empty')} />
         ) : (

@@ -1,20 +1,22 @@
 'use client';
 
-import { Disclosure } from '@/shared/components';
+import { Disclosure, Section, SectionLink } from '@/shared/components';
 import { BlockedUsersList } from '@/features/blocks';
-import { MyViolationsPanel } from '@/features/moderation';
 import { ChangePasswordForm, ProfileInfoForm } from '@/features/security';
 import { useT } from '@/core/i18n';
 
 /**
- * `/profile` → `Tài khoản`: the account as an object you administer, including the two decisions
- * made *about* it.
+ * `/profile` → `Tài khoản`: the account as an object you administer.
  *
- * FOUR `Disclosure`S, CLOSED BY DEFAULT, RATHER THAN FOUR ALWAYS-OPEN `Section`S. Stacked open,
- * two forms and two review panels ran the tab three screens long before a visitor reached the
- * fourth thing — every section paid for its neighbours' height whether or not it was what the
- * visitor came for. A closed accordion shows all four titles at a glance and only pays for the
- * one a person actually clicks.
+ * TWO `Disclosure`S, CLOSED BY DEFAULT, plus one pointer. Name and password are forms most
+ * visitors never open; a closed accordion shows both titles at a glance and only pays for the one
+ * that is clicked.
+ *
+ * MODERATION MOVED TO ITS OWN ROUTE. The violations list and the appeal flow were a `Disclosure`
+ * here; a rejected post and an automatic seven-day ban are serious enough that folding them into
+ * an accordion undersold them, so `/moderation` is a real destination now and this is a link to it.
+ * The blocked list stays — it is small, and it is the other half of a control that lives on
+ * `/u/{username}`.
  */
 export function AccountPanel() {
   const t = useT();
@@ -29,16 +31,14 @@ export function AccountPanel() {
         <ChangePasswordForm />
       </Disclosure>
 
-      {/* MODERATION, FROM THE RECEIVING END. `AppealController` shipped with the 2026-08-09 batch
-          and had no surface: a post could be removed and an account banned for seven days with
-          nothing on screen explaining it and no way to contest it. */}
-      <Disclosure title={t('moderationMine.title')}>
-        <MyViolationsPanel />
-      </Disclosure>
+      <Section
+        title={t('moderationMine.title')}
+        description={t('profile.moderationPointer')}
+        action={<SectionLink href="/moderation">{t('profile.moderationPointerCta')}</SectionLink>}
+      >
+        <></>
+      </Section>
 
-      {/* THE OTHER HALF OF BLOCKING. The control lives on `/u/{username}`; without a list, a block
-          is an invisible, permanent edit to what the product shows you and there is no way to
-          review or undo it. */}
       <Disclosure title={t('blocks.title')}>
         <BlockedUsersList />
       </Disclosure>

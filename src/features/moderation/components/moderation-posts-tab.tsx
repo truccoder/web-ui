@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Check, ChevronDown, X } from 'lucide-react';
 import {
+  ApiErrorNotice,
   Badge,
   Button,
   Card,
@@ -13,6 +14,7 @@ import {
 } from '@/shared/components';
 import { useT } from '@/core/i18n';
 import { getErrorMessage } from '@/shared/lib/api-error';
+import { usePagination } from '@/shared/lib/use-pagination';
 import { useRelativeTime } from '@/shared/lib/format';
 import { cn } from '@/shared/lib/cn';
 import { useModerationPosts, useReviewPost } from '../hooks/use-moderation';
@@ -208,7 +210,9 @@ export function ModerationPostsTab({ initialPostId, className }: ModerationPosts
   const [postId, setPostId] = useState(initialPostId ? String(initialPostId) : '');
   const [userId, setUserId] = useState('');
   const [status, setStatus] = useState<ModerationStatus | ''>('');
-  const [page, setPage] = useState(1);
+  // `bindFilter` wraps each setter so a filter change goes back to page 1 — staying on page 4 of a
+  // result set a new filter shrank to one page shows an empty list that reads as "no matches".
+  const { page, setPage, bindFilter } = usePagination();
 
   const query = useModerationPosts({
     postId: postId ? Number(postId) : undefined,
@@ -218,24 +222,15 @@ export function ModerationPostsTab({ initialPostId, className }: ModerationPosts
     size: PAGE_SIZE,
   });
 
-  // Any filter change resets to page 1: staying on page 4 of a result set that now has one page
-  // shows an empty list that looks like "no matches".
-  const onFilter =
-    <T,>(setter: (value: T) => void) =>
-    (value: T) => {
-      setter(value);
-      setPage(1);
-    };
-
   return (
     <div className={cn('flex flex-col gap-4', className)}>
       <ModerationFilters
         postId={postId}
-        onPostIdChange={onFilter(setPostId)}
+        onPostIdChange={bindFilter(setPostId)}
         userId={userId}
-        onUserIdChange={onFilter(setUserId)}
+        onUserIdChange={bindFilter(setUserId)}
         status={status}
-        onStatusChange={onFilter(setStatus)}
+        onStatusChange={bindFilter(setStatus)}
       />
 
       {query.isLoading ? (
@@ -244,7 +239,7 @@ export function ModerationPostsTab({ initialPostId, className }: ModerationPosts
           <Skeleton lines={4} />
         </div>
       ) : query.isError ? (
-        <EmptyState title={t('moderation.loadFailed')} description={getErrorMessage(query.error)} />
+        <ApiErrorNotice error={query.error} onRetry={() => query.refetch()} />
       ) : (query.data?.content.length ?? 0) === 0 ? (
         <EmptyState
           title={t('moderation.post.empty')}

@@ -1,11 +1,10 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { RefreshCw } from 'lucide-react';
-import { Button, Card, EmptyState, Skeleton } from '@/shared/components';
+import { ApiErrorNotice, Card, EmptyState, Skeleton } from '@/shared/components';
 import { useT } from '@/core/i18n';
 import { cn } from '@/shared/lib/cn';
+import { useInfiniteScroll } from '@/shared/lib/use-infinite-scroll';
 import { newsfeedKeys } from '../hooks/keys';
 import { useNewsfeed, usePublicFeed } from '../hooks/use-feed';
 import { feedScrollKey, useScrollRestoration } from '../hooks/use-scroll-restoration';
@@ -114,29 +113,8 @@ export function Newsfeed({ scope = 'friends', hashtag, className }: NewsfeedProp
    */
   const trackSeen = useSeenReporter(scope !== 'posts');
 
-  const sentinelRef = useRef<HTMLDivElement>(null);
-
-  // `fetchNextPage` is stable across renders (react-query memoises it), so the observer is rebuilt
-  // only when the two flags it reads actually change.
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = feed;
-
-  useEffect(() => {
-    const element = sentinelRef.current;
-    if (!element) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
-          fetchNextPage();
-        }
-      },
-      // Fetch before the reader actually reaches the end, so the append is invisible.
-      { rootMargin: '200px' }
-    );
-
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  const sentinelRef = useInfiniteScroll({ hasNextPage, isFetchingNextPage, fetchNextPage });
 
   // Sweeps the whole feature prefix rather than one branch: a reaction or comment written from a
   // card in one tab changes the same post as seen from the other.
@@ -156,20 +134,7 @@ export function Newsfeed({ scope = 'friends', hashtag, className }: NewsfeedProp
 
   if (feed.isError) {
     return (
-      <EmptyState
-        className={className}
-        title={t('newsfeed.error')}
-        action={
-          <Button
-            variant="secondary"
-            size="sm"
-            icon={<RefreshCw className="size-4" />}
-            onClick={() => feed.refetch()}
-          >
-            {t('newsfeed.retry')}
-          </Button>
-        }
-      />
+      <ApiErrorNotice className={className} error={feed.error} onRetry={() => feed.refetch()} />
     );
   }
 

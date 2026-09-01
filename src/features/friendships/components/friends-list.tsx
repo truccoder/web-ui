@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { UserMinus } from 'lucide-react';
 import { Button, Dialog, EmptyState, Skeleton } from '@/shared/components';
 import { getErrorMessage } from '@/shared/lib/api-error';
+import { useInfiniteScroll } from '@/shared/lib/use-infinite-scroll';
 import { useT } from '@/core/i18n';
 import { useInfiniteFriends, useUnfriend } from '../hooks/use-friendship';
 import { FriendListItem } from './friend-list-item';
@@ -40,30 +41,12 @@ export function FriendsList() {
   const t = useT();
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteFriends();
 
-  const sentinelRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useInfiniteScroll({ hasNextPage, isFetchingNextPage, fetchNextPage });
 
   // Held whole rather than by id: the dialog names the person, and reading the name back out of
   // the list would break the moment the row disappears on success.
   const [pending, setPending] = useState<{ userId: number; fullName: string } | null>(null);
   const unfriend = useUnfriend();
-
-  useEffect(() => {
-    const el = sentinelRef.current;
-    if (!el) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
-          fetchNextPage();
-        }
-      },
-      // Start the next page before the sentinel is actually on screen.
-      { rootMargin: '200px' }
-    );
-
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   if (isLoading) {
     return (

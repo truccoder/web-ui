@@ -50,27 +50,25 @@ import { useT } from '@/core/i18n';
  * who they are, what the app scores them at, what they have had verified, what they have made.
  * Nothing here is actionable beyond the two relationship buttons, and nothing here is private.
  *
- * A HERO AND THREE TABS, the same restructure `/profile` took and for the same reason: five
- * sections stacked down a 672 measure put the thing a visitor came for — what this person has
- * actually written — at the bottom of four screens. The tabs are NOT the three `/profile` has,
- * because the questions are different: there is no account here to administer, and "what has this
- * person made" deserves a tab rather than a third of one.
+ * A HERO AND THREE TABS — `Bài viết · Kỹ năng · GitHub`, the atlas's Plate 03 split. Five
+ * sections stacked down a 672 measure put the thing a visitor came for at the bottom of four
+ * screens; the tabs are NOT the three `/profile` has, because there is no account here to
+ * administer.
  *
  * | tab | what it holds |
  * | --- | --- |
- * | Tổng quan | Elite Score with its progress, and the skills an admin has verified |
- * | Công trình | GitHub stats and published books — the work that exists outside this product |
- * | Bài viết | what they have written inside it |
+ * | Bài viết | what they have written inside this product (the default — a shared link is "look at what they wrote") |
+ * | Kỹ năng | Elite Score with its progress, and the skills an admin has verified |
+ * | GitHub  | GitHub stats and published books — the work that exists outside this product |
  *
- * `Tổng quan` IS THE DEFAULT because it is the summary, and because a stranger following a shared
- * link needs to know who this is before they need to know what they wrote.
+ * `Bài viết` IS THE DEFAULT: the page is the thing that gets SHARED, and a link pasted into a
+ * chat should open on what this person wrote, not on a summary.
  *
- * THE TAB IS IN THE URL (`?tab=posts`) for the reason this whole route exists: the page is the
- * thing that gets SHARED, and "look at what they wrote" should survive being pasted into a chat.
- * `history.replaceState` rather than `router.replace` — swapping a mounted panel must not cost an
- * RSC round trip, and Back belongs to wherever the reader came from.
+ * THE TAB IS IN THE URL (`?tab=skills`). `history.replaceState` rather than `router.replace` —
+ * swapping a mounted panel must not cost an RSC round trip, and Back belongs to wherever the
+ * reader came from.
  */
-const TAB_IDS = ['overview', 'work', 'posts'] as const;
+const TAB_IDS = ['posts', 'skills', 'github'] as const;
 type TabId = (typeof TAB_IDS)[number];
 
 export default function PublicProfilePage() {
@@ -109,7 +107,7 @@ function PublicProfileContent() {
   // The hook rebuilds the path from `usePathname`, so it writes `/u/<handle>` without being told
   // the handle — the hand-rolled version here interpolated `username` into a template and would
   // have silently rewritten the URL to the RAW param if the route ever normalised the handle.
-  const [tab, onTabChange] = useTabParam<TabId>(TAB_IDS, 'overview');
+  const [tab, onTabChange] = useTabParam<TabId>(TAB_IDS, 'posts');
 
   /**
    * THIS PAGE IS THE REASON THE GUEST SURFACE EXISTS. A link to a developer's profile is what
@@ -248,80 +246,59 @@ function PublicProfileContent() {
               onChange={onTabChange}
               className="flex-1"
               tabs={[
-                { id: 'overview', label: t('publicProfile.tabs.overview') },
-                { id: 'work', label: t('publicProfile.tabs.work') },
                 { id: 'posts', label: t('publicProfile.tabs.posts') },
+                { id: 'skills', label: t('publicProfile.tabs.skills') },
+                { id: 'github', label: t('publicProfile.tabs.github') },
               ]}
             />
           </Card>
 
-          {tab === 'overview' && (
+          {/* THE HALF THIS PAGE WAS MISSING, now the default. `GET /users/{userId}/posts` had no
+              caller anywhere in the app, so a profile could say what an account scores and show
+              nothing it had written. NO `<h2>` — the tab is already `Bài viết`. */}
+          {tab === 'posts' && <UserPosts userId={profile.id} />}
+
+          {tab === 'skills' && (
             <div className="flex flex-col gap-[var(--nx-space-section)]">
               {/**
-               * THE REPUTATION CARD TAKES AN `<h2>` LIKE ITS NEIGHBOURS NOW. It could not before:
-               * the card printed its own `Elite Score` heading, so labelling the section printed
-               * the words twice twenty pixels apart, and the workaround — leaving this one section
-               * unlabelled — is why the panel's outline used to run `<h1>` → `<h3>` → `<h2>`. The
-               * card is headless now; `Section` carries the whole account.
-               *
-               * `descOther` rather than `desc` fixes a sentence that was not merely impersonal but
-               * wrong: it said the score came from "**your** contributions" while showing somebody
-               * else's number. It used to be the card's `readOnly` prop, whose only job this was.
+               * `descOther` rather than `desc` fixes a sentence that was wrong, not just impersonal:
+               * it said the score came from "**your** contributions" while showing somebody else's
+               * number. `ReputationCard` is headless, so `Section` carries the `<h2>`.
                */}
-              <Section title={t('reputation.title')} description={t('reputation.descOther')}>
+              <Section
+                title={t('publicProfile.reputationTitle')}
+                description={t('reputation.descOther')}
+              >
                 <ReputationCard userId={profile.id} />
               </Section>
 
               <Section title={t('publicProfile.skillsTitle')}>
-                {/* `MySkillsCard` needs no "my" variant because the backend already decides what
-                    a viewer may see — a stranger gets VERIFIED rows only. `readOnly` changes only
-                    the empty state, which told the reader to claim a skill from a roadmap, an
-                    action they cannot take on another person's behalf. */}
+                {/* `MySkillsCard` needs no "my" variant — the backend decides what a viewer may
+                    see (a stranger gets VERIFIED rows only). `readOnly` changes only the empty
+                    state, which told the reader to claim a skill they cannot claim for someone. */}
                 <MySkillsCard userId={profile.id} readOnly />
               </Section>
             </div>
           )}
 
-          {tab === 'work' && (
+          {tab === 'github' && (
             <div className="flex flex-col gap-[var(--nx-space-section)]">
               {/**
-               * GITHUB, READ-ONLY. `GET /github/stats/{userId}` takes ANY user id and was called
-               * from `/profile` only — so the endpoint that carries the most direct evidence a
-               * developer has (repos, followers, a year of contributions) was visible to exactly
-               * one person: its owner. On a product whose argument is that reputation comes from
-               * work, that is the wrong audience.
-               *
-               * `readOnly` is not decoration. `POST /github/sync` and `DELETE /github/unlink` take
-               * no user id and act on the CALLER, so the card's two buttons under a stranger's
-               * name would unlink the viewer's own account.
+               * GITHUB, READ-ONLY. `POST /github/sync` and `DELETE /github/unlink` take no user id
+               * and act on the CALLER, so the card's two buttons under a stranger's name would
+               * unlink the viewer's own account.
                */}
               <Section title={t('github.title')}>
                 <GithubStatsCard userId={profile.id} readOnly />
               </Section>
 
-              {/**
-               * BOOKS, SAME STORY AS GITHUB. `GET /books/author/{authorId}` takes any author id
-               * and was called only from `/library`'s "written by me" tab, so the shelf a person
-               * built was visible to nobody but them — on a profile that is meant to be the public
-               * record of what someone has produced.
-               *
-               * `readOnly` drops the per-row delete. It is author-only server-side, so it would
-               * 403 rather than destroy anything, but a button that always fails is still a lie.
-               */}
+              {/* BOOKS, the other outside-this-product work. `readOnly` drops the per-row delete,
+                  which is author-only server-side and would 403 under a stranger's name. */}
               <Section title={t('profile.books.titleOther')}>
                 <MyBooksList authorId={profile.id} readOnly />
               </Section>
             </div>
           )}
-
-          {/* THE HALF THIS PAGE WAS MISSING. `GET /users/{userId}/posts` had no caller anywhere in
-              the app, so a profile could say what an account SCORES and what it has had VERIFIED,
-              and show nothing it had actually written — on a product whose argument is that
-              reputation comes from work, that is the wrong half.
-              NO `<h2>` HERE: the tab is already called `Bài viết`, and `publicProfile.postsTitle`
-              would print the same word twice, twenty pixels apart. The key stays in the bundle
-              because `UserPosts` reads its sibling error and empty strings. */}
-          {tab === 'posts' && <UserPosts userId={profile.id} />}
         </div>
       )}
     </div>

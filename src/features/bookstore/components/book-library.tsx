@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { Badge, EmptyState, Select, Skeleton } from '@/shared/components';
 import { cn } from '@/shared/lib/cn';
 import { getErrorMessage, getErrorStatus } from '@/shared/lib/api-error';
+import { useInfiniteScroll } from '@/shared/lib/use-infinite-scroll';
 import { formatPriceParts, useIntlLocale } from '@/shared/lib/format';
 import { useT } from '@/core/i18n';
 import type { Book, LearningCategory } from '../types/book';
@@ -109,20 +110,7 @@ export function BookLibrary({ className }: BookLibraryProps) {
   const library = useLibrary(category);
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = library;
 
-  const sentinelRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const element = sentinelRef.current;
-    if (!element) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) fetchNextPage();
-      },
-      { rootMargin: '200px' }
-    );
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  const sentinelRef = useInfiniteScroll({ hasNextPage, isFetchingNextPage, fetchNextPage });
 
   /**
    * THE 503 GETS ITS OWN SENTENCE, IN THE READER'S LANGUAGE.

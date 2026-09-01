@@ -5,15 +5,15 @@ import { Plus, X } from 'lucide-react';
 import { Badge, Button, Card, Input, Select, Skeleton } from '@/shared/components';
 import { getErrorDetails, getErrorMessage } from '@/shared/lib/api-error';
 import { useT } from '@/core/i18n';
-import { isProfileMissing, useProfessionalProfile, useUpdateProfessionalProfile } from '../hooks';
-import type {
-  ExplanationStyle,
-  PrimaryRole,
-  ProfessionalProfile,
-  SeniorityLevel,
-  UpdateProfessionalProfileInput,
-  WorkExperience,
-} from '../types/knowledge';
+import {
+  isProfileMissing,
+  listToText,
+  textToList,
+  useProfessionalProfile,
+  useProfessionalProfileDraft,
+  useUpdateProfessionalProfile,
+} from '../hooks';
+import type { ExplanationStyle, PrimaryRole, SeniorityLevel } from '../types/knowledge';
 
 /**
  * The professional profile that steers the AI explainer.
@@ -77,50 +77,11 @@ const EXPLANATION_STYLES: ExplanationStyle[] = [
   'ANALOGY_HEAVY',
 ];
 
-/** What the form edits. `workHistory` rides along so the replace cannot drop it. */
-interface Draft {
-  jobTitle: string;
-  seniorityLevel: SeniorityLevel;
-  yearsOfExperience: string;
-  primaryRole: PrimaryRole | '';
-  explanationStyle: ExplanationStyle | '';
-  knownTechStack: string;
-  interestedDomains: string;
-  workHistory: WorkExperience[] | null;
-}
-
-const EMPTY_DRAFT: Draft = {
-  jobTitle: '',
-  // `seniorityLevel` is the one `@NotNull` field, so a blank profile still needs a starting value.
-  seniorityLevel: 'MID',
-  yearsOfExperience: '',
-  primaryRole: '',
-  explanationStyle: '',
-  knownTechStack: '',
-  interestedDomains: '',
-  workHistory: null,
-};
-
-/** Comma-separated text is how the two `string[]` fields are edited — see the note in the form. */
-const listToText = (list: string[] | null) => (list ?? []).join(', ');
-const textToList = (text: string) =>
-  text
-    .split(',')
-    .map((part) => part.trim())
-    .filter(Boolean);
-
-function toDraft(profile: ProfessionalProfile): Draft {
-  return {
-    jobTitle: profile.jobTitle ?? '',
-    seniorityLevel: profile.seniorityLevel ?? 'MID',
-    yearsOfExperience: profile.yearsOfExperience == null ? '' : String(profile.yearsOfExperience),
-    primaryRole: profile.primaryRole ?? '',
-    explanationStyle: profile.explanationStyle ?? '',
-    knownTechStack: listToText(profile.knownTechStack),
-    interestedDomains: listToText(profile.interestedDomains),
-    workHistory: profile.workHistory,
-  };
-}
+/**
+ * The draft shape, its serialization and the edit helpers live in `useProfessionalProfileDraft`
+ * (`../hooks`) so the onboarding wizard shares the one definition of "the endpoint is a full
+ * replace, so send every key". This file owns the view/edit/missing UI around it.
+ */
 
 /**
  * One question the form asks, with the fields that answer it.
@@ -193,37 +154,15 @@ export function ProfessionalProfileForm() {
   const { data: profile, isPending, isError, error } = useProfessionalProfile();
   const update = useUpdateProfessionalProfile();
 
-  // The edited copy is null until the user touches something, so the displayed values are DERIVED
-  // from whatever the query currently holds. That is what keeps this effect-free: no "copy server
-  // state into local state on load", which `react-hooks/set-state-in-effect` rejects and which
-  // would also go stale the moment the mutation writes a fresh profile into the cache.
-  const [edited, setEdited] = React.useState<Draft | null>(null);
+  // The draft, its serialization and the work-history helpers all come from the shared hook — see
+  // its header for why it derives rather than copies. This file keeps only the UI state around it.
+  const { draft, dirty, set, reset, work, setWorkRow, addWorkRow, removeWorkRow, toPayload } =
+    useProfessionalProfileDraft(profile);
   // A SET-UP PROFILE OPENS AS A READ-ONLY SUMMARY; THE SEVEN-FIELD FORM ONLY SHOWS ONCE SOMEONE
   // ASKS TO EDIT IT. A profile that has never been filled in has nothing to summarise, so `missing`
   // always forces the form open regardless of this flag.
   const [editing, setEditing] = React.useState(false);
   const missing = isError && isProfileMissing(error);
-  const draft = edited ?? (profile ? toDraft(profile) : EMPTY_DRAFT);
-  const set = <K extends keyof Draft>(key: K, value: Draft[K]) =>
-    setEdited({ ...draft, [key]: value });
-
-  // `workHistory` is `WorkExperience[] | null` — null while nothing has been added. These keep the
-  // "derive, don't copy" rule: every edit produces a whole new draft.
-  const work = draft.workHistory ?? [];
-  const setWorkRow = (index: number, patch: Partial<WorkExperience>) =>
-    set(
-      'workHistory',
-      work.map((row, i) => (i === index ? { ...row, ...patch } : row))
-    );
-  const addWorkRow = () =>
-    set('workHistory', [
-      ...work,
-      { company: null, role: null, domain: null, durationMonths: null },
-    ]);
-  const removeWorkRow = (index: number) => {
-    const next = work.filter((_, i) => i !== index);
-    set('workHistory', next.length > 0 ? next : null);
-  };
 
   // Wrapped like the settled states below it, so the section does not change shape when the query
   // resolves: bare `Skeleton` lines here meant the card materialised around the content afterwards.
@@ -324,24 +263,12 @@ export function ProfessionalProfileForm() {
 
   const submit = (event: React.FormEvent) => {
     event.preventDefault();
-    const years = draft.yearsOfExperience.trim();
-    // Every key is present — the type demands it, and the endpoint destroys whatever is absent.
-    const payload: UpdateProfessionalProfileInput = {
-      jobTitle: draft.jobTitle.trim() || null,
-      seniorityLevel: draft.seniorityLevel,
-      yearsOfExperience: years === '' ? null : Number(years),
-      primaryRole: draft.primaryRole === '' ? null : draft.primaryRole,
-      explanationStyle: draft.explanationStyle === '' ? null : draft.explanationStyle,
-      knownTechStack: textToList(draft.knownTechStack),
-      interestedDomains: textToList(draft.interestedDomains),
-      workHistory: draft.workHistory,
-    };
-    update.mutate(payload, {
+    update.mutate(toPayload(), {
       // Drop the local copy so the fields re-derive from the profile the server just returned,
       // rather than continuing to show what was typed, and close back to the summary — the form
       // was only open because someone asked to edit, and the edit is now done.
       onSuccess: () => {
-        setEdited(null);
+        reset();
         setEditing(false);
       },
     });
@@ -538,7 +465,7 @@ export function ProfessionalProfileForm() {
             from a sentence. */}
         <div className="flex flex-wrap items-center justify-between gap-[var(--nx-space-element)] border-t border-nx-border-subtle pt-4">
           <p aria-live="polite" className="text-nx-caption text-nx-text-muted">
-            {edited
+            {dirty
               ? t('knowledge.profile.unsaved')
               : update.isSuccess
                 ? t('knowledge.profile.saved')
@@ -549,8 +476,8 @@ export function ProfessionalProfileForm() {
             {missing ? (
               // No summary to fall back to yet — the only way out of an untouched blank form is
               // discarding what was typed into it, and that only means something once it is dirty.
-              edited && (
-                <Button type="button" variant="ghost" onClick={() => setEdited(null)}>
+              dirty && (
+                <Button type="button" variant="ghost" onClick={reset}>
                   {t('knowledge.profile.discard')}
                 </Button>
               )
@@ -559,7 +486,7 @@ export function ProfessionalProfileForm() {
                 type="button"
                 variant="ghost"
                 onClick={() => {
-                  setEdited(null);
+                  reset();
                   setEditing(false);
                 }}
               >

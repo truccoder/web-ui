@@ -16,6 +16,7 @@ import {
   Newspaper,
   Route as RouteIcon,
   Search,
+  Settings,
   TrendingUp,
   User,
   Users,
@@ -39,6 +40,7 @@ import { NotificationBell } from '@/features/notifications';
 import { useNotificationStream } from '@/features/notifications/hooks/use-notification-stream';
 import { clearFeedScroll } from '@/features/newsfeed';
 import { AccountBanBanner } from '@/features/moderation';
+import { ProfileRequiredRedirect } from '@/features/knowledge';
 import { useRoadmaps } from '@/features/roadmap';
 import { BACK_TO_PARAM, safeBackTo, SearchBar } from '@/features/search';
 import { Ledger, GuestLedger } from './ledger';
@@ -241,7 +243,19 @@ const PALETTE_ONLY_ITEMS: NavItem[] = [
   // saying so, which is a lot of chrome for a link the bar's own avatar menu already carries. The
   // page is unchanged and reachable two ways: `MeMenu` above, and this entry in the palette.
   { href: '/profile', labelKey: 'nav.profile', icon: User, keywords: 'trang ca nhan account home' },
+  {
+    href: '/settings',
+    labelKey: 'settings.title',
+    icon: Settings,
+    keywords: 'cai dat settings notifications github tokens vault calendar picture',
+  },
   { href: '/notifications', labelKey: 'nav.notifications', icon: Users, keywords: 'thong bao' },
+  {
+    href: '/moderation',
+    labelKey: 'moderationMine.title',
+    icon: Lock,
+    keywords: 'vi pham khieu nai khang cao moderation appeal violation ban',
+  },
   /**
    * NOW A TAB, NOT A PAGE — the entry survives because the palette is how someone who knows the
    * old name still finds the content.
@@ -635,6 +649,13 @@ export function MainShell({ children }: { children: React.ReactNode }) {
   const roadmapId = searchParams.get('id');
   const isChats = pathname.startsWith('/chats');
   const isFullBleed = isChats || (pathname.startsWith('/roadmap') && Boolean(roadmapId));
+
+  /**
+   * The onboarding wizard keeps the rail and the top bar — it is a standard screen — but drops the
+   * ledger, which summarises reputation and skills the reader has not built yet. The atlas's F2
+   * sheet: "standard, ledger hidden during wizard".
+   */
+  const isOnboarding = pathname.startsWith('/onboarding');
 
   useEffect(() => {
     if (!profile) return;
@@ -1030,7 +1051,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
               guest there is nothing for it to summarise. The slot is not left empty either: it is
               the widest piece of quiet space on the screen, and what belongs in it is the reason
               to have an account at all. */}
-          {!isFullBleed && (isGuest ? <GuestLedger /> : <Ledger />)}
+          {!isFullBleed && !isOnboarding && (isGuest ? <GuestLedger /> : <Ledger />)}
         </div>
 
         {/* ONE PROMPT FOR THE WHOLE SHELL. Every guest write in the app — in components this file
@@ -1042,6 +1063,10 @@ export function MainShell({ children }: { children: React.ReactNode }) {
             of `core/api/axios.ts` silently hard-redirecting to `/login`. Not gated on `isGuest` —
             it only ever fires for someone who had a session to lose. */}
         <SessionExpiredPrompt />
+
+        {/* Shell-level net for a 428 (missing professional profile) from any surface that does not
+            handle its own — routes to the onboarding wizard with a ?next= back. */}
+        {!isGuest && <ProfileRequiredRedirect />}
 
         <CommandPalette
           open={paletteOpen}

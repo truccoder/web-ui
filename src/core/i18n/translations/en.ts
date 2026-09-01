@@ -18,6 +18,130 @@ export const en = {
     digest: 'Error code: ${digest}',
   },
 
+  /* The atlas's F4 sheet — HTTP status → what the reader sees — as copy. `ApiErrorNotice` renders
+     these; `shared/lib/resolve-api-error.ts` decides which one a failure gets. Beside `error`
+     because both are the shell's language for "this did not work", not any domain's.
+
+     THE COPY NEVER BLAMES THE READER and never leaks the mechanism. "This did not load" and a
+     retry, not "GET returned 500". The one place the backend's own sentence is shown is `generic`
+     and `invalid`, where the server wrote something a person can act on. */
+  apiError: {
+    retry: 'Try again',
+    network: {
+      title: 'No response from the server',
+      description: 'Check your connection and try again.',
+    },
+    auth: {
+      title: 'Sign in to see this',
+      description: 'This part needs an account.',
+    },
+    banned: {
+      title: 'Your account is locked',
+    },
+    forbidden: {
+      title: "This isn't available to you",
+      description: 'Your account does not have access to this.',
+    },
+    notFound: {
+      title: 'Not found',
+      description: 'This does not exist, or it has been removed.',
+    },
+    conflict: {
+      title: 'This changed while you were here',
+      description: 'Someone updated it. Reload to see the current version.',
+    },
+    invalid: {
+      title: 'Some of this needs fixing',
+    },
+    profileRequired: {
+      title: 'Set up your professional profile first',
+      description: 'The AI features and matching read it. It takes a minute.',
+      cta: 'Set it up',
+    },
+    rateLimited: {
+      title: 'Try again in a little while',
+      description: 'That was a lot at once. Give it a moment.',
+    },
+    unavailable: {
+      title: 'Temporarily unavailable',
+      description: 'An outside service is down. Try again shortly.',
+    },
+    generic: {
+      title: 'Something went wrong',
+    },
+  },
+
+  /* The shared MediaUploader (`features/media`). One picker behind the composer's image grid, the
+     profile cover, the skill-proof field and the project banner — so its copy is here, not folded
+     into any one of those domains. Every message names a rule the server also enforces; the point
+     is to fail in a sentence rather than a round trip. */
+  mediaUploader: {
+    add: 'Add image',
+    replace: 'Replace',
+    remove: 'Remove',
+    failed: 'The upload did not go through. Try again.',
+    wrongType: 'That file type is not supported.',
+    fileTooLarge: 'That file is over the 20MB limit.',
+    batchTooLarge: 'Those files are over the 25MB limit for one upload.',
+    tooMany: 'Up to ${count} images.',
+    cropTitle: 'Position the image',
+    cropCancel: 'Cancel',
+    cropConfirm: 'Use this',
+  },
+
+  /* `/settings/*` — the machinery-config hub. Six panels that used to be scattered across
+     `/profile` and `/knowledge`; the hub is where "configure a thing" lives, so its copy is here
+     rather than folded into either of those domains. */
+  settings: {
+    title: 'Settings',
+    tabs: {
+      notifications: 'Notifications',
+      github: 'GitHub',
+      tokens: 'Access tokens',
+      vault: 'Vault',
+      calendar: 'Calendar',
+      picture: 'Picture',
+    },
+    notifications: {
+      title: 'Notifications',
+      desc: 'Which events reach you, and how.',
+    },
+    github: {
+      title: 'GitHub',
+      desc: 'Link your account so your contributions show on your profile.',
+    },
+    tokens: {
+      title: 'Access tokens',
+      desc: 'For the Obsidian vault client. A token is shown once — copy it then.',
+    },
+    vault: {
+      title: 'Synced notes',
+      desc: 'What the vault client has pushed, and which of it the AI may read.',
+    },
+    exportTemplate: {
+      title: 'Export template',
+      desc: 'The shape of the file the explanation download button produces.',
+    },
+    calendar: {
+      title: 'Google Calendar',
+      desc: 'Connect once so "Add to calendar" works on any event.',
+      connected: 'Connected',
+      notConnected: 'Not connected',
+      connectHint: 'You will be sent to Google to authorise access, then back here.',
+      reconnectHint:
+        'A token can stop working without this changing. Reconnect if adding an event fails.',
+      connect: 'Connect Google Calendar',
+      reconnect: 'Reconnect',
+    },
+    picture: {
+      avatarTitle: 'Avatar',
+      avatarDesc: 'JPEG, PNG or WEBP, up to 5MB.',
+      avatarChange: 'Change avatar',
+      coverTitle: 'Cover image',
+      coverDesc: 'The band behind your name on your profile.',
+    },
+  },
+
   /* Browser-tab titles, for the routes whose own copy makes a poor one. Read only by
      `core/i18n/server.ts`, never by a component — see the note there on why these are nouns
      rather than the page's heading: `auth.forgotPassword.title` is the question "Forgot
@@ -192,9 +316,17 @@ export const en = {
       banned: {
         title: 'This account is locked until ${until}.',
         titleNoTime: 'This account is locked.',
+        remaining: '${remaining}',
+        violationType: 'Recorded as',
+        reason: 'Reason',
+        appealHint:
+          'Once the lock lifts you can sign in and appeal it from the moderation page. Appeals filed during a lock are accepted, but there is no signed-out screen for them yet.',
+        retry: 'Try signing in again',
       },
       unverifiedHint: 'Your email is not verified yet.',
       useMagicLink: 'Verify and sign in with a magic link',
+      magicSending: 'Sending…',
+      magicSent: 'If that address has an account, a magic link is on its way.',
     },
     register: {
       title: 'Create an account',
@@ -1120,11 +1252,44 @@ export const en = {
     },
   },
 
+  /* `/onboarding/professional` — the 428 gate walked one step at a time. Beside `knowledge`
+     because the professional profile is that domain's, but this is its own route and its own
+     chrome (a wizard, not the summary-first form). */
+  onboarding: {
+    professional: {
+      stepOf: 'Step ${step} of ${total}',
+      progressLabel: 'Setup progress',
+      back: 'Back',
+      next: 'Next',
+      skip: 'Skip for now',
+      finish: 'Finish setup',
+      steps: {
+        '1': {
+          title: 'What you do now',
+          hint: 'The explainer pitches its answers to your role and seniority. This is the part it leans on most.',
+        },
+        '2': {
+          title: 'What you work with',
+          hint: 'Tech and domains, comma-separated. Also feeds friend and project suggestions.',
+        },
+        '3': {
+          title: 'How you like explanations',
+          hint: 'Optional — sets the default tone the AI writes back in. You can change it any time.',
+        },
+        '4': {
+          title: 'Where you have worked',
+          hint: 'Optional past roles. Skip straight to finish if you would rather add these later.',
+        },
+      },
+    },
+  },
+
   knowledge: {
     profileMoved:
       'Your professional profile moved to the profile page — the explainer will not run without it.',
     profileMovedLink: 'Open profile',
     title: 'Archive',
+    libraryDesc: 'AI explanations you have saved, grouped by topic.',
     tabs: {
       library: 'Library',
       vault: 'Synced notes',
@@ -1520,9 +1685,16 @@ export const en = {
 
   moderationMine: {
     title: 'Violations & appeals',
+    tabs: {
+      violations: 'My violations',
+      appeals: 'Appeals',
+    },
     loadError: 'Could not load your moderation history',
     emptyTitle: 'Nothing on record',
     emptyDesc: 'If one of your posts is removed, the record and your right to appeal appear here.',
+    appealsEmptyTitle: 'No appeals yet',
+    appealsEmptyDesc:
+      'An appeal you submit from the violations tab shows up here with its outcome.',
     appeal: 'Appeal',
     appealPending: 'Appeal submitted, awaiting review',
     appealsTitle: 'Your appeals',
@@ -1707,15 +1879,15 @@ export const en = {
   },
 
   publicProfile: {
-    /* Three tabs, deliberately NOT the same three as `profile.tabs`: there is no account here to
-       administer, and what a stranger came to see — what this person has made — is worth a tab of
-       its own rather than a third of one. */
+    /* Three tabs — Posts, Skills, GitHub — the atlas's Plate 03 split. Posts leads because a
+       stranger following a shared link came to see what this person wrote, not a summary. */
     tabs: {
-      overview: 'Overview',
-      work: 'Work',
       posts: 'Posts',
+      skills: 'Skills',
+      github: 'GitHub',
     },
     skillsTitle: 'Verified skills',
+    reputationTitle: 'Reputation',
     postsEmpty: 'No posts you can see',
     postsError: 'Could not load posts',
     notFoundTitle: 'No such person',
@@ -1796,9 +1968,12 @@ export const en = {
     },
     github: {
       desc: 'What your public code shows.',
+      moved: 'Connecting, syncing and unlinking GitHub live in settings now.',
     },
     professionalHint: 'Your explainer uses this profile to pitch answers at your level.',
-    professionalHintLink: 'Go to Knowledge',
+    moderationPointer:
+      'Any post of yours that was removed, and any appeal you have filed, live on their own page now.',
+    moderationPointerCta: 'Open moderation',
     /* `title` is still read twice — the browser-tab title in `profile/layout.tsx` and the tab
        strip's `aria-label` — but NOT as a heading any more: the hero's `<h1>` is the person's
        name. `subtitle` went with the heading it belonged to; "manage your account settings"

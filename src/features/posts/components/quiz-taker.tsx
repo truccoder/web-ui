@@ -24,7 +24,8 @@ import type { PublicQuizDetails } from '../types/post';
  *
  * THE RESULT ONLY EXISTS IN THIS COMPONENT'S MEMORY. There is no endpoint to read a past
  * attempt back, so navigating away or reloading loses it for good. That is why the result
- * replaces the form in place instead of, say, redirecting somewhere.
+ * replaces the form in place instead of, say, redirecting somewhere — and why the atlas's
+ * Plate 10 "result review" stays an inline component here rather than becoming its own route.
  */
 export interface QuizTakerProps {
   postId: number;

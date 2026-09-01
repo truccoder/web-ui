@@ -69,6 +69,7 @@ export {
   type EventAttendeeListProps,
   EventCalendarActions,
   type EventCalendarActionsProps,
+  CalendarConnectCard,
   ReactionBar,
   type ReactionBarProps,
   ACTION_GLYPH_BUTTON,

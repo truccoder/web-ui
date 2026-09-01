@@ -2,9 +2,18 @@
 
 import { useState } from 'react';
 import { Flag } from 'lucide-react';
-import { Badge, Button, Card, EmptyState, Input, Pagination, Skeleton } from '@/shared/components';
+import {
+  ApiErrorNotice,
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  Input,
+  Pagination,
+  Skeleton,
+} from '@/shared/components';
 import { useT } from '@/core/i18n';
-import { getErrorMessage } from '@/shared/lib/api-error';
+import { usePagination } from '@/shared/lib/use-pagination';
 import { useRelativeTime } from '@/shared/lib/format';
 import { cn } from '@/shared/lib/cn';
 import { useReports } from '../hooks/use-moderation';
@@ -56,7 +65,7 @@ export function ModerationReportsTab({ onViewPost, className }: ModerationReport
   // A string, like `ModerationFilters` keeps it: an id is an identifier, not a quantity, and an
   // empty field has to mean "no filter" rather than `NaN`.
   const [postIdInput, setPostIdInput] = useState('');
-  const [page, setPage] = useState(1);
+  const { page, setPage, bindFilter } = usePagination();
 
   const parsed = Number.parseInt(postIdInput, 10);
   const postId = Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
@@ -71,12 +80,9 @@ export function ModerationReportsTab({ onViewPost, className }: ModerationReport
         inputMode="numeric"
         label={t('moderation.filters.postId')}
         value={postIdInput}
-        onChange={(event) => {
-          setPostIdInput(event.target.value);
-          // A narrowed list is a different list; staying on page 4 of the old one would show an
-          // empty page for a filter that has results.
-          setPage(1);
-        }}
+        // `bindFilter` also returns to page 1 — a narrowed list is a different list, and staying
+        // on page 4 of the old one would show an empty page for a filter that has results.
+        onChange={(event) => bindFilter(setPostIdInput)(event.target.value)}
         wrapperClassName="w-32"
       />
       <p className="text-nx-caption text-nx-text-muted">{t('moderation.reports.readOnly')}</p>
@@ -96,7 +102,7 @@ export function ModerationReportsTab({ onViewPost, className }: ModerationReport
     return (
       <div className={cn('flex flex-col gap-4', className)}>
         {filter}
-        <EmptyState title={t('moderation.loadFailed')} description={getErrorMessage(query.error)} />
+        <ApiErrorNotice error={query.error} onRetry={() => query.refetch()} />
       </div>
     );
   }

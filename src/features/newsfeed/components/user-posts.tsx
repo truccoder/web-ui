@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import { Card, EmptyState, Skeleton } from '@/shared/components';
-import { getErrorMessage } from '@/shared/lib/api-error';
+import { ApiErrorNotice, Card, EmptyState, Skeleton } from '@/shared/components';
+import { useInfiniteScroll } from '@/shared/lib/use-infinite-scroll';
 import { useT } from '@/core/i18n';
 import { useUserPosts } from '../hooks/use-feed';
 import { FeedPost } from './feed-post';
@@ -35,21 +34,7 @@ export function UserPosts({ userId, className }: UserPostsProps) {
   const t = useT();
   const query = useUserPosts(userId);
   const { hasNextPage, isFetchingNextPage, fetchNextPage, refetch } = query;
-
-  const sentinelRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const element = sentinelRef.current;
-    if (!element) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) fetchNextPage();
-      },
-      { rootMargin: '200px' }
-    );
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  const sentinelRef = useInfiniteScroll({ hasNextPage, isFetchingNextPage, fetchNextPage });
 
   // `isPending` is also true while the query sits idle waiting for an id, and from the page's
   // point of view both are loading.
@@ -62,11 +47,7 @@ export function UserPosts({ userId, className }: UserPostsProps) {
   }
 
   if (query.isError) {
-    return (
-      <p className="text-nx-caption text-nx-status-danger-fg">
-        {getErrorMessage(query.error, t('publicProfile.postsError'))}
-      </p>
-    );
+    return <ApiErrorNotice className={className} error={query.error} onRetry={() => refetch()} />;
   }
 
   const posts = query.data?.pages.flatMap((page) => page.posts ?? []) ?? [];
