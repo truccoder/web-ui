@@ -76,4 +76,12 @@ export const postKeys = {
    */
   calendarStatus: () => ['posts', 'google-calendar', 'status'] as const,
   googleAuthUrl: () => ['posts', 'google-calendar', 'auth-url'] as const,
+
+  /**
+   * The authored quiz WITH its answer key (`GET /posts/{id}/quiz/answers`, author-only). Under
+   * `post(postId)` so a post-level invalidation sweeps it, suffixed `quiz-answers` because it is
+   * a different DTO from the public `quizDetails` on the feed payload — the edit form seeds from
+   * this so `correctOptionIndex` survives a save.
+   */
+  authorQuiz: (postId: number) => ['posts', postId, 'quiz-answers'] as const,
 };

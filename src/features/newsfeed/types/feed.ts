@@ -129,3 +129,10 @@ export type FeedApiScope = NonNullable<
  * (`@NotEmpty`), which is why the generator kept it non-optional and this is a straight alias.
  */
 export type MarkSeenInput = Schemas['MarkSeenRequestDto'];
+
+/**
+ * Result of `POST /v1/api/admin/newsfeed/rebuild` (ROLE_ADMIN) — how many users' feeds were
+ * recomputed and how many were skipped. Both fields are optional on the wire; the admin panel
+ * defaults a missing value to 0.
+ */
+export type FeedRebuildResult = Schemas['FeedRebuildResultDto'];

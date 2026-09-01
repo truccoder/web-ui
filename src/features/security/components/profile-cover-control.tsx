@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react';
 import { ImagePlus, Loader2, Trash2 } from 'lucide-react';
 import { ACCEPTED_MEDIA_TYPES, MAX_MEDIA_FILE_BYTES, useUploadMedia } from '@/features/media';
+import { ProgressBar } from '@/shared/components';
 import { useT } from '@/core/i18n';
 import { useMyProfile, useUpdateProfile } from '../hooks/use-profile';
 
@@ -150,9 +151,13 @@ export function ProfileCoverControl() {
         />
       </div>
 
-      {/* Under the band rather than on it: an error over a photograph is unreadable at exactly the
-          moment it matters. `absolute` so it cannot change the hero's height and shift the avatar
-          — the strip's whole point is that its geometry does not move. */}
+      {/* Under the band rather than on it, `absolute` so the hero's geometry never moves. Carries
+          the upload progress while a file is going up, then the error line if the save fails. */}
+      {upload.isPending && (
+        <div className="absolute left-[var(--nx-space-pad)] top-full mt-1 w-40">
+          <ProgressBar value={upload.progress} label={t('profile.cover.add')} />
+        </div>
+      )}
       {error && (
         <p className="absolute left-[var(--nx-space-pad)] top-full mt-1 text-nx-caption text-nx-status-danger-fg">
           {error}

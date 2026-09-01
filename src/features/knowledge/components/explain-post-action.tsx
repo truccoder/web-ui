@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { Sparkles } from 'lucide-react';
 import { Button, Skeleton, Switch, Textarea } from '@/shared/components';
 import { getErrorMessage, getErrorStatus } from '@/shared/lib/api-error';
@@ -99,9 +100,17 @@ export function ExplainPostAction({ postId, postContent }: ExplainPostActionProp
 
   if (explain.isError) {
     if (isProfileRequired(explain.error)) {
+      // A 428 cannot be retried — the explainer is built from the professional profile, so the
+      // fix is to fill one in. Point straight at the form rather than leaving the reader to find it.
       return (
         <p className="text-nx-caption text-nx-text-secondary">
-          {t('knowledge.explain.profileRequired')}
+          {t('knowledge.explain.profileRequired')}{' '}
+          <Link
+            href="/profile?tab=professional"
+            className="font-medium text-nx-text-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
+          >
+            {t('knowledge.explain.profileRequiredCta')}
+          </Link>
         </p>
       );
     }

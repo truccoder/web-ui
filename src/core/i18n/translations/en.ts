@@ -189,6 +189,12 @@ export const en = {
       magicLink: 'Sign in with a magic link',
       noAccount: "Don't have an account?",
       signUp: 'Sign up',
+      banned: {
+        title: 'This account is locked until ${until}.',
+        titleNoTime: 'This account is locked.',
+      },
+      unverifiedHint: 'Your email is not verified yet.',
+      useMagicLink: 'Verify and sign in with a magic link',
     },
     register: {
       title: 'Create an account',
@@ -345,6 +351,9 @@ export const en = {
       channels: 'Delivery channels',
       push: 'Push notifications',
       pushDesc: 'Shown by your browser while you are in another app',
+      pushNotConfigured: 'Push delivery is not set up on this deployment yet.',
+      pushDenied:
+        'Your browser is blocking notifications for this site. Allow them in your browser settings to turn this on.',
       email: 'Email notifications',
       emailDesc: 'Sent as soon as something happens',
       types: 'Notification types',
@@ -469,6 +478,24 @@ export const en = {
       logs: 'Decision log',
       banned: 'Banned users',
       appeals: 'Appeals',
+      system: 'System',
+    },
+    rebuild: {
+      title: 'Rebuild the newsfeed',
+      desc: "Recompute every user's personalised feed from scratch. Slow, and rarely needed — use it after a data migration or if feeds look stale.",
+      button: 'Rebuild newsfeed',
+      confirm: 'Yes, rebuild now',
+      cancel: 'Cancel',
+      result: 'Done — ${processed} feeds rebuilt, ${skipped} skipped.',
+      error: 'Could not rebuild the newsfeed.',
+    },
+    banBanner: {
+      title: 'Your account is restricted — ${remaining} left.',
+      titleNoTime: 'Your account is restricted.',
+      remainingDays: '${days}d ${hours}h',
+      remainingHours: '${hours}h ${minutes}m',
+      remainingMinutes: '${minutes}m',
+      link: 'See the reason and appeal',
     },
     report: {
       /* The `⋯` menu row. Deliberately shorter than `title`: it sits between `Edit` and
@@ -625,6 +652,12 @@ export const en = {
       proofUrlHint: 'Optional. A moderator reads this.',
       proofUrlAutoHint:
         'Required, and must be a repository under your own linked GitHub account — anything else is turned down.',
+      proofImage: 'Proof image',
+      proofImageHint:
+        'Optional. A screenshot a moderator can look at — not used for GitHub checks.',
+      proofImageAdd: 'Upload image',
+      proofImageRemove: 'Remove image',
+      proofImageInvalid: 'Use a JPEG, PNG or WEBP under 20MB.',
       submit: 'Submit',
       // Never "verified": the endpoint returns nothing, and an AUTO_CERTIFIED claim can be turned
       // down while still answering 200. See the note in `skill-verification-form.tsx`.
@@ -716,6 +749,11 @@ export const en = {
       gpsUnavailable: 'This browser does not support geolocation.',
     },
     visibilityLabel: 'Who can see this',
+    tag: {
+      chipRemove: 'Remove tag for ${name}',
+      privateWarning:
+        'A private post cannot tag anyone — remove the tags or change the visibility.',
+    },
     submittedPendingReview:
       'Post submitted. It may need to pass moderation before it shows up in the feed.',
     contentPlaceholderNoName: "What's on your mind?",
@@ -858,10 +896,13 @@ export const en = {
       url: 'Link URL',
       urlInvalid: 'Enter a full http:// or https:// address',
       title: 'Link title',
-      titleHint: 'Optional — nothing reads the page for you, so type it yourself.',
+      titleHint: 'Optional. Fetch a preview, or type it yourself.',
       description: 'Link description',
       thumbnailUrl: 'Thumbnail URL',
       thumbnailUrlHint: 'Optional. Paste a link to an image.',
+      fetchPreview: 'Fetch preview',
+      fetching: 'Fetching preview…',
+      previewFailed: "Couldn't read that page — fill the fields in yourself.",
     },
     event: {
       button: 'Event',
@@ -958,10 +999,11 @@ export const en = {
         EVENT: 'Event details cannot be changed after posting. Only the text and who can see it.',
         BOOK: 'Book details and the uploaded file cannot be changed after posting. Only the text and who can see it.',
       },
-      /* The server never sends the answer key back — the feed carries the reader's copy of the
-         quiz — so saving rewrites it from whatever is on screen. See `post-editor.tsx`. */
+      quizKeyLoading: 'Loading the quiz answers…',
+      /* Shown only when the author-only read fails (a 403). Normally the real answers load and
+         the composer opens with them marked. See `post-editor.tsx`. */
       quizKeyLost:
-        'The correct answers are not sent back to this screen, so saving would clear them. Mark the right answer on each question again before saving.',
+        'The correct answers could not be loaded, so saving would clear them. Mark the right answer on each question again before saving.',
     },
     comments: {
       // The feed's toggle, not the thread's: `CommentThread` fetches on mount, so the feed
@@ -1096,6 +1138,16 @@ export const en = {
          with which; these two titles are what the rule between them divides. */
       groupRole: 'Current role',
       groupStyle: 'Your explainer',
+      groupExperience: 'Work history',
+      work: {
+        hint: 'Past roles. Helps the AI pitch explanations, and feeds friend and project suggestions.',
+        company: 'Company',
+        role: 'Role',
+        domain: 'Domain',
+        durationMonths: 'Months',
+        add: 'Add a role',
+        remove: 'Remove role',
+      },
       jobTitle: 'Job title',
       jobTitlePlaceholder: 'Backend engineer',
       seniority: 'Seniority',
@@ -1201,8 +1253,8 @@ export const en = {
       // "in a moment" promise; the "Try again" button stays — this is a blip, not the quota wall.
       unavailable:
         "The AI is overloaded and couldn't generate the explanation right now. Try again in a few minutes.",
-      profileRequired:
-        'You need a professional profile before using AI explanations — fill in the form above and try again.',
+      profileRequired: 'You need a professional profile before using AI explanations.',
+      profileRequiredCta: 'Set up your professional profile',
       byAi: 'Explained by AI',
       byAiNote: 'Model-generated — verify before relying on it',
       collapse: 'Collapse',
@@ -1564,12 +1616,20 @@ export const en = {
         'There is no endpoint to add or edit roles after posting — this list is final.',
       positionTitle: 'Role title',
       positionTitlePlaceholder: 'e.g. Backend Engineer',
+      positionDescription: 'Role description',
+      positionDescriptionPlaceholder: 'What this person will work on (optional)',
+      positionQuantity: 'How many',
+      positionQuantityHint: 'People needed for this role.',
       skills: 'Required skills',
       skillsPlaceholder: 'Comma-separated skills: Kotlin, PostgreSQL',
       addPosition: 'Add a role',
       removePosition: 'Remove role',
       tags: 'Tags',
       tagsPlaceholder: 'Optional, comma-separated: Blockchain, Fintech',
+      banner: 'Banner image',
+      bannerAdd: 'Upload banner',
+      bannerRemove: 'Remove banner',
+      bannerInvalid: 'Use a JPEG, PNG or WEBP under 20MB.',
       submit: 'Post project',
       error: 'Could not post the project. Please try again.',
     },

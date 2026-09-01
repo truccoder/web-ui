@@ -23,10 +23,20 @@ export const mediaApi = {
    * The backend validates every file BEFORE writing any of them, deliberately, so a rejected
    * request leaves no orphaned object behind — which is why this can be called with a batch and
    * treated as all-or-nothing.
+   *
+   * `onProgress` is the browser's upload progress (0–100). It fires for the request BODY only —
+   * once the last byte is sent it sits at 100 while the server validates and writes, so a caller
+   * showing a bar should keep it visible until the promise resolves, not hide it at 100.
    */
-  upload: (files: File[]) => {
+  upload: (files: File[], onProgress?: (percent: number) => void) => {
     const formData = new FormData();
     for (const file of files) formData.append('files', file);
-    return api.post<MediaUploadResponse>('/v1/api/media', formData).then((r) => r.data);
+    return api
+      .post<MediaUploadResponse>('/v1/api/media', formData, {
+        onUploadProgress: onProgress
+          ? (event) => onProgress(Math.round((event.loaded / (event.total || event.loaded)) * 100))
+          : undefined,
+      })
+      .then((r) => r.data);
   },
 };

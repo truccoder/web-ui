@@ -8,6 +8,7 @@ import {
   ModerationPostsTab,
   ModerationReportsTab,
 } from '@/features/moderation';
+import { NewsfeedRebuildPanel } from '@/features/newsfeed';
 import { Card, Tabs } from '@/shared/components';
 import { useTabParam } from '@/shared/lib/use-tab-param';
 import { useT } from '@/core/i18n';
@@ -37,7 +38,7 @@ import { useT } from '@/core/i18n';
  * It replaces rather than pushes, so Back still leaves the admin area in one press instead of
  * walking backwards through every tab that was opened.
  */
-const TAB_IDS = ['posts', 'reports', 'logs', 'banned', 'appeals'] as const;
+const TAB_IDS = ['posts', 'reports', 'logs', 'banned', 'appeals', 'system'] as const;
 
 export default function AdminModerationPage() {
   // `useTabParam` reads the query string, which needs a Suspense boundary in the App Router.
@@ -94,6 +95,9 @@ function AdminModerationContent() {
               // Added once users could appeal at all. Without it the product accepts appeals and
               // gives nobody the ability to decide them — a promise of review no screen can keep.
               { id: 'appeals', label: t('moderation.tabs.appeals') },
+              // Operational, not a queue: the newsfeed rebuild and anything else that is a
+              // one-off maintenance action rather than a stream of items to work through.
+              { id: 'system', label: t('moderation.tabs.system') },
             ]}
           />
         </Card>
@@ -109,6 +113,7 @@ function AdminModerationContent() {
         {tab === 'logs' && <ModerationLogsTab />}
         {tab === 'banned' && <BannedUsersTab onViewPost={viewPost} />}
         {tab === 'appeals' && <AppealsTab />}
+        {tab === 'system' && <NewsfeedRebuildPanel />}
       </div>
     </div>
   );

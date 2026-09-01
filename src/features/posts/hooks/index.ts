@@ -15,7 +15,7 @@ export {
 
 export { useResolveLocation } from './use-location';
 
-export { useSubmitQuiz, type SubmitQuizVariables } from './use-quiz';
+export { useSubmitQuiz, useAuthorQuiz, type SubmitQuizVariables } from './use-quiz';
 
 export {
   useComments,

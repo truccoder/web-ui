@@ -2,11 +2,13 @@
 
 import { useImperativeHandle, useState } from 'react';
 import { ChevronDown, Eye, ListChecks, X } from 'lucide-react';
-import { Avatar, Button, Card, Dialog, Select, Textarea } from '@/shared/components';
+import { Avatar, Button, Card, Dialog, Select } from '@/shared/components';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { cn } from '@/shared/lib/cn';
 import { useMyProfile } from '@/features/security';
+import { MentionTextarea } from '@/features/search';
 import { useT } from '@/core/i18n';
+import { applyTaggedMentions, type TaggedMention } from '../lib/tagged-mentions';
 import { useCreateBookPost, useCreatePost } from '../hooks/use-post';
 import type { LocationResolution } from '../types/location';
 import type {
@@ -194,6 +196,12 @@ export function PostComposer({ onPosted, ref }: PostComposerProps) {
   const t = useT();
   const { data: profile } = useMyProfile();
   const [content, setContent] = useState('');
+  /**
+   * Friends the author picked from the `@` dropdown. Readable `@username` tokens live in
+   * `content`; `applyTaggedMentions` turns the ones still present into `@[i]` + `taggedUserIds`
+   * at submit. The backend forbids tags on a PRIVATE post, so they are dropped for that visibility.
+   */
+  const [taggedMentions, setTaggedMentions] = useState<TaggedMention[]>([]);
   const [visibility, setVisibility] = useState<PostVisibility>('PUBLIC');
   const [location, setLocation] = useState<LocationResolution | undefined>();
   const [postType, setPostType] = useState<PostType>('REGULAR');
@@ -246,6 +254,7 @@ export function PostComposer({ onPosted, ref }: PostComposerProps) {
 
   const reset = () => {
     setContent('');
+    setTaggedMentions([]);
     setLocation(undefined);
     setPostType('REGULAR');
     setCode({ language: 'plaintext', code: '' });
@@ -312,6 +321,23 @@ export function PostComposer({ onPosted, ref }: PostComposerProps) {
    */
   const fullName = profile?.fullName?.trim() ?? '';
 
+  // Tagging is dropped on a PRIVATE post (the backend rejects it). `resolvedTags` is what actually
+  // survives into the request — a picked friend whose `@username` was later deleted from the text
+  // is not counted.
+  const taggingAllowed = visibility !== 'PRIVATE';
+  const resolvedTags = applyTaggedMentions(trimmed, taggedMentions);
+  const applied = taggingAllowed
+    ? resolvedTags
+    : { content: trimmed, taggedUserIds: [] as number[] };
+  const activeTagUsernames = taggedMentions
+    .filter((m) => resolvedTags.taggedUserIds.includes(m.userId))
+    .sort(
+      (a, b) =>
+        resolvedTags.taggedUserIds.indexOf(a.userId) - resolvedTags.taggedUserIds.indexOf(b.userId)
+    );
+  // PRIVATE + a tag still in the text: the backend would 400. Block submit and say why.
+  const privateTagConflict = !taggingAllowed && resolvedTags.taggedUserIds.length > 0;
+
   // What each kind needs before submitting is worth anything. `content` is the article body and
   // the Q&A question, so those two still require it; a snippet, poll or link carries its own
   // substance in its details block and may stand without prose.
@@ -356,7 +382,8 @@ export function PostComposer({ onPosted, ref }: PostComposerProps) {
   })();
 
   // An attached quiz gates every kind, because `validateQuizDetails` runs for every kind.
-  const canSubmit = isReady && (quiz === undefined || isQuizReady(quiz)) && !pending;
+  const canSubmit =
+    isReady && (quiz === undefined || isQuizReady(quiz)) && !privateTagConflict && !pending;
 
   /** Exactly one details key, chosen by `postType` — see the note on `BeanUtils` above. */
   const detailsFor = (type: PostType): Partial<CreatePostRequest> => {
@@ -409,9 +436,12 @@ export function PostComposer({ onPosted, ref }: PostComposerProps) {
    * `canSubmit`.
    */
   const buildRequest = (): CreatePostRequest => ({
-    content: trimmed,
+    // `@username` tokens the author picked become `@[i]` placeholders here, matched to
+    // `taggedUserIds` in the same order — the shape `PostService.validateTags` requires.
+    content: applied.content,
     visibility,
     postType,
+    ...(applied.taggedUserIds.length > 0 && { taggedUserIds: applied.taggedUserIds }),
     // Spread the resolved candidate's own fields: the response mirrors the create request's
     // location shape on purpose. The legacy composer instead sent a flattened `location`
     // object, a key `CreatePostRequestDto` does not have — so every location it collected
@@ -577,14 +607,57 @@ export function PostComposer({ onPosted, ref }: PostComposerProps) {
         }
       >
         <div className="flex min-w-0 flex-1 flex-col gap-3">
-          <Textarea
+          <MentionTextarea
             autoResize
             rows={2}
             value={content}
-            onChange={(event) => setContent(event.target.value)}
+            onChange={setContent}
+            onMentionPicked={(row) => {
+              if (row.id == null || !row.username) return;
+              setTaggedMentions((prev) =>
+                prev.some((m) => m.userId === row.id)
+                  ? prev
+                  : [...prev, { userId: row.id!, username: row.username! }]
+              );
+            }}
+            // A PRIVATE post cannot carry tags — turn the dropdown off rather than let someone
+            // build a tag the backend will reject.
+            mentionsDisabled={!taggingAllowed}
             placeholder={placeholder}
             aria-label={t('createPost.post')}
           />
+
+          {activeTagUsernames.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {activeTagUsernames.map((m) => (
+                <span
+                  key={m.userId}
+                  className="inline-flex items-center gap-1 rounded-nx-full bg-nx-accent-soft px-2 py-0.5 text-nx-caption text-nx-text-accent"
+                >
+                  @{m.username}
+                  <button
+                    type="button"
+                    aria-label={t('createPost.tag.chipRemove', { name: m.username })}
+                    onClick={() => {
+                      setTaggedMentions((prev) => prev.filter((x) => x.userId !== m.userId));
+                      setContent((c) =>
+                        c.replace(new RegExp(`(^|\\s)@${m.username}\\b`, 'g'), '$1')
+                      );
+                    }}
+                    className="hover:text-nx-text-primary"
+                  >
+                    <X className="size-3" aria-hidden />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          {privateTagConflict && (
+            <p role="alert" className="text-nx-micro text-nx-status-danger-fg">
+              {t('createPost.tag.privateWarning')}
+            </p>
+          )}
 
           {/* NO HEADER ON THIS PANEL ANY MORE. It used to carry the type's name and a `Bỏ`
               button; the dialog title names the type, and the launcher's menu is the way back to
@@ -697,6 +770,7 @@ export function PostComposer({ onPosted, ref }: PostComposerProps) {
           }}
           onConfirm={submit}
           pending={pending}
+          uploadProgress={postType === 'BOOK' ? createBook.progress : undefined}
           error={error}
           author={{
             // `GET /profile/me` answers a `UserResponse`, which carries no Elite Score — so the
@@ -709,6 +783,7 @@ export function PostComposer({ onPosted, ref }: PostComposerProps) {
             profilePictureUrl: profile?.profilePictureUrl,
           }}
           request={buildRequest()}
+          taggedNames={activeTagUsernames.map((m) => m.username)}
           location={location}
           bookFile={bookFile}
           coverFile={coverFile}

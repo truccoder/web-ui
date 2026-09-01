@@ -101,6 +101,7 @@ export {
   useUnacceptAnswer,
   useResolveLocation,
   useSubmitQuiz,
+  useAuthorQuiz,
   useComments,
   useCreateComment,
   useUpdateComment,

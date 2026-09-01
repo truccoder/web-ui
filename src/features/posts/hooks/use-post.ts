@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useMutation, useQueryClient, type UseMutationOptions } from '@tanstack/react-query';
 import { postsApi } from '../api/post';
 import type { CreateBookRequest, CreatePostRequest, UpdatePostRequest } from '../types/post';
@@ -51,13 +52,21 @@ export interface CreateBookPostVariables {
   coverFile?: File;
 }
 
-/** POST /v1/api/posts/books — post + attached book in one multipart call. */
+/**
+ * POST /v1/api/posts/books — post + attached book in one multipart call.
+ *
+ * Exposes `progress` (0–100) for the book file upload — resets on each attempt, holds after.
+ */
 export function useCreateBookPost(options?: PostMutationOptions<CreateBookPostVariables>) {
-  return useMutation({
-    mutationFn: ({ metadata, bookFile, coverFile }: CreateBookPostVariables) =>
-      postsApi.createBookPost(metadata, bookFile, coverFile),
+  const [progress, setProgress] = useState(0);
+  const mutation = useMutation({
+    mutationFn: ({ metadata, bookFile, coverFile }: CreateBookPostVariables) => {
+      setProgress(0);
+      return postsApi.createBookPost(metadata, bookFile, coverFile, setProgress);
+    },
     ...options,
   });
+  return { ...mutation, progress };
 }
 
 export interface UpdatePostVariables {

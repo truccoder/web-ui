@@ -118,6 +118,39 @@ function notifySessionExpired() {
 }
 
 /**
+ * Subscribe to "a request just came back 403 with a ban attached" — the account was banned,
+ * possibly mid-session (a reject in the moderation queue does this). Same listener shape as the
+ * two above: the UI mounts one listener that shows a banner, core stays ignorant of it.
+ *
+ * `banDetails` is `{ bannedUntil?, reason?, violationType? }` from `ErrorResponseDto`. The last
+ * one seen is kept so a listener mounting after the event still sees it.
+ */
+export interface AccountBanInfo {
+  bannedUntil?: string;
+  reason?: string;
+  violationType?: string;
+}
+type AccountBannedListener = (ban: AccountBanInfo) => void;
+const accountBannedListeners = new Set<AccountBannedListener>();
+let lastSeenBan: AccountBanInfo | null = null;
+
+export function onAccountBanned(listener: AccountBannedListener) {
+  accountBannedListeners.add(listener);
+  if (lastSeenBan) listener(lastSeenBan);
+  return () => accountBannedListeners.delete(listener);
+}
+
+/** The most recent ban a 403 carried, or null. */
+export function getActiveBan() {
+  return lastSeenBan;
+}
+
+function notifyAccountBanned(ban: AccountBanInfo) {
+  lastSeenBan = ban;
+  accountBannedListeners.forEach((listener) => listener(ban));
+}
+
+/**
  * Path only: callers pass relative URLs, but an absolute one must not smuggle a query past this.
  *
  * EXPORTED FOR `axios.test.ts`, and that is the only reason it is not module-private. The pair
@@ -196,6 +229,13 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+
+    // A ban can land mid-session — a moderator rejecting a second post auto-bans the author, and
+    // every write they try next answers 403 with `banDetails`. Surface it once, wherever it fires.
+    const banDetails = error.response?.data?.banDetails;
+    if (error.response?.status === 403 && banDetails && typeof banDetails === 'object') {
+      notifyAccountBanned(banDetails as AccountBanInfo);
+    }
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;

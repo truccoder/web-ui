@@ -2,6 +2,7 @@ import api from '@/core/api/axios';
 import type {
   FeedPage,
   FeedPost,
+  FeedRebuildResult,
   MarkSeenInput,
   PublicFeedPage,
   FeedApiScope,
@@ -136,4 +137,15 @@ export const newsfeedApi = {
    * read" and must not claim either.
    */
   getPost: (postId: number) => api.get<FeedPost>(`/v1/api/posts/${postId}`).then((r) => r.data),
+
+  /**
+   * POST /v1/api/admin/newsfeed/rebuild — recompute every user's fan-out feed from scratch
+   * (ROLE_ADMIN, enforced server-side by `SecurityConfig`'s `/v1/api/admin/**` rule).
+   *
+   * SLOW AND ADMIN-ONLY, and it lives here for the same reason `getUserPosts` does — it is a feed
+   * operation, and putting it in an `admin` feature would fragment the one module that owns the
+   * feed. Returns `{ processed, skipped }`.
+   */
+  rebuildFeed: () =>
+    api.post<FeedRebuildResult>('/v1/api/admin/newsfeed/rebuild').then((r) => r.data),
 };

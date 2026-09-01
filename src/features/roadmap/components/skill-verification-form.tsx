@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { Button, Input, Select } from '@/shared/components';
+import { useRef, useState } from 'react';
+import { ImagePlus, Loader2, X } from 'lucide-react';
+import { Button, Input, ProgressBar, Select } from '@/shared/components';
+import { ACCEPTED_MEDIA_TYPES, MAX_MEDIA_FILE_BYTES, useUploadMedia } from '@/features/media';
 import { useT } from '@/core/i18n';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { cn } from '@/shared/lib/cn';
@@ -19,11 +21,12 @@ import type { RoadmapNode, VerificationTier } from '../types/roadmap';
  * form can truthfully report. Compounding it, nothing reads progress back (B21), so the form
  * cannot follow up with the real outcome either.
  *
- * NO PROOF-IMAGE FIELD. `SkillVerificationRequestDto.proofImageKey` exists and there is no way to
- * fill it: the whole API has exactly three multipart endpoints (register, book posts, profile
- * picture) and none of them uploads a skill proof, so a key could only be typed from memory. An
- * input for a value the user cannot obtain is the same defect as the `bountyPoints` box
- * (ds-deviation #12). Cut, recorded as ds-deviation #25, restore when an upload endpoint exists.
+ * PROOF IMAGE, RESTORED. This form used to omit `SkillVerificationRequestDto.proofImageKey`
+ * because nothing could fill it — `POST /v1/api/media` (B16) changed that. The picker uploads one
+ * image to the media store and sends the returned URL as `proofImageKey`; the moderator queue
+ * (`PendingVerificationDto`) surfaces that value as-is. It is independent of `proofUrl`, which
+ * stays a link field — for `AUTO_CERTIFIED` the backend checks `proofUrl` against the user's
+ * linked GitHub repo, so an image cannot stand in for it.
  */
 export interface SkillVerificationFormProps {
   node: RoadmapNode;
@@ -53,13 +56,44 @@ export function SkillVerificationForm({
 
   const [tier, setTier] = useState<VerificationTier>('SELF_VERIFIED');
   const [proofUrl, setProofUrl] = useState('');
+  const [proofImageUrl, setProofImageUrl] = useState<string | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const upload = useUploadMedia();
 
   const submit = useSubmitVerification({
     onSuccess: () => {
       setProofUrl('');
+      setProofImageUrl(null);
       onSubmitted?.();
     },
   });
+
+  // Still images only, same restriction the cover picker uses — a screenshot of a certificate,
+  // not an animation.
+  const acceptedTypes = ACCEPTED_MEDIA_TYPES.filter((type) => type !== 'image/gif');
+
+  const pickImage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (!file) return;
+    if (!acceptedTypes.includes(file.type) || file.size > MAX_MEDIA_FILE_BYTES) {
+      setImageError(t('roadmap.verify.proofImageInvalid'));
+      return;
+    }
+    setImageError(null);
+    upload.mutate([file], {
+      onSuccess: (result) => {
+        const url = result.urls[0];
+        if (!url) {
+          setImageError(t('roadmap.verify.proofImageInvalid'));
+          return;
+        }
+        setProofImageUrl(url);
+      },
+      onError: () => setImageError(t('roadmap.verify.proofImageInvalid')),
+    });
+  };
 
   // `AUTO_CERTIFIED` is the one tier whose proof is load-bearing: `verifyViaExternalApi` returns
   // false outright when `proofUrl` is blank, which would be a silent rejection the user never
@@ -79,6 +113,7 @@ export function SkillVerificationForm({
           // Trimmed to undefined rather than sent as "": the backend treats blank as missing for
           // AUTO_CERTIFIED anyway, and storing an empty string as a proof is a lie in the row.
           proofUrl: proofUrl.trim() || undefined,
+          proofImageKey: proofImageUrl ?? undefined,
         });
       }}
     >
@@ -105,6 +140,55 @@ export function SkillVerificationForm({
         // a human will read.
         hint={isAuto ? t('roadmap.verify.proofUrlAutoHint') : t('roadmap.verify.proofUrlHint')}
       />
+
+      {/* Optional evidence a moderator will look at — a screenshot of a certificate, a dashboard,
+          a commit. Not read by the AUTO_CERTIFIED check, which only trusts `proofUrl`. */}
+      <div className="flex flex-col gap-2">
+        <span className="text-nx-body-sm font-medium text-nx-text-primary">
+          {t('roadmap.verify.proofImage')}
+        </span>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept={acceptedTypes.join(',')}
+          onChange={pickImage}
+          className="hidden"
+        />
+        {proofImageUrl ? (
+          <div className="flex items-start gap-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={proofImageUrl}
+              alt=""
+              className="size-20 rounded-nx-xs border border-nx-border-subtle object-cover"
+            />
+            <Button
+              size="sm"
+              variant="ghost"
+              type="button"
+              icon={<X />}
+              onClick={() => setProofImageUrl(null)}
+              aria-label={t('roadmap.verify.proofImageRemove')}
+            />
+          </div>
+        ) : (
+          <Button
+            size="sm"
+            variant="secondary"
+            type="button"
+            icon={upload.isPending ? <Loader2 className="animate-spin" /> : <ImagePlus />}
+            onClick={() => fileInputRef.current?.click()}
+            disabled={upload.isPending}
+          >
+            {t('roadmap.verify.proofImageAdd')}
+          </Button>
+        )}
+        {upload.isPending && (
+          <ProgressBar value={upload.progress} label={t('roadmap.verify.proofImageAdd')} />
+        )}
+        <p className="text-nx-caption text-nx-text-muted">{t('roadmap.verify.proofImageHint')}</p>
+        {imageError && <p className="text-nx-micro text-nx-status-danger-fg">{imageError}</p>}
+      </div>
 
       {submit.isError && (
         <p role="status" className="text-nx-caption text-nx-status-danger-fg">

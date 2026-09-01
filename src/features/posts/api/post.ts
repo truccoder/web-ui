@@ -25,7 +25,12 @@ export const postsApi = {
    * `text/plain` and fails to deserialize. The server sets `postType = BOOK` itself, so the
    * caller's value for it is irrelevant here.
    */
-  createBookPost: (metadata: CreatePostRequest, bookFile: File, coverFile?: File) => {
+  createBookPost: (
+    metadata: CreatePostRequest,
+    bookFile: File,
+    coverFile?: File,
+    onProgress?: (percent: number) => void
+  ) => {
     const form = new FormData();
     form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
     form.append('file', bookFile);
@@ -34,6 +39,12 @@ export const postsApi = {
     return api
       .post<void>('/v1/api/posts/books', form, {
         headers: { 'Content-Type': 'multipart/form-data' },
+        // A book file is the largest upload in the product — the progress bar earns its place
+        // here more than anywhere. Fires for the request body; holds at 100 during server-side
+        // processing, so keep the bar up until the promise settles.
+        onUploadProgress: onProgress
+          ? (event) => onProgress(Math.round((event.loaded / (event.total || event.loaded)) * 100))
+          : undefined,
       })
       .then((r) => r.data);
   },

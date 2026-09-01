@@ -38,6 +38,7 @@ import { NotificationBell } from '@/features/notifications';
 // split into a chunk this route never loaded, so the hook silently never ran.
 import { useNotificationStream } from '@/features/notifications/hooks/use-notification-stream';
 import { clearFeedScroll } from '@/features/newsfeed';
+import { AccountBanBanner } from '@/features/moderation';
 import { useRoadmaps } from '@/features/roadmap';
 import { BACK_TO_PARAM, safeBackTo, SearchBar } from '@/features/search';
 import { Ledger, GuestLedger } from './ledger';
@@ -719,6 +720,10 @@ export function MainShell({ children }: { children: React.ReactNode }) {
           isFullBleed ? 'flex h-[100dvh] flex-col overflow-hidden' : 'min-h-screen'
         )}
       >
+        {/* Shows only after a request comes back 403 with a ban — including one that lands
+            mid-session. Signed-in only; a guest never had an account to ban. */}
+        {!isGuest && <AccountBanBanner />}
+
         {/* 56px, raised on the ground with a hairline shadow and NO bottom border — the elevation
             is what separates it, so a border would be saying the same thing twice. Full-bleed
             rather than capped with the shell: the search field centres on the viewport. */}

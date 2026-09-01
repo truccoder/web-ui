@@ -15,6 +15,7 @@ export { Skeleton, type SkeletonProps } from './skeleton';
 export { EmptyState, type EmptyStateProps } from './empty-state';
 export { Tabs, type TabsProps, type TabItem } from './tabs';
 export { Pagination, type PaginationProps } from './pagination';
+export { ProgressBar, type ProgressBarProps } from './progress-bar';
 export { ProfileHero, type ProfileHeroProps } from './profile-hero';
 export { Section, SectionLink, type SectionProps } from './section';
 export { Disclosure, type DisclosureProps } from './disclosure';

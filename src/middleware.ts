@@ -128,7 +128,11 @@ export const config = {
   //
   // An icon is chrome, not content: there is nothing behind any of these to protect, and a login
   // page delivered where a PNG was asked for is a redirect no image decoder will follow.
+  // `onesignal/` IS EXCLUDED FOR THE SAME REASON AS `sw.js`: `public/onesignal/OneSignalSDKWorker.js`
+  // is a service worker script, and a browser refuses a worker that arrives via a redirect. Without
+  // this, a cold visitor with no session gets a 307 to `/login` where the worker was requested, and
+  // web push silently never registers.
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|icon.svg|apple-icon.png|icons/|manifest.webmanifest|sw.js|api|v1).*)',
+    '/((?!_next/static|_next/image|favicon.ico|icon.svg|apple-icon.png|icons/|onesignal/|manifest.webmanifest|sw.js|api|v1).*)',
   ],
 };

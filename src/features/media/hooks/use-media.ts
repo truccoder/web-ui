@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { mediaApi } from '../api';
 
@@ -14,9 +15,18 @@ import { mediaApi } from '../api';
  * SO THE CALLER OWNS THE SECOND STEP. An upload on its own changes nothing a reader can see;
  * `ProfileCoverControl` uploads and then calls `useUpdateProfile`, because until that second call
  * lands the image is an object in a bucket that no row points at.
+ *
+ * `progress` (0–100) tracks the request body upload — useful for a large book file or a photo on
+ * a slow link. It resets to 0 at the start of each mutation and holds at its last value after
+ * `isPending` clears, so read it alongside `isPending`.
  */
 export function useUploadMedia() {
-  return useMutation({
-    mutationFn: (files: File[]) => mediaApi.upload(files),
+  const [progress, setProgress] = useState(0);
+  const mutation = useMutation({
+    mutationFn: (files: File[]) => {
+      setProgress(0);
+      return mediaApi.upload(files, setProgress);
+    },
   });
+  return { ...mutation, progress };
 }

@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { BrandMark, Button, Input } from '@/shared/components';
 import { AuthCard } from './auth-card';
 import { PasswordInput } from './password-input';
-import { getErrorMessage } from '@/shared/lib/api-error';
+import { getBanDetails, getErrorMessage, getErrorStatus } from '@/shared/lib/api-error';
 // i18n is app-wide infrastructure still living in lib/. It is the one edge out of this
 // feature; when it moves to core/ (recommended infra checkpoint) this import updates and
 // security passes the extraction test cleanly.
@@ -20,6 +20,61 @@ import { OAuthButtons } from './oauth-buttons';
 export interface LoginFormProps {
   /** Called after a successful sign-in. The page decides where to route. */
   onSuccess?: () => void;
+}
+
+/**
+ * The three ways login fails, told apart by STATUS, never by message text (`getErrorStatus`):
+ *
+ *  - **403 with `banDetails`** — the account is banned. Show when the ban lifts; no retry, a retry
+ *    cannot succeed until then.
+ *  - **400** — from `/auth/login` this is the "email not verified" branch (bad credentials are a
+ *    401). The account cannot be rescued with a password, only with a magic link, which sets
+ *    `emailVerified` as a side effect — so this branch points there rather than just repeating the
+ *    server's sentence.
+ *  - anything else — the generic line.
+ */
+function LoginError({ error }: { error: unknown }) {
+  const t = useT();
+  const status = getErrorStatus(error);
+  const ban = status === 403 ? getBanDetails(error) : undefined;
+
+  if (ban) {
+    const until = ban.bannedUntil ? new Date(ban.bannedUntil).toLocaleString() : undefined;
+    return (
+      <div
+        role="alert"
+        className="flex flex-col gap-1 rounded-nx-sm bg-nx-status-danger-bg px-3 py-2 text-nx-body-sm text-nx-status-danger-fg"
+      >
+        <span className="font-medium">
+          {until ? t('auth.login.banned.title', { until }) : t('auth.login.banned.titleNoTime')}
+        </span>
+        {ban.reason && <span className="opacity-90">{ban.reason}</span>}
+      </div>
+    );
+  }
+
+  if (status === 400) {
+    return (
+      <div
+        role="alert"
+        className="flex flex-col gap-2 rounded-nx-sm bg-nx-status-warning-bg px-3 py-2 text-nx-body-sm text-nx-status-warning-fg"
+      >
+        <span>{getErrorMessage(error, t('auth.login.unverifiedHint'))}</span>
+        <Link href="/magic-link" className="w-fit font-medium underline hover:no-underline">
+          {t('auth.login.useMagicLink')}
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <p
+      role="alert"
+      className="rounded-nx-sm bg-nx-status-danger-bg px-3 py-2 text-nx-body-sm text-nx-status-danger-fg"
+    >
+      {getErrorMessage(error, 'Invalid email or password')}
+    </p>
+  );
 }
 
 export function LoginForm({ onSuccess }: LoginFormProps) {
@@ -159,14 +214,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
           />
         </div>
 
-        {login.isError && (
-          <p
-            role="alert"
-            className="rounded-nx-sm bg-nx-status-danger-bg px-3 py-2 text-nx-body-sm text-nx-status-danger-fg"
-          >
-            {getErrorMessage(login.error, 'Invalid email or password')}
-          </p>
-        )}
+        {login.isError && <LoginError error={login.error} />}
 
         <Button type="submit" loading={login.isPending} className="w-full">
           {login.isPending ? t('auth.login.submitting') : t('auth.login.submit')}

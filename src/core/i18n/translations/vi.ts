@@ -173,6 +173,12 @@ export const vi: Messages = {
       magicLink: 'Đăng nhập không mật khẩu với email',
       noAccount: 'Chưa có tài khoản?',
       signUp: 'Đăng ký',
+      banned: {
+        title: 'Tài khoản này bị khoá đến ${until}.',
+        titleNoTime: 'Tài khoản này đang bị khoá.',
+      },
+      unverifiedHint: 'Email của bạn chưa được xác thực.',
+      useMagicLink: 'Xác thực và đăng nhập bằng Magic Link',
     },
     register: {
       title: 'Tạo tài khoản',
@@ -333,6 +339,9 @@ export const vi: Messages = {
       channels: 'Kênh nhận thông báo',
       push: 'Thông báo đẩy',
       pushDesc: 'Hiện trên trình duyệt khi bạn đang mở ứng dụng khác',
+      pushNotConfigured: 'Bản triển khai này chưa thiết lập gửi thông báo đẩy.',
+      pushDenied:
+        'Trình duyệt đang chặn thông báo cho trang này. Hãy cho phép trong cài đặt trình duyệt để bật.',
       email: 'Thông báo qua email',
       emailDesc: 'Gửi ngay khi có hoạt động mới',
       types: 'Loại thông báo',
@@ -455,6 +464,24 @@ export const vi: Messages = {
       logs: 'Nhật ký quyết định',
       banned: 'Người bị cấm',
       appeals: 'Khiếu nại',
+      system: 'Hệ thống',
+    },
+    rebuild: {
+      title: 'Dựng lại bảng tin',
+      desc: 'Tính lại bảng tin cá nhân hoá của mọi người dùng từ đầu. Chậm và hiếm khi cần — dùng sau khi di chuyển dữ liệu hoặc khi bảng tin có vẻ cũ.',
+      button: 'Dựng lại bảng tin',
+      confirm: 'Dựng lại ngay',
+      cancel: 'Huỷ',
+      result: 'Xong — đã dựng lại ${processed} bảng tin, bỏ qua ${skipped}.',
+      error: 'Không dựng lại được bảng tin.',
+    },
+    banBanner: {
+      title: 'Tài khoản của bạn đang bị hạn chế — còn ${remaining}.',
+      titleNoTime: 'Tài khoản của bạn đang bị hạn chế.',
+      remainingDays: '${days} ngày ${hours} giờ',
+      remainingHours: '${hours} giờ ${minutes} phút',
+      remainingMinutes: '${minutes} phút',
+      link: 'Xem lý do và kháng cáo',
     },
     report: {
       /* THE MENU ITEM, NOT THE DIALOG TITLE. `title` is the heading the dialog wears —
@@ -608,6 +635,12 @@ export const vi: Messages = {
       proofUrlHint: 'Không bắt buộc. Kiểm duyệt viên sẽ đọc link này.',
       proofUrlAutoHint:
         'Bắt buộc, và phải là repository thuộc chính tài khoản GitHub bạn đã liên kết — khác đi sẽ bị từ chối.',
+      proofImage: 'Ảnh minh chứng',
+      proofImageHint:
+        'Không bắt buộc. Ảnh chụp để kiểm duyệt viên xem — không dùng cho kiểm tra GitHub.',
+      proofImageAdd: 'Tải ảnh lên',
+      proofImageRemove: 'Xoá ảnh',
+      proofImageInvalid: 'Dùng ảnh JPEG, PNG hoặc WEBP dưới 20MB.',
       submit: 'Gửi',
       // Tuyệt đối không dùng chữ "đã xác minh": endpoint không trả gì, và một yêu cầu
       // AUTO_CERTIFIED bị từ chối vẫn trả 200. Xem ghi chú trong `skill-verification-form.tsx`.
@@ -699,6 +732,10 @@ export const vi: Messages = {
       gpsUnavailable: 'Trình duyệt này không hỗ trợ định vị.',
     },
     visibilityLabel: 'Ai xem được bài này',
+    tag: {
+      chipRemove: 'Bỏ gắn thẻ ${name}',
+      privateWarning: 'Bài riêng tư không gắn thẻ được ai — bỏ thẻ hoặc đổi chế độ hiển thị.',
+    },
     submittedPendingReview:
       'Đã gửi bài. Bài viết có thể phải qua kiểm duyệt trước khi xuất hiện trên bảng tin.',
     contentPlaceholderNoName: 'Bạn đang nghĩ gì vậy?',
@@ -841,10 +878,13 @@ export const vi: Messages = {
       url: 'URL liên kết',
       urlInvalid: 'Nhập địa chỉ đầy đủ bắt đầu bằng http:// hoặc https://',
       title: 'Tiêu đề liên kết',
-      titleHint: 'Không bắt buộc — hệ thống không tự đọc trang, bạn tự nhập.',
+      titleHint: 'Không bắt buộc. Lấy xem trước hoặc tự nhập.',
       description: 'Mô tả liên kết',
       thumbnailUrl: 'URL ảnh thu nhỏ',
       thumbnailUrlHint: 'Không bắt buộc. Dán liên kết ảnh.',
+      fetchPreview: 'Lấy xem trước',
+      fetching: 'Đang lấy xem trước…',
+      previewFailed: 'Không đọc được trang đó — bạn tự điền các ô bên dưới.',
     },
     event: {
       button: 'Sự kiện',
@@ -939,10 +979,11 @@ export const vi: Messages = {
           'Chi tiết sự kiện không sửa được sau khi đăng. Chỉ sửa được nội dung và phạm vi xem.',
         BOOK: 'Thông tin sách và tệp đã tải lên không sửa được sau khi đăng. Chỉ sửa được nội dung và phạm vi xem.',
       },
-      /* Server không trả đáp án về — bảng tin chỉ mang bản dành cho người đọc — nên lưu là ghi
-         đè đáp án bằng những gì đang có trên màn hình. Xem `post-editor.tsx`. */
+      quizKeyLoading: 'Đang tải đáp án quiz…',
+      /* Chỉ hiện khi đọc đáp án (chỉ tác giả) thất bại (403). Bình thường đáp án thật sẽ tải về
+         và trình soạn mở sẵn với đáp án đã đánh dấu. Xem `post-editor.tsx`. */
       quizKeyLost:
-        'Đáp án đúng không được gửi về màn hình này, nên lưu sẽ xoá mất chúng. Hãy đánh dấu lại đáp án đúng cho từng câu trước khi lưu.',
+        'Không tải được đáp án đúng, nên lưu sẽ xoá mất chúng. Hãy đánh dấu lại đáp án đúng cho từng câu trước khi lưu.',
     },
     comments: {
       show: 'Bình luận',
@@ -1072,6 +1113,16 @@ export const vi: Messages = {
          đi với ô nào; hai tiêu đề này là chỗ dựa cho đường kẻ ngăn giữa chúng. */
       groupRole: 'Vị trí hiện tại',
       groupStyle: 'Trình giải thích',
+      groupExperience: 'Kinh nghiệm làm việc',
+      work: {
+        hint: 'Các vị trí đã làm. Giúp AI chọn cách giải thích, và gợi ý bạn bè / dự án.',
+        company: 'Công ty',
+        role: 'Vị trí',
+        domain: 'Lĩnh vực',
+        durationMonths: 'Số tháng',
+        add: 'Thêm vị trí',
+        remove: 'Xoá vị trí',
+      },
       jobTitle: 'Chức danh',
       jobTitlePlaceholder: 'Kỹ sư backend',
       seniority: 'Cấp độ',
@@ -1175,8 +1226,8 @@ export const vi: Messages = {
       // 503 — Gemini quá tải/timeout. Đo 30/08: có lúc kéo dài nhiều phút nên không hứa "giây
       // lát"; vẫn giữ nút "Thử lại" vì đây là lỗi thoáng qua, không phải tường quota.
       unavailable: 'AI đang quá tải, chưa tạo được giải thích lúc này. Thử lại sau ít phút.',
-      profileRequired:
-        'Cần có hồ sơ nghề nghiệp trước khi dùng AI giải thích — điền hồ sơ ở trên rồi thử lại.',
+      profileRequired: 'Cần có hồ sơ nghề nghiệp trước khi dùng AI giải thích.',
+      profileRequiredCta: 'Thiết lập hồ sơ nghề nghiệp',
       byAi: 'Giải thích bằng AI',
       byAiNote: 'Nội dung do mô hình sinh ra — hãy tự kiểm chứng',
       collapse: 'Thu gọn',
@@ -1534,12 +1585,20 @@ export const vi: Messages = {
         'Không có endpoint sửa hay thêm vị trí sau khi đăng — danh sách này là cuối cùng.',
       positionTitle: 'Tên vị trí',
       positionTitlePlaceholder: 'Ví dụ: Backend Engineer',
+      positionDescription: 'Mô tả vị trí',
+      positionDescriptionPlaceholder: 'Người này sẽ làm gì (không bắt buộc)',
+      positionQuantity: 'Số lượng',
+      positionQuantityHint: 'Số người cần cho vị trí này.',
       skills: 'Kỹ năng yêu cầu',
       skillsPlaceholder: 'Kỹ năng, cách nhau bằng dấu phẩy: Kotlin, PostgreSQL',
       addPosition: 'Thêm vị trí',
       removePosition: 'Bỏ vị trí',
       tags: 'Thẻ chủ đề',
       tagsPlaceholder: 'Không bắt buộc, cách nhau bằng dấu phẩy: Blockchain, Fintech',
+      banner: 'Ảnh bìa',
+      bannerAdd: 'Tải ảnh bìa',
+      bannerRemove: 'Xoá ảnh bìa',
+      bannerInvalid: 'Dùng ảnh JPEG, PNG hoặc WEBP dưới 20MB.',
       submit: 'Đăng dự án',
       error: 'Không đăng được dự án. Vui lòng thử lại.',
     },

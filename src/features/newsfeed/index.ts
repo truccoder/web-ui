@@ -28,6 +28,7 @@ export {
   useUserPosts,
   usePost,
   useRefreshFeed,
+  useRebuildFeed,
   useFeedReturnHref,
   /**
    * The shell's brand mark calls this: pressing it is a request to be back at the start of the
@@ -44,6 +45,7 @@ export {
   type FeedPostProps,
   UserPosts,
   type UserPostsProps,
+  NewsfeedRebuildPanel,
 } from './components';
 
 export type { FeedPost as FeedPostData, FeedBookSummary, FeedPage, PublicFeedPage } from './types';

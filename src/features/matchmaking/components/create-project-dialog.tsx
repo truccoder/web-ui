@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { Plus, X } from 'lucide-react';
-import { Button, Dialog, Input, Textarea } from '@/shared/components';
+import { useRef, useState } from 'react';
+import { ImagePlus, Loader2, Plus, X } from 'lucide-react';
+import { Button, Dialog, Input, ProgressBar, Textarea } from '@/shared/components';
+import { ACCEPTED_MEDIA_TYPES, MAX_MEDIA_FILE_BYTES, useUploadMedia } from '@/features/media';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { useT } from '@/core/i18n';
 import type { CreatePositionInput } from '../types/matchmaking';
@@ -40,6 +41,7 @@ const emptyPosition = (): CreatePositionInput => ({
   title: '',
   description: '',
   requiredSkills: [],
+  quantity: 1,
 });
 
 export function CreateProjectDialog({ open, onClose, onCreated }: CreateProjectDialogProps) {
@@ -47,14 +49,43 @@ export function CreateProjectDialog({ open, onClose, onCreated }: CreateProjectD
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [tags, setTags] = useState('');
+  const [bannerUrl, setBannerUrl] = useState<string | null>(null);
+  const [bannerError, setBannerError] = useState<string | null>(null);
   const [positions, setPositions] = useState<CreatePositionInput[]>([emptyPosition()]);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
 
   const create = useCreateProject();
+  const bannerUpload = useUploadMedia();
+  const bannerTypes = ACCEPTED_MEDIA_TYPES.filter((type) => type !== 'image/gif');
+
+  const pickBanner = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (bannerInputRef.current) bannerInputRef.current.value = '';
+    if (!file) return;
+    if (!bannerTypes.includes(file.type) || file.size > MAX_MEDIA_FILE_BYTES) {
+      setBannerError(t('projects.create.bannerInvalid'));
+      return;
+    }
+    setBannerError(null);
+    bannerUpload.mutate([file], {
+      onSuccess: (result) => {
+        const url = result.urls[0];
+        if (!url) {
+          setBannerError(t('projects.create.bannerInvalid'));
+          return;
+        }
+        setBannerUrl(url);
+      },
+      onError: () => setBannerError(t('projects.create.bannerInvalid')),
+    });
+  };
 
   const reset = () => {
     setTitle('');
     setDescription('');
     setTags('');
+    setBannerUrl(null);
+    setBannerError(null);
     setPositions([emptyPosition()]);
     create.reset();
   };
@@ -70,7 +101,11 @@ export function CreateProjectDialog({ open, onClose, onCreated }: CreateProjectD
   // `title` and `description` are `@NotBlank` server-side; a position row is only sent if it has a
   // title, so an untouched blank row is dropped rather than rejected.
   const filled = positions.filter((position) => position.title.trim().length > 0);
-  const canSubmit = title.trim().length > 0 && description.trim().length > 0 && !create.isPending;
+  const canSubmit =
+    title.trim().length > 0 &&
+    description.trim().length > 0 &&
+    !create.isPending &&
+    !bannerUpload.isPending;
 
   return (
     <Dialog
@@ -93,6 +128,7 @@ export function CreateProjectDialog({ open, onClose, onCreated }: CreateProjectD
                 {
                   title: title.trim(),
                   description: description.trim(),
+                  bannerUrl: bannerUrl ?? undefined,
                   tags: tags
                     .split(',')
                     .map((tag) => tag.trim())
@@ -101,6 +137,9 @@ export function CreateProjectDialog({ open, onClose, onCreated }: CreateProjectD
                     ...position,
                     title: position.title.trim(),
                     description: position.description?.trim() || undefined,
+                    // `@Min(1)`; the backend defaults a missing value to 1, so only send a real one.
+                    quantity:
+                      position.quantity && position.quantity >= 1 ? position.quantity : undefined,
                   })),
                 },
                 {
@@ -139,6 +178,53 @@ export function CreateProjectDialog({ open, onClose, onCreated }: CreateProjectD
           onChange={(event) => setTags(event.target.value)}
           placeholder={t('projects.create.tagsPlaceholder')}
         />
+
+        <div className="flex flex-col gap-2">
+          <span className="text-nx-body-sm font-medium text-nx-text-primary">
+            {t('projects.create.banner')}
+          </span>
+          <input
+            ref={bannerInputRef}
+            type="file"
+            accept={bannerTypes.join(',')}
+            onChange={pickBanner}
+            className="hidden"
+          />
+          {bannerUrl ? (
+            <div className="flex items-start gap-2">
+              {/* Arbitrary MinIO host — `next/image` would need it declared. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={bannerUrl}
+                alt=""
+                className="h-20 w-36 rounded-nx-xs border border-nx-border-subtle object-cover"
+              />
+              <Button
+                size="sm"
+                variant="ghost"
+                type="button"
+                icon={<X />}
+                aria-label={t('projects.create.bannerRemove')}
+                onClick={() => setBannerUrl(null)}
+              />
+            </div>
+          ) : (
+            <Button
+              size="sm"
+              variant="secondary"
+              type="button"
+              icon={bannerUpload.isPending ? <Loader2 className="animate-spin" /> : <ImagePlus />}
+              onClick={() => bannerInputRef.current?.click()}
+              disabled={bannerUpload.isPending}
+            >
+              {t('projects.create.bannerAdd')}
+            </Button>
+          )}
+          {bannerUpload.isPending && (
+            <ProgressBar value={bannerUpload.progress} label={t('projects.create.bannerAdd')} />
+          )}
+          {bannerError && <p className="text-nx-micro text-nx-status-danger-fg">{bannerError}</p>}
+        </div>
 
         <div className="flex flex-col gap-3">
           <p className="text-nx-body-sm font-medium text-nx-text-primary">
@@ -184,6 +270,29 @@ export function CreateProjectDialog({ open, onClose, onCreated }: CreateProjectD
                 }
                 placeholder={t('projects.create.skillsPlaceholder')}
                 aria-label={t('projects.create.skills')}
+              />
+
+              <Textarea
+                rows={2}
+                value={position.description ?? ''}
+                onChange={(event) => updatePosition(index, { description: event.target.value })}
+                placeholder={t('projects.create.positionDescriptionPlaceholder')}
+                aria-label={t('projects.create.positionDescription')}
+              />
+
+              <Input
+                type="number"
+                min={1}
+                value={String(position.quantity ?? 1)}
+                onChange={(event) => {
+                  const n = Number(event.target.value);
+                  updatePosition(index, {
+                    quantity: Number.isFinite(n) && n >= 1 ? Math.floor(n) : 1,
+                  });
+                }}
+                label={t('projects.create.positionQuantity')}
+                hint={t('projects.create.positionQuantityHint')}
+                wrapperClassName="w-32"
               />
             </div>
           ))}

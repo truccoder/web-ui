@@ -6,6 +6,7 @@ import { useT } from '@/core/i18n';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { cn } from '@/shared/lib/cn';
 import { useUpdatePost } from '../hooks/use-post';
+import { useAuthorQuiz } from '../hooks/use-quiz';
 import type {
   ArticleDetails,
   CodeSnippetDetails,
@@ -76,29 +77,18 @@ import { QuizComposer, isQuizReady, normalizeQuiz } from './quiz-composer';
  * revisited.
  *
  * ────────────────────────────────────────────────────────────────────────────────────────────
- * THE QUIZ ANSWER KEY CANNOT SURVIVE AN EDIT, AND NO FRONTEND CHANGE CAN MAKE IT.
+ * THE QUIZ ANSWER KEY NOW SURVIVES AN EDIT, VIA `GET /posts/{id}/quiz/answers`.
  *
- * Found while wiring the panels, and it was live before them: `FeedPostDataDto.quizDetails` is
- * a `PublicQuizDetailsDto` — `{ title, questions: [{ question, options }] }` — while the update
- * DTO wants `QuizDetails`, whose questions also carry `correctOptionIndex` and `explanation`.
- * Every field in a generated DTO is optional, so the public shape assigns to the author shape
- * without complaint, and `...current` sent it straight back. `BeanUtils.copyProperties` then
- * wrote null over every `correctOptionIndex` in the post. The quiz stayed on screen and kept its
- * questions, and started grading every submission against a null key.
+ * The problem this section used to describe: `FeedPostDataDto.quizDetails` is a
+ * `PublicQuizDetailsDto` — `{ title, questions: [{ question, options }] }` — with no
+ * `correctOptionIndex`. `...current` sent that straight back and `BeanUtils.copyProperties`
+ * wrote null over the real key, leaving the quiz grading every submission against nothing.
  *
- * No endpoint returns the authored quiz: `GET /v1/api/posts/{postId}` serves the same
- * `FeedPostDataDto` the feed does. So the key is genuinely not available to this client, and the
- * choice is between three losses rather than between loss and no loss:
- *
- *   - send it back as received → silent, and the post looks fine while grading is broken;
- *   - omit `quizDetails` → the whole quiz is deleted, questions included;
- *   - hand the author the questions we do have and ask for the key → nothing is lost silently.
- *
- * The third is what this does. `QuizComposer` opens seeded with the real questions and options
- * and no answer marked, `isQuizReady` refuses the save until the author marks them, and the
- * warning says why. It is friction on an edit that used to be free, and the friction is the
- * accurate report: saving genuinely does rewrite the key. The backend fix — echo the authored
- * quiz to the post's own author, or stop copying nulls — belongs in `docs/backend-plan.md`.
+ * `getQuizForAuthor` (`useAuthorQuiz`) is the fix: it returns the full `QuizDetails` with the
+ * key, author-only. This form seeds `QuizComposer` from that response, so a save re-sends the
+ * real `correctOptionIndex` values. The old "mark the answers again" fallback stays for the one
+ * case the endpoint can still fail — a 403, if the caller is somehow not the author — and the
+ * warning is shown only then.
  */
 /**
  * Every key of the update payload, required — values may still be `undefined`, but the
@@ -187,10 +177,19 @@ export function PostEditor({
   const [link, setLink] = useState<LinkDetails>(current.linkDetails ?? {});
 
   /**
-   * The quiz, if the post has one — seeded from the public shape, so the questions and options
-   * are real and `correctOptionIndex` is missing from every one of them. See the file note.
+   * The quiz, if the post has one. The real answer key comes from `GET /quiz/answers`
+   * (`useAuthorQuiz`); until it lands, the public shape on `current` stands in (no
+   * `correctOptionIndex`). `quizEdit` holds the author's changes and wins once it exists — the
+   * same derive-don't-copy pattern `ProfessionalProfileForm` uses, so no effect calls setState.
    */
-  const [quiz, setQuiz] = useState<QuizDetails | undefined>(current.quizDetails);
+  const hasQuiz = current.quizDetails != null;
+  const authorQuiz = useAuthorQuiz(postId, hasQuiz);
+  const [quizEdit, setQuizEdit] = useState<QuizDetails | undefined>(undefined);
+  const quiz: QuizDetails | undefined =
+    quizEdit ?? authorQuiz.data ?? current.quizDetails ?? undefined;
+  // The authoritative key is on screen only once the author-only read succeeds.
+  const quizKeyLoaded = authorQuiz.isSuccess;
+  const quizKeyLoading = hasQuiz && authorQuiz.isPending;
 
   const trimmed = content.trim();
 
@@ -227,7 +226,13 @@ export function PostEditor({
 
   // An attached quiz gates every kind, because `validateQuizDetails` runs for every kind — and
   // here it does double duty as the thing that stops a save from writing a null answer key.
-  const canSave = detailsReady && (quiz === undefined || isQuizReady(quiz)) && !update.isPending;
+  // Also blocked while the author-only key is still loading, so a fast save cannot beat it and
+  // send the public shape back.
+  const canSave =
+    detailsReady &&
+    (quiz === undefined || isQuizReady(quiz)) &&
+    !quizKeyLoading &&
+    !update.isPending;
 
   /** Exactly one details key, chosen by `postType` — see the note on `BeanUtils` above. */
   const editedDetails = (): Partial<UpdatePostRequest> => {
@@ -302,17 +307,24 @@ export function PostEditor({
         </p>
       )}
 
-      {quiz && (
+      {quizKeyLoading && (
+        <p className="text-nx-micro text-nx-text-secondary">{t('post.edit.quizKeyLoading')}</p>
+      )}
+
+      {quiz && !quizKeyLoading && (
         <div className="flex flex-col gap-3 rounded-nx-sm border border-nx-border-default bg-nx-surface-sunken p-3">
-          {/* `role="alert"` and above the composer, because it explains a consequence of saving
-              rather than a property of the field under it. */}
-          <p
-            role="alert"
-            className="rounded-nx-sm bg-nx-status-warning-bg px-3 py-2 text-nx-body-sm text-nx-status-warning-fg"
-          >
-            {t('post.edit.quizKeyLost')}
-          </p>
-          <QuizComposer value={quiz} onChange={setQuiz} />
+          {/* Only when the author-only read failed (a 403): then the on-screen quiz is the public
+              shape with no key, and saving really would blank it unless the author re-marks. When
+              the key loaded, the composer opens with the real answers and no warning is due. */}
+          {!quizKeyLoaded && (
+            <p
+              role="alert"
+              className="rounded-nx-sm bg-nx-status-warning-bg px-3 py-2 text-nx-body-sm text-nx-status-warning-fg"
+            >
+              {t('post.edit.quizKeyLost')}
+            </p>
+          )}
+          <QuizComposer value={quiz} onChange={setQuizEdit} />
         </div>
       )}
 

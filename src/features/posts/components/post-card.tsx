@@ -184,9 +184,17 @@ export function PostCard({
   /* `whitespace-pre-wrap` because the composer's textarea keeps the author's line breaks and the
      backend stores them verbatim; collapsing them here would silently reflow every
      multi-paragraph post. Named because it is rendered from two branches — capped and not — and
-     the two must not drift into two different paragraphs. */
+     the two must not drift into two different paragraphs.
+
+     `@[0]` / `@[1]` … are the tag placeholders the backend stores (`taggedUserIds` order). The
+     feed payload carries the ids but no names, so a placeholder that survived to here is shown as
+     a neutral "@…" rather than as raw `@[0]` — resolving to the real name needs a backend field
+     (`taggedUsers`) that does not exist yet. */
+  const displayContent = (content ?? '').replace(/@\[\d+\]/g, '@…');
   const prose = (
-    <p className="whitespace-pre-wrap break-words text-nx-body text-nx-text-primary">{content}</p>
+    <p className="whitespace-pre-wrap break-words text-nx-body text-nx-text-primary">
+      {displayContent}
+    </p>
   );
 
   return (

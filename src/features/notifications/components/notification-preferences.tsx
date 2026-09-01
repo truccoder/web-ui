@@ -4,7 +4,7 @@ import { RefreshCw } from 'lucide-react';
 import { Button, Card, EmptyState, Skeleton, Switch } from '@/shared/components';
 import { useT } from '@/core/i18n';
 import { cn } from '@/shared/lib/cn';
-import { useNotificationPreferences, useUpdateNotificationPreferences } from '../hooks';
+import { useNotificationPreferences, useUpdateNotificationPreferences, useWebPush } from '../hooks';
 import type { NotificationType } from '../types/notification';
 
 /**
@@ -23,11 +23,12 @@ import type { NotificationType } from '../types/notification';
  * different name. Two controls for one decision is worse than one, so it stays cut — now as a
  * redundancy rather than a lie. Bring it back if digests are ever implemented, not before.
  *
- * PUSH CANNOT BE VERIFIED LOCALLY, only stored: `onesignal.app-id` is empty in this
- * environment and `shouldSendPush` additionally requires an `onesignalPlayerId`, which is null
- * for every user until a browser registers a subscription. The toggle is real; the delivery
- * path behind it is untested here. NOTE the id is no longer echoed back on the response
- * (`39b5666`) — it is write-only now, so nothing in this panel can compare against a stored one.
+ * PUSH IS WIRED THROUGH ONESIGNAL (`useWebPush`) BUT FEATURE-FLAGGED. Turning the switch on now
+ * asks the browser for permission and opts a subscription in, then sends `onesignalPlayerId` with
+ * `pushEnabled`. It only does any of that when `NEXT_PUBLIC_ONESIGNAL_APP_ID` is set — with no app
+ * id (this environment) the switch is disabled and a line says so. Delivery still additionally
+ * needs `onesignal.app-id` + `api-key` on the backend, so end-to-end push is not verifiable here;
+ * the id is write-only on the response (`39b5666`).
  */
 export interface NotificationPreferencesProps {
   className?: string;
@@ -62,6 +63,7 @@ export function NotificationPreferences({ className }: NotificationPreferencesPr
   const t = useT();
   const { data: preference, isLoading, isError, refetch } = useNotificationPreferences();
   const update = useUpdateNotificationPreferences();
+  const webPush = useWebPush();
 
   if (isLoading) {
     return (
@@ -111,6 +113,32 @@ export function NotificationPreferences({ className }: NotificationPreferencesPr
   const emailEnabled = pending?.emailEnabled ?? preference.emailEnabled;
   const mutedTypes: readonly string[] = pending?.mutedTypes ?? preference.mutedTypes;
 
+  /**
+   * Turning push ON registers a browser subscription first, then stores the flag + the
+   * subscription id. Turning it OFF just stores the flag — the subscription can stay, it simply
+   * stops being sent to. With no OneSignal app id configured the switch is inert (see the header).
+   */
+  const pushBlocked = webPush.configured && webPush.permission === 'denied';
+  const setPush = async (next: boolean) => {
+    if (!next) {
+      update.mutate({ pushEnabled: false });
+      return;
+    }
+    if (!webPush.configured) {
+      update.mutate({ pushEnabled: true });
+      return;
+    }
+    const playerId = await webPush.subscribe();
+    if (!playerId) return; // denied or unsupported — leave the switch off
+    update.mutate({ pushEnabled: true, onesignalPlayerId: playerId });
+  };
+
+  const pushDescription = !webPush.configured
+    ? t('notifications.prefs.pushNotConfigured')
+    : pushBlocked
+      ? t('notifications.prefs.pushDenied')
+      : t('notifications.prefs.pushDesc');
+
   const toggleMuted = (type: NotificationType, wantNotifications: boolean) => {
     // The switch reads positively ("notify me about X"), the backend stores the negative
     // ("mutedTypes"). Inverting here rather than labelling the control "Mute X" keeps every
@@ -133,9 +161,10 @@ export function NotificationPreferences({ className }: NotificationPreferencesPr
 
         <Switch
           checked={pushEnabled}
-          onChange={(next) => update.mutate({ pushEnabled: next })}
+          onChange={setPush}
+          disabled={pushBlocked}
           label={t('notifications.prefs.push')}
-          description={t('notifications.prefs.pushDesc')}
+          description={pushDescription}
         />
 
         <Switch

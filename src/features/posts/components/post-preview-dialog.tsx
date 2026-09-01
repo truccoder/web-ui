@@ -2,9 +2,10 @@
 
 import { useEffect, useMemo, type MouseEvent, type ReactNode } from 'react';
 import { Eye, ListChecks, Pencil } from 'lucide-react';
-import { Badge, Button, Dialog } from '@/shared/components';
+import { Badge, Button, Dialog, ProgressBar } from '@/shared/components';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { useT } from '@/core/i18n';
+import { renderTaggedPlaceholders } from '../lib/tagged-mentions';
 import type { LocationResolution } from '../types/location';
 import type { CreatePostRequest } from '../types/post';
 import { ArticleBody } from './article-body';
@@ -60,6 +61,11 @@ export interface PostPreviewDialogProps {
   onConfirm: () => void;
   pending: boolean;
   /**
+   * BOOK only: the book file's upload progress (0–100) while `pending`. Omitted for every other
+   * kind, whose payload is small enough that a bar would flash and vanish.
+   */
+  uploadProgress?: number;
+  /**
    * The failed create, if the last confirm failed. Rendered here because this is the dialog on
    * screen when it happens.
    */
@@ -67,6 +73,11 @@ export interface PostPreviewDialogProps {
   author: PostCardAuthor;
   /** Exactly what `submit` is about to send — see the file note. */
   request: CreatePostRequest;
+  /**
+   * Display names for `taggedUserIds`, in the same order, so the card can show `@Ada Lovelace`
+   * where the request carries `@[0]`. The request always keeps the placeholder form.
+   */
+  taggedNames?: string[];
   /** The resolved place, in the shape `PostCard` takes; the request carries it flattened. */
   location?: LocationResolution;
   /** BOOK only: the file is not uploaded yet, so its format and size are read off the `File`. */
@@ -141,9 +152,11 @@ export function PostPreviewDialog({
   onBack,
   onConfirm,
   pending,
+  uploadProgress,
   error,
   author,
   request,
+  taggedNames,
   location,
   bookFile,
   coverFile,
@@ -236,7 +249,7 @@ export function PostPreviewDialog({
             // Read at render, so the card says "Vừa xong" — which is what it will say the moment
             // it does land in the feed.
             createdAt={new Date().toISOString()}
-            content={request.content}
+            content={renderTaggedPlaceholders(request.content ?? '', taggedNames ?? [])}
             location={location}
             postType={request.postType}
             // Uncut: the cap's "Xem thêm" leads to a permalink this post does not have yet.
@@ -268,6 +281,12 @@ export function PostPreviewDialog({
             }
           />
         </div>
+
+        {/* A book file can take a while to go up — show how far along rather than a spinner that
+            says nothing. Kept visible at 100 until the request settles (server-side processing). */}
+        {pending && uploadProgress != null && (
+          <ProgressBar value={uploadProgress} label={t('createPost.posting')} />
+        )}
 
         {/* The create failed with this dialog on screen, so this is where the reason belongs —
             sending the author back to the form to read it would hide the button they need to

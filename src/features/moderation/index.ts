@@ -35,6 +35,7 @@ export {
   BannedUsersTab,
   type BannedUsersTabProps,
   MyViolationsPanel,
+  AccountBanBanner,
   AppealsTab,
   type AppealsTabProps,
   ModerationReportsTab,

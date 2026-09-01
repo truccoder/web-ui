@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { Plus, X } from 'lucide-react';
 import { Badge, Button, Card, Input, Select, Skeleton } from '@/shared/components';
 import { getErrorDetails, getErrorMessage } from '@/shared/lib/api-error';
 import { useT } from '@/core/i18n';
@@ -23,11 +24,10 @@ import type {
  * until the current profile has loaded, and it sends back every key including the ones it does not
  * let you edit.
  *
- * `workHistory` IS PASSED THROUGH UNTOUCHED RATHER THAN EDITED. A repeating sub-form for it would
- * be a fourth and fifth component in a checkpoint capped at five, and the value has to be sent back
- * regardless or the replace destroys it. Carrying it verbatim keeps the data safe today and leaves
- * the editor to a later checkpoint; the alternative — omitting it — is precisely the bug this file
- * is written around. Recorded as a known gap in `findings/knowledge.md`.
+ * `workHistory` IS NOW EDITABLE — a repeating add/remove sub-form, the same shape as the project
+ * dialog's positions. Each row is `{ company, role, domain, durationMonths }` (all nullable on the
+ * wire). It is still sent back whole on every save, because the endpoint is a full replace; the
+ * editor just means the whole is no longer frozen at whatever the vault or an earlier client left.
  *
  * A 404 IS THE EMPTY STATE, NOT AN ERROR. `GET` is `orElseThrow` with no get-or-create, so a user
  * who has never filled this in gets a 404 forever; the form opens blank and the same `PUT` creates
@@ -206,6 +206,24 @@ export function ProfessionalProfileForm() {
   const draft = edited ?? (profile ? toDraft(profile) : EMPTY_DRAFT);
   const set = <K extends keyof Draft>(key: K, value: Draft[K]) =>
     setEdited({ ...draft, [key]: value });
+
+  // `workHistory` is `WorkExperience[] | null` — null while nothing has been added. These keep the
+  // "derive, don't copy" rule: every edit produces a whole new draft.
+  const work = draft.workHistory ?? [];
+  const setWorkRow = (index: number, patch: Partial<WorkExperience>) =>
+    set(
+      'workHistory',
+      work.map((row, i) => (i === index ? { ...row, ...patch } : row))
+    );
+  const addWorkRow = () =>
+    set('workHistory', [
+      ...work,
+      { company: null, role: null, domain: null, durationMonths: null },
+    ]);
+  const removeWorkRow = (index: number) => {
+    const next = work.filter((_, i) => i !== index);
+    set('workHistory', next.length > 0 ? next : null);
+  };
 
   // Wrapped like the settled states below it, so the section does not change shape when the query
   // resolves: bare `Skeleton` lines here meant the card materialised around the content afterwards.
@@ -432,6 +450,77 @@ export function ProfessionalProfileForm() {
             ]}
             wrapperClassName="sm:max-w-xs"
           />
+        </FieldGroup>
+
+        <hr className="border-nx-border-subtle" />
+
+        <FieldGroup
+          title={t('knowledge.profile.groupExperience')}
+          description={t('knowledge.profile.work.hint')}
+        >
+          <div className="flex flex-col gap-3">
+            {work.map((row, index) => (
+              <div
+                key={index}
+                className="flex flex-col gap-2 rounded-nx-sm border border-nx-border-default bg-nx-surface-sunken p-3"
+              >
+                <div className="flex items-center gap-2">
+                  <Input
+                    wrapperClassName="flex-1"
+                    value={row.company ?? ''}
+                    onChange={(e) => setWorkRow(index, { company: e.target.value || null })}
+                    placeholder={t('knowledge.profile.work.company')}
+                    aria-label={t('knowledge.profile.work.company')}
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    icon={<X />}
+                    aria-label={t('knowledge.profile.work.remove')}
+                    onClick={() => removeWorkRow(index)}
+                  />
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Input
+                    value={row.role ?? ''}
+                    onChange={(e) => setWorkRow(index, { role: e.target.value || null })}
+                    placeholder={t('knowledge.profile.work.role')}
+                    aria-label={t('knowledge.profile.work.role')}
+                  />
+                  <Input
+                    value={row.domain ?? ''}
+                    onChange={(e) => setWorkRow(index, { domain: e.target.value || null })}
+                    placeholder={t('knowledge.profile.work.domain')}
+                    aria-label={t('knowledge.profile.work.domain')}
+                  />
+                </div>
+                <Input
+                  type="number"
+                  min={0}
+                  value={row.durationMonths == null ? '' : String(row.durationMonths)}
+                  onChange={(e) => {
+                    const n = Number(e.target.value);
+                    setWorkRow(index, {
+                      durationMonths: e.target.value === '' || !Number.isFinite(n) ? null : n,
+                    });
+                  }}
+                  label={t('knowledge.profile.work.durationMonths')}
+                  wrapperClassName="w-40"
+                />
+              </div>
+            ))}
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              icon={<Plus />}
+              className="self-start"
+              onClick={addWorkRow}
+            >
+              {t('knowledge.profile.work.add')}
+            </Button>
+          </div>
         </FieldGroup>
 
         {errorText && (

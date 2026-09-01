@@ -50,6 +50,9 @@ export {
 export {
   SearchBar,
   type SearchBarProps,
+  MentionTextarea,
+  type MentionTextareaProps,
+  findMentionQuery,
   SearchResults,
   type SearchResultsProps,
   UserResultCard,

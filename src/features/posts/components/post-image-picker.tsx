@@ -8,7 +8,7 @@ import {
   MAX_MEDIA_FILES,
   useUploadMedia,
 } from '@/features/media';
-import { Button } from '@/shared/components';
+import { Button, ProgressBar } from '@/shared/components';
 import { useT } from '@/core/i18n';
 import { cn } from '@/shared/lib/cn';
 
@@ -183,6 +183,14 @@ export function PostImagePicker({ value, onChange, disabled, className }: PostIm
           </span>
         )}
       </div>
+
+      {busy && (
+        <ProgressBar
+          value={upload.progress}
+          label={t('createPost.images.add')}
+          className="max-w-xs"
+        />
+      )}
 
       {error && <p className="text-nx-micro text-nx-status-danger-fg">{error}</p>}
     </div>
