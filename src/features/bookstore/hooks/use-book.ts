@@ -72,6 +72,24 @@ export function useLibrary(category?: LearningCategory, enabled = true) {
 }
 
 /**
+ * GET /v1/api/books/purchased — the caller's own purchases, cursor-paged. B37. Backs the
+ * `Sách đã mua` tab of `/library`.
+ *
+ * Invalidated by `useSyncPaymentStatus` through `bookstoreKeys.all` — a confirmed payment sweeps
+ * the whole bookstore namespace, this branch included, so a book bought just now shows up here on
+ * the tab's next mount without a dedicated invalidation of its own.
+ */
+export function usePurchasedBooks(enabled = true) {
+  return useInfiniteQuery({
+    enabled,
+    queryKey: bookstoreKeys.purchased,
+    queryFn: ({ pageParam }) => bookApi.getPurchasedBooks(pageParam, 12),
+    initialPageParam: undefined as number | undefined,
+    getNextPageParam: (last) => (last.hasMore ? (last.nextCursor ?? undefined) : undefined),
+  });
+}
+
+/**
  * Presigned URL for the sample.
  *
  * A PLAIN QUERY, UNLIKE `useDownloadBook` — `/preview` neither counts nor gates, so refetching it

@@ -25,6 +25,13 @@ export const bookstoreKeys = {
    */
   library: (category?: string) => ['bookstore', 'library', category] as const,
 
+  /**
+   * The caller's own purchases (B37). A separate branch from `library`, not a filtered view of
+   * it: the two are different cursor chains against different endpoints, same reasoning as
+   * `library` being keyed per topic.
+   */
+  purchased: ['bookstore', 'purchased'] as const,
+
   all: ['bookstore'] as const,
 
   /** Everything about one book — the prefix to invalidate after a review. */

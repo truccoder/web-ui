@@ -10,13 +10,15 @@ import type {
 } from '../types/book';
 
 /**
- * `BookController` (`com.socialapp.bookstore`) — 9 endpoints, 9 functions. Bare responses, no
+ * `BookController` (`com.socialapp.bookstore`) — 10 endpoints, 10 functions. Bare responses, no
  * envelope, consistent with every other controller in this backend.
  *
  * THIS HEADER USED TO SAY "THERE IS NO LIST BOOKS ENDPOINT", and it was true until 2026-08-09.
- * `GET /books` exists now, cursor-paged and filterable by topic — see `getLibrary`. What has still
- * never existed is a SEARCH over books, and a list keyed on the BUYER; the ways to reach one book
- * remain the catalogue, `getBooksByAuthor`, and the summary embedded in a feed or search post.
+ * `GET /books` exists now, cursor-paged and filterable by topic — see `getLibrary`. A second gap
+ * closed 01/09/2026 (B37, `docs/backend-plan.md`): `GET /books/purchased` lists the CALLER'S own
+ * purchases — see `getPurchasedBooks`. What has still never existed is a SEARCH over books; the
+ * ways to reach one book remain the catalogue, the purchased list, `getBooksByAuthor`, and the
+ * summary embedded in a feed or search post.
  */
 export const bookApi = {
   /**
@@ -81,6 +83,20 @@ export const bookApi = {
    */
   getLibrary: (cursor?: number, limit = 12, category?: LearningCategory) =>
     api.get<BookPage>('/v1/api/books', { params: { cursor, limit, category } }).then((r) => r.data),
+
+  /**
+   * GET /v1/api/books/purchased — every book the CALLER has bought, newest first. B37, shipped
+   * 01/09/2026.
+   *
+   * Cursor-paginated like `getLibrary`, and no `category` param — the endpoint does not accept
+   * one (measured against the regenerated `schema.gen.ts`).
+   *
+   * Same `Book` DTO, so both traps on the type still apply: read `downloadUrl != null` for access,
+   * and do not use this endpoint's mere presence in a page as a stand-in for `purchased` — that
+   * field's `!isFree` quirk is a property of the DTO, not of which list served it.
+   */
+  getPurchasedBooks: (cursor?: number, limit = 12) =>
+    api.get<BookPage>('/v1/api/books/purchased', { params: { cursor, limit } }).then((r) => r.data),
 
   getBooksByAuthor: (authorId: number) =>
     api.get<Book[]>(`/v1/api/books/author/${authorId}`).then((r) => r.data),

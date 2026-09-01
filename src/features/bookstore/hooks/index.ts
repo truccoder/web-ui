@@ -3,6 +3,7 @@ export { bookstoreKeys } from './keys';
 export {
   useBook,
   useLibrary,
+  usePurchasedBooks,
   useBooksByAuthor,
   useBookPreviewUrl,
   useBookReviews,

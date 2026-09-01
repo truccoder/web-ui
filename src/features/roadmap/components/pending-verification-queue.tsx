@@ -28,12 +28,8 @@ import type { VerificationTier } from '../types/roadmap';
  * first, here is the list again" — the mutation invalidates the queue, so the row disappears on
  * the refetch that follows.
  *
- * NOBODY IN THIS LIST IS CLICKABLE, AND THE REASON HAS CHANGED. It used to be "there is no public
- * profile endpoint"; `/u/{username}` exists now, so the search results and the friends list both
- * link. The blocker here is narrower and entirely on the payload: `PendingVerificationDto` carries
- * `fullName` and `profilePictureUrl` and **no handle** — and `/u/{…}` is keyed by username, not by
- * id, so even the `userId` in this row cannot build the URL. Adding `username` to the DTO is the
- * whole fix; nothing on this side can work around it.
+ * EVERY ROW LINKS NOW. `PendingVerificationDto` grew `username`, so the avatar and name reach
+ * `/u/{username}` the same way the search results and the friends list already do.
  */
 export interface PendingVerificationQueueProps {
   className?: string;
@@ -101,6 +97,7 @@ export function PendingVerificationQueue({ className }: PendingVerificationQueue
           <DeveloperIdentity
             size="sm"
             name={row.fullName}
+            href={row.username ? `/u/${encodeURIComponent(row.username)}` : undefined}
             src={row.profilePictureUrl ?? undefined}
             time={relativeTime(row.requestedAt)}
           />

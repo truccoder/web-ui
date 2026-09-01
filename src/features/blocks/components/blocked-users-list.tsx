@@ -87,20 +87,30 @@ function BlockedRow({
     // Same row card as the friends tabs — white, radius 8, `12px 20px`, so the two lists of people
     // read as the same kind of object.
     <div className="flex items-center gap-3 rounded-nx-md bg-nx-surface-card px-5 py-3">
-      <Avatar src={user.profilePictureUrl} name={name} size="lg" />
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-nx-ui font-medium text-nx-text-primary">{name}</p>
-        {/* Blocked people still link: the profile is public either way, and being unable to reach
-            it would leave a name with no way to check who it actually is. */}
-        {user.username && (
-          <Link
-            href={`/u/${encodeURIComponent(user.username)}`}
-            className="truncate font-mono text-nx-caption text-nx-text-muted hover:underline"
-          >
-            @{user.username}
-          </Link>
-        )}
-      </div>
+      {/* Blocked people still link: the profile is public either way, and being unable to reach
+          it would leave a name with no way to check who it actually is. The avatar and the full
+          name are the link's biggest targets, same as everywhere else identity is shown. */}
+      {user.username ? (
+        <Link
+          href={`/u/${encodeURIComponent(user.username)}`}
+          className="flex min-w-0 flex-1 items-center gap-3 rounded-nx-sm hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
+        >
+          <Avatar src={user.profilePictureUrl} name={name} size="lg" />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-nx-ui font-medium text-nx-text-primary">{name}</p>
+            <span className="truncate font-mono text-nx-caption text-nx-text-muted">
+              @{user.username}
+            </span>
+          </div>
+        </Link>
+      ) : (
+        <>
+          <Avatar src={user.profilePictureUrl} name={name} size="lg" />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-nx-ui font-medium text-nx-text-primary">{name}</p>
+          </div>
+        </>
+      )}
       <Button size="sm" variant="secondary" loading={pending} onClick={onUnblock}>
         {t('blocks.unblock')}
       </Button>

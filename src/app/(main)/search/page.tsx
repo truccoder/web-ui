@@ -3,8 +3,6 @@
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { SearchResults } from '@/features/search';
-import { PageHeader } from '@/shared/components';
-import { useT } from '@/core/i18n';
 
 /**
  * `/search` — results for the term in `?q=`.
@@ -21,17 +19,11 @@ export default function SearchPage() {
 }
 
 function SearchContent() {
-  const t = useT();
   const searchParams = useSearchParams();
   const query = (searchParams.get('q') ?? '').trim();
 
   return (
     <div className="flex flex-col gap-[var(--nx-space-section)]">
-      <PageHeader
-        title={t('search.title')}
-        description={query ? t('search.resultsFor', { query }) : undefined}
-      />
-
       <SearchResults query={query} />
     </div>
   );

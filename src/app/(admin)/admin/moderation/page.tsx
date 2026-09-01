@@ -8,7 +8,7 @@ import {
   ModerationPostsTab,
   ModerationReportsTab,
 } from '@/features/moderation';
-import { Tabs } from '@/shared/components';
+import { Card, Tabs } from '@/shared/components';
 import { useTabParam } from '@/shared/lib/use-tab-param';
 import { useT } from '@/core/i18n';
 
@@ -73,24 +73,30 @@ function AdminModerationContent() {
           canvas is deliberately denser than `/profile` or `/library`, and 16 under a 20 would have
           been the same symmetric float the wide pages had, just tighter. */}
       <div className="flex flex-col gap-[var(--nx-space-element)]">
-        <Tabs
-          active={tab}
-          onChange={setTab}
-          aria-label={t('moderation.title')}
-          tabs={[
-            { id: 'posts', label: t('moderation.tabs.posts') },
-            // Second, right after the queue it feeds. A report is the human input to the same
-            // decision the queue makes, and until this tab existed it was the only signal in the
-            // system that reached nobody — `POST /moderation/reports` wrote rows that
-            // `GET /admin/moderation/reports` was never called to read.
-            { id: 'reports', label: t('moderation.tabs.reports') },
-            { id: 'logs', label: t('moderation.tabs.logs') },
-            { id: 'banned', label: t('moderation.tabs.banned') },
-            // Added once users could appeal at all. Without it the product accepts appeals and
-            // gives nobody the ability to decide them — a promise of review no screen can keep.
-            { id: 'appeals', label: t('moderation.tabs.appeals') },
-          ]}
-        />
+        {/* THE WHITE CARD IS `/newsfeed`'s OWN GROUND, carried here — `Tabs` paints no fill of
+            its own, see its header. `padding "0 10px"` matches the `p-2.5` `/newsfeed`'s
+            `StickyBlock` row spends around the same strip. */}
+        <Card padding="0 10px" className="flex">
+          <Tabs
+            active={tab}
+            onChange={setTab}
+            aria-label={t('moderation.title')}
+            className="flex-1"
+            tabs={[
+              { id: 'posts', label: t('moderation.tabs.posts') },
+              // Second, right after the queue it feeds. A report is the human input to the same
+              // decision the queue makes, and until this tab existed it was the only signal in
+              // the system that reached nobody — `POST /moderation/reports` wrote rows that
+              // `GET /admin/moderation/reports` was never called to read.
+              { id: 'reports', label: t('moderation.tabs.reports') },
+              { id: 'logs', label: t('moderation.tabs.logs') },
+              { id: 'banned', label: t('moderation.tabs.banned') },
+              // Added once users could appeal at all. Without it the product accepts appeals and
+              // gives nobody the ability to decide them — a promise of review no screen can keep.
+              { id: 'appeals', label: t('moderation.tabs.appeals') },
+            ]}
+          />
+        </Card>
 
         {/* Only the active tab is mounted, so switching does not leave three lists alive and the
           page does not fetch all three on load. */}

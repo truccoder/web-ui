@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { PageHeader, Tabs } from '@/shared/components';
+import { Card, Tabs } from '@/shared/components';
 import { useInfiniteFriends, usePendingRequests } from '@/features/friendships';
 import { useT } from '@/core/i18n';
 
@@ -55,47 +55,50 @@ export default function FriendsLayout({ children }: { children: React.ReactNode 
 
   return (
     <div className="flex flex-col gap-[var(--nx-space-section)]">
-      <PageHeader title={t('friends.title')} />
-
-      {/* Tabs bind DOWN to the panel they name: 16 to the list, the canvas's own 40 to the
-          heading. The strip used to sit 40 from both, which on the one screen where the tabs ARE
-          the navigation left them looking like a third thing between the title and the content
-          rather than the control that chose it. */}
+      {/* Tabs bind DOWN to the panel they name: 16 to the list. The strip is the first thing in
+          the canvas now, so it takes the canvas's own top rung — on this screen the tabs ARE the
+          navigation, so there is no heading above them to bind against any more. */}
       <div className="flex flex-col gap-[var(--nx-space-group)]">
-        <Tabs
-          aria-label={t('friends.title')}
-          active={active}
-          onChange={(id) => {
-            const tab = TABS.find((candidate) => candidate.id === id);
-            if (tab) router.push(tab.href);
-          }}
-          tabs={TABS.map((tab) => ({
-            id: tab.id,
-            label: t(tab.labelKey),
-            /**
-             * TWO TABS CARRY A COUNT, and the third deliberately does not.
-             *
-             * `Lời mời` counts a queue — it is the number that decides whether to open the tab at
-             * all. `Bạn bè` counts the collection, which the kit shows as `128`; it comes from the
-             * SAME query the list itself runs (`useInfiniteFriends`), so this is a cache read and
-             * not a second request.
-             *
-             * `Gợi ý` has no count because a suggestion count means nothing: the endpoint returns
-             * whatever page you ask for out of a ranked stream, so any number here would be
-             * describing the page size, not a quantity of suggestions.
-             */
-            count:
-              tab.id === 'requests'
-                ? pendingCount > 0
-                  ? pendingCount
-                  : undefined
-                : tab.id === 'all'
-                  ? friendCount > 0
-                    ? friendCount
+        {/* THE WHITE CARD IS `/newsfeed`'s OWN GROUND, carried here — `Tabs` paints no fill of
+            its own, see its header. `padding "0 10px"` matches the `p-2.5` `/newsfeed`'s
+            `StickyBlock` row spends around the same strip. */}
+        <Card padding="0 10px" className="flex">
+          <Tabs
+            aria-label={t('friends.title')}
+            active={active}
+            onChange={(id) => {
+              const tab = TABS.find((candidate) => candidate.id === id);
+              if (tab) router.push(tab.href);
+            }}
+            className="flex-1"
+            tabs={TABS.map((tab) => ({
+              id: tab.id,
+              label: t(tab.labelKey),
+              /**
+               * TWO TABS CARRY A COUNT, and the third deliberately does not.
+               *
+               * `Lời mời` counts a queue — it is the number that decides whether to open the tab
+               * at all. `Bạn bè` counts the collection, which the kit shows as `128`; it comes
+               * from the SAME query the list itself runs (`useInfiniteFriends`), so this is a
+               * cache read and not a second request.
+               *
+               * `Gợi ý` has no count because a suggestion count means nothing: the endpoint
+               * returns whatever page you ask for out of a ranked stream, so any number here
+               * would be describing the page size, not a quantity of suggestions.
+               */
+              count:
+                tab.id === 'requests'
+                  ? pendingCount > 0
+                    ? pendingCount
                     : undefined
-                  : undefined,
-          }))}
-        />
+                  : tab.id === 'all'
+                    ? friendCount > 0
+                      ? friendCount
+                      : undefined
+                    : undefined,
+            }))}
+          />
+        </Card>
 
         {children}
       </div>

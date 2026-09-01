@@ -222,6 +222,23 @@
   --nx-accent-hover: var(--nx-blue-600);
   --nx-accent-soft: var(--nx-blue-50);
   --nx-accent-strong: var(--nx-blue-700);
+  /* ── The accent as a SOLID FILL UNDER TEXT, which is a different job from the accent as a
+     border, an icon or a tint, and the two cannot share one value across themes. ───────────
+     `--nx-accent` legitimately CLIMBS in dark (blue-500 → blue-400) so that a border or a
+     `text-nx-accent` label stays visible on a dark ground. But every surface that fills with
+     it and puts white text on top inherits that climb, and white on blue-400 measures
+     **3.69:1** — under AA for body text, on the message bubble, which is the longest-running
+     body text in the product.
+     Splitting the fill off is the whole fix: it steps in the OPPOSITE direction, going light
+     in dark mode and carrying INK rather than white, the way an inverted button does.
+       light  #ffffff on #2e6fc2 = 5.05:1 ✓
+       dark   #101820 on #4e87cf = 4.81:1 ✓
+     Not folded into `--nx-text-on-color`: that token is already spent on
+     `bg-nx-status-danger` (Button's danger variant), where red-500 wants white in both themes
+     — flipping it to ink there would take that button from 4.38 down to 4.06. One token, two
+     grounds, two answers; hence two tokens. */
+  --nx-accent-fill: var(--nx-blue-500);
+  --nx-accent-fill-text: #ffffff;
   --nx-focus-ring: var(--nx-blue-500);
   --nx-action-primary: var(--nx-blue-600);
   --nx-action-primary-hover: var(--nx-blue-700);
@@ -316,6 +333,11 @@
   --nx-border-subtle: var(--nx-tint);
 
   --nx-accent: var(--nx-blue-400);
+  /* Steps AWAY from `--nx-accent`, on purpose — see the light block's note. The fill goes
+     light and its text goes ink, so a filled accent surface reads as inverted here instead of
+     as white-on-mid-blue at 3.69:1. */
+  --nx-accent-fill: var(--nx-blue-400);
+  --nx-accent-fill-text: var(--nx-gray-950);
   --nx-accent-hover: var(--nx-blue-300);
   --nx-accent-soft: rgba(46, 111, 194, 0.18);
   --nx-accent-strong: #8fbce5;
@@ -398,6 +420,8 @@
   --color-nx-tint: var(--nx-tint);
 
   --color-nx-accent: var(--nx-accent);
+  --color-nx-accent-fill: var(--nx-accent-fill);
+  --color-nx-accent-fill-text: var(--nx-accent-fill-text);
   --color-nx-accent-hover: var(--nx-accent-hover);
   --color-nx-accent-soft: var(--nx-accent-soft);
   --color-nx-accent-strong: var(--nx-accent-strong);
@@ -551,6 +575,13 @@
   --spacing-nx-ledger-sm: 310px;
   --spacing-nx-canvas: 672px;
   --spacing-nx-shell-max: 1300px;
+  /* THE STEP-DOWN CAP, and it is the missing member of the `-sm` set. `--spacing-nx-ledger-sm`
+     and `--spacing-nx-region-gutter-sm` already encode the smaller fitting; its total —
+     `210 + 24 + 672 + 24 + 310 = 1240` — is stated in this file's own round-15 note and in
+     `shell.tsx`, but had no token, so the shell went on capping at 1300 while its columns
+     added up to 1240. The 60px difference had nowhere to go except into the canvas's
+     `mx-auto`, which is what let the reading column drift as the viewport changed. */
+  --spacing-nx-shell-max-sm: 1240px;
   --spacing-nx-region-gutter: 40px;
   --spacing-nx-region-gutter-sm: 24px;
   --spacing-nx-chat-measure: 600px;

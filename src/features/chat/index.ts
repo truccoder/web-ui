@@ -37,12 +37,8 @@ export {
 export {
   MessageUserButton,
   type MessageUserButtonProps,
-  ChatDock,
-  type ChatDockProps,
   ChatMessenger,
   type ChatMessengerProps,
-  FloatingChatWindow,
-  type FloatingChatWindowProps,
   ConversationSidebar,
   type ConversationSidebarProps,
   ConversationView,

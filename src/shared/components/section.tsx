@@ -62,7 +62,14 @@ export function Section({ title, description, action, children, className }: Sec
       <div className="flex items-baseline justify-between gap-[var(--nx-space-element)]">
         <div className="flex min-w-0 flex-col gap-[var(--nx-space-pair)]">
           <h2 className="text-nx-title-sm text-nx-text-primary">{title}</h2>
-          {description && <p className="text-nx-body-sm text-nx-text-muted">{description}</p>}
+          {/* Capped at `--measure-nx-read` (68ch): a section's description sits in the same 672
+              canvas column as body text, and at `body-sm` that column runs ~103 characters
+              uncapped — half again past the measure the system declares for reading. */}
+          {description && (
+            <p className="max-w-[var(--measure-nx-read)] text-nx-body-sm text-nx-text-muted">
+              {description}
+            </p>
+          )}
         </div>
         {action}
       </div>

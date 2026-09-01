@@ -144,7 +144,7 @@ export function Dialog({
         )}
       >
         {(title || description) && (
-          <div className="shrink-0 px-[18px] pt-4">
+          <div className="shrink-0 px-5 pt-4">
             {title && (
               <div id={titleId} className="text-[16px] font-semibold leading-[1.6]">
                 {title}
@@ -166,7 +166,7 @@ export function Dialog({
             className={cn(
               'min-h-0 flex-1',
               maxHeight && 'overflow-y-auto',
-              bodyBleed ? '' : 'px-[18px] pt-4',
+              bodyBleed ? '' : 'px-5 pt-4',
               // The specimen's body has no bottom padding — the footer's own top padding provides
               // the gap. Without a footer that would leave the content flush against the edge.
               !footer && !bodyBleed && 'pb-4'
@@ -177,7 +177,7 @@ export function Dialog({
         )}
 
         {footer && (
-          <div className="flex shrink-0 items-center justify-end gap-2 px-[18px] pb-3 pt-3">
+          <div className="flex shrink-0 items-center justify-end gap-2 px-5 pb-3 pt-3">
             {footer}
           </div>
         )}

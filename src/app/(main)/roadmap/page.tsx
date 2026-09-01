@@ -9,7 +9,7 @@ import {
   type RoadmapNode,
 } from '@/features/roadmap';
 import { useMyProfile } from '@/features/security';
-import { Button, Dialog, PageHeader } from '@/shared/components';
+import { Button, Dialog } from '@/shared/components';
 import { useT } from '@/core/i18n';
 
 /**
@@ -79,7 +79,7 @@ function RoadmapContent() {
   /**
    * TWO SHAPES ON ONE ROUTE, and which one renders is decided by `?id=` alone.
    *
-   * `/roadmap` is the index: a titled canvas screen listing the tracks. `/roadmap?id=N` is focus
+   * `/roadmap` is the index: a canvas screen listing the tracks. `/roadmap?id=N` is focus
    * mode's `extent` tenant — the shell already drops the rail and the ledger for it and hands the
    * viewport over, and this branch is the other half of that: the track drawn full width, with no
    * page header competing with the context bar that now names it.
@@ -106,8 +106,6 @@ function RoadmapContent() {
 
   return (
     <div className="flex flex-col gap-[var(--nx-space-section)]">
-      <PageHeader title={t('roadmap.title')} description={t('roadmap.subtitle')} />
-
       <RoadmapList
         selectedId={roadmapId}
         // `replace`, not `push`: picking a track is switching what you are looking at, not

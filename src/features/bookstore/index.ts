@@ -1,6 +1,7 @@
 /**
  * `features/bookstore` — mirrors the backend package `com.socialapp.bookstore`
- * (BookController: 8 endpoints + PaymentController: 3 = 11).
+ * (BookController: 10 endpoints + PaymentController: 3 = 13, since `GET /books/purchased` shipped
+ * 01/09/2026, B37).
  *
  * `PaymentController` serves `/v1/api/payments`, which reads like a domain of its own, but feature
  * boundaries mirror BE package boundaries 1:1 (CLAUDE.md §4) and it lives in `bookstore`. That is
@@ -40,6 +41,8 @@ export {
   PaymentResultPanel,
   type PaymentResultMode,
   type PaymentResultPanelProps,
+  PurchasedBooksList,
+  type PurchasedBooksListProps,
   StarRating,
   type StarRatingProps,
 } from './components';
@@ -48,6 +51,7 @@ export {
   bookstoreKeys,
   useBook,
   useLibrary,
+  usePurchasedBooks,
   useBooksByAuthor,
   useBookPreviewUrl,
   useBookReviews,

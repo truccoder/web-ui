@@ -16,6 +16,7 @@ import { useTabParam } from '@/shared/lib/use-tab-param';
 import { formatMonthYear, useIntlLocale } from '@/shared/lib/format';
 import { BlockUserButton } from '@/features/blocks';
 import { MessageUserButton } from '@/features/chat';
+import { FriendActionButton } from '@/features/friendships';
 import { MyBooksList } from '@/features/bookstore';
 import { GithubStatsCard } from '@/features/github';
 import { UserPosts } from '@/features/newsfeed';
@@ -199,16 +200,19 @@ function PublicProfileContent() {
         /* THE ONLY ACTIONS ON THIS PAGE, and they are in the hero rather than in a menu because
            there is nothing else to put in one. `blocks` shipped in the same backend batch as this
            route and had no surface at all until now — the product could block and could not be
-           asked to. They stay OUT of the tabs deliberately: an action about this person must not
-           be reachable only from one of three panels.
+           asked to. `FriendActionButton` closes the other half of that same gap: the page could
+           already message and block a stranger but never actually befriend one — the only place
+           that offered "Kết bạn" was `/friends/suggestions`, and only for people the ranking
+           surfaced on its own. They stay OUT of the tabs deliberately: an action about this person
+           must not be reachable only from one of three panels.
 
            Ordered by how often they are wanted, with the destructive one last and `ghost` so a
            misclick lands on the harmless one.
 
-           BOTH ACTIONS ARE RELATIONSHIPS, and a guest is not one end of one: messaging opens a
-           conversation between two accounts, blocking records an edge from yours. Neither has a
-           read-only form to show, so for a signed-out reader the pair is replaced by the one thing
-           that would make them available. */
+           ALL THREE ACTIONS ARE RELATIONSHIPS, and a guest is not one end of one: friending and
+           messaging both open a connection between two accounts, blocking records an edge from
+           yours. None has a read-only form to show, so for a signed-out reader the row is replaced
+           by the one thing that would make them available. */
         actions={
           isGuest ? (
             <Link href={registerHref}>
@@ -217,6 +221,7 @@ function PublicProfileContent() {
           ) : (
             profile.id != null && (
               <>
+                <FriendActionButton userId={profile.id} />
                 <MessageUserButton userId={profile.id} />
                 <BlockUserButton userId={profile.id} name={profile.fullName?.trim() || username} />
               </>
@@ -233,16 +238,22 @@ function PublicProfileContent() {
         // above. This was a bare fragment, so the strip inherited the canvas's `gap-section` on
         // both sides and sat equidistant from the identity card and the panel it labels.
         <div className="flex flex-col gap-[var(--nx-space-group)]">
-          <Tabs
-            aria-label={profile.fullName?.trim() || username}
-            active={tab}
-            onChange={onTabChange}
-            tabs={[
-              { id: 'overview', label: t('publicProfile.tabs.overview') },
-              { id: 'work', label: t('publicProfile.tabs.work') },
-              { id: 'posts', label: t('publicProfile.tabs.posts') },
-            ]}
-          />
+          {/* THE WHITE CARD IS `/newsfeed`'s OWN GROUND, carried here — `Tabs` paints no fill of
+              its own, see its header. `padding "0 10px"` matches the `p-2.5` `/newsfeed`'s
+              `StickyBlock` row spends around the same strip. */}
+          <Card padding="0 10px" className="flex">
+            <Tabs
+              aria-label={profile.fullName?.trim() || username}
+              active={tab}
+              onChange={onTabChange}
+              className="flex-1"
+              tabs={[
+                { id: 'overview', label: t('publicProfile.tabs.overview') },
+                { id: 'work', label: t('publicProfile.tabs.work') },
+                { id: 'posts', label: t('publicProfile.tabs.posts') },
+              ]}
+            />
+          </Card>
 
           {tab === 'overview' && (
             <div className="flex flex-col gap-[var(--nx-space-section)]">

@@ -10,7 +10,7 @@ import {
   VaultFilterSettings,
   VaultNoteList,
 } from '@/features/knowledge';
-import { PageHeader, Select, Tabs } from '@/shared/components';
+import { Card, Select, Tabs } from '@/shared/components';
 import { useTabParam } from '@/shared/lib/use-tab-param';
 import { useT } from '@/core/i18n';
 
@@ -68,8 +68,6 @@ function KnowledgeContent() {
 
   return (
     <div className="flex flex-col gap-[var(--nx-space-section)]">
-      <PageHeader title={t('knowledge.title')} description={t('knowledge.subtitle')} />
-
       {/* Applies to the whole page, not one tab — the 428 it describes fires from any tab that
           ends up generating an explanation, so it stays outside the tab strip. */}
       <p className="text-nx-body-sm text-nx-text-secondary">
@@ -83,16 +81,22 @@ function KnowledgeContent() {
       </p>
 
       <div className="flex flex-col gap-[var(--nx-space-group)]">
-        <Tabs
-          aria-label={t('knowledge.title')}
-          active={tab}
-          onChange={setTab}
-          tabs={[
-            { id: 'library', label: t('knowledge.tabs.library') },
-            { id: 'vault', label: t('knowledge.tabs.vault') },
-            { id: 'settings', label: t('knowledge.tabs.settings') },
-          ]}
-        />
+        {/* THE WHITE CARD IS `/newsfeed`'s OWN GROUND, carried here — `Tabs` paints no fill of
+            its own, see its header. `padding "0 10px"` matches the `p-2.5` `/newsfeed`'s
+            `StickyBlock` row spends around the same strip. */}
+        <Card padding="0 10px" className="flex">
+          <Tabs
+            aria-label={t('knowledge.title')}
+            active={tab}
+            onChange={setTab}
+            className="flex-1"
+            tabs={[
+              { id: 'library', label: t('knowledge.tabs.library') },
+              { id: 'vault', label: t('knowledge.tabs.vault') },
+              { id: 'settings', label: t('knowledge.tabs.settings') },
+            ]}
+          />
+        </Card>
 
         {tab === 'library' && <KnowledgeLibrary />}
 

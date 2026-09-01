@@ -329,11 +329,24 @@ function NavLink({
         // icon↔label gap — 32 is the DS's ROW UNIT, and 10 is the inset split, not a gap.
         // `min-h-8` rather than `h-8` because the row unit is a minimum: a wrapped Vietnamese
         // label has to grow its row instead of clipping.
-        'flex min-h-8 items-center gap-2 rounded-nx-sm px-2.5 text-nx-ui',
+        // THE ROW UNIT IS 32 FOR A POINTER AND 44 FOR A FINGER, and this component is rendered
+        // in both places: the rail above `lg`, and — the same element, same classes — inside the
+        // mobile `Drawer` below it. 32 is the DS's row unit and stays exactly that on the rail;
+        // 44 is the platform minimum for a touch target on both iOS and Android, and it is still
+        // on the vertical course (32 + 12, `row` + `element`), so the ladder is not broken to
+        // reach it. `min-h-` rather than `h-`, unchanged: a wrapped Vietnamese label grows.
+        'flex min-h-11 items-center gap-2 rounded-nx-sm px-2.5 text-nx-ui lg:min-h-8',
         'transition-colors duration-[var(--nx-duration-fast)] ease-nx-out',
         'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-nx-focus-ring',
+        // HOVER AND SELECTED ARE DIFFERENT TOKENS NOW. Active used to be `bg-nx-surface-hover` —
+        // the SAME fill hover paints — so the row you were pointing at and the row you were on
+        // differed by a font weight, on the one surface that is supposed to answer "where am I".
+        // The product already had an answer and the rail was not using it: `bg-nx-accent-soft`
+        // marks the selected row in `conversation-row`, `conversation-sidebar` and
+        // `vault-filter-settings`. One rule, everywhere: hover tints neutral, selected tints
+        // accent.
         active
-          ? 'bg-nx-surface-hover font-medium text-nx-text-primary'
+          ? 'bg-nx-accent-soft font-medium text-nx-text-accent'
           : 'text-nx-text-secondary hover:bg-nx-surface-hover hover:text-nx-text-primary',
         locked && 'text-nx-text-faint hover:text-nx-text-secondary'
       )}
@@ -545,7 +558,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           className={cn(
             // Same row unit as the nav items above it — it sits in the same column and any other
             // height would read as a different kind of thing.
-            'flex min-h-8 w-full items-center gap-2 rounded-nx-sm px-2.5 text-nx-ui',
+            'flex min-h-11 w-full items-center gap-2 rounded-nx-sm px-2.5 text-nx-ui lg:min-h-8',
             'text-nx-text-secondary hover:bg-nx-surface-hover hover:text-nx-text-primary',
             'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-nx-focus-ring'
           )}
@@ -752,8 +765,20 @@ export function MainShell({ children }: { children: React.ReactNode }) {
           >
             <div
               className={cn(
-                'mx-auto flex h-full w-full max-w-[var(--spacing-nx-shell-max)]',
-                'items-center gap-2.5 px-3 xl:px-5'
+                // `relative` IS LOAD-BEARING NOW: it makes this capped row — not the full-bleed
+                // <header> — the containing block for the search field below, which is what lets
+                // the field be positioned against the SHELL's columns instead of the viewport.
+                'relative mx-auto flex h-full w-full',
+                // Same cap as the body row, and it has to be: the bar's brand sits on the rail's
+                // column and its controls sit on the ledger's, so a bar capped at 1300 over a body
+                // capped at 1240 would hang 30px past both ends of what it labels.
+                'max-w-[var(--spacing-nx-shell-max-sm)]',
+                'min-[1440px]:max-w-[var(--spacing-nx-shell-max)]',
+                // ONE INSET FOR THE WHOLE SHELL, was `px-3 xl:px-5`. 20 is `--nx-space-pad`, the
+                // ladder's rung for "content ↔ container edge, HORIZONTAL", and it is already what
+                // the rail spends (nav 10 + item 10) and what the canvas now spends below `lg`.
+                // At `px-3` the brand sat 8px left of the nav icons it stands above.
+                'items-center gap-2.5 px-5'
               )}
             >
               <IconButton
@@ -787,6 +812,56 @@ export function MainShell({ children }: { children: React.ReactNode }) {
                 </span>
               </Link>
 
+              {/**
+               * THE FIELD MIRRORS THE CANVAS'S OWN BOX, at every width, not just from `lg` up.
+               *
+               * It used to sit outside this row, absolutely positioned against the full-bleed
+               * <header>, so `left-1/2` centred it on the VIEWPORT. The canvas is not centred on
+               * the viewport — it sits after the rail — so the two never agreed: measured in a
+               * 1300 shell, the field's centre was 650 and the canvas's was 586.
+               *
+               * A first fix left `left-1/2` in place below `lg` and only corrected `lg` and up,
+               * on the theory that below `lg` the canvas is "centred" too so the two axes would
+               * still agree. They do not: below `lg` the canvas is a 672px box **centred inside
+               * the row and then padded by `px-5`**, while a field centred with `left-1/2` is
+               * centred on the FULL row — the same two-centres bug, just moved to a narrower
+               * range (roughly 672–1024px) where a maximised rail-less window or a resized browser
+               * sits. It read as fine before only because nothing left-aligned shared the row to
+               * compare against; it stopped being fine the moment a heading did.
+               *
+               * SO THE FIELD'S WRAPPER IS BUILT FROM THE SAME TWO CLASSES THE CANVAS USES —
+               * `mx-auto max-w-[--spacing-nx-canvas] px-5` — nested inside an outer box that spans
+               * the row exactly the way `<main>` does. Below `lg` that reproduces the canvas's own
+               * centring and padding pixel for pixel, because both are the same shape nested in
+               * the same 1240/1300-capped parent. The field then sits flush at the padded box's
+               * left edge, same as the canvas's heading text.
+               *
+               * From `lg` up the mirroring classes cancel (`lg:mx-0 lg:max-w-none lg:px-0`) and
+               * the outer box collapses to `left = sidebar + gutter` — the canvas's own left edge
+               * above `lg`, where it runs flush with `lg:ml-0 lg:px-0`.
+               *
+               * Placed after the brand and before the controls so keyboard order runs
+               * logo → search → controls, which is the order they read in.
+               */}
+              <div
+                className={cn(
+                  'absolute inset-x-0 top-1/2 hidden -translate-y-1/2',
+                  'lg:inset-x-auto',
+                  'lg:left-[calc(var(--spacing-nx-sidebar)+var(--spacing-nx-region-gutter-sm))]',
+                  'min-[1440px]:left-[calc(var(--spacing-nx-sidebar)+var(--spacing-nx-region-gutter))]',
+                  'min-[576px]:block'
+                )}
+              >
+                <div className="mx-auto max-w-[var(--spacing-nx-canvas)] px-5 lg:mx-0 lg:max-w-none lg:px-0">
+                  <SearchBar
+                    className="w-[320px] lg:w-[440px] xl:w-[520px]"
+                    shortcutLabel={t('palette.shortcutHint')}
+                    shortcutAriaLabel={t('palette.label')}
+                    onShortcutClick={() => setPaletteOpen(true)}
+                  />
+                </div>
+              </div>
+
               <div className="ml-auto flex shrink-0 items-center gap-1">
                 {/* Below 576 the field does not exist (the DS derives that number: at 576 the
                   centred field's clamped minimum no longer fits between the two reserves), so the
@@ -811,42 +886,6 @@ export function MainShell({ children }: { children: React.ReactNode }) {
                   </>
                 )}
               </div>
-            </div>
-
-            {/**
-             * THE FIELD, OUT OF FLOW. `left-1/2 -translate-x-1/2` on the header centres it on the
-             * VIEWPORT, which is the one thing both flanks can be wrong about without moving it.
-             *
-             * 320 wide, 360 from 1280 up — `FIELD_MAX 360 (320 compact)` in §5.3, and 320 is what
-             * the kit measured at 1265. It stops existing below 576 rather than shrinking past
-             * usefulness; the icon button above takes over there.
-             */}
-            <div
-              className={cn(
-                // IT STEPS AGAIN, PAST WHAT THE KIT MEASURED — the owner's call, and the reason is
-                // that the kit's 320 was fitted to a bar this app does not have. Search here reaches
-                // people, posts, books and skills in one field; 320 shows about thirty characters of
-                // a query that is routinely a full name plus a qualifier, and the field looked
-                // undersized in a 1300 shell with empty ground on both sides of it.
-                //
-                // THE STEPS ARE BOUNDED BY THE FLANKS, not chosen for looks. The field is centred on
-                // the VIEWPORT while brand and controls flow inside the capped row, so a width only
-                // clears them if half of it stays short of the longer flank. The left one is the
-                // larger: pad 12 + rail button 34 + mark 24 + wordmark ≈ 175 while the button is
-                // still there. Hence the first step waits for `lg`, where the button goes away and
-                // the flank drops to ≈ 140 — a 440 field starts at 292 there. `xl` takes 520,
-                // starting at 380 against a flank that ends near 210. Below `lg` it stays at 320,
-                // which is what already fitted.
-                'absolute top-1/2 left-1/2 hidden -translate-x-1/2 -translate-y-1/2',
-                'w-[320px] lg:w-[440px] xl:w-[520px]',
-                'min-[576px]:block'
-              )}
-            >
-              <SearchBar
-                shortcutLabel={t('palette.shortcutHint')}
-                shortcutAriaLabel={t('palette.label')}
-                onShortcutClick={() => setPaletteOpen(true)}
-              />
             </div>
           </header>
         )}
@@ -899,7 +938,17 @@ export function MainShell({ children }: { children: React.ReactNode }) {
           className={cn(
             'mx-auto flex w-full',
             'gap-nx-region-gutter-sm min-[1440px]:gap-nx-region-gutter',
-            isFullBleed ? 'min-h-0 flex-1' : 'max-w-[var(--spacing-nx-shell-max)]'
+            // THE CAP STEPS WITH THE GUTTER, which it did not before and should have. The note
+            // above already says the budget is 1240 below 1440 and 1300 at 1440 — but only the
+            // gutter and the ledger stepped, while the cap stayed 1300 the whole way. That left
+            // 60px the columns had no claim on, and `mx-auto` on the canvas is what absorbed it,
+            // so the reading column's position depended on the viewport instead of on the grid.
+            isFullBleed
+              ? 'min-h-0 flex-1'
+              : cn(
+                  'max-w-[var(--spacing-nx-shell-max-sm)]',
+                  'min-[1440px]:max-w-[var(--spacing-nx-shell-max)]'
+                )
           )}
         >
           {/* Hangs below the bar and owns its own scroller, so a long rail never scrolls the
@@ -941,7 +990,28 @@ export function MainShell({ children }: { children: React.ReactNode }) {
                    * with the rail and the ledger, which is the property that actually matters.
                    * 48 bottom is the DS's runout, was 72.
                    */
-                  'mx-auto w-full max-w-[var(--spacing-nx-canvas)] px-4 pt-5 pb-12 lg:px-0'
+                  /**
+                   * `lg:ml-0` IS THE OTHER HALF OF THE CAP FIX. From `lg` the canvas stops
+                   * centring itself in whatever space is left and simply starts where the rail
+                   * ends, so any slack collects on the right — which is the side the ledger
+                   * arrives from.
+                   *
+                   * Measured before: at 1279 the canvas began at x=420 and at 1280 it began at
+                   * x=254, because the ledger appearing removed 334px of slack that `mx-auto` had
+                   * been splitting evenly. The reading column jumped 166px sideways at one
+                   * breakpoint, which is where a laptop sits when a window is halved. Now the
+                   * canvas begins at `sidebar + gutter` from the shell edge at every width from
+                   * `lg` up, ledger or no ledger, and the 1280 step moves it by half a pixel.
+                   *
+                   * Below `lg` `mx-auto` still governs: with no rail there is nothing to start
+                   * after, and centring is the correct answer.
+                   *
+                   * `px-5`, was `px-4`. Horizontal padding is `--nx-space-pad` (20) on the
+                   * ladder — 16 is `pad-y`, the vertical rung — and 20 is what the top bar and
+                   * the rail both spend, so this is the mobile canvas joining the shell's one
+                   * inset rather than keeping a fourth number.
+                   */
+                  'mx-auto w-full max-w-[var(--spacing-nx-canvas)] px-5 pt-5 pb-12 lg:ml-0 lg:px-0'
             )}
           >
             {children}

@@ -3,7 +3,7 @@
 import { Suspense, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus } from 'lucide-react';
-import { Button, PageHeader, Tabs } from '@/shared/components';
+import { Button, Card, Tabs } from '@/shared/components';
 import { useTabParam } from '@/shared/lib/use-tab-param';
 import {
   CreateProjectDialog,
@@ -49,32 +49,40 @@ function ProjectsContent() {
 
   return (
     <div className="flex flex-col gap-[var(--nx-space-section)]">
-      <PageHeader
-        title={t('projects.title')}
-        description={t('projects.subtitle')}
-        action={
-          <Button size="sm" icon={<Plus />} onClick={() => setCreating(true)}>
-            {t('projects.create.action')}
-          </Button>
-        }
-      />
-
       {/* `?tab=mine` rather than state alone. The paragraph above says these two never had URLs of
           their own, and that stays true of ROUTES — but a reader who submits an application and
           refreshes was being put back on the board, which is the one tab they were not looking at.
 
-          Grouped with its panel: 16 down, the page's own 40 up. It used to be 40 on both sides,
-          which left the strip stranded between the heading and the list it filters. */}
+          Grouped with its panel: 16 down to the list it filters. The strip is now the first thing
+          in the canvas, so it takes the canvas's own top rung instead of a rule written against a
+          heading that no longer sits above it. */}
       <div className="flex flex-col gap-[var(--nx-space-group)]">
-        <Tabs
-          aria-label={t('projects.title')}
-          active={tab}
-          onChange={setTab}
-          tabs={[
-            { id: 'board', label: t('projects.tabs.board') },
-            { id: 'mine', label: t('projects.tabs.mine') },
-          ]}
-        />
+        {/* THE CREATE BUTTON MOVED HERE FROM `PageHeader`'s `action` slot when the header itself
+            was dropped — the control still needs a home, and the tab strip's own row is it: the
+            button acts on the whole board this strip filters, not on either tab specifically, so
+            it sits beside the strip rather than inside a panel under it.
+
+            THE WHITE CARD IS `/newsfeed`'s OWN GROUND, carried here — `Tabs` paints no fill of
+            its own, see its header. `padding "0 10px"` matches the `p-2.5` `/newsfeed`'s
+            `StickyBlock` row spends around the same strip. */}
+        <Card
+          padding="0 10px"
+          className="flex items-center justify-between gap-[var(--nx-space-element)]"
+        >
+          <Tabs
+            aria-label={t('projects.title')}
+            active={tab}
+            onChange={setTab}
+            tabs={[
+              { id: 'board', label: t('projects.tabs.board') },
+              { id: 'mine', label: t('projects.tabs.mine') },
+            ]}
+          />
+
+          <Button size="sm" icon={<Plus />} onClick={() => setCreating(true)}>
+            {t('projects.create.action')}
+          </Button>
+        </Card>
 
         {tab === 'board' ? (
           <>

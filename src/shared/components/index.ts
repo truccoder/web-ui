@@ -16,7 +16,6 @@ export { EmptyState, type EmptyStateProps } from './empty-state';
 export { Tabs, type TabsProps, type TabItem } from './tabs';
 export { Pagination, type PaginationProps } from './pagination';
 export { ProfileHero, type ProfileHeroProps } from './profile-hero';
-export { PageHeader, type PageHeaderProps } from './page-header';
 export { Section, SectionLink, type SectionProps } from './section';
 export { Disclosure, type DisclosureProps } from './disclosure';
 export { StatTile, type StatTileProps } from './stat-tile';

@@ -94,6 +94,7 @@ export function FriendSuggestions({ limit }: FriendSuggestionsProps = {}) {
                 <FriendListItem
                   name={profile.fullName}
                   avatarUrl={profile.profilePictureUrl}
+                  href={profile.username}
                   subtitle={
                     mutualFriends > 0
                       ? t('friends.suggestions.mutualFriends', { count: mutualFriends })

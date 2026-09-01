@@ -121,25 +121,23 @@ export function Ledger() {
        * ledger are the same relationship as two cards in the canvas, so they take the same rung.
        */
       /**
-       * PADDING IS SYMMETRIC — and it is `px-2.5` (10), down from `px-5` (20). Symmetry was the
-       * fix in the round before this one: a lone `pr` of one region gutter double-counted the
-       * shell's own flex `gap` and left the cards flush against the left edge of their own region
-       * while inset 40 from the right.
+       * NO PADDING OF ITS OWN NOW — was `px-2.5` (10), on the reasoning that 10 was what "a flank
+       * in this shell insets its content by", matched to the rail's nav (`px-2.5`). That match was
+       * the wrong pair: the rail's nav padding is a SECOND inset stacked under the item's own
+       * `px-2.5`, there to give the active/hover fill room to sit off the true rail edge — a
+       * pointer-interaction affordance the static cards here have no equivalent of. Compared to
+       * what it actually sits beside, the 10 was short: rail↔canvas showed 40 (gap) + 20 (rail's
+       * two stacked insets) = 60 of visible gutter, canvas↔ledger only 40 + 10 = 50 — a column
+       * that reads a hair closer to the canvas than the rail is, on the one axis a grid is supposed
+       * to keep even.
        *
-       * TEN, BECAUSE THE OTHER FLANK'S SCROLLER ALREADY SPENDS TEN. The rail's nav is `px-2.5`,
-       * so 10 is what a flank in this shell insets its content by; the kit's `padding: 20px 20px
-       * 48px` on the ledger scroller was the only 20 of its kind, and it was buying the widest
-       * gutter in the layout twice — 40 of shell gap plus 20 of column padding put 60 between the
-       * canvas's card edge and this column's, on a screen whose two flanks are otherwise 24 and
-       * 34 from what they sit beside.
-       *
-       * WHAT IT BUYS IS CARD WIDTH: `px-2.5` (10 a side) leaves the card at the ledger token less
-       * 20 — 290 at the 1280 step, 318 at 1440 after the rail↔ledger rebalance (see
-       * `globals.css`'s shell-budget note; the token moved, the 1300 budget did not). The section
-       * below carries chips of matched skills under each row and had the least room of anything in
-       * the shell to carry them in. 48 (`pb-12`) is the runout at the end of every scroller and stays.
+       * `Card`'s OWN padding (`--nx-space-pad-y --nx-space-pad`, i.e. 20 horizontal) is what insets
+       * the content now, exactly as it already does in the canvas — so both flanks end up reading
+       * the shell gutter as the same 40 either side, and a card here sits at the same distance from
+       * the boundary a canvas card does. 48 (`pb-12`) is the runout at the end of every scroller and
+       * stays.
        */
-      className="sticky top-nx-topbar hidden h-[calc(100dvh-var(--spacing-nx-topbar))] w-[var(--spacing-nx-ledger-sm)] shrink-0 flex-col gap-[var(--nx-space-block)] overflow-y-auto px-2.5 pt-5 pb-12 xl:flex min-[1440px]:w-nx-ledger"
+      className="sticky top-nx-topbar hidden h-[calc(100dvh-var(--spacing-nx-topbar))] w-[var(--spacing-nx-ledger-sm)] shrink-0 flex-col gap-[var(--nx-space-block)] overflow-y-auto pt-5 pb-12 xl:flex min-[1440px]:w-nx-ledger"
     >
       <EvidenceSection userId={profile?.id} />
       {/* MOUNTED ONLY ONCE THERE IS A PROFILE, which is a request-shaping decision rather than a
@@ -183,7 +181,7 @@ export function GuestLedger() {
   return (
     <aside
       aria-label={t('ledger.label')}
-      className="sticky top-nx-topbar hidden h-[calc(100dvh-var(--spacing-nx-topbar))] w-[var(--spacing-nx-ledger-sm)] shrink-0 flex-col gap-[var(--nx-space-block)] overflow-y-auto px-2.5 pt-5 pb-12 xl:flex min-[1440px]:w-nx-ledger"
+      className="sticky top-nx-topbar hidden h-[calc(100dvh-var(--spacing-nx-topbar))] w-[var(--spacing-nx-ledger-sm)] shrink-0 flex-col gap-[var(--nx-space-block)] overflow-y-auto pt-5 pb-12 xl:flex min-[1440px]:w-nx-ledger"
     >
       <Card className="flex flex-col gap-3">
         <SectionHeading>{t('guest.ledger.overline')}</SectionHeading>

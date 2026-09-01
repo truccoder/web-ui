@@ -228,18 +228,11 @@ function NewsfeedContent() {
        * and each tab's own 12 completes the line to its label.
        */}
       <StickyBlock>
-        {/* `items-stretch` IS WHAT KEEPS THE HAIRLINE WHOLE. The `underline` tablist draws its own
-            `border-b` and that line running the full measure is the entire reason the variant
-            exists; putting a control beside it would have ended the line early. The control's own
-            box repeats the same border, so the two meet and read as one rail. */}
-        <div className="flex items-stretch">
-          {/* THE ONE CALLER THAT IS NOT A PILL. `Tabs` defaults to the pill variant now — a
-              control dropped onto a page, occupying as little as it can. This strip is not that:
-              it IS the block, a full-measure card parked under the chrome, and a pill group inside
-              it would leave the rest of the bar empty. `Tabs`' own header carries the full
-              argument.
-
-              `min-w-0` because the strip is an `overflow-x-auto` scroller: without it a flex item
+        {/* `Tabs` paints no fill and no rail of its own — see its own header for why — so this
+            row draws none either; the white ground under both the tabs and the compose button is
+            `StickyBlock`'s alone. */}
+        <div className="flex items-center">
+          {/* `min-w-0` because the strip is an `overflow-x-auto` scroller: without it a flex item
               refuses to shrink below its content, so at 390 the four Vietnamese labels would push
               the compose button off the bar instead of scrolling under it. */}
           <Tabs
@@ -247,13 +240,11 @@ function NewsfeedContent() {
             active={tab}
             onChange={selectTab}
             aria-label={t('newsfeed.tabs.label')}
-            variant="underline"
             className="min-w-0 flex-1 px-2.5"
           />
 
           {hasComposer && (
-            // `pb-px` matches the tablist's own, so both borders land on the same pixel row.
-            <div className="flex shrink-0 items-center border-b border-nx-border-subtle pr-2.5 pl-2 pb-px">
+            <div className="flex shrink-0 items-center pr-2.5 pl-2">
               {/**
                * THE BOX IS RESERVED, THE CONTROL COMES AND GOES INSIDE IT. `size-7` is exactly the
                * `sm` icon button, so the bar's geometry never changes: the button is the only

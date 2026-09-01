@@ -322,7 +322,6 @@ export const en = {
 
   notifications: {
     title: 'Notifications',
-    subtitle: 'Activity involving you',
     unreadCount: '${count} unread',
     allRead: "You're all caught up",
     unreadMarker: 'Unread',
@@ -376,7 +375,6 @@ export const en = {
     projectsSection: 'Projects (${count})',
     roadmapsSection: 'Roadmaps (${count})',
     title: 'Search',
-    resultsFor: 'Results for "${query}"',
     prompt: 'Type something and press Enter to search',
     promptTitle: 'Search for something',
     emptyTitle: 'No results',
@@ -577,7 +575,6 @@ export const en = {
 
   roadmap: {
     title: 'Roadmaps',
-    subtitle: 'Pick a track to learn and verify skills',
     list: {
       loadFailed: 'Could not load the roadmaps',
       empty: 'No roadmaps yet',
@@ -1086,7 +1083,6 @@ export const en = {
       'Your professional profile moved to the profile page — the explainer will not run without it.',
     profileMovedLink: 'Open profile',
     title: 'Archive',
-    subtitle: 'Your access tokens and saved explanations',
     tabs: {
       library: 'Library',
       vault: 'Synced notes',
@@ -1450,6 +1446,9 @@ export const en = {
         desc: 'Friend requests you send will appear here.',
       },
     },
+    action: {
+      sendError: 'Could not send friend request',
+    },
   },
 
   ledger: {
@@ -1503,7 +1502,6 @@ export const en = {
       subtitle: 'Ranked against the skills and domains in your professional profile.',
     },
     title: 'Projects',
-    subtitle: 'Find people to build with, or a place to contribute',
     tabs: {
       board: 'Project board',
       mine: 'My applications',
@@ -1615,10 +1613,10 @@ export const en = {
   library: {
     tabs: {
       browse: 'Browse',
-      mine: 'My library',
+      purchased: 'Purchased',
+      mine: 'My books',
     },
     title: 'Library',
-    subtitle: 'Books written by community members',
     owned: 'Owned',
     loadError: 'Could not load the library',
     storageError: 'Books are unavailable: the file storage cannot be reached.',
@@ -1628,6 +1626,9 @@ export const en = {
     allCategories: 'All topics',
     emptyCategoryTitle: 'No books on this topic yet',
     emptyCategoryDesc: 'Try another topic, or browse all of them.',
+    purchasedLoadError: 'Could not load your purchased books',
+    purchasedEmptyTitle: "You haven't bought any books yet",
+    purchasedEmptyDesc: 'Books you buy show up here, so you can come back and read them anytime.',
   },
 
   bookDetail: {
@@ -1792,8 +1793,6 @@ export const en = {
     messageUser: 'Message',
     messageUserError: 'Could not open the conversation. Please try again.',
     sayHi: 'Say hi to start the conversation!',
-    minimize: 'Minimize',
-    close: 'Close',
     chats: 'Chats',
     search: 'Search messages',
     noConversations: 'No conversations yet',
@@ -1820,8 +1819,6 @@ export const en = {
     startFailed: 'Could not open the conversation. Please try again.',
     peerNotReady:
       'This person has never used chat, so they cannot be messaged yet. Ask them to open Chats once.',
-    openChat: 'Open chat',
-    expand: 'Reopen chat window',
     newChatModeLabel: 'What kind of conversation',
     modeDirect: 'One person',
     modeGroup: 'Group',

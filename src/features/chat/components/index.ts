@@ -1,7 +1,5 @@
-export { ChatDock, type ChatDockProps } from './chat-dock';
 export { ChatInfo, type ChatInfoProps } from './chat-info';
 export { ChatMessenger, type ChatMessengerProps } from './chat-messenger';
-export { FloatingChatWindow, type FloatingChatWindowProps } from './floating-chat-window';
 export { ConversationRow, type ConversationRowProps } from './conversation-row';
 export { ConversationSidebar, type ConversationSidebarProps } from './conversation-sidebar';
 export { MessageBubble, type MessageBubbleProps } from './message-bubble';

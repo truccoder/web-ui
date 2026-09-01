@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import {
   Badge,
   Button,
@@ -138,10 +139,16 @@ function AppealRow({ appeal }: { appeal: Appeal }) {
             {appeal.violationType}
           </Badge>
         )}
-        <span className="text-nx-caption text-nx-text-muted">
-          {appeal.userFullName}
-          {appeal.username && ` · @${appeal.username}`}
-        </span>
+        {appeal.username ? (
+          <Link
+            href={`/u/${encodeURIComponent(appeal.username)}`}
+            className="text-nx-caption text-nx-text-muted hover:underline"
+          >
+            {appeal.userFullName} · @{appeal.username}
+          </Link>
+        ) : (
+          <span className="text-nx-caption text-nx-text-muted">{appeal.userFullName}</span>
+        )}
         {appeal.createdAt && (
           <span className="text-nx-caption text-nx-text-faint">
             {formatDateTime(appeal.createdAt, localeTag)}

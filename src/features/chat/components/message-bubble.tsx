@@ -96,7 +96,7 @@ export function MessageBubble({
            * rather than a step off the ramp" — so it darkens the ground and the white window by
            * the same perceptual amount, in both themes.
            */
-          isOwn ? 'bg-nx-accent text-white' : 'bg-nx-tint text-nx-text-primary'
+          isOwn ? 'bg-nx-accent-fill text-nx-accent-fill-text' : 'bg-nx-tint text-nx-text-primary'
         )}
       >
         {message.text}

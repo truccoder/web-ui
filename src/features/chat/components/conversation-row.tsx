@@ -93,7 +93,7 @@ export function ConversationRow({
             <span
               className={cn(
                 'grid h-5 min-w-5 shrink-0 place-items-center rounded-nx-full px-2',
-                'bg-nx-accent text-nx-caption font-semibold text-white'
+                'bg-nx-accent-fill text-nx-caption font-semibold text-nx-accent-fill-text'
               )}
             >
               {/* Past 99 the exact number stops being information and starts being noise. */}

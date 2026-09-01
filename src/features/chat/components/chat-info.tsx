@@ -40,7 +40,8 @@ import type { ConversationHeaderData } from './conversation-view';
  * pane's reach resolves an id to a handle: neither `ReputationResponseDto` nor the roadmap
  * progress rows carry a username, and there is no batch user lookup. The kit's link is real and
  * ours would be a control that cannot reach what it names — the one rule round 15 exists to
- * enforce. Raised as a backend request; a `username` on either DTO closes it with one `Link`.
+ * enforce. Filed as **B38** in `docs/backend-plan.md`; a `username` on either DTO closes it with
+ * one `Link`, same as B13/B21/B35 before it.
  */
 export interface ChatInfoProps {
   header: ConversationHeaderData | null;

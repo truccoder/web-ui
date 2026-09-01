@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense } from 'react';
-import { Tabs } from '@/shared/components';
+import { Card, Tabs } from '@/shared/components';
 import { useTabParam } from '@/shared/lib/use-tab-param';
 import { RepScore, useReputation } from '@/features/reputation';
 import { ProfileIdentityCard, useMyProfile } from '@/features/security';
@@ -132,22 +132,28 @@ function ProfileContent() {
           thing it does not, which reads as a control floating between two sections rather than as
           the label of the one underneath. 16 down, 40 up, and the group is unambiguous. */}
       <div className="flex flex-col gap-[var(--nx-space-group)]">
-        <Tabs
-          aria-label={t('profile.title')}
-          active={tab}
-          onChange={onTabChange}
-          tabs={[
-            {
-              id: 'overview',
-              label: t('profile.tabs.overview'),
-              // `|| undefined` rather than the raw length: `Tabs` prints any number it is handed,
-              // and a "0" pill beside a tab is a notification that nothing happened.
-              count: pendingRequests?.length || undefined,
-            },
-            { id: 'professional', label: t('profile.tabs.professional') },
-            { id: 'account', label: t('profile.tabs.account') },
-          ]}
-        />
+        {/* THE WHITE CARD IS `/newsfeed`'s OWN GROUND, carried here — `Tabs` paints no fill of
+            its own, see its header. `padding "0 10px"` matches the `p-2.5` `/newsfeed`'s
+            `StickyBlock` row spends around the same strip. */}
+        <Card padding="0 10px" className="flex">
+          <Tabs
+            aria-label={t('profile.title')}
+            active={tab}
+            onChange={onTabChange}
+            className="flex-1"
+            tabs={[
+              {
+                id: 'overview',
+                label: t('profile.tabs.overview'),
+                // `|| undefined` rather than the raw length: `Tabs` prints any number it is
+                // handed, and a "0" pill beside a tab is a notification that nothing happened.
+                count: pendingRequests?.length || undefined,
+              },
+              { id: 'professional', label: t('profile.tabs.professional') },
+              { id: 'account', label: t('profile.tabs.account') },
+            ]}
+          />
+        </Card>
 
         {/* THREE COMPONENTS RATHER THAN THREE BLOCKS OF JSX, so that a closed panel is UNMOUNTED
             and its queries never fire. The page used to ask for everything on every visit —

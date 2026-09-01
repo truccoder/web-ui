@@ -15,3 +15,4 @@ export {
 } from './payment-result-panel';
 export { StarRating, type StarRatingProps } from './star-rating';
 export { BookLibrary, type BookLibraryProps } from './book-library';
+export { PurchasedBooksList, type PurchasedBooksListProps } from './purchased-books-list';

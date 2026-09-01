@@ -310,7 +310,6 @@ export const vi: Messages = {
 
   notifications: {
     title: 'Thông báo',
-    subtitle: 'Hoạt động liên quan tới bạn',
     unreadCount: '${count} thông báo chưa đọc',
     allRead: 'Bạn đã đọc hết thông báo',
     unreadMarker: 'Chưa đọc',
@@ -364,7 +363,6 @@ export const vi: Messages = {
     projectsSection: 'Dự án (${count})',
     roadmapsSection: 'Lộ trình (${count})',
     title: 'Tìm kiếm',
-    resultsFor: 'Kết quả cho "${query}"',
     prompt: 'Nhập nội dung và nhấn Enter để tìm kiếm',
     promptTitle: 'Tìm gì đó',
     emptyTitle: 'Không có kết quả',
@@ -560,7 +558,6 @@ export const vi: Messages = {
 
   roadmap: {
     title: 'Lộ trình',
-    subtitle: 'Chọn lộ trình để học và xác nhận kỹ năng',
     list: {
       loadFailed: 'Không tải được lộ trình',
       empty: 'Chưa có lộ trình nào',
@@ -1063,7 +1060,6 @@ export const vi: Messages = {
       'Hồ sơ nghề nghiệp đã chuyển sang trang cá nhân — thiếu nó thì trình giải thích không chạy.',
     profileMovedLink: 'Mở trang cá nhân',
     title: 'Kho lưu trữ',
-    subtitle: 'Token truy cập và những giải thích bạn đã lưu',
     tabs: {
       library: 'Thư viện',
       vault: 'Ghi chú đã đồng bộ',
@@ -1420,6 +1416,9 @@ export const vi: Messages = {
         desc: 'Các lời mời kết bạn bạn đã gửi sẽ xuất hiện ở đây.',
       },
     },
+    action: {
+      sendError: 'Không thể gửi lời mời kết bạn',
+    },
   },
 
   ledger: {
@@ -1473,7 +1472,6 @@ export const vi: Messages = {
       subtitle: 'Xếp theo kỹ năng và lĩnh vực bạn quan tâm trong hồ sơ nghề nghiệp.',
     },
     title: 'Dự án',
-    subtitle: 'Tìm người cùng làm, hoặc chỗ để góp sức',
     tabs: {
       board: 'Bảng dự án',
       mine: 'Đơn của tôi',
@@ -1585,10 +1583,10 @@ export const vi: Messages = {
   library: {
     tabs: {
       browse: 'Duyệt sách',
-      mine: 'Kho sách của tôi',
+      purchased: 'Sách đã mua',
+      mine: 'Sách tôi viết',
     },
     title: 'Thư viện',
-    subtitle: 'Sách do thành viên cộng đồng viết',
     owned: 'Đã sở hữu',
     loadError: 'Không thể tải thư viện',
     storageError: 'Không tải được sách: kho lưu trữ tệp đang không truy cập được.',
@@ -1598,6 +1596,9 @@ export const vi: Messages = {
     allCategories: 'Tất cả chủ đề',
     emptyCategoryTitle: 'Chủ đề này chưa có sách',
     emptyCategoryDesc: 'Thử một chủ đề khác, hoặc xem tất cả.',
+    purchasedLoadError: 'Không thể tải sách đã mua',
+    purchasedEmptyTitle: 'Bạn chưa mua cuốn sách nào',
+    purchasedEmptyDesc: 'Sách bạn mua sẽ xuất hiện ở đây, kể cả khi bạn đọc lại sau này.',
   },
 
   bookDetail: {
@@ -1754,8 +1755,6 @@ export const vi: Messages = {
     messageUser: 'Nhắn tin',
     messageUserError: 'Không mở được cuộc trò chuyện. Vui lòng thử lại.',
     sayHi: 'Hãy chào để bắt đầu cuộc trò chuyện!',
-    minimize: 'Thu nhỏ',
-    close: 'Đóng',
     chats: 'Chats',
     search: 'Tìm trong tin nhắn',
     noConversations: 'Chưa có cuộc trò chuyện nào',
@@ -1783,8 +1782,6 @@ export const vi: Messages = {
     startFailed: 'Không mở được cuộc trò chuyện. Vui lòng thử lại.',
     peerNotReady:
       'Người này chưa dùng chat bao giờ nên chưa nhắn được. Nhờ họ mở mục Chats một lần.',
-    openChat: 'Mở chat',
-    expand: 'Mở lại cửa sổ chat',
     newChatModeLabel: 'Kiểu cuộc trò chuyện',
     modeDirect: 'Một người',
     modeGroup: 'Nhóm',

@@ -14,6 +14,8 @@ export {
   type FriendRequestsProps,
   FriendSuggestions,
   type FriendSuggestionsProps,
+  FriendActionButton,
+  type FriendActionButtonProps,
 } from './components';
 
 export {

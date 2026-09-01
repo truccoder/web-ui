@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { BookOpen, FileText, Users } from 'lucide-react';
-import { EmptyState, Skeleton, Tabs } from '@/shared/components';
+import { Card, EmptyState, Skeleton, Tabs } from '@/shared/components';
 import { useT } from '@/core/i18n';
 import { useTabParam } from '@/shared/lib/use-tab-param';
 import { cn } from '@/shared/lib/cn';
@@ -196,12 +196,18 @@ export function SearchResults({ query, className }: SearchResultsProps) {
 
   return (
     <div className={cn('flex flex-col gap-[var(--nx-space-group)]', className)}>
-      <Tabs
-        aria-label={t('search.title')}
-        active={tab}
-        onChange={setTab}
-        tabs={SEARCH_TABS.map((id) => ({ id, label: t(`search.tabs.${id}`), count: counts[id] }))}
-      />
+      {/* THE WHITE CARD IS `/newsfeed`'s OWN GROUND, carried here — `Tabs` paints no fill of its
+          own, see its header. `padding "0 10px"` matches the `p-2.5` `/newsfeed`'s `StickyBlock`
+          row spends around the same strip. */}
+      <Card padding="0 10px" className="flex">
+        <Tabs
+          aria-label={t('search.title')}
+          active={tab}
+          onChange={setTab}
+          className="flex-1"
+          tabs={SEARCH_TABS.map((id) => ({ id, label: t(`search.tabs.${id}`), count: counts[id] }))}
+        />
+      </Card>
 
       <SearchFilters tab={tab} postKinds={postKinds} value={filters} onChange={setFilters} />
 

@@ -1,8 +1,6 @@
 'use client';
 
 import { NotificationList, NotificationPreferences } from '@/features/notifications';
-import { PageHeader } from '@/shared/components';
-import { useT } from '@/core/i18n';
 
 /**
  * `/notifications` — owned entirely by `notifications`, no contributing domains.
@@ -21,12 +19,8 @@ import { useT } from '@/core/i18n';
  * The page composes and does nothing else: both children own their own queries.
  */
 export default function NotificationsPage() {
-  const t = useT();
-
   return (
     <div className="flex flex-col gap-[var(--nx-space-section)]">
-      <PageHeader title={t('notifications.title')} description={t('notifications.subtitle')} />
-
       <NotificationList />
 
       <NotificationPreferences />

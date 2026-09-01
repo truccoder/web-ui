@@ -97,37 +97,80 @@ export function CommentPreview({ postId, commentCount, className }: CommentPrevi
           <Skeleton className="h-8 w-4/5 rounded-nx-sm" />
         </>
       ) : (
-        preview.map((comment) => (
-          <Link
-            key={comment.id}
-            href={href}
-            className={cn(
-              'flex w-full items-start gap-2 rounded-nx-sm p-1 text-left',
-              'transition-colors duration-[var(--nx-duration-fast)] ease-nx-out',
-              'hover:bg-nx-surface-hover',
-              'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-nx-focus-ring'
-            )}
-          >
-            <Avatar
-              src={comment.authorProfilePictureUrl ?? undefined}
-              name={comment.authorFullName ?? undefined}
-              size="xs"
-              className="mt-0.5"
-            />
-            <span className="min-w-0 flex-1 text-nx-body-sm">
-              <span className="font-medium text-nx-text-primary">
-                {comment.authorFullName ?? t('post.comments.unknownAuthor')}
-              </span>{' '}
-              {/* `line-clamp-2` rather than the measured clamp `ExpandableBlock` uses: a preview
-                  row is two lines by definition, so there is nothing to decide and no reason to
-                  pay for a `ResizeObserver` on every comment of every card in the feed. */}
-              <span className="line-clamp-2 text-nx-text-secondary">{comment.content}</span>
-            </span>
-            <span className="shrink-0 text-nx-caption text-nx-text-faint">
-              {relativeTime(comment.createdAt)}
-            </span>
-          </Link>
-        ))
+        preview.map((comment) => {
+          const authorHref = comment.authorUsername
+            ? `/u/${encodeURIComponent(comment.authorUsername)}`
+            : undefined;
+
+          return (
+            <div
+              key={comment.id}
+              className={cn(
+                'flex w-full items-start gap-2 rounded-nx-sm p-1 text-left',
+                'transition-colors duration-[var(--nx-duration-fast)] ease-nx-out',
+                'hover:bg-nx-surface-hover'
+              )}
+            >
+              {/* The avatar and name go to the commenter's own profile, not the post — the row's
+                  own `Link` (below) already covers "read the rest of this thread". */}
+              {authorHref ? (
+                <Link
+                  href={authorHref}
+                  className="shrink-0 rounded-nx-full focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-nx-focus-ring"
+                >
+                  <Avatar
+                    src={comment.authorProfilePictureUrl ?? undefined}
+                    name={comment.authorFullName ?? undefined}
+                    size="xs"
+                    className="mt-0.5"
+                  />
+                </Link>
+              ) : (
+                <Avatar
+                  src={comment.authorProfilePictureUrl ?? undefined}
+                  name={comment.authorFullName ?? undefined}
+                  size="xs"
+                  className="mt-0.5"
+                />
+              )}
+              {/* THREE SIBLING LINKS, NEVER NESTED. The name reaches the commenter's profile and
+                  the body and the timestamp reach the thread; wrapping the whole column in the
+                  post `Link` and keeping the name link inside it puts an `<a>` in an `<a>`, which
+                  React refuses to hydrate. */}
+              <div className="flex min-w-0 flex-1 items-start gap-2">
+                <span className="min-w-0 flex-1 text-nx-body-sm">
+                  {authorHref ? (
+                    <Link
+                      href={authorHref}
+                      className="font-medium text-nx-text-primary hover:underline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-nx-focus-ring"
+                    >
+                      {comment.authorFullName ?? t('post.comments.unknownAuthor')}
+                    </Link>
+                  ) : (
+                    <span className="font-medium text-nx-text-primary">
+                      {comment.authorFullName ?? t('post.comments.unknownAuthor')}
+                    </span>
+                  )}{' '}
+                  {/* `line-clamp-2` rather than the measured clamp `ExpandableBlock` uses: a preview
+                      row is two lines by definition, so there is nothing to decide and no reason to
+                      pay for a `ResizeObserver` on every comment of every card in the feed. */}
+                  <Link
+                    href={href}
+                    className="line-clamp-2 text-nx-text-secondary hover:underline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-nx-focus-ring"
+                  >
+                    {comment.content}
+                  </Link>
+                </span>
+                <Link
+                  href={href}
+                  className="shrink-0 text-nx-caption text-nx-text-faint hover:underline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-nx-focus-ring"
+                >
+                  {relativeTime(comment.createdAt)}
+                </Link>
+              </div>
+            </div>
+          );
+        })
       )}
 
       <Link

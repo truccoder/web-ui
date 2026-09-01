@@ -89,7 +89,8 @@ export interface BookLibraryProps {
  * else. It used to be a card with a small rectangle and two text bars — which described the old
  * row layout, and would now promise a shelf that does not arrive.
  */
-function BookRowSkeleton() {
+/** Exported so `PurchasedBooksList` (`Sách đã mua`) can show the same loading shape as the shelf. */
+export function BookRowSkeleton() {
   return <Skeleton className="aspect-[2/3] w-full rounded-nx-md" />;
 }
 
@@ -237,8 +238,12 @@ export function BookLibrary({ className }: BookLibraryProps) {
  * title that only appears on pointer-over does not exist on a phone; `@media (hover: none)`
  * pins it open. `focus-within` does the same for the keyboard, so tabbing through the shelf
  * says which book has focus.
+ *
+ * EXPORTED so `PurchasedBooksList` (`Sách đã mua`, B37) draws the exact same card — the request
+ * was explicit that the purchased shelf should look like the browse shelf, not grow a second card
+ * design for the same `Book` shape.
  */
-function BookCell({ book, localeTag }: { book: Book; localeTag: string }) {
+export function BookCell({ book, localeTag }: { book: Book; localeTag: string }) {
   const t = useT();
   const [coverFailed, setCoverFailed] = useState(false);
   const showCover = Boolean(book.coverImageUrl?.trim()) && !coverFailed;
