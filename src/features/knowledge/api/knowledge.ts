@@ -1,4 +1,5 @@
 import api from '@/core/api/axios';
+import { liftExplanationEnvelope } from '../lib/explanation-envelope';
 import type { Explanation, SavedExplanations, SaveExplanationInput } from '../types/knowledge';
 
 /**
@@ -35,6 +36,13 @@ export const explanationApi = {
    *
    * NOTHING IS PERSISTED HERE. The result is returned and forgotten; `saveExplanation` is what puts
    * it in the library. So a generated explanation has no `id` until it is saved.
+   *
+   * NO `liftExplanationEnvelope` HERE ANY MORE (B40). The backend used to fall back to returning
+   * Gemini's raw JSON envelope as `explanationContent` when it could not deserialize it;
+   * `ExplanationService` now strips the fence, trims to the outermost braces, asks the model to
+   * repair its own output once, and answers 503 rather than handing back an envelope. A fresh
+   * explanation can no longer arrive wrapped, so the salvage is applied only in `getMyLibrary`,
+   * where rows saved while the bug was live still carry the raw string.
    */
   explainPost: (
     postId: number,
@@ -66,9 +74,17 @@ export const explanationApi = {
    *
    * Unpaginated, and returns `{ explanations: [], totalCount: 0 }` for an empty library rather than
    * a 404 (measured), so `totalCount === 0` is the empty-state test.
+   *
+   * `liftExplanationEnvelope` IS THE LAST CONSUMER OF THE B40 SALVAGE. The backend no longer
+   * produces raw-JSON envelopes, but rows saved while that bug was live still hold one in
+   * `explanationContent` and nothing rewrites them — this keeps those entries readable. No-op on
+   * every well-formed row, so it comes out once the old data is gone.
    */
   getMyLibrary: () =>
-    api.get<SavedExplanations>('/v1/api/knowledge/my-library').then((r) => r.data),
+    api.get<SavedExplanations>('/v1/api/knowledge/my-library').then((r) => ({
+      ...r.data,
+      explanations: (r.data.explanations ?? []).map(liftExplanationEnvelope),
+    })),
 
   /*
    * GET  /v1/api/knowledge/sync/pull  — DELIBERATELY NOT IMPLEMENTED
