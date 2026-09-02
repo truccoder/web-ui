@@ -108,7 +108,9 @@ function PreviewBody({
         <CodeSnippetBody details={request.codeSnippetDetails} />
       ) : null;
     case 'ARTICLE':
-      return request.articleDetails ? <ArticleBody details={request.articleDetails} /> : null;
+      // ARTICLE leads through the card's `header` slot, above the prose — mirrors
+      // `feed-post.tsx`. `articleDetails` is the title and summary; `content` is the body copy.
+      return null;
     case 'QNA':
       return request.qnaDetails ? <QnaBody details={request.qnaDetails} /> : null;
     case 'POLL':
@@ -254,12 +256,18 @@ export function PostPreviewDialog({
             postType={request.postType}
             // Uncut: the cap's "Xem thêm" leads to a permalink this post does not have yet.
             expanded
+            // An ARTICLE's cover, title and summary lead the card, above the body copy.
+            header={
+              request.postType === 'ARTICLE' && request.articleDetails ? (
+                <ArticleBody details={request.articleDetails} />
+              ) : undefined
+            }
+            // Attached pictures close the card, below the body and location — the order the feed
+            // renders them in.
+            media={<PostImages images={request.images} />}
             body={
               <>
                 <PreviewBody request={request} bookFile={bookFile} coverUrl={coverUrl} />
-
-                {/* After the body, before the quiz — the order the feed renders them in. */}
-                <PostImages images={request.images} />
 
                 {/* SUMMARISED, NOT PLAYED. See the file note: `QuizTaker` submits against a
                     postId, so the honest preview of an attachment that cannot run yet is a line

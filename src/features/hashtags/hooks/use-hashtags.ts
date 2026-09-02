@@ -34,11 +34,16 @@ export function useHashtagSuggest(query: string, limit = 8) {
  *
  * `staleTime` IS FIVE MINUTES, matching `useTrending`: the ranking moves only as people post, not
  * as the reader does anything, so refetching on every focus would redraw an identical list.
+ *
+ * `enabled` LETS A CALLER THAT ONLY SOMETIMES NEEDS THE LIST HOLD THE REQUEST BACK. The composer's
+ * `#` typeahead wants trending only while a bare `#` is open, not on every mount of an
+ * always-rendered textarea — the search box, which is the list's home, leaves it at the default.
  */
-export function useHashtagTrending(window: HashtagWindow = 'week', limit = 8) {
+export function useHashtagTrending(window: HashtagWindow = 'week', limit = 8, enabled = true) {
   return useQuery({
     queryKey: hashtagKeys.trending(window),
     queryFn: () => hashtagsApi.trending(window, limit),
+    enabled,
     staleTime: 5 * 60_000,
   });
 }

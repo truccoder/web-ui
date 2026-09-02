@@ -110,8 +110,28 @@ export interface PostCardProps {
    */
   postType?: string | null;
   commentCount?: number;
-  /** Type-specific body. */
+  /**
+   * Type-specific content that reads BEFORE the free-text `content` — an ARTICLE's cover,
+   * title and summary.
+   *
+   * Most kinds use `body` (rendered after the prose) because their details block is a
+   * secondary attachment hanging off a post whose main thrust is the text: a poll, a linked
+   * book, a code snippet. An ARTICLE inverts that — `articleDetails` carries the headline and
+   * the teaser, and `content` is the article's body copy — so the order has to be
+   * title → summary → content. The caller decides which slot to use; the card still never
+   * branches on `postType` itself.
+   */
+  header?: ReactNode;
+  /** Type-specific body, rendered after the free-text `content`. */
   body?: ReactNode;
+  /**
+   * Attached media — the pictures the author added to the post, as opposed to a kind's own
+   * image (an ARTICLE cover, a LINK thumbnail). Rendered LAST in the body group, below the
+   * body, the quiz and the location, because a photo gallery is what the reader looks at after
+   * they have read the post, not part of reading it. The caller decides what goes here; the
+   * card still never branches on `postType`.
+   */
+  media?: ReactNode;
   /** Reaction bar / comment thread. */
   actions?: ReactNode;
   /** Author-only controls, right of the identity row. */
@@ -152,7 +172,9 @@ export function PostCard({
   hashtags,
   postType,
   commentCount,
+  header,
   body,
+  media,
   actions,
   menu,
   expanded = false,
@@ -280,7 +302,7 @@ export function PostCard({
           thing — what the post says — so they sit at the `tight` rung together and the 16 above
           separates them from the face rather than from each other. Rendered only when it has
           something in it, so a bare-body post does not pay for an empty 16. */}
-      {(content || body || location || (hashtags && hashtags.length > 0)) && (
+      {(content || header || body || media || location || (hashtags && hashtags.length > 0)) && (
         <div className="flex flex-col gap-[var(--nx-space-tight)]">
           {/**
            * THE BADGE ROW OPENS THE BODY, and it used to not exist at all — the post type was
@@ -324,6 +346,13 @@ export function PostCard({
               ))}
             </div>
           ) : null}
+
+          {/* THE HEADER READS BEFORE THE PROSE. For an ARTICLE this is the cover, the title and
+              the summary — its headline, not an attachment — so it has to sit above `content`,
+              which holds the article's body copy. `body` below is for kinds whose block trails
+              the text. */}
+          {header}
+
           {content &&
             /**
              * CAPPED AT 280 AND OPENED IN A DIALOG — the same device the code block uses, and for
@@ -355,6 +384,11 @@ export function PostCard({
           {body}
 
           {location && <LocationBadge location={location} mapsLabel={t('post.openInMaps')} />}
+
+          {/* LAST IN THE GROUP. The author's attached pictures are what the reader browses once
+              they have read the post — after the body, after a quiz they might take, after the
+              place it was posted from — so they close the body group rather than interrupt it. */}
+          {media}
         </div>
       )}
 

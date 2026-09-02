@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Hash, SquarePen, X } from 'lucide-react';
 import { IconButton, StickyBlock, Tabs } from '@/shared/components';
@@ -171,6 +171,22 @@ function NewsfeedContent() {
   const composerCardRef = useRef<HTMLDivElement>(null);
   const [composerOffscreen, setComposerOffscreen] = useState(false);
 
+  /**
+   * After a post is created, refresh the feed AND take the author to their new post's permalink,
+   * where a skeleton covers the moderation check and the page then shows either the post or a
+   * "chờ kiểm duyệt" notice.
+   *
+   * IT GOES VIA `/posts/new`, SYNCHRONOUSLY. `POST /v1/api/posts` returns no id (backend debt
+   * B39), so the id has to be read back over the network — and doing that here, then pushing once
+   * it resolved, left the author on the feed for a beat and gave Back a history entry that did not
+   * return to the tab they posted from. `/posts/new` is pushed on the same tick the post is
+   * accepted and replaces itself with the real permalink once the lookup lands.
+   */
+  const handlePosted = useCallback(() => {
+    refreshFeed();
+    router.push('/posts/new');
+  }, [refreshFeed, router]);
+
   // `tech` has no composer at all (nothing it publishes would land there) and a guest never gets
   // one, so on those the bar has nothing to offer and the button is not rendered. A hashtag view
   // hides it too: a new post is not guaranteed to carry that tag, so "write" under a `#kafka`
@@ -311,7 +327,7 @@ function NewsfeedContent() {
         // The wrapper exists for the `IntersectionObserver` above — `PostComposer` renders a
         // `Card` and forwards no DOM ref, and the one ref it DOES take is the imperative handle.
         <div ref={composerCardRef}>
-          <PostComposer ref={composerRef} onPosted={refreshFeed} />
+          <PostComposer ref={composerRef} onPosted={handlePosted} />
         </div>
       )}
 

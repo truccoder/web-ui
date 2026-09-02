@@ -22,4 +22,6 @@ export { HashtagSearchBox, type HashtagSearchBoxProps } from './components';
 
 export { normalizeHashtag } from './lib/normalize';
 
+export { findHashtagQuery } from './lib/find-hashtag-query';
+
 export type { Hashtag, HashtagDto, HashtagWindow } from './types';

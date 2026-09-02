@@ -190,7 +190,10 @@ function PostBody({
         />
       ) : null;
     case 'ARTICLE':
-      return post.articleDetails ? <ArticleBody details={post.articleDetails} /> : null;
+      // ARTICLE renders through the card's `header` slot, above the prose — `articleDetails`
+      // is the piece's title and summary, and `content` is its body copy, so the order is
+      // title → summary → content. See `FeedPost`'s `header` prop.
+      return null;
     case 'QNA':
       return post.qnaDetails ? <QnaBody details={post.qnaDetails} /> : null;
     case 'POLL':
@@ -360,6 +363,19 @@ export function FeedPost({
       commentCount={post.commentCount}
       // Drops the prose clamp on the permalink; see the prop.
       expanded={expanded}
+      // An ARTICLE's cover, title and summary lead the card, above the body copy in
+      // `content`. Hidden while editing for the same reason the body is — the editor holds
+      // these fields.
+      header={
+        !editing && post.postType === 'ARTICLE' && post.articleDetails ? (
+          <ArticleBody details={post.articleDetails} />
+        ) : undefined
+      }
+      // ATTACHED PICTURES CLOSE THE CARD, below the body and the location. `images` sits on
+      // `FeedPostDataDto` beside `content`, not inside any details block, so any kind can carry
+      // them — a gallery the reader browses after the post, not part of reading it. Hidden while
+      // editing for the same reason the body is: the editor already holds these URLs.
+      media={!editing ? <PostImages images={post.images} /> : undefined}
       menu={
         /**
          * THE MENU RENDERS FOR EVERY POST NOW, and its contents are what differ.
@@ -397,17 +413,6 @@ export function FeedPost({
           ) : (
             <PostBody post={post} onChanged={onChanged} expanded={expanded} />
           )}
-
-          {/* PICTURES BELONG TO THE POST, NOT TO ONE OF ITS KINDS, which is why they render here
-              rather than inside `PostBody`'s switch. `images` sits on `FeedPostDataDto` beside
-              `content`, not inside any of the six details blocks, so an ARTICLE and a REGULAR
-              post can both carry them — and an ARTICLE with a cover would otherwise have had two
-              unrelated places to look for a picture.
-
-              AFTER THE BODY, BEFORE THE QUIZ. The prose is what the pictures illustrate, so they
-              follow it; a quiz is a control the reader operates and belongs last. Hidden while
-              editing for the same reason the body is: the editor already holds these URLs. */}
-          {!editing && <PostImages images={post.images} />}
 
           {/* A quiz is an attachment, not a post type — `buildAndSavePost` accepts
               `quizDetails` regardless of `postType` — so it renders after whatever body the

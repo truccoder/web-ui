@@ -79,6 +79,7 @@ export const en = {
     add: 'Add image',
     replace: 'Replace',
     remove: 'Remove',
+    uploadFromDevice: 'Upload from device',
     failed: 'The upload did not go through. Try again.',
     wrongType: 'That file type is not supported.',
     fileTooLarge: 'That file is over the 20MB limit.',
@@ -1014,8 +1015,9 @@ export const en = {
       titlePlaceholder: 'A headline that says what it is about',
       summary: 'Summary',
       summaryHint: 'Shown on the feed card instead of the full body.',
-      coverImage: 'Cover image URL',
-      coverImageHint: 'Paste a link to an image — there is no upload for cover images yet.',
+      coverImage: 'Cover image',
+      coverImageHint:
+        'The image the feed card shows for this article. Paste a link, or upload one from your device.',
     },
     qna: {
       noticeTitle: 'Your post becomes the question',
@@ -1041,8 +1043,8 @@ export const en = {
       title: 'Link title',
       titleHint: 'Optional. Fetch a preview, or type it yourself.',
       description: 'Link description',
-      thumbnailUrl: 'Thumbnail URL',
-      thumbnailUrlHint: 'Optional. Paste a link to an image.',
+      thumbnailUrl: 'Thumbnail',
+      thumbnailUrlHint: 'Optional. Paste a link to an image, or upload one from your device.',
       fetchPreview: 'Fetch preview',
       fetching: 'Fetching preview…',
       previewFailed: "Couldn't read that page — fill the fields in yourself.",
@@ -1060,6 +1062,9 @@ export const en = {
       maxAttendees: 'Max attendees (optional)',
     },
     images: {
+      label: 'Photos in this post',
+      hintArticle: 'These sit in the post body.',
+      hintLink: 'These sit in the post body, separate from the link thumbnail above.',
       add: 'Add photos',
       remove: 'Remove photo',
       tooMany: 'Up to ${count} photos per post',
@@ -1110,6 +1115,10 @@ export const en = {
       notFoundTitle: 'This post is not available',
       notFoundDesc: 'It may have been removed, or you may not have access to it.',
       open: 'Open post',
+    },
+    pendingReview: {
+      title: 'This post is awaiting moderation',
+      desc: 'Your post has been submitted and is waiting to be reviewed. It will appear here automatically once it is approved.',
     },
     unknownAuthor: 'Unknown author',
     qna: {
@@ -1187,7 +1196,6 @@ export const en = {
     },
     body: {
       code: 'Code',
-      coverAlt: 'Article cover',
       openLink: 'Opens in a new tab',
       qnaResolved: 'Resolved',
       qnaUnresolved: 'Unanswered',

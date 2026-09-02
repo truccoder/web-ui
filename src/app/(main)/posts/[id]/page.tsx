@@ -1,10 +1,12 @@
 'use client';
 
+import { Suspense } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
+import { useParams, useSearchParams } from 'next/navigation';
+import { ArrowLeft, Clock } from 'lucide-react';
 import { Card, EmptyState, Skeleton } from '@/shared/components';
-import { FeedPost, useFeedReturnHref, usePost } from '@/features/newsfeed';
+import { FeedPost, useFeedReturnHref, usePost, usePostApproval } from '@/features/newsfeed';
+import { useMyProfile } from '@/features/security';
 import { useT } from '@/core/i18n';
 
 /**
@@ -24,15 +26,41 @@ import { useT } from '@/core/i18n';
  * that was deleted and for one this reader may not see — deliberately, so the endpoint cannot be
  * used to probe what exists. So the empty state says the post is not available, and does not say
  * it was removed.
+ *
+ * `?new=1` IS THE COMPOSER LANDING HERE. `POST /v1/api/posts` returns no id, so the composer reads
+ * the new post back from the author's own post list and sends them here with this flag — see
+ * `useResolveMyLatestPostId`. When it is set and the viewer is the author, the page holds a
+ * skeleton while `usePostApproval` checks whether moderation has cleared the post, then shows
+ * either the post or a "chờ kiểm duyệt" notice. Backend debt B39 covers the missing status API.
  */
 export default function PostPermalinkPage() {
+  // `useSearchParams` needs a Suspense boundary in the App Router — same shape as `/newsfeed`.
+  return (
+    <Suspense>
+      <PostPermalinkContent />
+    </Suspense>
+  );
+}
+
+function PostPermalinkContent() {
   const t = useT();
   const params = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
 
   const raw = Number(params?.id);
   const postId = Number.isInteger(raw) && raw > 0 ? raw : undefined;
 
   const { data: post, isPending, isError, refetch } = usePost(postId);
+
+  /**
+   * `?new=1` is only trusted together with authorship: the moderation check reads the author's own
+   * feed, so it means nothing for anyone else, and a shared link that happens to carry the flag
+   * should still just render the post.
+   */
+  const { data: profile } = useMyProfile();
+  const justPosted = searchParams.get('new') === '1';
+  const isAuthor = post != null && profile?.id != null && post.authorId === profile.id;
+  const approval = usePostApproval(postId, justPosted && isAuthor);
 
   /**
    * WHERE `← Về bảng tin` GOES. Bare `/newsfeed` now opens on `Công nghệ` — the crawler's stream,
@@ -42,6 +70,12 @@ export default function PostPermalinkPage() {
    * was reached from a shared link or a notification instead.
    */
   const backHref = useFeedReturnHref();
+
+  const notFound = postId === undefined || isError || (!isPending && !post);
+  // Hold the skeleton while the post itself loads, and — for a post the author just created —
+  // while the moderation check is still inconclusive.
+  const checking = !notFound && (isPending || approval.isChecking);
+  const pendingReview = !notFound && !checking && approval.isPending;
 
   return (
     /* THE BLOCK RUNG, NOT THE SECTION RUNG. `--nx-space-section` (40) is "section ↔ section
@@ -67,16 +101,30 @@ export default function PostPermalinkPage() {
         {t('post.backToFeed')}
       </Link>
 
-      {postId === undefined || isError || (!isPending && !post) ? (
+      {notFound ? (
         <EmptyState
           title={t('post.permalink.notFoundTitle')}
           description={t('post.permalink.notFoundDesc')}
         />
-      ) : isPending ? (
+      ) : checking ? (
         <Card>
           <Skeleton lines={4} />
         </Card>
-      ) : (
+      ) : pendingReview ? (
+        /* NOT AN ERROR STATE. The post was saved and the author can see it — it just has not been
+           cleared for an audience yet. The check keeps polling underneath this, so an approval
+           that lands a few seconds later swaps the notice for the real post with no action from
+           the reader. */
+        <Card className="flex flex-col items-center gap-[var(--nx-space-element)] px-4 py-10 text-center">
+          <Clock className="size-8 text-nx-text-muted" aria-hidden />
+          <div className="flex flex-col gap-[var(--nx-space-tight)]">
+            <p className="text-nx-body font-semibold text-nx-text-primary">
+              {t('post.pendingReview.title')}
+            </p>
+            <p className="text-nx-body-sm text-nx-text-secondary">{t('post.pendingReview.desc')}</p>
+          </div>
+        </Card>
+      ) : post ? (
         // Comments open on arrival: see `defaultCommentsOpen`. A permalink exists so that a
         // notification, a shared link or a skill's cited evidence has somewhere to land, and
         // in all three the discussion is what the reader came for.
@@ -85,7 +133,7 @@ export default function PostPermalinkPage() {
         // page, so rendering the feed's clamped card here left a long post cut behind a control
         // that navigated to the URL already on screen. This page is where the whole post lives.
         <FeedPost post={post} onChanged={() => refetch()} defaultCommentsOpen expanded />
-      )}
+      ) : null}
     </div>
   );
 }

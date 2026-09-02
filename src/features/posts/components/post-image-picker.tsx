@@ -44,6 +44,14 @@ export interface PostImagePickerProps {
   onChange: (images: string[]) => void;
   /** True while the post itself is in flight — picking during a submit would be a race. */
   disabled?: boolean;
+  /**
+   * A heading over the control. Worth setting on any kind that ALSO has an image field of its own
+   * (an article's cover, a link's thumbnail): without a name, "Add photos" reads as if it were
+   * that same image, and a reader cannot tell the body pictures from the card image.
+   */
+  label?: string;
+  /** A line under the heading, for the same disambiguation. */
+  hint?: string;
   className?: string;
 }
 
@@ -59,7 +67,14 @@ export interface PostImagePickerProps {
  */
 const MAX_REQUEST_BYTES = 25 * 1024 * 1024;
 
-export function PostImagePicker({ value, onChange, disabled, className }: PostImagePickerProps) {
+export function PostImagePicker({
+  value,
+  onChange,
+  disabled,
+  label,
+  hint,
+  className,
+}: PostImagePickerProps) {
   const t = useT();
   const upload = useUploadMedia();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -116,6 +131,15 @@ export function PostImagePicker({ value, onChange, disabled, className }: PostIm
 
   return (
     <div className={cn('flex flex-col gap-2', className)}>
+      {(label || hint) && (
+        <div className="flex flex-col gap-0.5">
+          {label && (
+            <span className="text-nx-body-sm font-medium text-nx-text-primary">{label}</span>
+          )}
+          {hint && <p className="text-nx-caption text-nx-text-muted">{hint}</p>}
+        </div>
+      )}
+
       {value.length > 0 && (
         <ul className="flex flex-wrap gap-2">
           {value.map((url) => (

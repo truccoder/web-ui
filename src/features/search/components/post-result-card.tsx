@@ -120,6 +120,9 @@ export function PostResultCard({ post, className }: PostResultCardProps) {
       // payload genuinely carried nothing, which search does not do.
       createdAt={post.createdAt ?? ''}
       content={post.content}
+      // An article's title and summary read before the body copy in `content` — same order as
+      // the feed card.
+      header={post.articleDetails ? <ArticleBody details={post.articleDetails} /> : undefined}
       body={
         <>
           {/* An event post's title lives in `eventName`; `content` above is its description. */}
@@ -137,7 +140,6 @@ export function PostResultCard({ post, className }: PostResultCardProps) {
               href={post.id != null ? `/posts/${post.id}` : undefined}
             />
           )}
-          {post.articleDetails && <ArticleBody details={post.articleDetails} />}
           {post.qnaDetails && <QnaBody details={post.qnaDetails} />}
           {post.pollDetails && <PollBody details={post.pollDetails} />}
           {post.linkDetails && <LinkBody details={post.linkDetails} />}

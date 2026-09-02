@@ -78,6 +78,7 @@ export const vi: Messages = {
     add: 'Thêm ảnh',
     replace: 'Đổi ảnh',
     remove: 'Gỡ',
+    uploadFromDevice: 'Tải lên từ máy',
     failed: 'Tải lên không thành công. Thử lại.',
     wrongType: 'Định dạng file này không được hỗ trợ.',
     fileTooLarge: 'File này vượt quá 20MB.',
@@ -994,8 +995,9 @@ export const vi: Messages = {
       titlePlaceholder: 'Tiêu đề nói rõ bài này về cái gì',
       summary: 'Tóm tắt',
       summaryHint: 'Hiện trên card bảng tin thay cho toàn bộ nội dung.',
-      coverImage: 'URL ảnh bìa',
-      coverImageHint: 'Dán liên kết ảnh — hiện chưa có chỗ tải ảnh bìa lên.',
+      coverImage: 'Ảnh bìa',
+      coverImageHint:
+        'Ảnh hiện trên card bảng tin cho bài viết này. Dán liên kết ảnh, hoặc tải một ảnh lên từ máy.',
     },
     qna: {
       noticeTitle: 'Nội dung bài chính là câu hỏi',
@@ -1021,8 +1023,8 @@ export const vi: Messages = {
       title: 'Tiêu đề liên kết',
       titleHint: 'Không bắt buộc. Lấy xem trước hoặc tự nhập.',
       description: 'Mô tả liên kết',
-      thumbnailUrl: 'URL ảnh thu nhỏ',
-      thumbnailUrlHint: 'Không bắt buộc. Dán liên kết ảnh.',
+      thumbnailUrl: 'Ảnh thu nhỏ',
+      thumbnailUrlHint: 'Không bắt buộc. Dán liên kết ảnh, hoặc tải một ảnh lên từ máy.',
       fetchPreview: 'Lấy xem trước',
       fetching: 'Đang lấy xem trước…',
       previewFailed: 'Không đọc được trang đó — bạn tự điền các ô bên dưới.',
@@ -1039,6 +1041,9 @@ export const vi: Messages = {
       maxAttendees: 'Số người tham gia tối đa (tuỳ chọn)',
     },
     images: {
+      label: 'Ảnh trong bài',
+      hintArticle: 'Ảnh nằm trong nội dung bài.',
+      hintLink: 'Ảnh nằm trong nội dung bài, tách biệt với ảnh thu nhỏ của liên kết ở trên.',
       add: 'Thêm ảnh',
       remove: 'Bỏ ảnh',
       tooMany: 'Mỗi bài tối đa ${count} ảnh',
@@ -1089,6 +1094,10 @@ export const vi: Messages = {
       notFoundTitle: 'Không xem được bài viết này',
       notFoundDesc: 'Bài viết có thể đã bị gỡ, hoặc bạn không có quyền xem nó.',
       open: 'Mở bài viết',
+    },
+    pendingReview: {
+      title: 'Bài viết đang chờ kiểm duyệt',
+      desc: 'Bài của bạn đã được gửi và đang chờ kiểm duyệt. Khi được duyệt, bài sẽ tự hiển thị ở đây.',
     },
     unknownAuthor: 'Tác giả không xác định',
     qna: {
@@ -1163,7 +1172,6 @@ export const vi: Messages = {
     },
     body: {
       code: 'Mã nguồn',
-      coverAlt: 'Ảnh bìa bài viết',
       openLink: 'Mở trong tab mới',
       qnaResolved: 'Đã có đáp án',
       qnaUnresolved: 'Chưa có đáp án',

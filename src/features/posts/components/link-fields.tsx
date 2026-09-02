@@ -1,7 +1,8 @@
 'use client';
 
-import { Image as ImageIcon, Link2, Sparkles } from 'lucide-react';
+import { Link2, Sparkles } from 'lucide-react';
 import { Button, Input, Textarea } from '@/shared/components';
+import { ImageUrlField } from '@/features/media';
 import { useT } from '@/core/i18n';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { useLinkPreview } from '@/features/link-preview';
@@ -16,7 +17,9 @@ import type { LinkDetails } from '../types/post';
  * failed preview never blocks the post. Only fields the author has not already filled are
  * overwritten by a preview.
  *
- * `thumbnailUrl` is a URL, not an upload: `LinkDetails` is stored exactly as posted.
+ * `thumbnailUrl` is stored exactly as posted — a URL string. It can now be filled two ways: an
+ * unfurl or a pasted link, as before, or an upload from the device via `POST /v1/api/media`
+ * (`ImageUrlField`), which stores the URL that endpoint returns.
  *
  * Backend validation for this kind: none. The `http(s)` check is a frontend guard so the reader
  * side is not handed a `javascript:` or relative href to render as an anchor.
@@ -77,9 +80,9 @@ export function LinkFields({ value, onChange }: LinkFieldsProps) {
         />
         <Button
           type="button"
-          size="sm"
+          size="md"
           variant="secondary"
-          icon={<Sparkles className="size-3.5" />}
+          icon={<Sparkles />}
           loading={preview.isPending}
           disabled={!isValidLinkUrl(url)}
           onClick={() => preview.mutate(url)}
@@ -109,16 +112,11 @@ export function LinkFields({ value, onChange }: LinkFieldsProps) {
         onChange={(event) => onChange({ ...value, description: event.target.value })}
       />
 
-      <Input
-        mono
-        type="url"
-        inputMode="url"
-        prefix={<ImageIcon />}
+      <ImageUrlField
         label={t('createPost.link.thumbnailUrl')}
         hint={t('createPost.link.thumbnailUrlHint')}
         value={value.thumbnailUrl ?? ''}
-        onChange={(event) => onChange({ ...value, thumbnailUrl: event.target.value })}
-        placeholder="https://"
+        onChange={(thumbnailUrl) => onChange({ ...value, thumbnailUrl })}
       />
     </div>
   );

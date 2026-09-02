@@ -1,7 +1,7 @@
 'use client';
 
-import { Link2 } from 'lucide-react';
 import { Input, Textarea } from '@/shared/components';
+import { ImageUrlField } from '@/features/media';
 import { useT } from '@/core/i18n';
 import type { ArticleDetails } from '../types/post';
 
@@ -9,12 +9,10 @@ import type { ArticleDetails } from '../types/post';
  * `ARTICLE` payload — `articleDetails: { title, coverImage, summary }`. The article *body* is
  * the post's `content`; `summary` is the teaser the feed card shows.
  *
- * `coverImage` IS A URL FIELD, NOT AN UPLOAD, because the backend has no general-purpose file
- * endpoint. Grepping `@RequestPart MultipartFile` across every controller returns exactly
- * three: the book file and its cover (`POST /posts/books`), the registration avatar, and
- * `PUT /profile/picture`. There is no image endpoint a composer could post to, so the only
- * honest control is "paste a link to an image". When the backend grows an upload endpoint,
- * this field becomes a file picker.
+ * `coverImage` TAKES A URL *OR* AN UPLOAD. It was URL-only for as long as the backend had no
+ * general-purpose file endpoint; `POST /v1/api/media` (B16) is that endpoint, so `ImageUrlField`
+ * now offers both — paste a link, or send a file from the device and store the URL it returns.
+ * The stored value is a URL either way.
  *
  * As with every kind in this checkpoint except EVENT, the backend validates nothing here.
  */
@@ -43,16 +41,11 @@ export function ArticleFields({ value, onChange }: ArticleFieldsProps) {
         onChange={(event) => onChange({ ...value, summary: event.target.value })}
       />
 
-      <Input
-        mono
-        type="url"
-        inputMode="url"
-        prefix={<Link2 />}
+      <ImageUrlField
         label={t('createPost.article.coverImage')}
         hint={t('createPost.article.coverImageHint')}
         value={value.coverImage ?? ''}
-        onChange={(event) => onChange({ ...value, coverImage: event.target.value })}
-        placeholder="https://"
+        onChange={(coverImage) => onChange({ ...value, coverImage })}
       />
     </div>
   );

@@ -623,6 +623,11 @@ export function PostComposer({ onPosted, ref }: PostComposerProps) {
             // A PRIVATE post cannot carry tags — turn the dropdown off rather than let someone
             // build a tag the backend will reject.
             mentionsDisabled={!taggingAllowed}
+            // `#` completes against real, used tags (`GET /v1/api/hashtags/suggest`). There is
+            // nothing to resolve at submit like `@` mentions are — `CreatePostRequestDto` has no
+            // `hashtags` field, the backend extracts `#tags` from `content` after posting — so this
+            // is purely a completion aid. On for every visibility: a private post keeps its tags.
+            hashtagSuggestions
             placeholder={placeholder}
             aria-label={t('createPost.post')}
           />
@@ -691,7 +696,26 @@ export function PostComposer({ onPosted, ref }: PostComposerProps) {
               on `REGULAR`, which is the kind most likely to want a photograph. Above the quiz and
               the location row because it is part of composing the post rather than an attachment
               to it. */}
-          <PostImagePicker value={images} onChange={setImages} disabled={pending} />
+          <PostImagePicker
+            value={images}
+            onChange={setImages}
+            disabled={pending}
+            // ARTICLE and LINK each carry their own image field (a cover, a thumbnail); without a
+            // name these body pictures read as if they were that same image. The other kinds have
+            // nothing to confuse them with, so the control stays bare there.
+            label={
+              postType === 'ARTICLE' || postType === 'LINK'
+                ? t('createPost.images.label')
+                : undefined
+            }
+            hint={
+              postType === 'ARTICLE'
+                ? t('createPost.images.hintArticle')
+                : postType === 'LINK'
+                  ? t('createPost.images.hintLink')
+                  : undefined
+            }
+          />
 
           {quiz && (
             <div className="flex flex-col gap-3 rounded-nx-sm border border-nx-border-default bg-nx-surface-sunken p-3">
