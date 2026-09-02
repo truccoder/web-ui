@@ -456,6 +456,9 @@ export const vi: Messages = {
     markAllReadError: 'Không đánh dấu tất cả đã đọc được. Vui lòng thử lại.',
     retry: 'Thử lại',
     allLoaded: 'Bạn đã xem hết thông báo rồi',
+    // Đứng thế cho người chưa đặt tên tài khoản — khớp `.orElse("Someone")` phía backend để một
+    // dòng tiếng Việt không kẹp chữ tiếng Anh. Xem `lib/notification-text.ts`.
+    someone: 'Ai đó',
     bell: {
       label: 'Thông báo',
       labelUnread: 'Thông báo, ${count} chưa đọc',
@@ -480,19 +483,53 @@ export const vi: Messages = {
       error: 'Không tải được tuỳ chọn thông báo',
       saveError: 'Không lưu được thay đổi. Vui lòng thử lại.',
     },
+    // Nhãn loại theo từng type — panel tuỳ chọn đọc để dựng công tắc tắt/bật, giữ đủ so với
+    // `NotificationType` để không loại nào thiếu nhãn.
     types: {
       POST_LIKED: 'Có người thích bài viết của bạn',
+      COMMENT_LIKED: 'Có người bày tỏ cảm xúc về bình luận của bạn',
       POST_COMMENTED: 'Có người bình luận bài viết của bạn',
       POST_TAGGED: 'Có người nhắc tới bạn trong bài viết',
+      USER_MENTIONED: 'Có người nhắc tới bạn trong một bình luận',
       FRIEND_REQUEST: 'Lời mời kết bạn mới',
       FRIEND_ACCEPTED: 'Lời mời kết bạn được chấp nhận',
       EVENT_RSVP: 'Có người phản hồi sự kiện của bạn',
       EVENT_REMINDER: 'Nhắc trước một ngày sự kiện bạn sẽ tham gia',
       BOOK_REVIEW: 'Có đánh giá mới cho sách của bạn',
       BOOK_PURCHASED: 'Có người mua sách của bạn',
+      SKILL_VERIFIED: 'Một yêu cầu xác minh kỹ năng của bạn được duyệt',
+      SKILL_REJECTED: 'Một yêu cầu xác minh kỹ năng của bạn bị từ chối',
       PROJECT_APPLICATION_ACCEPTED: 'Đơn ứng tuyển dự án của bạn được nhận',
       PROJECT_APPLICATION_REJECTED: 'Đơn ứng tuyển dự án của bạn bị từ chối',
       PROJECT_MEMBER_REMOVED: 'Bạn bị loại khỏi một dự án',
+    },
+    /**
+     * DÒNG NỘI DUNG THEO TỪNG TYPE — B41. Backend gửi `messageKey` (vd `POST_LIKED`) +
+     * `messageArgs` (vd `{ actor: "Ada" }`); `lib/notification-text.ts` dựng câu từ đây nên dòng
+     * chữ theo đúng ngôn ngữ UI. `${actor}` là tên hiển thị, còn lại là tiêu đề trong ngoặc kép
+     * (`${book}`, `${skill}`, `${project}`, `${event}`). Khoá khớp hằng `NotificationMessages`
+     * phía backend, gồm 2 biến thể `EVENT_RSVP_*` — đổi tên khoá phải đồng bộ với backend. Khối
+     * này ở lại lâu dài, không phải shim tạm: vẫn giữ sau khi tầng parse tiếng Anh cũ trong file
+     * đó được gỡ.
+     */
+    line: {
+      POST_LIKED: '${actor} đã bày tỏ cảm xúc về bài viết của bạn',
+      COMMENT_LIKED: '${actor} đã bày tỏ cảm xúc về bình luận của bạn',
+      POST_COMMENTED: '${actor} đã bình luận bài viết của bạn',
+      POST_TAGGED: '${actor} đã gắn thẻ bạn trong một bài viết',
+      USER_MENTIONED: '${actor} đã nhắc tới bạn trong một bình luận',
+      FRIEND_REQUEST: '${actor} đã gửi cho bạn lời mời kết bạn',
+      FRIEND_ACCEPTED: '${actor} đã chấp nhận lời mời kết bạn của bạn',
+      EVENT_RSVP_GOING: '${actor} sẽ tham gia ${event}',
+      EVENT_RSVP_INTERESTED: '${actor} quan tâm tới ${event}',
+      EVENT_REMINDER: '${event} sẽ bắt đầu trong vòng 24 giờ',
+      BOOK_REVIEW: '${actor} đã đánh giá “${book}”',
+      BOOK_PURCHASED: '${actor} đã mua “${book}”',
+      SKILL_VERIFIED: 'Yêu cầu xác minh “${skill}” của bạn đã được duyệt',
+      SKILL_REJECTED: 'Yêu cầu xác minh “${skill}” của bạn không được duyệt',
+      PROJECT_APPLICATION_ACCEPTED: 'Đơn ứng tuyển vào “${project}” của bạn đã được chấp nhận',
+      PROJECT_APPLICATION_REJECTED: 'Đơn ứng tuyển vào “${project}” của bạn đã bị từ chối',
+      PROJECT_MEMBER_REMOVED: 'Bạn đã bị loại khỏi nhóm của “${project}”',
     },
   },
 

@@ -2671,6 +2671,10 @@ export interface components {
             /** Format: int32 */
             id?: number;
             isRead?: boolean;
+            messageArgs?: {
+                [key: string]: string;
+            };
+            messageKey?: string;
             /** Format: int32 */
             postId?: number;
             /** Format: int32 */

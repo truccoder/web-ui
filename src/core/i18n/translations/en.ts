@@ -470,6 +470,10 @@ export const en = {
     markAllReadError: 'Could not mark all notifications as read. Please try again.',
     retry: 'Try again',
     allLoaded: "You've seen all notifications",
+    // Stands in for a person whose account has no name set — mirrors the backend's own
+    // `.orElse("Someone")` so a Vietnamese line does not carry a stray English word. See
+    // `lib/notification-text.ts`.
+    someone: 'Someone',
     bell: {
       label: 'Notifications',
       labelUnread: 'Notifications, ${count} unread',
@@ -494,19 +498,53 @@ export const en = {
       error: 'Could not load your notification settings',
       saveError: 'Could not save that change. Please try again.',
     },
+    // The category label per type — read by the preferences panel's mute switches, and kept
+    // complete against `NotificationType` so nothing is ever unlabelled.
     types: {
       POST_LIKED: 'Someone reacts to your post',
+      COMMENT_LIKED: 'Someone reacts to your comment',
       POST_COMMENTED: 'Someone comments on your post',
       POST_TAGGED: 'Someone mentions you in a post',
+      USER_MENTIONED: 'Someone mentions you in a comment',
       FRIEND_REQUEST: 'New friend request',
       FRIEND_ACCEPTED: 'Friend request accepted',
       EVENT_RSVP: 'Someone responds to your event',
       EVENT_REMINDER: 'A day before an event you are going to',
       BOOK_REVIEW: 'New review on your book',
       BOOK_PURCHASED: 'Someone buys your book',
+      SKILL_VERIFIED: 'A skill claim of yours is verified',
+      SKILL_REJECTED: 'A skill claim of yours is declined',
       PROJECT_APPLICATION_ACCEPTED: 'Your project application is accepted',
       PROJECT_APPLICATION_REJECTED: 'Your project application is declined',
       PROJECT_MEMBER_REMOVED: 'You are removed from a project',
+    },
+    /**
+     * THE INSTANCE LINE PER TYPE — B41. The backend sends `messageKey` (e.g. `POST_LIKED`) +
+     * `messageArgs` (e.g. `{ actor: "Ada" }`); `lib/notification-text.ts` renders from here so
+     * the line follows the UI language. `${actor}` is a display name, the rest are quoted titles
+     * (`${book}`, `${skill}`, `${project}`, `${event}`). Keys mirror the backend's
+     * `NotificationMessages` constants, including the two `EVENT_RSVP_*` variants — rename one
+     * only in step with the backend. Load-bearing, not a temporary shim: this stays after the
+     * legacy English-parsing tier in that file is eventually removed.
+     */
+    line: {
+      POST_LIKED: '${actor} reacted to your post',
+      COMMENT_LIKED: '${actor} reacted to your comment',
+      POST_COMMENTED: '${actor} commented on your post',
+      POST_TAGGED: '${actor} tagged you in a post',
+      USER_MENTIONED: '${actor} mentioned you in a comment',
+      FRIEND_REQUEST: '${actor} sent you a friend request',
+      FRIEND_ACCEPTED: '${actor} accepted your friend request',
+      EVENT_RSVP_GOING: '${actor} is going to ${event}',
+      EVENT_RSVP_INTERESTED: '${actor} is interested in ${event}',
+      EVENT_REMINDER: '${event} starts within 24 hours',
+      BOOK_REVIEW: '${actor} reviewed “${book}”',
+      BOOK_PURCHASED: '${actor} purchased “${book}”',
+      SKILL_VERIFIED: 'Your claim for “${skill}” was verified',
+      SKILL_REJECTED: 'Your claim for “${skill}” was not verified',
+      PROJECT_APPLICATION_ACCEPTED: 'Your application to “${project}” was accepted',
+      PROJECT_APPLICATION_REJECTED: 'Your application to “${project}” was declined',
+      PROJECT_MEMBER_REMOVED: 'You were removed from the team on “${project}”',
     },
   },
 

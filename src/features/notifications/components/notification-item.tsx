@@ -22,6 +22,7 @@ import type { LucideIcon } from 'lucide-react';
 import { useRelativeTime } from '@/shared/lib/format';
 import { useT } from '@/core/i18n';
 import { cn } from '@/shared/lib/cn';
+import { localizeNotificationText } from '../lib/notification-text';
 import type { AppNotification, NotificationType } from '../types/notification';
 
 /**
@@ -200,18 +201,23 @@ export function NotificationItem({ notification, onRead, className }: Notificati
 
       <span className="min-w-0 flex-1">
         {/* ONE LINE, THE SPECIFIC ONE. The backend sends a `title` that names the CATEGORY
-            ("Có người bày tỏ cảm xúc về bài viết của bạn") and a `body` that names the INSTANCE
-            ("Bùi Gia Thắng đã bày tỏ cảm xúc về bài viết của bạn.") — stacked, they said the same
-            thing twice, twenty pixels apart, down the whole list. A notification list wants the
-            instance, so `body` is the line; `title` only stands in when there is no body (nullable
-            in the schema, absent — not null — on the wire, hence `||` on the falsy string too). */}
+            ("New reaction on your post") and a `body` that names the INSTANCE ("Bùi Gia Thắng
+            reacted to your post") — stacked, they said the same thing twice, twenty pixels apart,
+            down the whole list. A notification list wants the instance, so `body` is the line;
+            `title` only stands in when there is no body (nullable in the schema, absent — not
+            null — on the wire, hence `||` on the falsy string too).
+
+            `localizeNotificationText` (B41) is what makes that line follow the UI language: it
+            renders from the backend's `messageKey`/`messageArgs` where present, from the frozen
+            English-template parse for rows written before B41, and falls back to this raw string
+            on any miss. */}
         <span
           className={cn(
             'block text-nx-ui text-nx-text-primary',
             unread ? 'font-semibold' : 'font-normal'
           )}
         >
-          {notification.body || notification.title}
+          {localizeNotificationText(notification, t)}
         </span>
 
         <span className="mt-1 block text-nx-caption text-nx-text-muted">
