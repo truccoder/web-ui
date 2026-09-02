@@ -46,8 +46,23 @@ jobs:
             exit 1
           fi
 
+      # `--max-warnings=0` is the whole point of this step.
+      #
+      # The design-system rules in `eslint.config.mjs` — the spacing ladder and the raw-hex ban —
+      # are registered at severity `warn`, so plain `eslint` exits 0 with them firing. Until now
+      # the only place they were enforced was `lint-staged`, which passes `--max-warnings=0` but
+      # runs on the developer's machine and is skipped by `--no-verify` or by an edit made in
+      # GitHub's web UI. That made this step green for exactly the commits it needed to catch.
       - name: Code Linting
-        run: yarn lint
+        run: yarn lint --max-warnings=0
+
+      # Before the build, because it finishes in under a second and the build takes ten.
+      #
+      # These are unit tests over pure logic only — no browser, no database. The Playwright suite
+      # is NOT run in CI and must not be: `playwright.config.ts` explains that it reads the demo
+      # database whose contents `docs/demo-script.md` quotes to the number.
+      - name: Unit tests
+        run: yarn test
 
       - name: Build project
         run: yarn build
