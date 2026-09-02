@@ -1,0 +1,187 @@
+'use client';
+
+import { RefreshCw } from 'lucide-react';
+import { Button, Card, DeveloperMeta, EmptyState, Skeleton } from '@/shared/components';
+import { useT } from '@/core/i18n';
+import { LinkGithubButton } from './link-github-button';
+import { getErrorMessage } from '@/shared/lib/api-error';
+import { useRelativeTime } from '@/shared/lib/format';
+import { cn } from '@/shared/lib/cn';
+import {
+  isNotLinked,
+  isSyncRateLimited,
+  useGithubStats,
+  useSyncGithub,
+  useUnlinkGithub,
+} from '../hooks/use-github';
+import { ContributionGraph } from './contribution-graph';
+import { PinnedRepoList } from './pinned-repo-list';
+
+/**
+ * A user's GitHub presence: identity, counts, pinned repositories, contribution graph, and the
+ * two controls that work today — sync and unlink.
+ *
+ * THERE IS DELIBERATELY NO "LINK GITHUB" BUTTON, AND ITS ABSENCE IS THE FEATURE. The linking flow
+ * cannot complete: `/v1/api/github/oauth/url` and `/v1/api/auth/github/url` return byte-identical
+ * URLs pointing at the SIGN-IN callback, which spends the single-use code; and `middleware.ts`
+ * redirects any signed-in session away from `/oauth/*` before that page renders. So a link button
+ * would send the user on a round trip that silently logs them in again and links nothing.
+ * Shipping it would be the "Bỏ qua" button with no handler (ds-deviation #9) with extra steps.
+ * B23; the empty state below says the account is not linked and stops there rather than offering
+ * an action that cannot work.
+ *
+ * A 404 IS THE EMPTY STATE, NOT AN ERROR. `getStats` is `findByUserId(...).orElseThrow`, so an
+ * unlinked user 404s every time — `isNotLinked` separates it, and the hook does not retry it.
+ *
+ * SYNC REPORTS ONLY THAT IT WAS ACCEPTED. `syncGithubData` swallows every exception, so a 200
+ * covers both "refreshed" and "GitHub was unreachable". The copy therefore does not claim
+ * success; `lastSyncedAt` below is the actual evidence, and it is rendered right next to the
+ * button so the two can be compared.
+ */
+export interface GithubStatsCardProps {
+  /** Whose stats to show. Undefined while the caller is still resolving it. */
+  userId?: number;
+  /**
+   * Somebody else's GitHub — drop `Đồng bộ` / `Huỷ liên kết`, and change the empty state.
+   *
+   * NOT COSMETIC. `POST /github/sync` and `DELETE /github/unlink` take **no user id**: both act on
+   * the authenticated caller. Rendered under a stranger's name they would read as controls over
+   * that person's account and would quietly re-sync or UNLINK the viewer's own — a destructive
+   * action performed on the wrong account with no way to tell from the screen.
+   *
+   * `readOnly` is the prop rather than "isMe" because the caller already knows which page it is;
+   * making the card compare ids would mean it needs the session, which is `features/security`.
+   *
+   * @default false
+   */
+  readOnly?: boolean;
+  className?: string;
+}
+
+export function GithubStatsCard({ userId, readOnly = false, className }: GithubStatsCardProps) {
+  const t = useT();
+  const relativeTime = useRelativeTime();
+
+  const stats = useGithubStats(userId);
+  const sync = useSyncGithub();
+  const unlink = useUnlinkGithub();
+
+  // EVERY STATE OF THIS COMPONENT IS A CARD, INCLUDING THE THREE THAT USED NOT TO BE. Loading,
+  // not-linked and failed each returned a bare block onto the page ground, so a section that is a
+  // card once the data lands was a hole in the column until then — and on `/profile`'s `Chuyên
+  // môn` tab, where `MySkillsCard` sits directly above wrapping its own empty state in a `Card`,
+  // the unlinked case (the common one — B23 means nobody CAN link) left the tab ending in a
+  // 96px-tall gap. `compact` for the same reason `MySkillsCard` passes it: `py-12` is the padding
+  // of an empty state that owns a screen, not one filling a card.
+  if (stats.isPending) {
+    return (
+      <Card className={className}>
+        <Skeleton lines={4} />
+      </Card>
+    );
+  }
+
+  if (isNotLinked(stats.error)) {
+    // A viewer gets a different sentence. The owner's copy explains WHY linking cannot be
+    // completed (B23) — which is an answer to "how do I fix this?", a question nobody asks about
+    // somebody else's account.
+    return (
+      <Card className={className}>
+        <EmptyState
+          compact
+          title={readOnly ? t('github.notLinkedOther.title') : t('github.notLinked.title')}
+          description={readOnly ? t('github.notLinkedOther.desc') : t('github.notLinked.desc')}
+          {...(readOnly ? {} : { action: <LinkGithubButton /> })}
+        />
+      </Card>
+    );
+  }
+
+  if (stats.isError) {
+    return (
+      <Card className={className}>
+        <EmptyState
+          compact
+          title={t('github.loadFailed')}
+          description={getErrorMessage(stats.error)}
+        />
+      </Card>
+    );
+  }
+
+  const data = stats.data;
+  if (!data) return null;
+
+  return (
+    <Card className={cn('flex flex-col gap-4', className)}>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <a
+            href={`https://github.com/${data.githubUsername}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-mono text-nx-ui font-medium text-nx-text-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
+          >
+            {data.githubUsername}
+          </a>
+        </div>
+
+        {!readOnly && (
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="secondary"
+              loading={sync.isPending}
+              onClick={() => sync.mutate()}
+              icon={<RefreshCw className="size-3.5" aria-hidden />}
+            >
+              {t('github.sync')}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              loading={unlink.isPending}
+              onClick={() => unlink.mutate()}
+            >
+              {t('github.unlink')}
+            </Button>
+          </div>
+        )}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-4">
+        <DeveloperMeta>{t('github.repos', { count: data.publicReposCount })}</DeveloperMeta>
+        <DeveloperMeta>{t('github.followers', { count: data.followersCount })}</DeveloperMeta>
+        {/* Null between linking and the first successful sync. Because a failed sync is silent,
+            this is the clearest signal available that it has not worked. */}
+        <DeveloperMeta>
+          {data.lastSyncedAt
+            ? t('github.lastSynced', { when: relativeTime(data.lastSyncedAt) })
+            : t('github.neverSynced')}
+        </DeveloperMeta>
+      </div>
+
+      {/* The rate limit is a refusal, not a fault, so it gets its own sentence rather than a raw
+          error message: the user did nothing wrong and only needs to know to come back later. */}
+      {sync.isError && (
+        <p role="status" className="text-nx-caption text-nx-status-danger-fg">
+          {isSyncRateLimited(sync.error)
+            ? t('github.syncRateLimited')
+            : getErrorMessage(sync.error)}
+        </p>
+      )}
+
+      {unlink.isError && (
+        <p role="status" className="text-nx-caption text-nx-status-danger-fg">
+          {getErrorMessage(unlink.error)}
+        </p>
+      )}
+
+      <PinnedRepoList repos={data.pinnedRepos} />
+
+      {/* Null when the sync produced GitHub's empty-object fallback — see `normalizeStats`. The
+          graph is simply absent then, rather than an empty grid implying zero contributions. */}
+      {data.contributionGraph && <ContributionGraph calendar={data.contributionGraph} />}
+    </Card>
+  );
+}
