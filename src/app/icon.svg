@@ -1,0 +1,31 @@
+<!--
+  THE BROWSER-TAB MARK. Same geometry as `shared/components/brand-mark.tsx` — the DS's 256-unit
+  viewBox, the three-point chevron and the amber cursor — transcribed here because a favicon is
+  a static file the React component cannot serve.
+
+  TWO DELIBERATE DIFFERENCES FROM THE COMPONENT, both forced by 16px:
+  - The chevron is DRAWN, not knocked out. The DS's light form cuts the chevron out of the ink
+    square so the page shows through; a tab strip is not a page whose colour we know, and a
+    knock-out on an unknown ground is a chevron that disappears half the time.
+  - The square sits nearly flush (inset 1, radius 44 rather than 8 / 52) and the glyph is scaled
+    1.18. At the mark's own proportions a 16px favicon spends a third of its width on margin.
+
+  Colours are the tokens' literals: #101820 = --nx-surface-inverse, #ECEEEC = dark-mode
+  --nx-text-primary, #D18F2E = --nx-amber-500. Fixed rather than theme-aware on purpose: an ink
+  square reads on a light tab strip and on a dark one, so there is nothing for a media query to
+  fix, and Safari ignores one inside an SVG favicon anyway.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <rect x="1" y="1" width="254" height="254" rx="44" fill="#101820" />
+  <g transform="translate(128 128) scale(1.18) translate(-128 -128)">
+    <path
+      d="M83.36 81.64 L129.73 128 L83.36 174.36"
+      fill="none"
+      stroke="#ECEEEC"
+      stroke-width="17"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+    <rect x="142" y="156" width="44" height="16" rx="8" fill="#D18F2E" />
+  </g>
+</svg>
