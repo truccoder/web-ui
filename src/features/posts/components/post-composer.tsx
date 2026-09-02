@@ -16,6 +16,7 @@ import type {
   CodeSnippetDetails,
   CreateBookRequest,
   CreatePostRequest,
+  CreatePostResponse,
   EventDetails,
   LinkDetails,
   PollDetails,
@@ -172,8 +173,13 @@ export interface PostComposerHandle {
 }
 
 export interface PostComposerProps {
-  /** Called after a successful create, for the host page to refresh its feed. */
-  onPosted?: () => void;
+  /**
+   * Called after a successful create, for the host page to refresh its feed and take the author
+   * to the post they just wrote. It is handed the backend's own answer — `{ postId,
+   * moderationStatus }` — so the host navigates to a real permalink instead of guessing which
+   * post is the new one.
+   */
+  onPosted?: (created: CreatePostResponse) => void;
   /**
    * Exposes {@link PostComposerHandle}. React 19 passes `ref` as an ordinary prop, so there is no
    * `forwardRef` wrapper here.
@@ -252,7 +258,7 @@ export function PostComposer({ onPosted, ref }: PostComposerProps) {
   // `validateQuizDetails` from running.
   const [quiz, setQuiz] = useState<QuizDetails | undefined>();
 
-  const reset = () => {
+  const reset = (created: CreatePostResponse) => {
     setContent('');
     setTaggedMentions([]);
     setLocation(undefined);
@@ -275,7 +281,7 @@ export function PostComposer({ onPosted, ref }: PostComposerProps) {
     // on screen at this point, and `open` is already false.
     setOpen(false);
     setPreview(false);
-    onPosted?.();
+    onPosted?.(created);
   };
 
   const create = useCreatePost({ onSuccess: reset });

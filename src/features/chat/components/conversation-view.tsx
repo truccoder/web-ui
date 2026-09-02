@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, type ReactNode } from 'react';
+import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { Avatar, EmptyState, Skeleton } from '@/shared/components';
 import { useT } from '@/core/i18n';
@@ -33,6 +34,18 @@ export interface ConversationViewProps {
   onSend: (text: string) => Promise<void>;
   /** Rendered as a back arrow in the header when given — the mobile one-pane layout needs it. */
   onBack?: () => void;
+  /**
+   * The peer's profile page, when the frame could resolve one (B38).
+   *
+   * A PROP RATHER THAN A LOOKUP IN HERE, because this component is presentational — it is handed
+   * a conversation and renders it, and the floating window frames it too. The handle comes from
+   * `GET /users/{userId}/reputation`, which the frame is already asking for; resolving it here
+   * would put a request inside a component whose whole contract is that it makes none.
+   *
+   * It also has to be optional: a group has no single peer, and a payload can arrive without a
+   * handle. Absent means the title renders as plain text, same rule as `PostCard.authorHref`.
+   */
+  titleHref?: string;
   /**
    * Header controls for the caller's own frame, aligned right.
    *
@@ -67,6 +80,7 @@ export function ConversationView({
   error,
   onSend,
   onBack,
+  titleHref,
   actions,
   className,
 }: ConversationViewProps) {
@@ -122,10 +136,24 @@ export function ConversationView({
           </button>
         )}
 
-        <Avatar src={header?.otherMemberImage ?? undefined} name={title} size="md" />
-        <span className="min-w-0 flex-1 truncate text-nx-ui font-semibold text-nx-text-primary">
-          {title}
-        </span>
+        {titleHref ? (
+          /* The avatar and the name are one anchor here, not two as in the info pane: this is a
+             32px row where two adjacent tap targets to the same place would only make each of
+             them smaller. */
+          <Link href={titleHref} className="flex min-w-0 flex-1 items-center gap-3 hover:underline">
+            <Avatar src={header?.otherMemberImage ?? undefined} name={title} size="md" />
+            <span className="min-w-0 flex-1 truncate text-nx-ui font-semibold text-nx-text-primary">
+              {title}
+            </span>
+          </Link>
+        ) : (
+          <>
+            <Avatar src={header?.otherMemberImage ?? undefined} name={title} size="md" />
+            <span className="min-w-0 flex-1 truncate text-nx-ui font-semibold text-nx-text-primary">
+              {title}
+            </span>
+          </>
+        )}
         {actions && <div className="flex shrink-0 items-center gap-0.5">{actions}</div>}
       </div>
 

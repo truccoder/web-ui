@@ -33,10 +33,15 @@ import { useMyViolations, useSubmitAppeal } from '../hooks/use-moderation';
  * WHY THE APPEAL BUTTON DISAPPEARS RATHER THAN ERRORING. `appealPending` on the violation row is
  * the backend's own record that an appeal exists; submitting a second one is rejected server-side.
  *
- * THE VIOLATION TYPE IS SHOWN AS THE BACKEND STORED IT, and that is worth knowing rather than
- * softening: `reviewPost` files EVERY rejection as `HATE_SPEECH` regardless of what the post did
- * (B22). Rewriting the label here would hide a backend defect behind a friendlier word from the
- * one person who needs to see the discrepancy to appeal it.
+ * THE VIOLATION TYPE IS TRANSLATED NOW, AND THAT REVERSES AN EARLIER DECISION HERE. It used to be
+ * printed as the raw enum on purpose: `reviewPost` filed EVERY rejection as `HATE_SPEECH` whatever
+ * the post did, and softening the label would have hidden that defect behind a friendlier word
+ * from the one person who needed to see the discrepancy in order to appeal it.
+ *
+ * The backend now requires the moderator to choose the type per decision, and this screen's own
+ * queue asks for it (`ModerationPostsTab`), so the stored value is a real claim about this post
+ * rather than a constant. A real claim is worth reading in words: `SPAM` and `LOW` in a monospace
+ * badge are database values, and this panel is where someone finds out why they were sanctioned.
  */
 export function MyViolationsPanel() {
   const t = useT();
@@ -83,12 +88,17 @@ export function MyViolationsPanel() {
           className="flex flex-col gap-[var(--nx-space-tight)] rounded-nx-md bg-nx-surface-card px-5 py-3"
         >
           <div className="flex flex-wrap items-center gap-[var(--nx-space-pair)]">
+            {/* TRANSLATED, NOT THE RAW ENUM. This panel is read by the person the violation is
+                recorded against, and it used to show them `SPAM` and `LOW` — database constants,
+                in a monospace badge, as the explanation for a sanction. The labels already
+                existed for the moderator's own log rows (`moderation.violation.*`); the severity
+                ones are new. The `mono` treatment goes with the enum it was styling. */}
             {violation.violationType && (
-              <Badge mono variant="danger">
-                {violation.violationType}
-              </Badge>
+              <Badge variant="danger">{t(`moderation.violation.${violation.violationType}`)}</Badge>
             )}
-            {violation.severity && <Badge variant="neutral">{violation.severity}</Badge>}
+            {violation.severity && (
+              <Badge variant="neutral">{t(`moderation.severity.${violation.severity}`)}</Badge>
+            )}
             {violation.createdAt && (
               <span className="text-nx-caption text-nx-text-muted">
                 {formatDate(violation.createdAt, localeTag)}

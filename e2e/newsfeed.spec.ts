@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { firstPostHref } from './discover';
 
 /**
  * Act 1: "là mạng xã hội, nhưng không phải mạng xã hội thường".
@@ -22,7 +23,6 @@ import { test, expect, type Page } from '@playwright/test';
 
 /** The eight kinds, in the order the composer's menu offers them. */
 const POST_KINDS = [
-  'Trạng thái',
   'Code',
   'Bài viết',
   'Câu hỏi',
@@ -87,6 +87,11 @@ test.describe('newsfeed', () => {
     const menu = page.getByRole('menu');
     await expect(menu).toBeVisible();
 
+    // THE CURRENT KIND IS NOT IN THE MENU, by design — `PostTypeMenu` filters it out because the
+    // trigger already names it and offering it again is a row that does nothing. So this asserts
+    // the seven kinds it can switch TO, plus the trigger above, which together are the eight.
+    await expect(menu.getByRole('menuitem')).toHaveCount(POST_KINDS.length);
+
     for (const kind of POST_KINDS) {
       await expect(menu.getByRole('menuitem', { name: kind, exact: true })).toBeVisible();
     }
@@ -125,7 +130,7 @@ test.describe('newsfeed', () => {
     // "Mở ra là bình luận đã bung sẵn, vì mọi lối vào trang này đều là người đi đọc một cuộc thảo
     // luận cụ thể." `defaultCommentsOpen` is the prop; the feed deliberately does the opposite,
     // which is what the second half of this test checks.
-    await page.goto('/posts/5055');
+    await page.goto(await firstPostHref(page));
 
     // The reply box only exists once the thread is open, so it is the cheapest proof that the
     // thread expanded without anyone pressing anything.

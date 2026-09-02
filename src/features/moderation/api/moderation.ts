@@ -83,10 +83,14 @@ export const moderationApi = {
    * what escalates to an automatic ban — two violations ban the author for seven days, and that
    * ban blocks `/auth/login` outright. A reject here can lock someone out of the product.
    *
-   * AND THE RECORDED REASON IS ALWAYS `HATE_SPEECH`, hardcoded, whatever the post actually did.
-   * The endpoint takes no violation type, so a rejected spam post is filed as hate speech in the
-   * user's ban history. `feedback` is the only place the real reason can go, which makes it worth
-   * filling in even though it is optional. Raised as B22.
+   * THE VIOLATION TYPE IS NOW REQUIRED ON A REJECTION, and this note used to say the opposite.
+   * The endpoint hardcoded `HATE_SPEECH` for every rejection — a removed piece of spam was filed
+   * as hate speech in the author's ban history, which `UserBanService.determineSeverity` reads as
+   * CRITICAL. The backend fixed that by asking: `violationType` is optional in the schema but
+   * required in effect, and a rejecting `decision` without one answers **400 `violationType is
+   * required when rejecting a post`**. It is ignored on an approval — an approved post has no
+   * violation to type. `feedback` is still free text and still worth filling in: it is the only
+   * place the specifics go.
    *
    * ONLY A `PENDING_REVIEW` POST CAN BE REVIEWED — anything else answers **409 Conflict** with
    * "Post is not in PENDING_REVIEW status" (measured, by reviewing an already-rejected post).

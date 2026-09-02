@@ -3,6 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import {
+  BookOpen,
   CheckCircle2,
   Clock,
   ExternalLink,
@@ -116,6 +117,28 @@ export function PaymentResultPanel({ transactionRef, mode = 'confirm' }: Payment
 
   const remembered = usePendingPaymentByRef(transactionRef);
 
+  /**
+   * The book this payment was for, kept past the moment the note is dropped.
+   *
+   * WITHOUT IT THE SUCCESS SCREEN IS A DEAD END. The only control under every phase was
+   * `Về trang bảng tin`, so the highest-intent moment in the product — money has just left the
+   * buyer's account — handed them the newsfeed and left them to find their way back to the book
+   * they bought. The download button lives on `/books/{id}` and nothing pointed at it.
+   *
+   * A COPY RATHER THAN A READ OF `remembered`, because `forgetPendingPayment` runs one line before
+   * `setPhase('paid')` — by the time the paid branch renders, the note is gone. This is captured
+   * on the way past.
+   */
+  const rememberedBookIdRef = React.useRef<number | null>(null);
+  const [settledBookId, setSettledBookId] = React.useState<number | null>(null);
+
+  // In an effect, not during render: `react-hooks/refs` forbids writing a ref while rendering, and
+  // the note arrives asynchronously anyway — `usePendingPaymentByRef` reads localStorage after
+  // mount, so the first render of this component genuinely has nothing to copy.
+  React.useEffect(() => {
+    if (remembered) rememberedBookIdRef.current = remembered.bookId;
+  }, [remembered]);
+
   const attemptsRef = React.useRef(0);
   const startedForRef = React.useRef<string | null>(null);
   const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -147,7 +170,9 @@ export function PaymentResultPanel({ transactionRef, mode = 'confirm' }: Payment
           if (status.paid) {
             // The purchase is done, so the browser's note about it has served its purpose. Dropping
             // it here — rather than in the button that started it — is what makes the note
-            // self-clearing no matter which tab or device the payment finished on.
+            // self-clearing no matter which tab or device the payment finished on. The book id is
+            // lifted out first: the success screen links back to it.
+            setSettledBookId(rememberedBookIdRef.current);
             forgetPendingPayment(transactionRef);
             setPhase('paid');
           } else if (attemptsRef.current < maxAttempts) {
@@ -171,7 +196,17 @@ export function PaymentResultPanel({ transactionRef, mode = 'confirm' }: Payment
     attempt();
 
     return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
+      if (!timerRef.current) return;
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+      // AND LET THE NEXT RUN TAKE OVER. Clearing the timer without this leaves the chain dead:
+      // the guard at the top of the effect sees its own run key in `startedForRef` and returns
+      // early, so nothing reschedules — the screen then waits for ever on a payment that may
+      // already have settled, which is precisely what its own copy promises will not happen.
+      // Releasing the key only when a scheduled attempt was actually thrown away keeps the
+      // duplicate-run guard intact for every other case (including StrictMode's double mount,
+      // where the first attempt is still in flight and there is no timer to clear).
+      startedForRef.current = null;
     };
   }, [transactionRef, runId, mode, sync]);
 
@@ -299,6 +334,17 @@ export function PaymentResultPanel({ transactionRef, mode = 'confirm' }: Payment
               {t('payment.devSettle')}
             </Button>
           )}
+
+        {/* THE WAY BACK TO WHAT WAS JUST BOUGHT — the book's page is where the download button
+            is. Only on success, and only when this browser is the one that started the payment:
+            a cold deep link (`/payment/pending?orderId=…` opened on another device, or after a
+            cache clear) has no note to read the book id out of, and a link that cannot name its
+            destination is worse than the newsfeed. */}
+        {phase === 'paid' && settledBookId !== null && (
+          <Link href={`/books/${settledBookId}`}>
+            <Button icon={<BookOpen className="h-4 w-4" />}>{t('payment.backToBook')}</Button>
+          </Link>
+        )}
 
         <Link href="/newsfeed">
           <Button variant="ghost">{t('payment.backToNewsfeed')}</Button>

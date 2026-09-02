@@ -154,6 +154,8 @@ export type {
   PublicQuizDetails,
   CreateBookRequest,
   CreatePostRequest,
+  CreatePostResponse,
+  ModerationStatus,
   UpdatePostRequest,
   LocationResolutionRequest,
   LocationResolution,

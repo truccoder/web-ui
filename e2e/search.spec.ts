@@ -45,9 +45,14 @@ async function sections(page: Page): Promise<Record<string, number>> {
 async function search(page: Page, query: string): Promise<Record<string, number>> {
   await page.goto(`/search?q=${encodeURIComponent(query)}`);
 
-  // The heading echoes the term back, so waiting on it proves the page read the URL — without
+  // THE SEARCH FIELD ECHOES THE TERM, so waiting on it proves the page read the URL — without
   // this, an empty result set and a page that has not rendered yet look identical.
-  await expect(page.getByText(`Kết quả cho "${query}"`)).toBeVisible();
+  //
+  // IT USED TO BE A HEADING (`Kết quả cho "…"`), removed with `PageHeader` in `8f0cf5c`, and for
+  // a while afterwards the term appeared NOWHERE on the results screen — the field was empty too.
+  // The field is filled from `?q=` again (`SearchBar`), which is both what a reader needs in order
+  // to refine a search and what this wait can hang on.
+  await expect(page.getByRole('searchbox')).toHaveValue(query);
 
   // Results arrive from a query, so the first paint is the loading state. Waiting for either a
   // section or the empty state means an genuinely empty answer fails on the comparison below

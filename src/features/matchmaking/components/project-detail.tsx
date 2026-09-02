@@ -151,6 +151,7 @@ export function ProjectDetail({ projectId, viewerId, onDeleted }: ProjectDetailP
               <li key={position.id}>
                 <PositionCard
                   position={position}
+                  isOwner={isOwner}
                   canApply={!isOwner && project.status === 'OPEN'}
                   ownerControls={
                     isOwner ? <PositionOwnerControls position={position} /> : undefined
@@ -183,10 +184,13 @@ export function ProjectDetail({ projectId, viewerId, onDeleted }: ProjectDetailP
 
 function PositionCard({
   position,
+  isOwner,
   canApply,
   ownerControls,
 }: {
   position: ProjectPosition;
+  /** Whether the viewer owns this project — the candidate ranking is theirs alone to see. */
+  isOwner: boolean;
   canApply: boolean;
   /** The owner's edit / status / delete row, rendered inside the card below the role details. */
   ownerControls?: ReactNode;
@@ -244,7 +248,14 @@ function PositionCard({
         ))}
       </div>
 
-      {isOpen && <MatchingCandidates position={position} />}
+      {/* OWNER ONLY, AND THE GATE IS NOT COSMETIC. `GET /positions/{id}/suggested-candidates` is
+          owner-scoped and answers **403** to everyone else, so rendering this for a visitor sent
+          one guaranteed-refused request per open position — three per page on a typical project —
+          which the component then swallowed as "an empty result". Asking a question whose answer is
+          already known is the same rule `core/api/axios`'s guest allow-list follows, and the cost
+          of breaking it here was a page that could not be told apart from a broken one while
+          reading the network tab. Measured 02/09 on `/projects/4050`: 3 × 403. */}
+      {isOpen && isOwner && <MatchingCandidates position={position} />}
 
       {ownerControls}
 

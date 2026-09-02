@@ -297,9 +297,17 @@ export function FeedPost({
    * `defaultCommentsOpen` rather than `expanded` is the right flag for that question: it is the
    * one that says the thread is on this page.
    *
-   * NO `guard` ON EITHER SHAPE ANY MORE. The gate was here because opening a panel a guest cannot
-   * fill is worse than refusing — see `useAuthGate` above — but navigating to a public permalink
-   * is not a write, and the page decides for itself what a signed-out reader gets.
+   * NO `guard` ON THE LINK SHAPE. The gate was here because opening a panel a guest cannot fill
+   * is worse than refusing — see `useAuthGate` above — but navigating to a public permalink is not
+   * a write, and the page decides for itself what a signed-out reader gets.
+   *
+   * THE SCROLL SHAPE IS GUARDED AGAIN, AND THE HOLE IT LEAVES OTHERWISE IS WORTH RECORDING. The
+   * thread below is gated on `!isGuest`, so on the permalink a signed-out reader has nothing for
+   * `commentsRef` to point at — and pressing `Bình luận` there scrolled to nothing at all: no
+   * thread, no prompt, no navigation, no error. Measured 02/09 on a guest permalink, where the
+   * reaction beside it correctly raised the sign-in prompt. A control that answers a press with
+   * silence is worse than one that says no, and this is the page a guest reaches specifically to
+   * read a discussion.
    */
   const commentsHref = defaultCommentsOpen ? null : `/posts/${post.postId}`;
 
@@ -504,8 +512,9 @@ export function FeedPost({
                     // The handler is composed inside the event rather than built during render:
                     // `scrollToComments` reads `commentsRef.current`, and passing the function
                     // itself to `onClick` is fine, but wrapping it at render time in anything
-                    // that could read the ref trips `react-hooks/refs`.
-                    onClick={() => scrollToComments()}
+                    // that could read the ref trips `react-hooks/refs` — which is why `guard`
+                    // wraps it here, at click time, rather than once above.
+                    onClick={() => guard(scrollToComments)()}
                     title={t('post.comments.show')}
                     className={cn(
                       ACTION_GLYPH_BUTTON,
@@ -541,7 +550,7 @@ export function FeedPost({
                   ) : (
                     <button
                       type="button"
-                      onClick={() => scrollToComments()}
+                      onClick={() => guard(scrollToComments)()}
                       aria-label={t('post.commentCount', { count: post.commentCount })}
                       className={cn(
                         ACTION_COUNT,

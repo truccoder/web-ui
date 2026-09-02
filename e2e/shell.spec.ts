@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { firstPostHref, firstProfileHref } from './discover';
 
 /**
  * The app shell: the things every route depends on and no single feature owns.
@@ -30,11 +31,24 @@ const TITLES: ReadonlyArray<readonly [string, string]> = [
   ['/library', 'Thư viện · Elite Nexus'],
   ['/chats', 'Chats · Elite Nexus'],
   ['/friends/requests', 'Lời mời kết bạn · Elite Nexus'],
-  // Dynamic segments name the KIND, not the item — resolving the item would mean fetching it
-  // during server render with the reader's own session. See `core/i18n/server.ts`.
-  ['/posts/5055', 'Bài viết · Elite Nexus'],
-  ['/u/backend_truc_anh', 'Hồ sơ lập trình viên · Elite Nexus'],
+  /*
+   * THE SETTINGS HUB, whose six routes carried no title of their own until 02/09 — every one of
+   * them reported the root layout's bare `Elite Nexus`, which is the exact failure
+   * `core/i18n/server.ts` exists to prevent and the one its own note says was fixed everywhere.
+   * Two of the six are listed rather than all: they share one pattern, and a table that repeats
+   * it six times is a table nobody reads.
+   */
+  ['/settings/tokens', 'Access token · Cài đặt · Elite Nexus'],
+  ['/settings/github', 'GitHub · Cài đặt · Elite Nexus'],
 ];
+
+/*
+ * The two DYNAMIC routes are tested separately, below, because their paths are discovered rather
+ * than named: a dynamic segment's title says the KIND and not the item (resolving the item would
+ * mean fetching it during server render with the reader's own session — see `core/i18n/server.ts`),
+ * and this table used to carry `/posts/5055` and `/u/backend_truc_anh`, both deleted by the 02/09
+ * re-seed. See `discover.ts`.
+ */
 
 test.describe('shell', () => {
   for (const [path, title] of TITLES) {
@@ -43,6 +57,16 @@ test.describe('shell', () => {
       await expect(page).toHaveTitle(title);
     });
   }
+
+  test('a permalink carries the kind as its title, not the post', async ({ page }) => {
+    await page.goto(await firstPostHref(page));
+    await expect(page).toHaveTitle('Bài viết · Elite Nexus');
+  });
+
+  test('a profile carries the kind as its title, not the person', async ({ page }) => {
+    await page.goto(await firstProfileHref(page));
+    await expect(page).toHaveTitle('Hồ sơ lập trình viên · Elite Nexus');
+  });
 
   test('the title follows the locale cookie', async ({ page, context }) => {
     // The locale is a cookie precisely so the SERVER can read it — it moved out of localStorage

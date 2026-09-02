@@ -179,6 +179,9 @@ export const vi: Messages = {
       'MoMo chưa báo về kết quả. Nếu tiền đã bị trừ, quyền truy cập sẽ được mở trong ít phút — tải lại trang này để kiểm tra.',
     successTitle: 'Thanh toán thành công',
     successDesc: 'Cảm ơn bạn! Bạn đã có toàn quyền truy cập cuốn sách này.',
+    /* Chỗ nút này dẫn tới mới là điều đáng nói: trang sách là nơi có nút Tải xuống. Trước đây
+       màn thành công chỉ có đường về bảng tin — vừa trả tiền xong thì bị đưa đi chỗ khác. */
+    backToBook: 'Mở sách vừa mua',
     backToNewsfeed: 'Về trang bảng tin',
     /* Màn app tự chờ trong lúc người mua trả tiền — khác hẳn màn MoMo chuyển về: chưa có đồng nào
        rời đi, và mã QR thì quét bằng điện thoại. Câu chữ phải nói rõ trang này tự cập nhật, nếu
@@ -716,6 +719,14 @@ export const vi: Messages = {
       PENDING_REVIEW: 'Cần quyết định',
       REJECTED: 'Đã từ chối',
     },
+    /* Mức nghiêm trọng do `UserBanService.determineSeverity` suy ra từ loại vi phạm — người bị
+       ghi vi phạm đọc được nó, nên nó phải là chữ chứ không phải hằng số enum. */
+    severity: {
+      LOW: 'Nhẹ',
+      MEDIUM: 'Trung bình',
+      HIGH: 'Nặng',
+      CRITICAL: 'Nghiêm trọng',
+    },
     violation: {
       HATE_SPEECH: 'Ngôn từ thù ghét',
       NSFW: 'Nội dung nhạy cảm',
@@ -744,6 +755,12 @@ export const vi: Messages = {
       reject: 'Từ chối',
       rejectConfirm: 'Từ chối',
       cancel: 'Huỷ',
+      violationType: 'Loại vi phạm',
+      violationTypeUnset: 'Chọn loại vi phạm',
+      /* Không đặt sẵn giá trị: nó được ghi vào hồ sơ vi phạm của tác giả và chính họ đọc được,
+         nên chọn nhầm là buộc tội oan — và SPAM với HATE_SPEECH khác nhau ở chỗ cái sau tính là
+         nghiêm trọng, tức là gần lệnh cấm 7 ngày hơn. */
+      violationTypeHint: 'Được ghi vào hồ sơ vi phạm và hiện cho tác giả. Bắt buộc khi từ chối.',
       rejectWarning:
         'Từ chối sẽ ghi một vi phạm cho tác giả. Đủ 2 vi phạm là bị cấm 7 ngày, và lệnh cấm chặn cả đăng nhập.',
     },
@@ -1135,6 +1152,13 @@ export const vi: Messages = {
     pendingReview: {
       title: 'Bài viết đang chờ kiểm duyệt',
       desc: 'Bài của bạn đã được gửi và đang chờ kiểm duyệt. Khi được duyệt, bài sẽ tự hiển thị ở đây.',
+    },
+    /* Trước đây không phân biệt được với "chờ duyệt": FE đoán trạng thái bằng cách dò feed của
+       chính tác giả, mà bài bị từ chối thì không bao giờ vào feed — nên nó nằm mãi ở câu "đang
+       chờ". Giờ `moderationStatus` nói thẳng, và một bài bị từ chối phải nói ra là bị từ chối. */
+    rejected: {
+      title: 'Bài viết không được duyệt',
+      desc: 'Bài này vi phạm quy định nội dung nên không được đăng. Bạn có thể sửa lại rồi đăng bài mới, hoặc gửi khiếu nại ở trang Tài khoản.',
     },
     unknownAuthor: 'Tác giả không xác định',
     qna: {
@@ -2130,6 +2154,9 @@ export const vi: Messages = {
       label: 'Thông tin cuộc trò chuyện',
       memberCount: '${count} thành viên',
       verifiedSkills: 'Kỹ năng đã xác minh',
+      /* Nhãn cho ảnh đại diện đã thành link — chữ "Xem trang cá nhân" không hiện ra màn hình,
+         nó là tên của cái link cho trình đọc màn hình, nên phải kèm tên người. */
+      viewProfile: 'Xem trang cá nhân của ${name}',
     },
   },
 

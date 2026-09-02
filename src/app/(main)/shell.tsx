@@ -861,12 +861,23 @@ export function MainShell({ children }: { children: React.ReactNode }) {
                *
                * Placed after the brand and before the controls so keyboard order runs
                * logo → search → controls, which is the order they read in.
+               *
+               * THE 1024 STEP IS `min-[1024px]:`, NOT `lg:`, AND THAT IS THE FIX FOR A REAL OFFSET.
+               * `lg` and `min-[1440px]` set the same property (`left`), and media queries carry no
+               * specificity — the one that wins is the one Tailwind emits LAST. v4 buckets arbitrary
+               * `min-[…]` variants ahead of the named-breakpoint block, so `min-[1440px]:left-…`
+               * shipped *before* `lg:left-…` and lost to it: at ≥1440 the field kept the 24px-gutter
+               * value and sat 16px left of the canvas card (the gutter steps to 40 there). Writing
+               * the 1024 step as `min-[1024px]:` too puts both overrides in the one bucket, where
+               * they sort by width — 1024 before 1440 — and the wider step wins as intended. The
+               * `gap`/`max-w` steps on this element don't hit this because their base value is
+               * unprefixed, and an unprefixed utility always precedes every media query.
                */}
               <div
                 className={cn(
                   'absolute inset-x-0 top-1/2 hidden -translate-y-1/2',
-                  'lg:inset-x-auto',
-                  'lg:left-[calc(var(--spacing-nx-sidebar)+var(--spacing-nx-region-gutter-sm))]',
+                  'min-[1024px]:inset-x-auto',
+                  'min-[1024px]:left-[calc(var(--spacing-nx-sidebar)+var(--spacing-nx-region-gutter-sm))]',
                   'min-[1440px]:left-[calc(var(--spacing-nx-sidebar)+var(--spacing-nx-region-gutter))]',
                   'min-[576px]:block'
                 )}

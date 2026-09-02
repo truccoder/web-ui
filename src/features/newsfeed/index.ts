@@ -28,8 +28,6 @@ export {
   useUserPosts,
   usePost,
   useRefreshFeed,
-  useResolveMyLatestPostId,
-  usePostApproval,
   useRebuildFeed,
   useFeedReturnHref,
   /**

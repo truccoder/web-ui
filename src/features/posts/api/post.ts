@@ -1,13 +1,14 @@
 import api from '@/core/api/axios';
-import type { CreatePostRequest, UpdatePostRequest } from '../types/post';
+import type { CreatePostRequest, CreatePostResponse, UpdatePostRequest } from '../types/post';
 
 /**
  * PostController (`com.socialapp.posts`) — 5 endpoints, one function each. Bare responses,
  * no wrapper.
  *
- * Every one of these returns **204/void**: the backend hands back neither the created post
- * nor the updated one. Callers cannot patch a cache optimistically from a response — they
- * refetch (the feed is the read side; see the note on `features/newsfeed`).
+ * THE TWO CREATES ANSWER `201 CreatePostResponseDto` — `{ postId, moderationStatus }` — since
+ * the backend closed B39. Everything else here still returns **204/void**: an update hands back
+ * nothing, so callers refetch rather than patching a cache from a response (the feed is the read
+ * side; see the note on `features/newsfeed`).
  */
 export const postsApi = {
   /**
@@ -15,7 +16,7 @@ export const postsApi = {
    * `PostService.createPost` throws a 400 for `postType: 'BOOK'`; use `createBookPost`.
    */
   createPost: (payload: CreatePostRequest) =>
-    api.post<void>('/v1/api/posts', payload).then((r) => r.data),
+    api.post<CreatePostResponse>('/v1/api/posts', payload).then((r) => r.data),
 
   /**
    * POST /v1/api/posts/books — create a post with an attached book, in one multipart call.
@@ -37,7 +38,7 @@ export const postsApi = {
     if (coverFile) form.append('cover', coverFile);
 
     return api
-      .post<void>('/v1/api/posts/books', form, {
+      .post<CreatePostResponse>('/v1/api/posts/books', form, {
         headers: { 'Content-Type': 'multipart/form-data' },
         // A book file is the largest upload in the product — the progress bar earns its place
         // here more than anywhere. Fires for the request body; holds at 100 during server-side

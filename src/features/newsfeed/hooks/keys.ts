@@ -38,11 +38,4 @@ export const newsfeedKeys = {
 
   /** One post, for the permalink page. Same prefix, so a create or delete sweeps it too. */
   post: (postId: number) => ['newsfeed', 'post', postId] as const,
-
-  /**
-   * The moderation-clearance probe for one just-created post — see `usePostApproval`. Under the
-   * `newsfeed` prefix on purpose: the probe reads the author's own fan-out feed, so a
-   * `useRefreshFeed` sweep after a create should refresh it too.
-   */
-  approvalProbe: (postId: number) => ['newsfeed', 'approval-probe', postId] as const,
 };

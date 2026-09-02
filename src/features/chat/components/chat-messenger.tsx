@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback } from 'react';
+import { useReputation } from '@/features/reputation';
 import { cn } from '@/shared/lib/cn';
 import { useChatClient } from '../hooks/use-chat-client';
 import { useConversation } from '../hooks/use-conversation';
@@ -62,6 +63,26 @@ export function ChatMessenger({
     error,
     send,
   } = useConversation(activeConversationId);
+
+  /**
+   * The peer's profile page — B38.
+   *
+   * RESOLVED HERE AND PASSED DOWN, in one place for both panes. Stream ids are the app's own
+   * user ids rendered as strings (`StreamChatService` mints them with `String.valueOf`), and
+   * `GET /users/{userId}/reputation` is the endpoint that maps one to a handle. `ChatInfo` asks
+   * for the same user under the same query key, so on a wide screen where both panes are up this
+   * is a cache hit rather than a second request; on a narrow one, where the info pane is hidden,
+   * it is the only request and the only way to reach the profile at all.
+   *
+   * `Number.parseInt` rather than `Number()` for the same reason `ChatInfo` gives: `Number('')`
+   * is 0, which would ask about user zero on every empty pane.
+   */
+  const parsedPeerId = Number.parseInt(header?.otherMemberId ?? '', 10);
+  const peerId = Number.isFinite(parsedPeerId) ? parsedPeerId : undefined;
+  const { data: peerReputation } = useReputation(peerId);
+  const peerProfileHref = peerReputation?.username
+    ? `/u/${encodeURIComponent(peerReputation.username)}`
+    : undefined;
 
   const handleStart = useCallback(
     async (friendUserId: string) => {
@@ -132,6 +153,7 @@ export function ChatMessenger({
             // through the `data-slot` hook rather than by withholding the callback, because
             // "which breakpoint" is a CSS question and JS cannot answer it during render.
             onBack={onBack}
+            titleHref={peerProfileHref}
             className="md:[&_[data-slot=back]]:hidden"
           />
         ) : (

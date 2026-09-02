@@ -75,6 +75,30 @@ export type CreatePostRequest = Omit<Schemas['CreatePostRequestDto'], 'postType'
 };
 
 /**
+ * Where a post stands with moderation, as the backend reports it.
+ *
+ * `PENDING_MODERATION` is the transient state every post starts in — the AI check runs
+ * `AFTER_COMMIT` and usually settles within a second or two. `PENDING_REVIEW` means it was
+ * escalated to a human and will sit there. `REJECTED` is final.
+ */
+export type ModerationStatus = NonNullable<Schemas['CreatePostResponseDto']['moderationStatus']>;
+
+/**
+ * What `POST /v1/api/posts` and `POST /v1/api/posts/books` answer: **201 with the new post's id
+ * and its moderation state**.
+ *
+ * BOTH USED TO BE 204 WITH NO BODY, and that absence is what forced the composer to guess. It
+ * navigated to a transit route which read the id back from `GET /users/{me}/posts` ("my newest
+ * post"), and the permalink then decided whether moderation had cleared by polling the author's
+ * own feed. Neither guess could tell `REJECTED` from `PENDING_REVIEW`, and both were wrong on
+ * cold caches. The backend closed this (`docs/backend-plan.md` B39) and the heuristics are gone.
+ */
+export type CreatePostResponse = {
+  postId: number;
+  moderationStatus: ModerationStatus;
+};
+
+/**
  * `PUT /v1/api/posts/{postId}`. Same shape minus the fields that cannot change after
  * creation: `postType`, `eventDetails` and `bookDetails` are absent from the Java DTO.
  */

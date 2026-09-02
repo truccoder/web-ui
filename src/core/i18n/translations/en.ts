@@ -184,6 +184,9 @@ export const en = {
       'MoMo has not reported back. If you were charged, access opens within a few minutes — reload this page to check.',
     successTitle: 'Payment successful',
     successDesc: 'Thank you! You now have full access to this book.',
+    /* Where this one goes is the point: the book's page is where the download button lives.
+       The success state used to offer only the newsfeed — away from what was just paid for. */
+    backToBook: 'Open the book',
     backToNewsfeed: 'Back to newsfeed',
     /* The screen the app waits on while the buyer pays, which is a different situation from the
        one MoMo redirects into: nothing has been paid yet, and the QR is scanned on a phone. The
@@ -731,6 +734,14 @@ export const en = {
       PENDING_REVIEW: 'Needs a decision',
       REJECTED: 'Rejected',
     },
+    /* Severity is derived by `UserBanService.determineSeverity` from the violation type, and the
+       person it is recorded against reads it — so it is words, not an enum constant. */
+    severity: {
+      LOW: 'Low',
+      MEDIUM: 'Medium',
+      HIGH: 'High',
+      CRITICAL: 'Critical',
+    },
     // All nine members of the backend `ViolationType` enum, in its own order. Written out rather
     // than derived: a union has no runtime value to map over, and a missing key here renders the
     // raw enum name to a moderator rather than failing at compile time.
@@ -764,6 +775,12 @@ export const en = {
       reject: 'Reject',
       rejectConfirm: 'Yes, reject',
       cancel: 'Cancel',
+      violationType: 'Violation type',
+      violationTypeUnset: 'Pick a violation type',
+      /* Not pre-selected: it goes into the author's violation record and is shown to them, so a
+         wrong one is a false accusation — and SPAM vs HATE_SPEECH is the difference between a
+         nuisance and a step toward the seven-day ban. */
+      violationTypeHint: 'Recorded against the author and shown to them. Required to reject.',
       rejectWarning:
         'Rejecting records a violation against the author. Two violations ban them for 7 days, and a ban blocks sign-in.',
     },
@@ -1157,6 +1174,13 @@ export const en = {
     pendingReview: {
       title: 'This post is awaiting moderation',
       desc: 'Your post has been submitted and is waiting to be reviewed. It will appear here automatically once it is approved.',
+    },
+    /* Previously indistinguishable from "pending": the status was guessed by probing the
+       author's own feed, and a rejected post never lands there — so it sat under "awaiting
+       moderation" for ever. `moderationStatus` says it outright now, so this screen can too. */
+    rejected: {
+      title: 'This post was not approved',
+      desc: 'It breaks the content rules, so it was not published. You can rewrite it and post again, or appeal from your account page.',
     },
     unknownAuthor: 'Unknown author',
     qna: {
@@ -2176,6 +2200,9 @@ export const en = {
       // Does not inflect at 1, following `profile.hero.verifiedSkills` and `github.repos`.
       memberCount: '${count} members',
       verifiedSkills: 'Verified skills',
+      /* The accessible name for the avatar link — never rendered, so it carries the person's
+         name rather than repeating what the visible link beside it already says. */
+      viewProfile: '${name}’s profile',
     },
   },
 

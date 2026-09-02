@@ -14,6 +14,8 @@ export type {
   PublicQuizDetails,
   CreateBookRequest,
   CreatePostRequest,
+  CreatePostResponse,
+  ModerationStatus,
   UpdatePostRequest,
 } from './post';
 

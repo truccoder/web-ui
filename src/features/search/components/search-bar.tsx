@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { BookOpen, Search, User, X } from 'lucide-react';
 import { Avatar, Input } from '@/shared/components';
 import { useT } from '@/core/i18n';
@@ -51,8 +51,36 @@ export function SearchBar({
 }: SearchBarProps) {
   const t = useT();
   const router = useRouter();
-  const [value, setValue] = useState('');
+
+  /**
+   * THE FIELD SHOWS THE TERM THE RESULTS PAGE IS ANSWERING.
+   *
+   * It used to start empty and stay empty, and `/search` stopped printing the query itself when
+   * `PageHeader` was retired (`8f0cf5c`) — so between them the term appeared NOWHERE on the
+   * results screen. Arriving by a shared link, a back navigation or a reload left a reader
+   * looking at results for a word the app would not tell them, and refining the search meant
+   * retyping it from memory. Measured 02/09 on `/search?q=nguyen`: no heading, empty field.
+   *
+   * Only on `/search`, because that is the one route whose content IS the query; everywhere else
+   * a pre-filled field would be describing a page the reader has already left.
+   */
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const urlQuery = pathname === '/search' ? (searchParams.get('q') ?? '') : '';
+
+  const [value, setValue] = useState(urlQuery);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  /**
+   * Re-syncs only when the URL's own term changes — NOT on every render, which would fight the
+   * person typing by resetting the field to the last search after each keystroke.
+   */
+  const lastUrlQuery = useRef(urlQuery);
+  useEffect(() => {
+    if (urlQuery === lastUrlQuery.current) return;
+    lastUrlQuery.current = urlQuery;
+    setValue(urlQuery);
+  }, [urlQuery]);
 
   /**
    * THE FIELD RESERVES WHAT THE BADGE ACTUALLY MEASURES, not what it measured on a Mac.

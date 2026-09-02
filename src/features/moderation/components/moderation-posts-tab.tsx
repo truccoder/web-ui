@@ -9,6 +9,7 @@ import {
   Card,
   EmptyState,
   Pagination,
+  Select,
   Skeleton,
   Textarea,
 } from '@/shared/components';
@@ -18,7 +19,7 @@ import { usePagination } from '@/shared/lib/use-pagination';
 import { useRelativeTime } from '@/shared/lib/format';
 import { cn } from '@/shared/lib/cn';
 import { useModerationPosts, useReviewPost } from '../hooks/use-moderation';
-import type { ModerationStatus, PostModerationDetail } from '../types/moderation';
+import type { ModerationStatus, PostModerationDetail, ViolationType } from '../types/moderation';
 import { ModerationFilters } from './moderation-filters';
 import { ModerationLogRow } from './moderation-log-row';
 
@@ -36,6 +37,20 @@ import { ModerationLogRow } from './moderation-log-row';
  * lock someone out of the product. The confirmation step exists for that reason and not as
  * general caution; approving has no confirmation because approving is reversible in effect
  * (the post simply becomes visible) and harms nobody.
+ *
+ * AND IT NAMES THE VIOLATION, which for a while it could not — REJECTION WAS OUTRIGHT IMPOSSIBLE
+ * FROM THIS SCREEN. The backend began requiring `violationType` on a rejecting decision (it used
+ * to hardcode `HATE_SPEECH` for every rejection, so removing spam filed a critical hate-speech
+ * violation against its author, and the author is shown that reason). This screen was never given
+ * the field, so every press of `Từ chối` answered **400 `violationType is required when rejecting
+ * a post`** — with no control anywhere on the page that could satisfy it. Measured 02/09 on a
+ * `PENDING_REVIEW` post; the eight posts sitting in the seeded queue could not be decided at all.
+ *
+ * NO DEFAULT, AND THE CONFIRM STAYS DISABLED UNTIL ONE IS PICKED. A pre-selected type would be
+ * the same mistake the hardcoded one was, in a nicer place: the value is written into the
+ * author's violation record and shown to them, so a wrong one is a false accusation, and the
+ * difference between `SPAM` and `HATE_SPEECH` is the difference between a nuisance and a
+ * seven-day ban (`UserBanService.determineSeverity`).
  */
 export interface ModerationPostsTabProps {
   /** Pre-fills the post-id filter, e.g. when arriving from a banned user's triggering post. */
@@ -45,6 +60,19 @@ export interface ModerationPostsTabProps {
 
 const PAGE_SIZE = 10;
 
+/** The nine `ViolationType` members, in the Java enum's own order. */
+const VIOLATION_TYPES = [
+  'SPAM',
+  'HATE_SPEECH',
+  'NSFW',
+  'SEXUALLY_EXPLICIT',
+  'VIOLENCE',
+  'THREAT',
+  'INSULT',
+  'KEYWORD_BLACKLIST',
+  'DUPLICATE_CONTENT',
+] as const satisfies readonly ViolationType[];
+
 function PostReviewCard({ post }: { post: PostModerationDetail }) {
   const t = useT();
   const relativeTime = useRelativeTime();
@@ -52,6 +80,7 @@ function PostReviewCard({ post }: { post: PostModerationDetail }) {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [feedback, setFeedback] = useState('');
   const [confirmingReject, setConfirmingReject] = useState(false);
+  const [violationType, setViolationType] = useState<ViolationType | ''>('');
 
   const review = useReviewPost();
 
@@ -72,6 +101,9 @@ function PostReviewCard({ post }: { post: PostModerationDetail }) {
         // of every user an admin rejected, whatever they had done. A pre-filled reason is worse
         // than an empty one: it is a false record that takes no effort to leave in place.
         feedback: feedback.trim() || undefined,
+        // Only ever sent with a rejection: the backend ignores it on an approval, because an
+        // approved post has no violation to type.
+        violationType: approve ? undefined : (violationType as ViolationType),
       },
     });
 
@@ -157,11 +189,36 @@ function PostReviewCard({ post }: { post: PostModerationDetail }) {
               <p role="status" className="text-nx-caption text-nx-status-danger-fg">
                 {t('moderation.post.rejectWarning')}
               </p>
+
+              {/* THE LIST IS WRITTEN OUT rather than derived from `ViolationType`: a union has no
+                  runtime value to map over, and the order is the Java enum's own so it never
+                  silently reshuffles. Same rule `ModerationFilters` follows for statuses, and the
+                  labels are the ones the log rows already use. */}
+              <Select
+                size="sm"
+                label={t('moderation.post.violationType')}
+                hint={t('moderation.post.violationTypeHint')}
+                value={violationType}
+                onChange={(event) => setViolationType(event.target.value as ViolationType | '')}
+                options={[
+                  { value: '', label: t('moderation.post.violationTypeUnset') },
+                  ...VIOLATION_TYPES.map((value) => ({
+                    value,
+                    label: t(`moderation.violation.${value}`),
+                  })),
+                ]}
+                wrapperClassName="w-64"
+              />
+
               <div className="flex items-center gap-2">
                 <Button
                   size="sm"
                   variant="danger"
                   loading={review.isPending}
+                  // The backend refuses a rejection with no type; refusing it here instead means
+                  // the moderator is told what is missing by a disabled button next to the empty
+                  // field, rather than by an error after the fact.
+                  disabled={!violationType}
                   onClick={() => decide(false)}
                 >
                   {t('moderation.post.rejectConfirm')}

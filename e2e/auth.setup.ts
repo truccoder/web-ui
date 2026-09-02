@@ -1,4 +1,4 @@
-import { existsSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { test as setup, expect, type Page } from '@playwright/test';
 import { ADMIN_STATE, ADMIN_USER, DEMO_USER, STATE_TTL_MS, USER_STATE } from './accounts';
 
@@ -72,13 +72,75 @@ async function signIn(
   await page.context().storageState({ path: statePath });
 }
 
-/** True while the saved state at `path` is younger than the reuse window. */
-function fresh(path: string): boolean {
-  return existsSync(path) && Date.now() - statSync(path).mtimeMs < STATE_TTL_MS;
+/**
+ * True while the saved state at `path` is young enough to reuse AND STILL WORKS.
+ *
+ * AGE ALONE WAS NOT ENOUGH, and the failure it let through is the worst kind this suite can
+ * produce. A saved session is reused for an hour on the reasoning in `accounts.ts` — the login
+ * endpoint is rate limited, so a suite that signs in every run stops working exactly when you are
+ * iterating fastest. But the REFRESH TOKEN IS SINGLE-USE AND ROTATES: anyone signing in as the
+ * same account elsewhere (another browser, a curl during a QA pass) invalidates the one sitting in
+ * the saved file. The state is then young, present, and dead.
+ *
+ * What that looked like on 02/09: `POST /v1/api/auth/refresh` answering 401, every test in the
+ * project failing on data that would not load, and nothing anywhere naming a session problem —
+ * two runs were spent reading it as a product regression. Deleting `e2e/.auth/` fixed it, which is
+ * a thing you have to already know.
+ *
+ * So this asks the backend. One `GET /v1/api/profile/me` with the saved access token is cheap, is
+ * NOT rate limited (only `/auth/**` is), and answers the only question that matters: would a test
+ * starting from this state be signed in? A dead session costs one re-login, which is the correct
+ * price; a live one still costs nothing.
+ */
+async function fresh(path: string): Promise<boolean> {
+  if (!existsSync(path)) return false;
+  if (Date.now() - statSync(path).mtimeMs >= STATE_TTL_MS) return false;
+
+  const token = savedAccessToken(path);
+  if (!token) return false;
+
+  try {
+    const probe = await fetch(`${API_URL}/v1/api/profile/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return probe.ok;
+  } catch {
+    // The backend being unreachable is not a reason to burn a login — the run is doomed either
+    // way, and it should fail on the first test rather than on the sign-in.
+    return true;
+  }
 }
 
+/**
+ * The access token inside a Playwright storage state.
+ *
+ * It lives in localStorage under `auth_tokens` (see `core/api/axios.ts`), which `storageState`
+ * records per origin. Anything unexpected in that shape returns `undefined`, which sends the
+ * caller down the sign-in path — the safe direction.
+ */
+function savedAccessToken(path: string): string | undefined {
+  try {
+    const state = JSON.parse(readFileSync(path, 'utf8')) as {
+      origins?: Array<{ localStorage?: Array<{ name: string; value: string }> }>;
+    };
+    for (const origin of state.origins ?? []) {
+      for (const entry of origin.localStorage ?? []) {
+        if (entry.name !== 'auth_tokens') continue;
+        const parsed = JSON.parse(entry.value) as { accessToken?: string };
+        if (parsed.accessToken) return parsed.accessToken;
+      }
+    }
+  } catch {
+    return undefined;
+  }
+  return undefined;
+}
+
+/** Where the probe above asks. The app and this suite read the same variable. */
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
+
 setup('sign in as the demo user', async ({ page }) => {
-  if (fresh(USER_STATE)) {
+  if (await fresh(USER_STATE)) {
     setup.skip(true, 'Reusing the saved user session — see the rate-limit note in auth.setup.ts');
     return;
   }
@@ -86,7 +148,7 @@ setup('sign in as the demo user', async ({ page }) => {
 });
 
 setup('sign in as the admin', async ({ page }) => {
-  if (fresh(ADMIN_STATE)) {
+  if (await fresh(ADMIN_STATE)) {
     setup.skip(true, 'Reusing the saved admin session — see the rate-limit note in auth.setup.ts');
     return;
   }

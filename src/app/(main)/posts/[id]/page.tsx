@@ -3,10 +3,9 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Clock } from 'lucide-react';
+import { ArrowLeft, Clock, ShieldX } from 'lucide-react';
 import { Card, EmptyState, Skeleton } from '@/shared/components';
-import { FeedPost, useFeedReturnHref, usePost, usePostApproval } from '@/features/newsfeed';
-import { useMyProfile } from '@/features/security';
+import { FeedPost, useFeedReturnHref, usePost } from '@/features/newsfeed';
 import { useT } from '@/core/i18n';
 
 /**
@@ -27,11 +26,17 @@ import { useT } from '@/core/i18n';
  * used to probe what exists. So the empty state says the post is not available, and does not say
  * it was removed.
  *
- * `?new=1` IS THE COMPOSER LANDING HERE. `POST /v1/api/posts` returns no id, so the composer reads
- * the new post back from the author's own post list and sends them here with this flag — see
- * `useResolveMyLatestPostId`. When it is set and the viewer is the author, the page holds a
- * skeleton while `usePostApproval` checks whether moderation has cleared the post, then shows
- * either the post or a "chờ kiểm duyệt" notice. Backend debt B39 covers the missing status API.
+ * `?new=1` IS THE COMPOSER LANDING HERE, and all it now does is ask this page to KEEP LOOKING.
+ * `POST /v1/api/posts` answers with the new post's id and its `moderationStatus` (B39, closed),
+ * so the composer pushes a real permalink and the state on screen is read from the post itself:
+ * `PENDING_MODERATION` right after writing means the AI check has not run yet — a second or two —
+ * so the page holds a skeleton and re-reads; `PENDING_REVIEW` and `REJECTED` are resting states
+ * and each says so in its own words.
+ *
+ * THE STATUS IS ONLY EVER NON-`APPROVED` FOR THE AUTHOR: `PostVisibilityService` 404s an
+ * uncleared post to everyone else, so no authorship check is needed here — and an author who
+ * opens their own pending post from their profile now gets the same honest notice as one who
+ * arrives straight from the composer.
  */
 export default function PostPermalinkPage() {
   // `useSearchParams` needs a Suspense boundary in the App Router — same shape as `/newsfeed`.
@@ -50,17 +55,20 @@ function PostPermalinkContent() {
   const raw = Number(params?.id);
   const postId = Number.isInteger(raw) && raw > 0 ? raw : undefined;
 
-  const { data: post, isPending, isError, refetch } = usePost(postId);
+  // Only a post its author has just written is re-read on a timer; every other visit is one GET.
+  const justPosted = searchParams.get('new') === '1';
+  const {
+    data: post,
+    isPending,
+    isError,
+    refetch,
+  } = usePost(postId, { watchModeration: justPosted });
 
   /**
-   * `?new=1` is only trusted together with authorship: the moderation check reads the author's own
-   * feed, so it means nothing for anyone else, and a shared link that happens to carry the flag
-   * should still just render the post.
+   * Null on feed rows written before the field existed — treated as approved, which is what an
+   * entry that reached the cache at all must have been.
    */
-  const { data: profile } = useMyProfile();
-  const justPosted = searchParams.get('new') === '1';
-  const isAuthor = post != null && profile?.id != null && post.authorId === profile.id;
-  const approval = usePostApproval(postId, justPosted && isAuthor);
+  const status = post?.moderationStatus ?? 'APPROVED';
 
   /**
    * WHERE `← Về bảng tin` GOES. Bare `/newsfeed` now opens on `Công nghệ` — the crawler's stream,
@@ -72,10 +80,15 @@ function PostPermalinkContent() {
   const backHref = useFeedReturnHref();
 
   const notFound = postId === undefined || isError || (!isPending && !post);
-  // Hold the skeleton while the post itself loads, and — for a post the author just created —
-  // while the moderation check is still inconclusive.
-  const checking = !notFound && (isPending || approval.isChecking);
-  const pendingReview = !notFound && !checking && approval.isPending;
+  /**
+   * Hold the skeleton while the post loads, and — for a post its author has just written — while
+   * the AI check is still the thing standing between it and the feed. Flashing "chờ kiểm duyệt"
+   * for the second that check takes would describe the normal path as a problem.
+   */
+  const checking = !notFound && (isPending || (justPosted && status === 'PENDING_MODERATION'));
+  const rejected = !notFound && !checking && status === 'REJECTED';
+  const pendingReview =
+    !notFound && !checking && (status === 'PENDING_REVIEW' || status === 'PENDING_MODERATION');
 
   return (
     /* THE BLOCK RUNG, NOT THE SECTION RUNG. `--nx-space-section` (40) is "section ↔ section
@@ -110,11 +123,24 @@ function PostPermalinkContent() {
         <Card>
           <Skeleton lines={4} />
         </Card>
+      ) : rejected ? (
+        /* A RESTING STATE, AND THE ONE THE OLD GUESSWORK COULD NEVER REACH: a rejected post never
+           enters the feed the check used to read, so it sat under "chờ kiểm duyệt" indefinitely.
+           Saying it plainly is the difference between an author who can act and one who waits. */
+        <Card className="flex flex-col items-center gap-[var(--nx-space-element)] px-4 py-10 text-center">
+          <ShieldX className="size-8 text-nx-text-muted" aria-hidden />
+          <div className="flex flex-col gap-[var(--nx-space-tight)]">
+            <p className="text-nx-body font-semibold text-nx-text-primary">
+              {t('post.rejected.title')}
+            </p>
+            <p className="text-nx-body-sm text-nx-text-secondary">{t('post.rejected.desc')}</p>
+          </div>
+        </Card>
       ) : pendingReview ? (
         /* NOT AN ERROR STATE. The post was saved and the author can see it — it just has not been
-           cleared for an audience yet. The check keeps polling underneath this, so an approval
-           that lands a few seconds later swaps the notice for the real post with no action from
-           the reader. */
+           cleared for an audience yet. A post the author just wrote keeps re-reading underneath
+           this, so an approval that lands a few seconds later swaps the notice for the real post
+           with no action from the reader. */
         <Card className="flex flex-col items-center gap-[var(--nx-space-element)] px-4 py-10 text-center">
           <Clock className="size-8 text-nx-text-muted" aria-hidden />
           <div className="flex flex-col gap-[var(--nx-space-tight)]">

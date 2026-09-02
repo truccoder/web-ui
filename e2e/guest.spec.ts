@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { firstProfileHref, handleOf } from './discover';
 
 /**
  * THE SIGNED-OUT READER — the surface opened so that a link to this product answers with the
@@ -17,15 +18,12 @@ import { test, expect, type Page } from '@playwright/test';
  * request reaches the demo database — the suite's hard rule (see `playwright.config.ts`) is
  * upheld by the feature rather than by care.
  *
- * THE HANDLE AND THE POST ARE DISCOVERED, NOT HARDCODED, except for `KNOWN_HANDLE`: the guest
- * surface has no search and the feed payload carries no author username (a backend gap recorded
- * in `features/security/hooks/use-profile.ts`), so there is no in-app path from a post to its
- * author's page. One seeded handle is the smallest hardcoded thing that lets the public profile
- * be tested at all.
+ * THE HANDLE AND THE POST ARE BOTH DISCOVERED NOW. The exception this note used to carry —
+ * `KNOWN_HANDLE`, one hardcoded seed handle, because "the feed payload carries no author
+ * username" — expired twice over: the backend added `authorUsername` (B13) so the card links its
+ * author, and the seed it named was deleted in the 02/09 re-seed, taking two tests with it. See
+ * `discover.ts`.
  */
-
-/** Seeded, and the same account `accounts.ts` signs the user suite in as. `/u/{username}`. */
-const KNOWN_HANDLE = 'backend_truc_anh';
 
 async function openGuestFeed(page: Page) {
   // `/newsfeed` bare is the `Công nghệ` tab now — crawled items, no posts. The public post column
@@ -139,14 +137,30 @@ test.describe('guest', () => {
   });
 
   test('opens a public profile — the link this whole surface exists for', async ({ page }) => {
-    await page.goto(`/u/${KNOWN_HANDLE}`);
+    const profileHref = await firstProfileHref(page);
+    await page.goto(profileHref);
 
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible({ timeout: 20_000 });
-    await expect(page.getByText(`@${KNOWN_HANDLE}`)).toBeVisible();
+    // The handle, not an `<h1>`: the profile hero prints `@handle` under the name, and the page
+    // deliberately carries no level-1 heading — the same PageHeader retirement (`8f0cf5c`) that
+    // took the `<h1>` off `/admin/moderation` and the query echo off `/search`.
+    await expect(page.getByText(`@${handleOf(profileHref)}`).first()).toBeVisible({
+      timeout: 20_000,
+    });
 
     // Reputation is a guest-readable endpoint of its own, and its presence is what proves the page
     // is the real profile rather than a shell that rendered before its data was refused.
-    await expect(page.locator('main')).toContainText('Elite Score');
+    //
+    // THE CHIP, NOT THE WORDS `Elite Score`: the hero prints the number and its level name
+    // (`247 · Expert`) and has not spelled the metric out for some time. Matching the literal
+    // asserted a label the product removed, on a page that was rendering the score correctly.
+    await expect(
+      page
+        .locator('main')
+        .getByText(/\d+\s*·\s*\S+/)
+        .first()
+    ).toBeVisible({
+      timeout: 20_000,
+    });
 
     // Message and block are relationships between two accounts; a guest is not one end of one.
     await expect(page.getByRole('button', { name: /nhắn tin/i })).toHaveCount(0);

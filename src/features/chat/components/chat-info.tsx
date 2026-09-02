@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { Check } from 'lucide-react';
 import { Avatar, Skeleton } from '@/shared/components';
 import { useT } from '@/core/i18n';
@@ -35,13 +36,12 @@ import type { ConversationHeaderData } from './conversation-view';
  * queries below are already gated on. The alternative, a reputation chip for whichever member
  * Stream listed first, would be a number about someone the reader never asked about.
  *
- * THERE IS NO `Xem trang cá nhân` LINK, AND IT IS NOT AN OMISSION I CAN FIX HERE. The public
- * profile endpoint is keyed by **handle** (`GET /users/{username}/profile`), and nothing in this
- * pane's reach resolves an id to a handle: neither `ReputationResponseDto` nor the roadmap
- * progress rows carry a username, and there is no batch user lookup. The kit's link is real and
- * ours would be a control that cannot reach what it names — the one rule round 15 exists to
- * enforce. Filed as **B38** in `docs/backend-plan.md`; a `username` on either DTO closes it with
- * one `Link`, same as B13/B21/B35 before it.
+ * THE AVATAR AND THE NAME LINK TO THE PEER'S PROFILE — B38, closed. This pane could not do that
+ * for a long time: `/u/{username}` is keyed by **handle** and nothing here resolved an id to one,
+ * so the kit's link would have been a control that cannot reach what it names. `username` is on
+ * `ReputationResponseDto` now, and this pane already fetches it for the score chip, so the link
+ * costs no extra request. Same rule as B13/B21/B35 wherever a handle can be missing: when it is
+ * absent the same avatar and name render as plain text rather than as a link that 404s.
  */
 export interface ChatInfoProps {
   header: ConversationHeaderData | null;
@@ -72,6 +72,11 @@ export function ChatInfo({ header, className }: ChatInfoProps) {
   const name = header?.name ?? header?.otherMemberName ?? t('chat.unknownPerson');
   const isGroup = (header?.memberCount ?? 0) > 2;
 
+  /** The peer's page, when the reputation payload says who they are. */
+  const profileHref = reputation?.username
+    ? `/u/${encodeURIComponent(reputation.username)}`
+    : undefined;
+
   return (
     <aside
       aria-label={t('chat.info.label')}
@@ -87,8 +92,27 @@ export function ChatInfo({ header, className }: ChatInfoProps) {
       )}
     >
       <div className="flex flex-col items-center gap-2 text-center">
-        <Avatar src={header?.otherMemberImage ?? undefined} name={name} size="xl" />
-        <p className="text-nx-heading font-semibold text-nx-text-primary">{name}</p>
+        {/* `encodeURIComponent` because a handle is user-chosen text, not a slug this app minted —
+            the same rule `PostCard.authorHref` follows. A group has no peer and therefore no
+            `reputation`, so it falls to the unlinked branch without a check of its own. */}
+        {profileHref ? (
+          <>
+            <Link href={profileHref} aria-label={t('chat.info.viewProfile', { name })}>
+              <Avatar src={header?.otherMemberImage ?? undefined} name={name} size="xl" />
+            </Link>
+            <Link
+              href={profileHref}
+              className="text-nx-heading font-semibold text-nx-text-primary hover:underline"
+            >
+              {name}
+            </Link>
+          </>
+        ) : (
+          <>
+            <Avatar src={header?.otherMemberImage ?? undefined} name={name} size="xl" />
+            <p className="text-nx-heading font-semibold text-nx-text-primary">{name}</p>
+          </>
+        )}
 
         {/* THE ONE THING A GROUP CAN SAY IN THE SLOT THE REPUTATION CHIP LEAVES EMPTY. It is a
             count and not a member list on purpose: the names would need an avatar each and this

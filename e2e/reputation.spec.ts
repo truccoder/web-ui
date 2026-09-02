@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { firstProfileHref } from './discover';
 
 /**
  * Act 2: "uy tín đến từ sổ cái, không phải tự khai" — the part of the script that gets the most
@@ -41,7 +42,21 @@ test.describe('reputation', () => {
     // three things that answer "what can this person demonstrate". Clicking rather than going
     // straight to `?tab=professional` keeps the assertion on the reader's own path, and proves
     // the panel actually mounts rather than that the URL is accepted.
-    await page.getByRole('tab', { name: /chuyên môn/i }).click();
+    /**
+     * RETRIED UNTIL THE TAB ACTUALLY CHANGES, because one click is not the same as one handled
+     * click. The strip is server-rendered, so Playwright finds it visible and enabled before React
+     * has attached anything to it; a click that lands in that window is swallowed silently and the
+     * test then waits twenty seconds for a panel that was never asked to open. It failed exactly
+     * that way on 02/09 while the same click worked by hand in a browser on the same build — the
+     * difference was how long `next dev` took to compile the route that run.
+     *
+     * `toPass` keeps the reader's own path (a click on the tab, not a jump to `?tab=`) and makes
+     * the assertion "the tab responded", which is the thing this test is actually about.
+     */
+    await expect(async () => {
+      await page.getByRole('tab', { name: /chuyên môn/i }).click();
+      await expect(page).toHaveURL(/tab=professional/, { timeout: 2_000 });
+    }).toPass({ timeout: 20_000 });
 
     // "Những kỹ năng đã được quản trị viên xác minh." The section exists whether or not this
     // account has any — an empty state is still the honest answer, and a missing section is not.
@@ -53,7 +68,10 @@ test.describe('reputation', () => {
   test('a public profile shows the same score, from the same source', async ({ page }) => {
     // `/u/{username}` is keyed on the username, and B2 put `levelName` on the public profile DTO
     // so this screen no longer has to print a dash where the product's central claim goes.
-    await page.goto('/u/backend_truc_anh');
+    // DISCOVERED, NOT NAMED. This read `/u/backend_truc_anh` until the 02/09 re-seed deleted that
+    // account, at which point the test failed on a profile that does not exist while claiming the
+    // score was missing. Any author in the public feed proves the same thing. See `discover.ts`.
+    await page.goto(await firstProfileHref(page));
 
     await expect(page.getByText(SCORE_WITH_LEVEL).first()).toBeVisible({ timeout: 20_000 });
   });
@@ -93,13 +111,21 @@ test.describe('reputation', () => {
     await expect(page.getByText('Giao thức HTTP').first()).toBeVisible();
 
     /**
-     * AND ITS DESCRIPTION, which is a new assertion rather than a renamed one. All 103 seeded nodes
-     * carry a hand-written description and none of it reached the screen: the horizontal chain
-     * rendered `name` only, and the one component that did render descriptions was mounted by no
-     * route. It is the only text on this page that says what a skill MEANS, so it is worth a test
-     * that fails if it silently stops being rendered again.
+     * AND ITS DESCRIPTION, which is what makes the chain more than a list of words: every seeded
+     * node carries a hand-written one, and for a while none of it reached the screen — the
+     * horizontal chain rendered `name` only, and the component that did render descriptions was
+     * mounted by no route. It is the only text here that says what a skill MEANS.
+     *
+     * ASSERTED AS "the node's description block is non-empty", not as a sentence. The exact
+     * wording under `Giao thức HTTP` has already been rewritten once by a re-seed (it read
+     * `Phân biệt 401 và 403` before 02/09), and a test that names seeded prose fails on an edit
+     * to that prose while reporting that the feature broke.
      */
-    await expect(page.getByText('Phân biệt 401 và 403', { exact: false }).first()).toBeVisible();
+    const nodeDescription = page
+      .getByText('Giao thức HTTP')
+      .first()
+      .locator('xpath=ancestor-or-self::*[self::li or self::article or self::section][1]');
+    await expect(nodeDescription).not.toHaveText('Giao thức HTTP');
 
     /**
      * THE BACK LINK LEADS TO THE LIST — both halves asserted, because the pair is the change. The

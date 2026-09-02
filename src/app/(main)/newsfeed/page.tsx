@@ -6,7 +6,12 @@ import { Hash, SquarePen, X } from 'lucide-react';
 import { IconButton, StickyBlock, Tabs } from '@/shared/components';
 import { Newsfeed, useRefreshFeed, type FeedScope } from '@/features/newsfeed';
 import { HashtagSearchBox, normalizeHashtag } from '@/features/hashtags';
-import { PostComposer, PostTypeMenu, type PostComposerHandle } from '@/features/posts';
+import {
+  PostComposer,
+  PostTypeMenu,
+  type CreatePostResponse,
+  type PostComposerHandle,
+} from '@/features/posts';
 import { useIsGuest } from '@/features/security';
 import { TrendingList } from '@/features/trending';
 import { useTabParam } from '@/shared/lib/use-tab-param';
@@ -172,20 +177,23 @@ function NewsfeedContent() {
   const [composerOffscreen, setComposerOffscreen] = useState(false);
 
   /**
-   * After a post is created, refresh the feed AND take the author to their new post's permalink,
-   * where a skeleton covers the moderation check and the page then shows either the post or a
-   * "chờ kiểm duyệt" notice.
+   * After a post is created, refresh the feed AND take the author straight to their new post's
+   * permalink, which shows either the post, a "chờ kiểm duyệt" notice, or the rejection.
    *
-   * IT GOES VIA `/posts/new`, SYNCHRONOUSLY. `POST /v1/api/posts` returns no id (backend debt
-   * B39), so the id has to be read back over the network — and doing that here, then pushing once
-   * it resolved, left the author on the feed for a beat and gave Back a history entry that did not
-   * return to the tab they posted from. `/posts/new` is pushed on the same tick the post is
-   * accepted and replaces itself with the real permalink once the lookup lands.
+   * ONE `router.push`, ON THE SAME TICK, TO A REAL ID. `POST /v1/api/posts` now answers `{
+   * postId, moderationStatus }` (backend closed B39), so there is nothing to look up: this used
+   * to bounce through a `/posts/new` transit route that read "my newest post" back from
+   * `GET /users/{me}/posts` and replaced itself, which cost a round-trip and could land on the
+   * wrong post. `?new=1` is kept — it is what tells the permalink to keep re-reading while
+   * moderation is still deciding.
    */
-  const handlePosted = useCallback(() => {
-    refreshFeed();
-    router.push('/posts/new');
-  }, [refreshFeed, router]);
+  const handlePosted = useCallback(
+    (created: CreatePostResponse) => {
+      refreshFeed();
+      router.push(`/posts/${created.postId}?new=1`);
+    },
+    [refreshFeed, router]
+  );
 
   // `tech` has no composer at all (nothing it publishes would land there) and a guest never gets
   // one, so on those the bar has nothing to offer and the button is not rendered. A hashtag view

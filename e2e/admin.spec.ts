@@ -40,7 +40,11 @@ test.describe('admin · moderation', () => {
     await expect(page.getByRole('navigation', { name: 'Quản trị kiểm duyệt' })).toBeVisible();
     await expect(page.getByRole('navigation', { name: 'Điều hướng chính' })).toHaveCount(0);
 
-    await expect(page.getByRole('heading', { name: 'Kiểm duyệt' })).toBeVisible();
+    // THE TABLIST, NOT AN `<h1>`. The page deliberately renders no heading of its own — the admin
+    // header nav already names the destination and highlights it while active, so repeating it
+    // would be the label twice (the same PageHeader retirement, `8f0cf5c`, that took the query
+    // echo off `/search`). The tablist carries the accessible name instead.
+    await expect(page.getByRole('tablist', { name: 'Kiểm duyệt' })).toBeVisible();
   });
 
   test('all five tabs are present', async ({ page }) => {
@@ -120,8 +124,11 @@ test.describe('admin · roadmap', () => {
     await page.goto('/admin/roadmap');
 
     // The page carries two sections: the queue that closes the loop, and the authoring forms.
-    await expect(page.getByRole('heading', { name: 'Quản lý lộ trình' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Chờ duyệt' })).toBeVisible();
+    // Same rule as `/admin/moderation` above: the nav names the page, the page does not repeat it,
+    // and its two sections are tabs rather than headings. The tablist carries the page's name.
+    const tabs = page.getByRole('tablist', { name: 'Quản lý lộ trình' });
+    await expect(tabs.getByRole('tab', { name: 'Chờ duyệt' })).toBeVisible();
+    await expect(tabs.getByRole('tab', { name: 'Lộ trình' })).toBeVisible();
 
     // The queue itself: rows with a `Duyệt` each, or its empty state. The demo expects a long
     // queue ("48 yêu cầu chờ"), but the assertion is structural — approving here is the single
@@ -132,9 +139,14 @@ test.describe('admin · roadmap', () => {
     await panelSettled(page, approve.first().or(empty));
 
     // The authoring side is reused from the reader's roadmap list — a track has to be selectable
-    // before nodes can be added to it. `Backend cho người mới` is seeded (id 2001); it read
+    // before nodes can be added to it. It is BEHIND THE SECOND TAB rather than under the queue on
+    // the same scroll, so reaching it is a click: the two sections used to stack, and asserting
+    // its content without switching tabs failed on a page that was rendering correctly.
+    //
+    // `Backend cho người mới` is seeded (id 2001) and survived the 02/09 re-seed; it read
     // `Backend Developer` until the third-generation seed (`V88`) rebuilt the tracks with
     // Vietnamese names.
+    await tabs.getByRole('tab', { name: 'Lộ trình' }).click();
     await expect(page.getByText('Backend cho người mới').first()).toBeVisible({ timeout: 15_000 });
   });
 });

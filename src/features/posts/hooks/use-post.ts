@@ -3,14 +3,20 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient, type UseMutationOptions } from '@tanstack/react-query';
 import { postsApi } from '../api/post';
-import type { CreateBookRequest, CreatePostRequest, UpdatePostRequest } from '../types/post';
+import type {
+  CreateBookRequest,
+  CreatePostRequest,
+  CreatePostResponse,
+  UpdatePostRequest,
+} from '../types/post';
 import { postKeys } from './keys';
 
 /**
- * Posts state layer, cycle 1 (PostController). Every endpoint here is a write that returns
- * **void** — there is no created/updated post to fold into a cache, and no `GET /posts` to
- * refetch a single one (see the ledger's posts notes). So these hooks invalidate what this
- * domain owns and nothing else.
+ * Posts state layer, cycle 1 (PostController). The two creates answer `{ postId,
+ * moderationStatus }` and every other endpoint here returns **void** — there is still no
+ * updated post to fold into a cache. So these hooks invalidate what this domain owns and
+ * nothing else, and hand the create response straight back to the caller: it is what tells the
+ * composer where to navigate and whether moderation has already cleared the post.
  *
  * CROSS-DOMAIN REFRESH IS THE CALLER'S JOB, deliberately. The read side of a post is the
  * **feed** (`newsfeed`) and **search** — other domains, with their own query keys. Reaching
@@ -38,7 +44,9 @@ export type PostMutationOptions<TVariables, TData = void> = Omit<
 >;
 
 /** POST /v1/api/posts — any type except `BOOK` (the API rejects it; use `useCreateBookPost`). */
-export function useCreatePost(options?: PostMutationOptions<CreatePostRequest>) {
+export function useCreatePost(
+  options?: PostMutationOptions<CreatePostRequest, CreatePostResponse>
+) {
   return useMutation({
     mutationFn: (payload: CreatePostRequest) => postsApi.createPost(payload),
     ...options,
@@ -57,7 +65,9 @@ export interface CreateBookPostVariables {
  *
  * Exposes `progress` (0–100) for the book file upload — resets on each attempt, holds after.
  */
-export function useCreateBookPost(options?: PostMutationOptions<CreateBookPostVariables>) {
+export function useCreateBookPost(
+  options?: PostMutationOptions<CreateBookPostVariables, CreatePostResponse>
+) {
   const [progress, setProgress] = useState(0);
   const mutation = useMutation({
     mutationFn: ({ metadata, bookFile, coverFile }: CreateBookPostVariables) => {
