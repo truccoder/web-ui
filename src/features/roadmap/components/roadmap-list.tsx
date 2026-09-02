@@ -124,7 +124,7 @@ export function RoadmapList({ selectedId, onSelect, className }: RoadmapListProp
          * way to map back is to fetch every roadmap's nodes and search them, one request per track.
          * That is an N+1 over the catalogue to render a heading, so the split waits for the field.
          */
-        <ul className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-3">
+        <ul className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-[var(--nx-space-element)]">
           {visible.map((roadmap) => (
             // `h-full` on the item so a one-line and a two-line description in the same grid row
             // produce cards of equal height rather than a ragged strip — the `Card` below already

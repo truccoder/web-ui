@@ -604,8 +604,9 @@ export const en = {
   },
 
   moderation: {
+    // `subtitle` went with the page's own `<h1>` when it was dropped — the admin header nav
+    // already names this destination, so a repeated title+sentence was saying it a third time.
     title: 'Moderation',
-    subtitle: 'Review reported posts, audit the decision log, and see who has been banned',
     loadFailed: 'Could not load',
     pageOf: 'Page ${page} / ${totalPages}',
     tabs: {

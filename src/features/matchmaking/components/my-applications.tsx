@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Badge, Button, Dialog, EmptyState, Skeleton, toast } from '@/shared/components';
+import { Badge, Button, Card, Dialog, EmptyState, Skeleton, toast } from '@/shared/components';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { formatDate, useIntlLocale } from '@/shared/lib/format';
 import { useT } from '@/core/i18n';
@@ -72,7 +72,11 @@ function ApplicationRow({ application }: { application: ProjectApplication }) {
   const canWithdraw = status === 'PENDING';
 
   return (
-    <div className="flex flex-col gap-[var(--nx-space-tight)] rounded-nx-md bg-nx-surface-card px-5 py-3">
+    // `Card` rather than a hand-rolled `rounded-nx-md bg-nx-surface-card` div — this is the same
+    // kind of object as `ProjectCard` beside it in `project-list.tsx` (one project, summarised),
+    // so it takes the same padding/radius/fill from the shared component instead of a copy that
+    // drifts the moment `Card`'s own styling changes.
+    <Card className="flex flex-col gap-[var(--nx-space-tight)]">
       <div className="flex flex-wrap items-center gap-[var(--nx-space-pair)]">
         <Badge
           variant={
@@ -156,6 +160,6 @@ function ApplicationRow({ application }: { application: ProjectApplication }) {
           </p>
         )}
       </Dialog>
-    </div>
+    </Card>
   );
 }

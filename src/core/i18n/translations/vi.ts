@@ -588,8 +588,9 @@ export const vi: Messages = {
   },
 
   moderation: {
+    // `subtitle` went with the page's own `<h1>` when it was dropped — the admin header nav
+    // already names this destination, so a repeated title+sentence was saying it a third time.
     title: 'Kiểm duyệt',
-    subtitle: 'Duyệt bài bị báo cáo, tra nhật ký quyết định, và xem ai đang bị cấm',
     loadFailed: 'Không tải được dữ liệu',
     pageOf: 'Trang ${page} / ${totalPages}',
     tabs: {

@@ -51,40 +51,40 @@ function AdminRoadmapContent() {
   const roadmapId = Number.isInteger(rawId) && rawId > 0 ? rawId : undefined;
 
   return (
-    <div className="flex flex-col gap-5">
-      <h1 className="text-nx-title font-semibold text-nx-text-primary">
-        {t('roadmap.admin.title')}
-      </h1>
+    // NO `<h1>` — the admin header nav (`(admin)/layout.tsx`) already names this destination and
+    // highlights it while active, same as `/admin/moderation` beside it and every rail-linked
+    // screen in the main app (`/library`, `/projects`, `/settings`).
+    //
+    // THE STRIP BINDS DOWN TO THE PANEL AT 12, not the wide pages' 16 — the admin canvas is
+    // deliberately denser than `/profile` or `/library`, matching `/admin/moderation`'s own ratio.
+    <div className="flex flex-col gap-[var(--nx-space-element)]">
+      <Card padding="0 10px" className="flex">
+        <Tabs
+          aria-label={t('roadmap.admin.title')}
+          active={tab}
+          onChange={setTab}
+          className="flex-1"
+          tabs={[
+            { id: 'queue', label: t('roadmap.queue.title') },
+            { id: 'tracks', label: t('roadmap.title') },
+          ]}
+        />
+      </Card>
 
-      <div className="flex flex-col gap-[var(--nx-space-element)]">
-        <Card padding="0 10px" className="flex">
-          <Tabs
-            aria-label={t('roadmap.admin.title')}
-            active={tab}
-            onChange={setTab}
-            className="flex-1"
-            tabs={[
-              { id: 'queue', label: t('roadmap.queue.title') },
-              { id: 'tracks', label: t('roadmap.title') },
-            ]}
+      {tab === 'queue' && <PendingVerificationQueue />}
+
+      {tab === 'tracks' && (
+        <div className="flex flex-col gap-10">
+          <RoadmapList
+            selectedId={roadmapId}
+            // `tab=tracks` is kept explicitly: `router.replace` builds a fresh URL, and a track
+            // is only ever picked from this tab, so dropping the reader back onto `Chờ duyệt`
+            // after selecting one would lose the panel they were about to edit.
+            onSelect={(id) => router.replace(`/admin/roadmap?tab=tracks&id=${id}`)}
           />
-        </Card>
-
-        {tab === 'queue' && <PendingVerificationQueue />}
-
-        {tab === 'tracks' && (
-          <div className="flex flex-col gap-10">
-            <RoadmapList
-              selectedId={roadmapId}
-              // `tab=tracks` is kept explicitly: `router.replace` builds a fresh URL, and a track
-              // is only ever picked from this tab, so dropping the reader back onto `Chờ duyệt`
-              // after selecting one would lose the panel they were about to edit.
-              onSelect={(id) => router.replace(`/admin/roadmap?tab=tracks&id=${id}`)}
-            />
-            <RoadmapAdminPanel roadmapId={roadmapId} />
-          </div>
-        )}
-      </div>
+          <RoadmapAdminPanel roadmapId={roadmapId} />
+        </div>
+      )}
     </div>
   );
 }

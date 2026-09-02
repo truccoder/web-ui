@@ -61,60 +61,54 @@ function AdminModerationContent() {
   };
 
   return (
-    <div className="flex flex-col gap-5">
-      <div>
-        <h1 className="text-nx-title font-semibold text-nx-text-primary">
-          {t('moderation.title')}
-        </h1>
-        <p className="mt-0.5 text-nx-body-sm text-nx-text-secondary">{t('moderation.subtitle')}</p>
-      </div>
+    // NO `<h1>` — the admin header nav (`(admin)/layout.tsx`) already names this destination and
+    // highlights it while active, the same reason the main app's rail-linked screens (`/library`,
+    // `/projects`, `/settings`) render straight into their tab strip instead of repeating the label.
+    //
+    // THE STRIP BINDS DOWN TO THE PANEL AT 12, not the wide pages' 16 — the admin canvas is
+    // deliberately denser than `/profile` or `/library`; see `roadmap.admin.title`'s page for the
+    // same ratio.
+    <div className="flex flex-col gap-[var(--nx-space-element)]">
+      {/* THE WHITE CARD IS `/newsfeed`'s OWN GROUND, carried here — `Tabs` paints no fill of
+          its own, see its header. `padding "0 10px"` matches the `p-2.5` `/newsfeed`'s
+          `StickyBlock` row spends around the same strip. */}
+      <Card padding="0 10px" className="flex">
+        <Tabs
+          active={tab}
+          onChange={setTab}
+          aria-label={t('moderation.title')}
+          className="flex-1"
+          tabs={[
+            { id: 'posts', label: t('moderation.tabs.posts') },
+            // Second, right after the queue it feeds. A report is the human input to the same
+            // decision the queue makes, and until this tab existed it was the only signal in
+            // the system that reached nobody — `POST /moderation/reports` wrote rows that
+            // `GET /admin/moderation/reports` was never called to read.
+            { id: 'reports', label: t('moderation.tabs.reports') },
+            { id: 'logs', label: t('moderation.tabs.logs') },
+            { id: 'banned', label: t('moderation.tabs.banned') },
+            // Added once users could appeal at all. Without it the product accepts appeals and
+            // gives nobody the ability to decide them — a promise of review no screen can keep.
+            { id: 'appeals', label: t('moderation.tabs.appeals') },
+            // Operational, not a queue: the newsfeed rebuild and anything else that is a
+            // one-off maintenance action rather than a stream of items to work through.
+            { id: 'system', label: t('moderation.tabs.system') },
+          ]}
+        />
+      </Card>
 
-      {/* THE STRIP BINDS DOWN TO THE PANEL, and on this page the step is 20 above → 12 below
-          rather than 40 → 16. What makes the group read is the RATIO, not the number: the admin
-          canvas is deliberately denser than `/profile` or `/library`, and 16 under a 20 would have
-          been the same symmetric float the wide pages had, just tighter. */}
-      <div className="flex flex-col gap-[var(--nx-space-element)]">
-        {/* THE WHITE CARD IS `/newsfeed`'s OWN GROUND, carried here — `Tabs` paints no fill of
-            its own, see its header. `padding "0 10px"` matches the `p-2.5` `/newsfeed`'s
-            `StickyBlock` row spends around the same strip. */}
-        <Card padding="0 10px" className="flex">
-          <Tabs
-            active={tab}
-            onChange={setTab}
-            aria-label={t('moderation.title')}
-            className="flex-1"
-            tabs={[
-              { id: 'posts', label: t('moderation.tabs.posts') },
-              // Second, right after the queue it feeds. A report is the human input to the same
-              // decision the queue makes, and until this tab existed it was the only signal in
-              // the system that reached nobody — `POST /moderation/reports` wrote rows that
-              // `GET /admin/moderation/reports` was never called to read.
-              { id: 'reports', label: t('moderation.tabs.reports') },
-              { id: 'logs', label: t('moderation.tabs.logs') },
-              { id: 'banned', label: t('moderation.tabs.banned') },
-              // Added once users could appeal at all. Without it the product accepts appeals and
-              // gives nobody the ability to decide them — a promise of review no screen can keep.
-              { id: 'appeals', label: t('moderation.tabs.appeals') },
-              // Operational, not a queue: the newsfeed rebuild and anything else that is a
-              // one-off maintenance action rather than a stream of items to work through.
-              { id: 'system', label: t('moderation.tabs.system') },
-            ]}
-          />
-        </Card>
-
-        {/* Only the active tab is mounted, so switching does not leave three lists alive and the
-          page does not fetch all three on load. */}
-        {tab === 'posts' && (
-          <ModerationPostsTab key={jumpToPostId ?? 'all'} initialPostId={jumpToPostId} />
-        )}
-        {/* Same jump as the banned-users tab: a report names a post id and nothing else, so the
-          way to act on one is to open it where the post and its history are. */}
-        {tab === 'reports' && <ModerationReportsTab onViewPost={viewPost} />}
-        {tab === 'logs' && <ModerationLogsTab />}
-        {tab === 'banned' && <BannedUsersTab onViewPost={viewPost} />}
-        {tab === 'appeals' && <AppealsTab />}
-        {tab === 'system' && <NewsfeedRebuildPanel />}
-      </div>
+      {/* Only the active tab is mounted, so switching does not leave three lists alive and the
+        page does not fetch all three on load. */}
+      {tab === 'posts' && (
+        <ModerationPostsTab key={jumpToPostId ?? 'all'} initialPostId={jumpToPostId} />
+      )}
+      {/* Same jump as the banned-users tab: a report names a post id and nothing else, so the
+        way to act on one is to open it where the post and its history are. */}
+      {tab === 'reports' && <ModerationReportsTab onViewPost={viewPost} />}
+      {tab === 'logs' && <ModerationLogsTab />}
+      {tab === 'banned' && <BannedUsersTab onViewPost={viewPost} />}
+      {tab === 'appeals' && <AppealsTab />}
+      {tab === 'system' && <NewsfeedRebuildPanel />}
     </div>
   );
 }

@@ -1,15 +1,14 @@
 'use client';
 
 import * as React from 'react';
-import Link from 'next/link';
 import { Trash2 } from 'lucide-react';
-import { Badge, Button, Card, Dialog, EmptyState, Skeleton } from '@/shared/components';
+import { Button, Dialog, EmptyState } from '@/shared/components';
 import { getErrorMessage, getErrorStatus } from '@/shared/lib/api-error';
-import { formatCurrency, useIntlLocale } from '@/shared/lib/format';
+import { useIntlLocale } from '@/shared/lib/format';
 import { useT } from '@/core/i18n';
 import type { Book } from '../types/book';
 import { useBooksByAuthor, useDeleteBook } from '../hooks';
-import { StarRating } from './star-rating';
+import { BookCell, BookRowSkeleton } from './book-library';
 
 /**
  * Every book one author has published, with the only destructive control the domain has.
@@ -77,12 +76,14 @@ export function MyBooksList({ authorId, readOnly = false }: MyBooksListProps) {
   const remove = useDeleteBook();
 
   // `isPending` is also true while the query sits idle waiting for `authorId`, so both read as
-  // loading — which is what they are from the page's point of view.
+  // loading — which is what they are from the page's point of view. Same cover-shaped skeleton as
+  // `BookLibrary`/`PurchasedBooksList`: this shelf loads into the same grid now.
   if (authorId == null || isPending) {
     return (
-      <div className="space-y-3">
-        <Skeleton lines={2} />
-        <Skeleton lines={2} />
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-[var(--nx-space-element)]">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <BookRowSkeleton key={i} />
+        ))}
       </div>
     );
   }
@@ -115,25 +116,46 @@ export function MyBooksList({ authorId, readOnly = false }: MyBooksListProps) {
 
   return (
     <>
-      <ul className="flex flex-col gap-3">
+      {/* SAME GRID, SAME CARD AS `BookLibrary` AND `PurchasedBooksList` — `BookCell` is imported
+          rather than re-implemented, so a shelf of your own books renders identically to the
+          catalogue and the purchased shelf beside it, down to the hover veil and the price row.
+          This used to be its own row layout (a `Card` per book, cover left, facts and a labelled
+          delete button right); the owner's request was to fold it into the one shelf design the
+          other two tabs already use rather than carry a second card for the same `Book` shape. */}
+      <ul className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-[var(--nx-space-element)]">
         {books.map((book) => (
-          <li key={book.id}>
-            <BookRow
-              book={book}
-              localeTag={localeTag}
-              // `undefined` rather than a no-op: the row decides whether the control exists at
-              // all from the presence of the handler, so there is one source of that truth.
-              onDelete={
-                readOnly
-                  ? undefined
-                  : () => {
-                      // Clear any error from a previous attempt so the dialog does not open already
-                      // showing a failure that belonged to a different book.
-                      remove.reset();
-                      setPendingDelete(book);
-                    }
-              }
-            />
+          <li key={book.id} className="group/mine relative">
+            <BookCell book={book} localeTag={localeTag} />
+
+            {/* THE DELETE CONTROL IS A SIBLING OF THE CELL'S LINK, NOT A CHILD OF IT — `BookCell`'s
+                own header is explicit that the whole cell became one anchor once its buttons left,
+                and a `<button>` nested inside that `<a>` would be unnested by the browser, the same
+                ambiguity that argument was written to avoid. Floating it in the corner instead
+                keeps one click target per intent: the cover for reading, this chip for deleting.
+
+                THE DARK CHIP MATCHES THE VEIL'S OWN COLOUR, not `IconButton`'s ghost/outline
+                treatment — those assume a card surface underneath, and this sits on a photograph
+                that can be any colour. `rgba(16,24,32,…)` is the same ink `BookCell`'s gradient
+                already uses, so the two floating layers read as one system instead of two.
+
+                REVEALED THE SAME WAY THE TITLE VEIL IS: hidden until hover or keyboard focus, and
+                pinned open under `(hover: none)` for a touch screen that cannot hover to find it. */}
+            {!readOnly && (
+              <button
+                type="button"
+                title={t('profile.books.delete')}
+                aria-label={t('profile.books.deleteAria', { title: book.title ?? '' })}
+                onClick={() => {
+                  // Clear any error from a previous attempt so the dialog does not open already
+                  // showing a failure that belonged to a different book.
+                  remove.reset();
+                  setPendingDelete(book);
+                }}
+                className="absolute right-2 top-2 z-10 flex size-7 items-center justify-center rounded-nx-full bg-[rgba(16,24,32,0.72)] text-white opacity-0 transition-opacity duration-[var(--nx-duration-fast)] ease-nx-out hover:bg-[rgba(16,24,32,0.9)] focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring group-hover/mine:opacity-100 group-focus-within/mine:opacity-100 [@media(hover:none)]:opacity-100"
+              >
+                <Trash2 className="size-3.5" aria-hidden />
+              </button>
+            )}
           </li>
         ))}
       </ul>
@@ -164,99 +186,5 @@ export function MyBooksList({ authorId, readOnly = false }: MyBooksListProps) {
         )}
       </Dialog>
     </>
-  );
-}
-
-function BookRow({
-  book,
-  localeTag,
-  onDelete,
-}: {
-  book: Book;
-  localeTag: string;
-  /** Absent on a shelf the reader does not own — the delete control is then not rendered. */
-  onDelete?: () => void;
-}) {
-  const t = useT();
-  const [coverFailed, setCoverFailed] = React.useState(false);
-  const showCover = Boolean(book.coverImageUrl?.trim()) && !coverFailed;
-
-  const price =
-    book.isFree || book.price == null
-      ? t('post.book.free')
-      : formatCurrency(book.price, book.currency?.trim() || 'VND', localeTag);
-
-  return (
-    <Card padding={12} className="flex items-start gap-3">
-      {/* The cover is presigned at read time now (B4 fixed), but a URL can still expire in a
-          long-lived tab or point at a missing object, so the fallback stays — a clean placeholder
-          beats a broken-image glyph. Plain <img>: the host is MinIO, which next/image would need
-          configured as a remote pattern for no benefit at this size. */}
-      {showCover ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={book.coverImageUrl ?? undefined}
-          alt=""
-          className="h-16 w-12 shrink-0 rounded-nx-sm object-cover"
-          onError={() => setCoverFailed(true)}
-        />
-      ) : (
-        /* A COVER PLACEHOLDER THAT SAYS "no cover", NOT "broken". It used to be an empty grey
-           rectangle, which reads as a failed image — the reader cannot tell a book with no cover
-           from one whose cover would not load. The title's first letter is the cheapest signal
-           that something is deliberately standing in for the artwork, and it doubles as a weak
-           identifier when scanning a list. `aria-hidden` because the title is right beside it;
-           announcing the letter would read the same word twice. */
-        <div
-          className="h-16 w-12 flex shrink-0 items-center justify-center rounded-nx-sm bg-nx-surface-sunken"
-          aria-hidden
-        >
-          <span className="text-nx-heading font-semibold text-nx-text-faint">
-            {book.title?.trim()?.charAt(0)?.toUpperCase() || '?'}
-          </span>
-        </div>
-      )}
-
-      <div className="min-w-0 flex-1">
-        {/* The catalogue's titles link; these were the one book list that still did not, so the
-            same row behaved differently depending on which screen it was drawn on. */}
-        {book.id != null ? (
-          <Link
-            href={`/books/${book.id}`}
-            className="block truncate text-nx-body font-medium text-nx-text-primary hover:underline"
-          >
-            {book.title}
-          </Link>
-        ) : (
-          <p className="truncate text-nx-body font-medium text-nx-text-primary">{book.title}</p>
-        )}
-
-        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="text-nx-caption text-nx-text-secondary">{price}</span>
-          {book.fileFormat && (
-            <Badge mono variant="neutral">
-              {book.fileFormat}
-            </Badge>
-          )}
-          {/* Only once someone has actually rated it: `avgRating` on an unrated book is 0, and a
-              row of empty stars reads as "rated badly" rather than "not rated". */}
-          {book.reviewCount && book.avgRating ? (
-            <StarRating rating={book.avgRating} size={11} />
-          ) : null}
-        </div>
-      </div>
-
-      {onDelete && (
-        <Button
-          size="sm"
-          variant="ghost"
-          icon={<Trash2 className="size-3.5" />}
-          onClick={onDelete}
-          aria-label={t('profile.books.deleteAria', { title: book.title ?? '' })}
-        >
-          {t('profile.books.delete')}
-        </Button>
-      )}
-    </Card>
   );
 }

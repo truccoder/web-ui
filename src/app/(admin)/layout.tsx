@@ -62,8 +62,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="min-h-screen bg-nx-surface-page">
+      {/* `h-nx-topbar` + `px-5` — the same row unit and edge inset `(main)/shell.tsx`'s header
+          spends, was `h-16` (64px) and a `px-4 sm:px-5 lg:px-10` ramp with no step on the main
+          shell's own ladder. Two topbars in the product should be the same 56px band, not two. */}
       <header className="border-b border-nx-border-subtle bg-nx-surface-card">
-        <div className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-4 px-4 sm:px-5 lg:px-10">
+        <div className="mx-auto flex h-nx-topbar max-w-5xl items-center justify-between gap-[var(--nx-space-pad-half)] px-5">
           <div className="flex items-center gap-2.5">
             <BrandMark size={28} />
             <span className="text-nx-body font-semibold tracking-tight text-nx-text-primary">
@@ -97,7 +100,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 py-10 sm:px-5 lg:px-10">{children}</main>
+      {/* `pt-5 pb-12` — the main shell's own canvas rhythm (`--nx-space-pad` top, `--nx-space-runout`
+          bottom), was a single `py-10` on no course the ladder has. `px-5` matches the header
+          above instead of stepping through three widths the rest of the app never uses. */}
+      <main className="mx-auto max-w-5xl px-5 pt-5 pb-12">{children}</main>
     </div>
   );
 }
