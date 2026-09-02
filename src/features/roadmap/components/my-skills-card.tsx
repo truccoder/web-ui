@@ -145,7 +145,9 @@ export function MySkillsCard({ userId, readOnly = false }: MySkillsCardProps) {
           they describe instead of stretched away from it. */}
       <ul className="grid gap-[var(--nx-space-element)] sm:grid-cols-2 lg:grid-cols-3">
         {sortRows(rows).map((row) => (
-          <li key={row.nodeId}>
+          // `h-full` on the item: some rows carry a tier note and some do not, and without it the
+          // `Card`'s own `h-full` has no row height to resolve against — the grid reads ragged.
+          <li key={row.nodeId} className="h-full">
             <Card variant="inset" padding="12px 14px" className="flex h-full flex-col gap-2">
               <span className="text-nx-body-sm font-medium text-nx-text-primary">
                 {row.nodeName}

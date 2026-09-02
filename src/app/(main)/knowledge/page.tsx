@@ -15,24 +15,29 @@ import { useT } from '@/core/i18n';
  * `/knowledge` opens straight on what a returning reader came back for.
  *
  * The professional profile is still on `/profile?tab=professional`; the explainer refuses to
- * run without it, so the pointer stays.
+ * run without it, so the pointer stays — folded into the section's own description rather than
+ * left as a bare sentence floating at the top of the canvas, which is what it became once the
+ * tab strip above it was removed.
  */
 export default function KnowledgePage() {
   const t = useT();
 
   return (
     <div className="flex flex-col gap-[var(--nx-space-section)]">
-      <p className="text-nx-body-sm text-nx-text-secondary">
-        {t('knowledge.profileMoved')}{' '}
-        <Link
-          href="/profile?tab=professional"
-          className="text-nx-text-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
-        >
-          {t('knowledge.profileMovedLink')}
-        </Link>
-      </p>
-
-      <Section title={t('knowledge.tabs.library')} description={t('knowledge.libraryDesc')}>
+      <Section
+        title={t('knowledge.savedTitle')}
+        description={
+          <>
+            {t('knowledge.libraryDesc')} {t('knowledge.profileMoved')}{' '}
+            <Link
+              href="/profile?tab=professional"
+              className="text-nx-text-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
+            >
+              {t('knowledge.profileMovedLink')}
+            </Link>
+          </>
+        }
+      >
         <KnowledgeLibrary />
       </Section>
     </div>

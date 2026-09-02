@@ -126,7 +126,10 @@ export function RoadmapList({ selectedId, onSelect, className }: RoadmapListProp
          */
         <ul className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-3">
           {visible.map((roadmap) => (
-            <li key={roadmap.id}>
+            // `h-full` on the item so a one-line and a two-line description in the same grid row
+            // produce cards of equal height rather than a ragged strip — the `Card` below already
+            // asks for `h-full`, but `height: 100%` needs the item itself to take the row's height.
+            <li key={roadmap.id} className="h-full">
               <Card
                 interactive
                 selected={roadmap.id === selectedId}

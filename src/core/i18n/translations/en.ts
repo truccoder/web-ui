@@ -518,6 +518,7 @@ export const en = {
     postsSection: 'Posts (${count})',
     projectsSection: 'Projects (${count})',
     roadmapsSection: 'Roadmaps (${count})',
+    viewAllInTab: 'View all',
     title: 'Search',
     prompt: 'Type something and press Enter to search',
     promptTitle: 'Search for something',
@@ -1298,6 +1299,8 @@ export const en = {
       'Your professional profile moved to the profile page — the explainer will not run without it.',
     profileMovedLink: 'Open profile',
     title: 'Archive',
+    // Not "Library" — the rail already spends that word on the book catalogue (`/library`).
+    savedTitle: 'Saved explanations',
     libraryDesc: 'AI explanations you have saved, grouped by topic.',
     tabs: {
       library: 'Library',
@@ -1734,6 +1737,7 @@ export const en = {
       title: 'Projects that fit you',
       subtitle: 'Ranked against the skills and domains in your professional profile.',
     },
+    allTitle: 'All projects',
     title: 'Projects',
     tabs: {
       board: 'Project board',

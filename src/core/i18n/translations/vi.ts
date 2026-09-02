@@ -504,6 +504,7 @@ export const vi: Messages = {
     postsSection: 'Bài viết (${count})',
     projectsSection: 'Dự án (${count})',
     roadmapsSection: 'Lộ trình (${count})',
+    viewAllInTab: 'Xem tất cả',
     title: 'Tìm kiếm',
     prompt: 'Nhập nội dung và nhấn Enter để tìm kiếm',
     promptTitle: 'Tìm gì đó',
@@ -1272,6 +1273,8 @@ export const vi: Messages = {
       'Hồ sơ nghề nghiệp đã chuyển sang trang cá nhân — thiếu nó thì trình giải thích không chạy.',
     profileMovedLink: 'Mở trang cá nhân',
     title: 'Kho lưu trữ',
+    // Không phải "Thư viện" — rail đã dùng từ đó cho kho sách (`/library`).
+    savedTitle: 'Giải thích đã lưu',
     libraryDesc: 'Các bản giải thích AI bạn đã lưu, nhóm theo chủ đề.',
     tabs: {
       library: 'Thư viện',
@@ -1700,6 +1703,7 @@ export const vi: Messages = {
       title: 'Dự án phù hợp với bạn',
       subtitle: 'Xếp theo kỹ năng và lĩnh vực bạn quan tâm trong hồ sơ nghề nghiệp.',
     },
+    allTitle: 'Tất cả dự án',
     title: 'Dự án',
     tabs: {
       board: 'Bảng dự án',

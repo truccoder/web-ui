@@ -43,15 +43,44 @@ export interface SearchResultsProps {
   className?: string;
 }
 
-/** Section heading with its icon and count. */
-function SectionHeading({ icon, label }: { icon: React.ReactNode; label: string }) {
+/** Section heading with its icon and count, and an optional "view all" hung off the right edge —
+    for the `all` tab, where a section is a capped preview of a tab that has the rest. */
+function SectionHeading({
+  icon,
+  label,
+  onViewAll,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onViewAll?: () => void;
+}) {
+  const t = useT();
   return (
-    <p className="flex items-center gap-2 px-1 py-1 text-nx-body-sm font-medium text-nx-text-secondary">
-      {icon}
-      {label}
-    </p>
+    <div className="flex items-center justify-between gap-2 px-1 py-1">
+      <p className="flex items-center gap-2 text-nx-body-sm font-medium text-nx-text-secondary">
+        {icon}
+        {label}
+      </p>
+      {onViewAll && (
+        <button
+          type="button"
+          onClick={onViewAll}
+          className="text-nx-caption text-nx-text-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
+        >
+          {t('search.viewAllInTab')}
+        </button>
+      )}
+    </div>
   );
 }
+
+/* THE `all` TAB PREVIEWS, THE OWN TAB HOLDS THE REST. Before this cap it concatenated the full
+   people, post and book lists one under another — for a broad term that is three long lists on
+   one page, stacked, with no way to tell "this is everything" from "this is the start of a lot
+   more". Five rows / six covers is a screenful; the section's own tab (with the term already
+   applied) is one click away via `onViewAll` and keeps its own uncapped, unfiltered list. */
+const ALL_TAB_ROW_CAP = 5;
+const ALL_TAB_BOOK_CAP = 6;
 
 /** A column of cards — people, posts, projects. The gap is the block rung the feed and the
     project board use between cards. */
@@ -228,9 +257,10 @@ export function SearchResults({ query, className }: SearchResultsProps) {
                 <SectionHeading
                   icon={<Users className="size-4" />}
                   label={t('search.usersSection', { count: users.length })}
+                  onViewAll={users.length > ALL_TAB_ROW_CAP ? () => setTab('people') : undefined}
                 />
                 <CardColumn>
-                  {users.map((user) => (
+                  {users.slice(0, ALL_TAB_ROW_CAP).map((user) => (
                     <li key={user.id}>
                       <UserResultCard user={user} />
                     </li>
@@ -244,9 +274,10 @@ export function SearchResults({ query, className }: SearchResultsProps) {
                 <SectionHeading
                   icon={<FileText className="size-4" />}
                   label={t('search.postsSection', { count: posts.length })}
+                  onViewAll={posts.length > ALL_TAB_ROW_CAP ? () => setTab('posts') : undefined}
                 />
                 <CardColumn>
-                  {posts.map((post) => (
+                  {posts.slice(0, ALL_TAB_ROW_CAP).map((post) => (
                     <li key={post.id}>
                       <PostResultCard post={post} />
                     </li>
@@ -260,9 +291,10 @@ export function SearchResults({ query, className }: SearchResultsProps) {
                 <SectionHeading
                   icon={<BookOpen className="size-4" />}
                   label={t('search.booksSection', { count: books.length })}
+                  onViewAll={books.length > ALL_TAB_BOOK_CAP ? () => setTab('books') : undefined}
                 />
                 <BookGrid>
-                  {books.map((book) => (
+                  {books.slice(0, ALL_TAB_BOOK_CAP).map((book) => (
                     <li key={book.id}>
                       <BookResultCard book={book} />
                     </li>

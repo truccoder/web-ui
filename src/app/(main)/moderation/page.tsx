@@ -16,6 +16,11 @@ import { useT } from '@/core/i18n';
  *
  * TWO TABS because a violation and the outcome of contesting it are two states — see the panels.
  * Deep-linkable and reload-stable via `useTabParam`.
+ *
+ * IT CARRIES AN `<h1>`, WHICH MOST `(main)` PAGES DO NOT. The no-heading rule exists because the
+ * rail already names a page a reader chose from a list of destinations; this one has no rail row
+ * — it is reached only by following the ban banner or the pointer left on the account tab — so a
+ * reader arriving here cold has nothing else on screen saying where they are.
  */
 const TAB_IDS = ['violations', 'appeals'] as const;
 
@@ -33,6 +38,10 @@ function ModerationContent() {
 
   return (
     <div className="flex flex-col gap-[var(--nx-space-section)]">
+      <h1 className="text-nx-title font-semibold text-nx-text-primary">
+        {t('moderationMine.title')}
+      </h1>
+
       <div className="flex flex-col gap-[var(--nx-space-group)]">
         <Card padding="0 10px" className="flex">
           <Tabs

@@ -1,6 +1,6 @@
 'use client';
 
-import { NotificationList, NotificationPreferences } from '@/features/notifications';
+import { NotificationList } from '@/features/notifications';
 
 /**
  * `/notifications` — owned entirely by `notifications`, no contributing domains.
@@ -16,14 +16,10 @@ import { NotificationList, NotificationPreferences } from '@/features/notificati
  * links back to this route — which is why the sidebar has no `/notifications` row any more: two
  * entry points, one of them without a badge, is the weaker pair.
  *
- * The page composes and does nothing else: both children own their own queries.
+ * PREFERENCES LEFT THIS PAGE for `/settings/notifications` when the settings hub landed — the
+ * list is a feed of events, the toggles are configuration, and rendering both here meant the
+ * exact same `NotificationPreferences` panel sat on two routes. This page is now just the list.
  */
 export default function NotificationsPage() {
-  return (
-    <div className="flex flex-col gap-[var(--nx-space-section)]">
-      <NotificationList />
-
-      <NotificationPreferences />
-    </div>
-  );
+  return <NotificationList />;
 }

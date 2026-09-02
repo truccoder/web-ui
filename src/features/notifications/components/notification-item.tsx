@@ -199,22 +199,20 @@ export function NotificationItem({ notification, onRead, className }: Notificati
       </span>
 
       <span className="min-w-0 flex-1">
+        {/* ONE LINE, THE SPECIFIC ONE. The backend sends a `title` that names the CATEGORY
+            ("Có người bày tỏ cảm xúc về bài viết của bạn") and a `body` that names the INSTANCE
+            ("Bùi Gia Thắng đã bày tỏ cảm xúc về bài viết của bạn.") — stacked, they said the same
+            thing twice, twenty pixels apart, down the whole list. A notification list wants the
+            instance, so `body` is the line; `title` only stands in when there is no body (nullable
+            in the schema, absent — not null — on the wire, hence `||` on the falsy string too). */}
         <span
           className={cn(
             'block text-nx-ui text-nx-text-primary',
             unread ? 'font-semibold' : 'font-normal'
           )}
         >
-          {notification.title}
+          {notification.body || notification.title}
         </span>
-
-        {/* `body` is nullable in the schema and null on the wire when absent — the key is
-            there, the value is not (Jackson ALWAYS). Hence a null check, never `?:`. */}
-        {notification.body !== null && (
-          <span className="mt-0.5 block text-nx-body-sm text-nx-text-secondary">
-            {notification.body}
-          </span>
-        )}
 
         <span className="mt-1 block text-nx-caption text-nx-text-muted">
           {relativeTime(notification.createdAt)}

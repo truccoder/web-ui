@@ -209,7 +209,15 @@ export function ModerationPostsTab({ initialPostId, className }: ModerationPosts
 
   const [postId, setPostId] = useState(initialPostId ? String(initialPostId) : '');
   const [userId, setUserId] = useState('');
-  const [status, setStatus] = useState<ModerationStatus | ''>('');
+  // DEFAULTS TO THE QUEUE, NOT TO EVERYTHING. `''` here loaded every post the product has ever
+  // held — 261 pages of mostly `APPROVED` rows under a tab labelled "Hàng chờ" — and the one thing
+  // a moderator opens this for, the posts actually awaiting a decision, was buried. `PENDING_REVIEW`
+  // is that set; the moderator can still widen the filter by hand. Arriving via a post-id jump
+  // (from a report or a banned user) keeps it unfiltered, so that specific post shows whatever
+  // status it is in.
+  const [status, setStatus] = useState<ModerationStatus | ''>(
+    initialPostId ? '' : 'PENDING_REVIEW'
+  );
   // `bindFilter` wraps each setter so a filter change goes back to page 1 — staying on page 4 of a
   // result set a new filter shrank to one page shows an empty list that reads as "no matches".
   const { page, setPage, bindFilter } = usePagination();

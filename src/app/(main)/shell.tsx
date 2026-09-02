@@ -240,7 +240,8 @@ const PALETTE_ONLY_ITEMS: NavItem[] = [
   // `/profile` LEFT THE RAIL'S FOOTER and lives only here now. The rail is destinations — places
   // you go to do work — and "you" was the one row that was not one; it also sat below a divider
   // saying so, which is a lot of chrome for a link the bar's own avatar menu already carries. The
-  // page is unchanged and reachable two ways: `MeMenu` above, and this entry in the palette.
+  // page is unchanged and reachable two ways: `MeMenu` above, and this entry in the palette — as
+  // is `/settings`, which `MeMenu` now carries too.
   { href: '/profile', labelKey: 'nav.profile', icon: User, keywords: 'trang ca nhan account home' },
   {
     href: '/settings',
@@ -431,6 +432,14 @@ function MeMenu() {
           label: t('nav.profile'),
           icon: <User />,
           onSelect: () => router.push('/profile'),
+        },
+        {
+          // The `/settings/*` hub has six real panels and was reachable only from the ⌘K palette
+          // and a couple of deep links — the avatar menu is where a reader looks for it, so it
+          // sits here beside the profile it is not.
+          label: t('settings.title'),
+          icon: <Settings />,
+          onSelect: () => router.push('/settings'),
         },
         '-',
         { label: t('nav.logout'), icon: <LogOut />, danger: true, onSelect: () => logout() },

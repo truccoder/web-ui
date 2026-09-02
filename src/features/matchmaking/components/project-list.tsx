@@ -57,6 +57,13 @@ export function ProjectList() {
 
   return (
     <div>
+      {/* A heading, so that when `SuggestedProjects` renders its own block directly above this one
+          the two do not run together as a single undifferentiated column — the ranked cut and the
+          whole board share a project, and without a break the repeat reads as a bug. */}
+      <h2 className="mb-[var(--nx-space-block)] text-nx-heading font-semibold text-nx-text-primary">
+        {t('projects.allTitle')}
+      </h2>
+
       <ul className="flex flex-col gap-[var(--nx-space-block)]">
         {items.map((project) => (
           <li key={project.id}>
@@ -234,11 +241,16 @@ function SuggestedProjectCard({ suggestion }: { suggestion: SuggestedProject }) 
 
       {/* The reason ships with the recommendation (backend javadoc on `SuggestedProjectDto`) so
           it renders here rather than being recomputed against `requiredSkills` client-side —
-          the same principle `MatchingCandidates` follows for `matchedSkills` on a candidate. */}
+          the same principle `MatchingCandidates` follows for `matchedSkills` on a candidate.
+
+          THE RAW `matchScore` IS NOT SHOWN. It is a number with no scale printed anywhere — 12
+          means nothing without knowing a skill outweighs a domain — and `ledger.tsx` makes the
+          same call for the same card in the flank: show the half that reads as language. The
+          candidate list on `project-detail` is the one place the number stays, because there it
+          is a rank between people rather than a figure on its own. */}
       {reasons.length > 0 && (
         <p className="text-nx-caption text-nx-text-muted">
-          {t('projects.matching.score', { score: suggestion.matchScore ?? 0 })} ·{' '}
-          {reasons.slice(0, 4).join(' · ')}
+          {t('ledger.matchedOn')} {reasons.slice(0, 4).join(' · ')}
         </p>
       )}
     </div>
