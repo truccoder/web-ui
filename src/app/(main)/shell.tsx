@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   Archive,
   ArrowLeft,
@@ -41,8 +41,7 @@ import { useNotificationStream } from '@/features/notifications/hooks/use-notifi
 import { clearFeedScroll } from '@/features/newsfeed';
 import { AccountBanBanner } from '@/features/moderation';
 import { ProfileRequiredRedirect } from '@/features/knowledge';
-import { useRoadmaps } from '@/features/roadmap';
-import { BACK_TO_PARAM, safeBackTo, SearchBar } from '@/features/search';
+import { SearchBar } from '@/features/search';
 import { Ledger, GuestLedger } from './ledger';
 import {
   AuthRequiredPrompt,
@@ -614,7 +613,6 @@ export function MainShell({ children }: { children: React.ReactNode }) {
   useNotificationStream(!isGuest);
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const brandHome = useBrandHome();
   const { data: profile } = useMyProfile();
 
@@ -626,29 +624,15 @@ export function MainShell({ children }: { children: React.ReactNode }) {
    * that pushes its composer below the fold is broken. Every other route keeps `min-h-screen` and
    * scrolls, which is what a feed has to do.
    *
-   * AN OPEN ROADMAP IS THE SECOND TENANT, and it was missing. `layout-r7.md` §3.1 names focus
-   * mode's four by hand, each with one parameter:
-   *
-   * | tenant | parameter | what it draws |
-   * | --- | --- | --- |
-   * | `/chats` | `bleed` | the tenant owns the full width and its own scrollers |
-   * | `/kho/{id}` | `panel` | a 300 companion column, right |
-   * | **`/roadmap/{id}`** | **`extent`** | **the content governs its own width** |
-   * | the reader | — | the measure, centred |
-   *
-   * A roadmap tree is `extent`: it is a graph, not prose, and forcing it through a 672 measure
-   * makes it wrap at a width chosen for reading sentences. `density-r8.md` §3 is explicit that
-   * the reason is the SHAPE and not the subject — *"a focus shape has no second region to scroll
-   * past, so a page scroll buys nothing"* — and that `/roadmap/{id}` inherits it for that reason.
-   *
-   * KEYED OFF `?id=` BECAUSE THAT IS THE ROUTE WE HAVE. The DS writes `/roadmap/{id}`; ours keeps
-   * the open track in a query param, and the two are the same state. Changing the URL shape is a
-   * separate decision — it would break every link already shared — so the shape is read from
-   * where it actually lives rather than the route being bent to match a spec's spelling.
+   * `/chats` IS THE ONLY FULL-BLEED TENANT NOW. An open roadmap track (`/roadmap?id=N`) used to be
+   * the second one — focus mode's `extent` shape, drawn full width with the rail, the ledger and
+   * the top bar's context row all dropped for it. That was pulled back at the owner's call
+   * (*"tab roadmap đang fullscreen … bỏ luôn đi, để ở canvas chính là đủ rồi"*): it is now an
+   * ordinary detail view in the standard canvas, with its own back link, so there is nothing to
+   * special-case here and `?id=` is `roadmap/page.tsx`'s concern alone.
    */
-  const roadmapId = searchParams.get('id');
   const isChats = pathname.startsWith('/chats');
-  const isFullBleed = isChats || (pathname.startsWith('/roadmap') && Boolean(roadmapId));
+  const isFullBleed = isChats;
 
   /**
    * The onboarding wizard keeps the rail and the top bar — it is a standard screen — but drops the
@@ -779,8 +763,8 @@ export function MainShell({ children }: { children: React.ReactNode }) {
          * `/chats` DROPS THE TOP BAR ENTIRELY. Focus mode already strips it back to brand · search
          * · bell · avatar, and on this tenant even that is redundant: the context bar below carries
          * the way out, the messenger owns the height, and the reclaimed 56px goes to the transcript.
-         * Its one mobile job — the menu button — moves onto the context bar (`ChatsTrail`). The
-         * roadmap tenant keeps the bar, so this is `isChats`, not `isFullBleed`.
+         * Its one mobile job — the menu button — moves onto the context bar (`ChatsTrail`). `/chats`
+         * is now focus mode's only tenant, so `isChats` and `isFullBleed` name the same set.
          */}
         {!isChats && (
           <header
@@ -916,17 +900,9 @@ export function MainShell({ children }: { children: React.ReactNode }) {
           </header>
         )}
 
-        {/* Focus mode's second row. Which trail renders is a mount-time branch, not a prop —
-            see `FocusTrail` at the foot of this file. */}
-        {isFullBleed &&
-          (isChats ? (
-            <ChatsTrail onOpenMenu={() => setDrawerOpen(true)} />
-          ) : (
-            <RoadmapTrail
-              roadmapId={Number(roadmapId)}
-              backTo={safeBackTo(searchParams.get(BACK_TO_PARAM))}
-            />
-          ))}
+        {/* Focus mode's second row — see `FocusTrail` at the foot of this file. `/chats` is the
+            only tenant, so there is one trail and no branch. */}
+        {isChats && <ChatsTrail onOpenMenu={() => setDrawerOpen(true)} />}
 
         <Drawer
           open={drawerOpen}
@@ -957,8 +933,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
          * measure, a ledger and two gutters; focus mode has none of those, so capping it is
          * arithmetic about regions that are not on screen. Measured before the fix: `/chats` ran
          * 1300 wide, centred, with 150px of bare ground down each side of a transcript — while the
-         * kit's own focus region measures the full 1600 at 1600. The owner asked for exactly this
-         * on the other tenant: *Roadmap cũng phải làm full tối đa*.
+         * kit's own focus region measures the full 1600 at 1600.
          */}
         <div
           className={cn(
@@ -1108,23 +1083,16 @@ export function MainShell({ children }: { children: React.ReactNode }) {
  * header beside its primary action (R8 moved it there to buy back 40px on every screen);
  * a second title in the chrome would be that same string twice.
  *
- * THE BACK ARROW GOES TO THE PARENT, NOT TO `/newsfeed`. It used to go to the feed from both
- * tenants, and on the roadmap that was wrong in a way a reader feels immediately: you reach a
- * track by picking it out of `/roadmap`, so the one place the arrow must not throw you is the
- * feed — it discards the list you were choosing from and there is no other route back to it.
- * `/chats` keeps the feed as its parent because it genuinely has none: the rail is where you
- * came from, and the feed is the rail's first item.
- *
- * SO THE TRAIL IS PER TENANT, WHICH IS WHY THIS IS THREE COMPONENTS AND NOT ONE. Each tenant
- * resolves its own crumbs — the roadmap has to look its track's name up — and a single component
- * would have to call the roadmap's hooks on `/chats` as well, firing `GET /roadmaps` on a screen
- * that has no roadmap on it. Hooks cannot be called conditionally; components can be mounted
- * conditionally, so the branch belongs at the mount rather than inside.
+ * `/chats` IS FOCUS MODE'S ONLY TENANT. An open roadmap track was the second — with its own
+ * trail back to the index it was picked from — until it was pulled back into the ordinary canvas.
+ * The pieces below stay split (`FocusTrailBar` · `FocusTrail` · `ChatsTrail`) rather than being
+ * inlined: the split is what let a per-tenant trail resolve its own crumbs without every tenant's
+ * hooks firing on every other tenant's screen, and it is the seam a future focus tenant slots into.
  */
 function FocusTrailBar({
   children,
   // `/chats` removed the top bar above this one, so the trail is the chrome's top edge and sticks
-  // at 0. The roadmap tenant still has the 56px bar, so it stays offset below it.
+  // at 0. `atTop` stays a prop for a future tenant that keeps the 56px bar and needs the offset.
   atTop = false,
 }: {
   children: React.ReactNode;
@@ -1147,9 +1115,8 @@ function FocusTrailBar({
  * The trail's two parts: a link back to the parent, and where you are now.
  *
  * `title` IS OPTIONAL AND ABSENT IS A REAL STATE, not a loading placeholder to fill with dashes.
- * The roadmap's crumb is the track's own name, which arrives with a request; until it does — and
- * for an `?id=` that names no track at all — the bar shows the way back and stops. A skeleton or
- * a repeated tenant name would both be the bar claiming to know something it does not.
+ * A tenant whose crumb arrives with a request shows the way back and stops until it resolves; a
+ * skeleton or a repeated tenant name would both be the bar claiming to know something it does not.
  */
 function FocusTrail({
   backHref,
@@ -1212,40 +1179,6 @@ function ChatsTrail({ onOpenMenu }: { onOpenMenu: () => void }) {
           <MenuIcon />
         </IconButton>
       }
-    />
-  );
-}
-
-/**
- * `/roadmap?id=N` — back to the index the track was picked from, and the track's own name as the
- * place you are.
- *
- * THE NAME COMES OUT OF THE LIST THAT IS ALREADY LOADED. `useRoadmaps` is one unpaginated request
- * keyed `roadmapKeys.roadmaps`, and `RoadmapList` on the index mounts it — so the ordinary way
- * into this screen arrives with the answer in cache and the bar names the track on first paint.
- * A shared link pays for one small request. There is no per-roadmap read to prefer: the API has
- * `GET /roadmaps` and `GET /roadmaps/{id}/nodes`, and nothing that fetches one roadmap's own row.
- *
- * THE SHELL READING A FEATURE'S CACHE IS THE `slot` DECISION DEFERRED, AND IT IS DELIBERATE. The
- * note that stood here said a per-page slot API "would be the honest long-term shape … when a
- * tenant has something to add here, that is the moment to build the slot, not before". This is a
- * second consumer, not a general one: two tenants, each with a fixed trail. A slot — context,
- * a store, a layout segment — is the change to make when a page needs to put something in this
- * bar that the URL cannot tell the shell, which is still not the case.
- *
- * `backTo` IS THE ONE EXCEPTION THE URL DOES CARRY: a track opened from `/search` (B33) leaves a
- * `?backTo=` naming the results it came from, and the trail leads back there instead of to the
- * index. `safeBackTo` upstream has already pinned it to a `/search?` path.
- */
-function RoadmapTrail({ roadmapId, backTo }: { roadmapId: number; backTo: string | null }) {
-  const t = useT();
-  const { data } = useRoadmaps();
-
-  return (
-    <FocusTrail
-      backHref={backTo ?? '/roadmap'}
-      backLabel={backTo ? t('search.backToResults') : t('nav.roadmap')}
-      title={data?.find((roadmap) => roadmap.id === roadmapId)?.name}
     />
   );
 }

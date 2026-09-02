@@ -11,15 +11,15 @@ import { withBackTo } from '../lib/search-return';
  * One learning track in the results — the same `Card` the roadmap index draws (`RoadmapList`),
  * not the bespoke row this used to be. The owner's note was "dùng style có sẵn … thay vì random".
  *
- * Links to `/roadmap?id={id}` — the shape `roadmap/page.tsx` reads to open a track in focus mode —
- * with `?backTo=` so the focus-mode trail leads back to these results, not the roadmap index.
+ * Links to `/roadmap?id={id}` — the shape `roadmap/page.tsx` reads to open a track's detail view —
+ * with `?backTo=` so that view's back link leads to these results, not the roadmap index.
  * `RoadmapList` uses a button + `onSelect` because selection there is route state it owns; here a
  * plain link is right. The category badge is hidden for `OTHER` for the same reason it is there:
  * as a chip it would print "Khác" and say nothing.
  */
 export interface RoadmapResultCardProps {
   roadmap: Roadmap;
-  /** The results URL to send the reader back to from the track's focus-mode trail. */
+  /** The results URL to send the reader back to from the track's back link. */
   backTo: string;
   className?: string;
 }

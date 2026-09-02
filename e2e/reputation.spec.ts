@@ -76,13 +76,14 @@ test.describe('reputation', () => {
     await expect(backend).toBeVisible({ timeout: 20_000 });
     await backend.click();
 
-    // Opening one shows its steps and a legend naming the three states a node can be in. Nothing is
-    // submitted here; see the file note.
-    //
-    // ASSERTED ON THE LEGEND RATHER THAN ON THE ROADMAP'S NAME, because the canvas still does not
-    // print the track's name — the context bar does, and that is asserted separately below. Worth
-    // knowing when reading this test: the obvious in-canvas heading assertion is the one that
-    // fails, and it fails on a missing heading rather than on a broken roadmap.
+    // Opening one navigates to that track's detail view: the list gives way to a back link, the
+    // track's name as a heading, and its steps. Nothing is submitted here; see the file note.
+    await expect(page).toHaveURL(/\/roadmap\?id=\d+/);
+    await expect(page.getByRole('heading', { name: 'Backend cho người mới' })).toBeVisible({
+      timeout: 15_000,
+    });
+
+    // The legend naming the three states a node can be in — text only the open track produces.
     for (const state of ['Đã xác minh', 'Chờ duyệt', 'Chưa bắt đầu']) {
       await expect(page.getByText(state, { exact: true }).first()).toBeVisible({ timeout: 15_000 });
     }
@@ -101,14 +102,14 @@ test.describe('reputation', () => {
     await expect(page.getByText('Phân biệt 401 và 403', { exact: false }).first()).toBeVisible();
 
     /**
-     * THE TRAIL CARRIES THE SELECTION AND LEADS BACK TO THE INDEX — both halves asserted, because
-     * the pair is the change. The bar used to read `Bảng tin / Lộ trình`: it named the section the
-     * reader could already see and its arrow discarded the list they had just picked from, which
-     * is the one place in this flow there is no other way back to. The rail is hidden in focus
-     * mode, so the `Lộ trình` link on this screen is the trail's and nothing else's.
+     * THE BACK LINK LEADS TO THE LIST — both halves asserted, because the pair is the change. The
+     * detail view used to be a focus-mode shape whose context bar read `Bảng tin / Lộ trình` and
+     * whose arrow discarded the list the reader had just picked from. Now a plain `Lộ trình` link
+     * at the top of the canvas returns there. Scoped to `main` so it is the back link and not the
+     * rail's identically-named nav row, which is on screen again now that focus mode is gone.
      */
-    await expect(page.getByText('Backend cho người mới').first()).toBeVisible();
-    await page.getByRole('link', { name: 'Lộ trình' }).first().click();
+    await page.getByRole('main').getByRole('link', { name: 'Lộ trình' }).click();
     await expect(page).toHaveURL(/\/roadmap$/);
+    await expect(page.getByText('Backend cho người mới').first()).toBeVisible();
   });
 });

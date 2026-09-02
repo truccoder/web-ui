@@ -55,15 +55,13 @@ import type { RoadmapNode, RoadmapProgress } from '../types/roadmap';
  * child against a different parent's child). Children take the 16px dot the legend already
  * describes, and inherit their position from the indent.
  *
- * THE MEASURE IS THE CANVAS'S 672, CENTRED, INSIDE A FOCUS SHAPE THAT HAS NO MEASURE.
- * `/roadmap?id=N` is focus mode's `extent` tenant — `layout-r7.md` §3.1, *the content governs its
- * own width* — and that is still the right tenant: the rail and the ledger go, and the context
- * bar's back arrow is the way out of the track. What changed is what the content governs itself
- * TO. `extent` was read as "take everything" because the old shape genuinely needed 1,176; a
- * column of rows with prose in it does not, and at 1,920 it would set 12-word descriptions across
- * 1,800px. So this component caps itself at `--spacing-nx-canvas` and centres — the same number
- * every other reading column in the product uses, chosen here by the same reasoning rather than
- * copied. `--nx-path-stage`, `--nx-path-stage-max` and `--nx-path-connector` go back to having no
+ * THE MEASURE IS THE CANVAS'S 672, CENTRED. `/roadmap?id=N` used to be focus mode's `extent`
+ * tenant — full width, no rail, no ledger — and this component still capped itself at
+ * `--spacing-nx-canvas` because a column of rows with prose in it reads badly at 1,800px. The
+ * focus shape was dropped ("để ở canvas chính là đủ rồi") and the track now renders in the
+ * ordinary canvas, which is already that width; the cap here is therefore redundant with the
+ * canvas's own but kept so the component is still legible mounted anywhere else.
+ * `--nx-path-stage`, `--nx-path-stage-max` and `--nx-path-connector` go back to having no
  * consumer, which is where they were before the chain.
  *
  * `REJECTED` FOLDS INTO "NOT STARTED", carried forward from the chain along with its reason: a
@@ -425,15 +423,14 @@ export function RoadmapTrack({
   const percent = Math.round((verified / all.length) * 100);
 
   return (
-    // `max-w-nx-canvas` and centred: focus mode hands over the whole viewport, and this is the
-    // content deciding it wants a reading measure out of it. See the file note.
+    // `max-w-nx-canvas` and centred: a reading measure for the prose in the rows. Redundant with
+    // the canvas's own cap now that this renders there, kept so it holds up mounted elsewhere.
     <div className={cn('mx-auto flex w-full max-w-nx-canvas flex-col gap-5', className)}>
       {/**
        * THE HEADER IS THE TRACK'S OWN PROGRESS, and it is the one thing the old screen could not
        * say at all — the chain published `done/total` per stage and nothing for the track, so a
-       * reader could not answer "how far am I" without adding up cards. It sits above the rail
-       * rather than in the context bar because the bar names WHICH track you are on and is shared
-       * with `/chats`; this is a fact about your progress through it.
+       * reader could not answer "how far am I" without adding up cards. It sits above the rail and
+       * just under the track's name, which the detail page (`roadmap/page.tsx`) prints.
        *
        * `userId` gates it. With nobody signed in every node is `open` by construction, so a bar
        * reading `0/12 · 0%` would be reporting the absence of a session as a lack of progress.
