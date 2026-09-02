@@ -1,11 +1,13 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
-import { Badge, EmptyState, Skeleton } from '@/shared/components';
+import { Badge, Button, Dialog, EmptyState, Skeleton, toast } from '@/shared/components';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { formatDate, useIntlLocale } from '@/shared/lib/format';
 import { useT } from '@/core/i18n';
-import { useMyApplications } from '../hooks/use-matchmaking';
+import type { ProjectApplication } from '../types/matchmaking';
+import { useMyApplications, useWithdrawApplication } from '../hooks/use-matchmaking';
 
 /**
  * What the signed-in account has applied to, and what came of it.
@@ -20,7 +22,6 @@ import { useMyApplications } from '../hooks/use-matchmaking';
  */
 export function MyApplications() {
   const t = useT();
-  const localeTag = useIntlLocale();
   const { data, isPending, isError, error } = useMyApplications();
 
   if (isPending) return <Skeleton lines={2} />;
@@ -47,50 +48,114 @@ export function MyApplications() {
   return (
     <ul className="flex flex-col gap-4">
       {rows.map((application) => (
-        <li
-          key={application.id}
-          className="flex flex-col gap-[var(--nx-space-tight)] rounded-nx-md bg-nx-surface-card px-5 py-3"
-        >
-          <div className="flex flex-wrap items-center gap-[var(--nx-space-pair)]">
-            <Badge
-              variant={
-                application.status === 'ACCEPTED'
-                  ? 'success'
-                  : application.status === 'REJECTED'
-                    ? 'danger'
-                    : 'neutral'
-              }
-            >
-              {t(`projects.applicationStatus.${application.status ?? 'PENDING'}`)}
-            </Badge>
-            {application.createdAt && (
-              <span className="text-nx-caption text-nx-text-muted">
-                {formatDate(application.createdAt, localeTag)}
-              </span>
-            )}
-          </div>
-
-          <p className="text-nx-ui text-nx-text-primary">
-            {/* The project is reachable, so its title is the link — an application row with no way
-                back to what it is about would make the reader search for it by name. */}
-            <Link
-              href={`/projects/${application.projectId}`}
-              className="font-medium hover:underline"
-            >
-              {application.projectTitle}
-            </Link>
-            {application.positionTitle && (
-              <span className="text-nx-text-muted"> · {application.positionTitle}</span>
-            )}
-          </p>
-
-          {application.message && (
-            <p className="whitespace-pre-wrap text-nx-body-sm text-nx-text-secondary">
-              {application.message}
-            </p>
-          )}
+        <li key={application.id}>
+          <ApplicationRow application={application} />
         </li>
       ))}
     </ul>
+  );
+}
+
+/**
+ * WITHDRAW IS ONLY OFFERED WHILE `PENDING`. `DELETE /projects/applications/{id}` answers 409 once
+ * the owner has accepted or rejected — the decision is final from the applicant's side — so a
+ * button in those states would exist only to produce that error. It is behind a confirm because a
+ * withdrawn application is hard-deleted and cannot be resent as the same row.
+ */
+function ApplicationRow({ application }: { application: ProjectApplication }) {
+  const t = useT();
+  const localeTag = useIntlLocale();
+  const [confirm, setConfirm] = useState(false);
+  const withdraw = useWithdrawApplication();
+
+  const status = application.status ?? 'PENDING';
+  const canWithdraw = status === 'PENDING';
+
+  return (
+    <div className="flex flex-col gap-[var(--nx-space-tight)] rounded-nx-md bg-nx-surface-card px-5 py-3">
+      <div className="flex flex-wrap items-center gap-[var(--nx-space-pair)]">
+        <Badge
+          variant={
+            status === 'ACCEPTED'
+              ? 'success'
+              : status === 'REJECTED' || status === 'REMOVED'
+                ? 'danger'
+                : 'neutral'
+          }
+        >
+          {t(`projects.applicationStatus.${status}`)}
+        </Badge>
+        {application.createdAt && (
+          <span className="text-nx-caption text-nx-text-muted">
+            {formatDate(application.createdAt, localeTag)}
+          </span>
+        )}
+        {canWithdraw && (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="ml-auto"
+            loading={withdraw.isPending}
+            onClick={() => {
+              withdraw.reset();
+              setConfirm(true);
+            }}
+          >
+            {t('projects.manage.withdraw')}
+          </Button>
+        )}
+      </div>
+
+      <p className="text-nx-ui text-nx-text-primary">
+        {/* The project is reachable, so its title is the link — an application row with no way
+            back to what it is about would make the reader search for it by name. */}
+        <Link href={`/projects/${application.projectId}`} className="font-medium hover:underline">
+          {application.projectTitle}
+        </Link>
+        {application.positionTitle && (
+          <span className="text-nx-text-muted"> · {application.positionTitle}</span>
+        )}
+      </p>
+
+      {application.message && (
+        <p className="whitespace-pre-wrap text-nx-body-sm text-nx-text-secondary">
+          {application.message}
+        </p>
+      )}
+
+      <Dialog
+        open={confirm}
+        onClose={() => setConfirm(false)}
+        title={t('projects.manage.withdrawConfirmTitle')}
+        description={t('projects.manage.withdrawConfirmDesc')}
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setConfirm(false)}>
+              {t('projects.cancel')}
+            </Button>
+            <Button
+              variant="danger"
+              loading={withdraw.isPending}
+              onClick={() => {
+                if (application.id == null) return;
+                withdraw.mutate(application.id, {
+                  onSuccess: () => setConfirm(false),
+                  onError: (error) =>
+                    toast.error(getErrorMessage(error, t('projects.manage.withdrawError'))),
+                });
+              }}
+            >
+              {t('projects.manage.withdraw')}
+            </Button>
+          </>
+        }
+      >
+        {withdraw.isError && (
+          <p role="alert" className="text-nx-body-sm text-nx-status-danger-fg">
+            {getErrorMessage(withdraw.error, t('projects.manage.withdrawError'))}
+          </p>
+        )}
+      </Dialog>
+    </div>
   );
 }

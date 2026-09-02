@@ -1,16 +1,22 @@
 import api from '@/core/api/axios';
 import type {
   ApplyToPositionInput,
+  CreatePositionInput,
   CreateProjectInput,
   Project,
   ProjectApplication,
+  ProjectMember,
   ProjectPage,
+  ProjectPosition,
+  ProjectStatus,
   SuggestedCandidate,
   SuggestedProject,
+  UpdatePositionInput,
+  UpdateProjectInput,
 } from '../types/matchmaking';
 
 /**
- * `ProjectController` (`/v1/api/projects`) — 9 endpoints, 9 functions.
+ * `ProjectController` (`/v1/api/projects`) — one call per endpoint.
  *
  * THE WARNING THAT USED TO OPEN THIS FILE IS DEAD, and it is quoted here because it explains why
  * the domain sat unbuilt for so long: "FOUR OF THESE FIVE FUNCTIONS NEED AN ID THAT NO ENDPOINT
@@ -19,6 +25,13 @@ import type {
  * All three lists exist now, and `createProject` returns the created project with its id instead
  * of `void`. So every id these calls need has a source, and the screens that were impossible are
  * ordinary.
+ *
+ * PROJECT MANAGEMENT LANDED SEPARATELY (BE `task/E4rkd1nF`): the owner can now edit the project,
+ * move its status (`OPEN ↔ CLOSED → COMPLETED`, the last step one-way), manage positions one at a
+ * time, read the team roster and remove a member; an applicant can withdraw a `PENDING`
+ * application. Ownership is checked in `ProjectService`, not in `SecurityConfig` — every
+ * `/v1/api/projects/**` call only needs a session — so these are gated on the client by comparing
+ * `authorId` to the signed-in id, the same way `getProjectApplications` already is.
  *
  * ONE PATH DETAIL WORTH NOT BREAKING: the detail and inbox routes are declared `{projectId:\d+}`
  * server-side so that `/projects/applications` routes to the literal sibling rather than trying to
@@ -124,4 +137,96 @@ export const matchmakingApi = {
     api
       .get<SuggestedProject[]>('/v1/api/projects/suggested', { params: { limit } })
       .then((r) => r.data),
+
+  /**
+   * PUT /v1/api/projects/{projectId} — edit title/description/banner/tags (not positions).
+   *
+   * Owner only, and **409 when the project is `COMPLETED`** — a finished project is frozen.
+   */
+  updateProject: (projectId: number, payload: UpdateProjectInput) =>
+    api.put<Project>(`/v1/api/projects/${projectId}`, payload).then((r) => r.data),
+
+  /**
+   * PATCH /v1/api/projects/{projectId}/status.
+   *
+   * `OPEN ↔ CLOSED` is free; `→ COMPLETED` is ONE-WAY (409 on any move out of `COMPLETED`);
+   * setting the current status again is a no-op. `CLOSED`/`COMPLETED` also stop new applications.
+   */
+  updateProjectStatus: (projectId: number, status: ProjectStatus) =>
+    api.patch<Project>(`/v1/api/projects/${projectId}/status`, { status }).then((r) => r.data),
+
+  /**
+   * DELETE /v1/api/projects/{projectId} — hard delete (cascades positions + applications).
+   *
+   * Revokes the `PROJECT_APPLICATION_ACCEPTED` reputation of every `ACCEPTED` member first. There
+   * is no undo, which is why the UI puts it behind a confirm that names the consequence.
+   */
+  deleteProject: (projectId: number) =>
+    api.delete<void>(`/v1/api/projects/${projectId}`).then((r) => r.data),
+
+  /**
+   * POST /v1/api/projects/{projectId}/positions — add a role after creation (201).
+   *
+   * `quantity` defaults to 1. 409 when the project is `COMPLETED`.
+   */
+  addPosition: (projectId: number, payload: CreatePositionInput) =>
+    api
+      .post<ProjectPosition>(`/v1/api/projects/${projectId}/positions`, payload)
+      .then((r) => r.data),
+
+  /**
+   * PUT /v1/api/projects/positions/{positionId} — edit a role.
+   *
+   * A null `quantity` keeps the current one. 409 when `quantity` is below the seats already
+   * `ACCEPTED`. The backend reconciles status on its own: raising `quantity` on a `FILLED` role
+   * reopens it, lowering it to exactly the accepted count fills an `OPEN` one.
+   */
+  updatePosition: (positionId: number, payload: UpdatePositionInput) =>
+    api
+      .put<ProjectPosition>(`/v1/api/projects/positions/${positionId}`, payload)
+      .then((r) => r.data),
+
+  /**
+   * PATCH /v1/api/projects/positions/{positionId}/status — `OPEN ↔ CLOSED` only.
+   *
+   * `FILLED` cannot be set by hand (400), and reopening a role that is full answers 409.
+   */
+  updatePositionStatus: (positionId: number, status: 'OPEN' | 'CLOSED') =>
+    api
+      .patch<ProjectPosition>(`/v1/api/projects/positions/${positionId}/status`, { status })
+      .then((r) => r.data),
+
+  /**
+   * DELETE /v1/api/projects/positions/{positionId} — 204.
+   *
+   * 409 while any member is still `ACCEPTED` on it; `PENDING`/`REJECTED`/`REMOVED` applications
+   * are deleted along with it.
+   */
+  deletePosition: (positionId: number) =>
+    api.delete<void>(`/v1/api/projects/positions/${positionId}`).then((r) => r.data),
+
+  /**
+   * GET /v1/api/projects/{projectId}/members — the team roster, built from `ACCEPTED`
+   * applications. Any signed-in user may read it; 404 if the project does not exist.
+   */
+  getProjectMembers: (projectId: number) =>
+    api.get<ProjectMember[]>(`/v1/api/projects/${projectId}/members`).then((r) => r.data),
+
+  /**
+   * DELETE /v1/api/projects/{projectId}/members/{userId} — 204.
+   *
+   * Removes the person from EVERY position they hold: each application becomes `REMOVED`, their
+   * `PROJECT_APPLICATION_ACCEPTED` reputation is revoked, and a freed seat reopens a `FILLED`
+   * role. 404 if they are not a member. Owner only.
+   */
+  removeMember: (projectId: number, userId: number) =>
+    api.delete<void>(`/v1/api/projects/${projectId}/members/${userId}`).then((r) => r.data),
+
+  /**
+   * DELETE /v1/api/projects/applications/{applicationId} — the applicant withdraws their own
+   * application. 403 if it is not theirs; **409 once the owner has acted on it** (only a
+   * `PENDING` application can be withdrawn). Hard delete.
+   */
+  withdrawApplication: (applicationId: number) =>
+    api.delete<void>(`/v1/api/projects/applications/${applicationId}`).then((r) => r.data),
 };

@@ -12,6 +12,7 @@ import type {
   CreateRoadmapInput,
   CreateRoadmapNodeInput,
   RoadmapNode,
+  RoadmapProgress,
   SkillVerificationInput,
 } from '../types/roadmap';
 import { roadmapKeys } from './keys';
@@ -160,37 +161,47 @@ export function usePendingVerifications(enabled = true) {
 /**
  * POST /v1/api/skills/verify — claim a node.
  *
- * INVALIDATES THE SUBMITTER'S OWN PROGRESS, AND NOTHING ELSE. This used to invalidate nothing,
- * for a reason that has expired: B21 meant no endpoint could read a user's progress back, so there
- * was no cached query to refresh. `GET /users/{userId}/roadmap-progress` now exists, a claim
- * immediately shows up in it (as `VERIFIED` or `PENDING_APPROVAL` depending on tier), and a skills
- * card that does not move after you claim a skill looks broken.
+ * WRITES THE RETURNED ROW STRAIGHT INTO THE CACHE, NO REFETCH. The endpoint now answers with the
+ * resulting `RoadmapProgressDto` (B21 closed), so `onSuccess` upserts it into the submitter's own
+ * `roadmap-progress` list by `nodeId` — that is the identity the skills card and `roadmap-track`
+ * key on, and a re-claim overwrites the same row server-side. The submitter id comes from
+ * `useMyProfile` (same pattern as `useIsRoadmapAdmin`); a claim only reaches here from behind auth,
+ * but if the profile has somehow not resolved the code falls back to invalidating the list.
  *
- * The whole `progress` prefix is swept rather than one user's key, because the mutation is not
- * told whose progress it just changed — the backend takes the submitter from the JWT.
+ * A SUCCESSFUL MUTATION STILL DOES NOT MEAN THE CLAIM WAS ACCEPTED — it means the row now has a
+ * `status`. `SELF_VERIFIED` comes back `VERIFIED`, the two mod tiers `PENDING_APPROVAL`, and
+ * `AUTO_CERTIFIED` `VERIFIED` **or `REJECTED`** (still a 200). The form reads `status` to say which.
  *
  * THE QUEUE IS STILL NOT INVALIDATED. Only `MOD_VERIFIED` and `QUIZ_VERIFIED` land there, and only
  * an admin can read it, so invalidating `pendingVerifications` from an ordinary user's submission
  * would refetch a list they are not allowed to see.
  *
- * A SUCCESSFUL MUTATION DOES NOT MEAN THE CLAIM WAS ACCEPTED. The endpoint returns `void` and the
- * four tiers behave differently behind it — `SELF_VERIFIED` verifies instantly, the two mod tiers
- * queue, and `AUTO_CERTIFIED` is checked on the spot and may be **rejected**, still answering 200.
- * Callers must phrase success as "submitted", never "verified".
- *
- * Reputation moves for two of those tiers, and this deliberately does not invalidate it: that is
- * another domain's cache, which CLAUDE.md §4 forbids this hook from touching. A screen showing
- * both passes its own `onSuccess`.
+ * Reputation moves for two of those tiers, and this deliberately does not touch it: that is
+ * another domain's cache. A screen showing both passes its own `onSuccess`.
  */
-export function useSubmitVerification(options?: RoadmapMutationOptions<SkillVerificationInput>) {
+export function useSubmitVerification(
+  options?: RoadmapMutationOptions<SkillVerificationInput, RoadmapProgress>
+) {
   const queryClient = useQueryClient();
+  const profile = useMyProfile();
   return useMutation({
     mutationFn: (payload: SkillVerificationInput) =>
       skillVerificationApi.submitVerification(payload),
     ...options,
-    onSuccess: (data, payload, ...rest) => {
-      queryClient.invalidateQueries({ queryKey: roadmapKeys.progressAll });
-      options?.onSuccess?.(data, payload, ...rest);
+    onSuccess: (row, payload, ...rest) => {
+      const myId = profile.data?.id;
+      if (myId != null) {
+        queryClient.setQueryData<RoadmapProgress[]>(roadmapKeys.progress(myId), (prev) => {
+          const next = prev ? [...prev] : [];
+          const i = next.findIndex((r) => r.nodeId === row.nodeId);
+          if (i >= 0) next[i] = row;
+          else next.push(row);
+          return next;
+        });
+      } else {
+        queryClient.invalidateQueries({ queryKey: roadmapKeys.progressAll });
+      }
+      options?.onSuccess?.(row, payload, ...rest);
     },
   });
 }

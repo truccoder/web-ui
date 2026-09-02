@@ -16,7 +16,7 @@ import type { SearchTab } from '../lib/tabs';
 
 export type SortMode = 'relevance' | 'rep';
 export type PriceMode = 'all' | 'free' | 'paid';
-export type ProjectStatusMode = 'all' | 'OPEN' | 'CLOSED';
+export type ProjectStatusMode = 'all' | 'OPEN' | 'CLOSED' | 'COMPLETED';
 
 export interface SearchFiltersState {
   peopleSort: SortMode;
@@ -105,6 +105,7 @@ export function SearchFilters({ tab, postKinds, value, onChange }: SearchFilters
             { value: 'all', label: t('search.filters.statusAll') },
             { value: 'OPEN', label: t('projects.status.OPEN') },
             { value: 'CLOSED', label: t('projects.status.CLOSED') },
+            { value: 'COMPLETED', label: t('projects.status.COMPLETED') },
           ]}
         />
       )}

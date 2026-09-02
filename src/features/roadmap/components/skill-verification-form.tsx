@@ -13,13 +13,12 @@ import type { RoadmapNode, VerificationTier } from '../types/roadmap';
 /**
  * Claim one roadmap node, backed by a tier.
  *
- * THE SUCCESS MESSAGE SAYS "SUBMITTED", NEVER "VERIFIED", and that is a correctness requirement
- * rather than a wording preference. `POST /skills/verify` returns `void` and the four tiers do
- * four different things behind it: `SELF_VERIFIED` verifies on the spot, the two moderator tiers
- * queue for review, and `AUTO_CERTIFIED` is checked immediately and **may be rejected** — still
- * answering 200. A 200 therefore means "the backend accepted the request", which is the most this
- * form can truthfully report. Compounding it, nothing reads progress back (B21), so the form
- * cannot follow up with the real outcome either.
+ * THE SUCCESS MESSAGE REPORTS THE REAL OUTCOME NOW. `POST /skills/verify` returns the resulting
+ * progress row (B21 closed), so the form can read `status` and say what actually happened rather
+ * than "submitted": `SELF_VERIFIED` comes back `VERIFIED`, the two moderator tiers
+ * `PENDING_APPROVAL`, and `AUTO_CERTIFIED` `VERIFIED` **or `REJECTED`** — the last one still a 200,
+ * and finally visible instead of silent. The form does not auto-close on success for exactly this
+ * reason: the outcome is the point, so the dialog stays until the user dismisses it.
  *
  * PROOF IMAGE, RESTORED. This form used to omit `SkillVerificationRequestDto.proofImageKey`
  * because nothing could fill it — `POST /v1/api/media` (B16) changed that. The picker uploads one
@@ -61,11 +60,12 @@ export function SkillVerificationForm({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const upload = useUploadMedia();
 
+  // Deliberately does NOT call `onSubmitted` here — that closes the dialog, and the returned
+  // `status` is what the user opened it to find out. The "Done" button below hands control back.
   const submit = useSubmitVerification({
     onSuccess: () => {
       setProofUrl('');
       setProofImageUrl(null);
-      onSubmitted?.();
     },
   });
 
@@ -106,7 +106,7 @@ export function SkillVerificationForm({
       className={cn('flex flex-col gap-3', className)}
       onSubmit={(event) => {
         event.preventDefault();
-        if (!canSubmit || submit.isPending) return;
+        if (!canSubmit || submit.isPending || submit.isSuccess) return;
         submit.mutate({
           nodeId: node.id,
           tier,
@@ -196,20 +196,41 @@ export function SkillVerificationForm({
         </p>
       )}
 
-      {submit.isSuccess && (
-        <p role="status" className="text-nx-caption text-nx-text-secondary">
-          {t('roadmap.verify.submitted')}
+      {submit.isSuccess && submit.data && (
+        <p
+          role="status"
+          className={cn(
+            'text-nx-caption',
+            submit.data.status === 'REJECTED'
+              ? 'text-nx-status-danger-fg'
+              : 'text-nx-text-secondary'
+          )}
+        >
+          {t(`roadmap.verify.result.${RESULT_KEY[submit.data.status] ?? 'pending'}`)}
         </p>
       )}
 
       <div>
-        <Button type="submit" size="sm" loading={submit.isPending} disabled={!canSubmit}>
-          {t('roadmap.verify.submit')}
-        </Button>
+        {submit.isSuccess ? (
+          <Button type="button" size="sm" onClick={() => onSubmitted?.()}>
+            {t('roadmap.verify.done')}
+          </Button>
+        ) : (
+          <Button type="submit" size="sm" loading={submit.isPending} disabled={!canSubmit}>
+            {t('roadmap.verify.submit')}
+          </Button>
+        )}
       </div>
     </form>
   );
 }
+
+/** Result `status` → `roadmap.verify.result.*` leaf, spelled out for the same greppability. */
+const RESULT_KEY: Record<string, string> = {
+  VERIFIED: 'verified',
+  PENDING_APPROVAL: 'pending',
+  REJECTED: 'rejected',
+};
 
 /** Enum value → hint key leaf. Spelled out for the same greppability reason as `TIERS`. */
 const TIER_HINT_KEY: Record<VerificationTier, string> = {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import {
   Avatar,
@@ -24,6 +24,9 @@ import {
   useRejectApplication,
   useSuggestedCandidates,
 } from '../hooks/use-matchmaking';
+import { ProjectOwnerControls } from './project-owner-controls';
+import { AddPositionButton, PositionOwnerControls } from './position-owner-controls';
+import { ProjectMembersSection } from './project-members-section';
 
 /**
  * One project: what it is, which roles are open, and — if you own it — who has asked to join.
@@ -42,9 +45,14 @@ export interface ProjectDetailProps {
   projectId: number;
   /** The signed-in account, for the owner split. Undefined while the profile is in flight. */
   viewerId?: number;
+  /**
+   * Called after the owner deletes the project. The page passes a router push — `features/*` does
+   * not import `next/navigation`, so navigation stays at the route layer.
+   */
+  onDeleted?: () => void;
 }
 
-export function ProjectDetail({ projectId, viewerId }: ProjectDetailProps) {
+export function ProjectDetail({ projectId, viewerId, onDeleted }: ProjectDetailProps) {
   const t = useT();
   const localeTag = useIntlLocale();
   const { data: project, isPending, isError, error } = useProject(projectId);
@@ -107,8 +115,10 @@ export function ProjectDetail({ projectId, viewerId }: ProjectDetailProps) {
               {project.createdAt && ` · ${formatDate(project.createdAt, localeTag)}`}
             </p>
           </div>
-          {project.status === 'CLOSED' && (
-            <Badge variant="neutral">{t('projects.status.CLOSED')}</Badge>
+          {project.status && project.status !== 'OPEN' && (
+            <Badge variant={project.status === 'COMPLETED' ? 'success' : 'neutral'}>
+              {t(`projects.status.${project.status}`)}
+            </Badge>
           )}
         </div>
 
@@ -117,10 +127,19 @@ export function ProjectDetail({ projectId, viewerId }: ProjectDetailProps) {
             {project.description}
           </p>
         )}
+
+        {isOwner && <ProjectOwnerControls project={project} onDeleted={() => onDeleted?.()} />}
       </Card>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-nx-title-sm text-nx-text-primary">{t('projects.detail.positions')}</h2>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-nx-title-sm text-nx-text-primary">
+            {t('projects.detail.positions')}
+          </h2>
+          {isOwner && project.status !== 'COMPLETED' && project.id != null && (
+            <AddPositionButton projectId={project.id} />
+          )}
+        </div>
 
         {positions.length === 0 ? (
           // A project with no roles is a real state the API allows: `positions` is optional on the
@@ -130,12 +149,20 @@ export function ProjectDetail({ projectId, viewerId }: ProjectDetailProps) {
           <ul className="flex flex-col gap-[var(--nx-space-block)]">
             {positions.map((position) => (
               <li key={position.id}>
-                <PositionCard position={position} canApply={!isOwner} />
+                <PositionCard
+                  position={position}
+                  canApply={!isOwner && project.status === 'OPEN'}
+                  ownerControls={
+                    isOwner ? <PositionOwnerControls position={position} /> : undefined
+                  }
+                />
               </li>
             ))}
           </ul>
         )}
       </section>
+
+      <ProjectMembersSection projectId={projectId} isOwner={isOwner} />
 
       {isOwner && (
         <section className="flex flex-col gap-3">
@@ -154,7 +181,16 @@ export function ProjectDetail({ projectId, viewerId }: ProjectDetailProps) {
   );
 }
 
-function PositionCard({ position, canApply }: { position: ProjectPosition; canApply: boolean }) {
+function PositionCard({
+  position,
+  canApply,
+  ownerControls,
+}: {
+  position: ProjectPosition;
+  canApply: boolean;
+  /** The owner's edit / status / delete row, rendered inside the card below the role details. */
+  ownerControls?: ReactNode;
+}) {
   const t = useT();
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState('');
@@ -209,6 +245,8 @@ function PositionCard({ position, canApply }: { position: ProjectPosition; canAp
       </div>
 
       {isOpen && <MatchingCandidates position={position} />}
+
+      {ownerControls}
 
       <Dialog
         open={open}

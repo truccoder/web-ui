@@ -2,7 +2,7 @@
 
 import { Suspense } from 'react';
 import Link from 'next/link';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { EmptyState } from '@/shared/components';
 import { ProjectDetail } from '@/features/matchmaking';
@@ -33,6 +33,7 @@ export default function ProjectDetailPage() {
 
 function ProjectDetailContent() {
   const t = useT();
+  const router = useRouter();
   const params = useParams<{ id: string }>();
   const searchParams = useSearchParams();
   const { data: profile } = useMyProfile();
@@ -61,7 +62,11 @@ function ProjectDetailContent() {
         {backTo ? t('search.backToResults') : t('projects.backToBoard')}
       </Link>
 
-      <ProjectDetail projectId={projectId} viewerId={profile?.id} />
+      <ProjectDetail
+        projectId={projectId}
+        viewerId={profile?.id}
+        onDeleted={() => router.push('/projects')}
+      />
     </div>
   );
 }

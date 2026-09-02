@@ -1,5 +1,9 @@
 import api from '@/core/api/axios';
-import type { PendingVerification, SkillVerificationInput } from '../types/roadmap';
+import type {
+  PendingVerification,
+  RoadmapProgress,
+  SkillVerificationInput,
+} from '../types/roadmap';
 
 /**
  * `SkillVerificationController` (`/v1/api/skills`) — 4 endpoints, 4 functions.
@@ -9,39 +13,35 @@ import type { PendingVerification, SkillVerificationInput } from '../types/roadm
  * because method security is never enabled, and a plain seed user reading `/skills/pending` got
  * **200**. Raised as B20. Typed and gated here as the moderator operations they are meant to be.
  *
- * THERE IS NO ENDPOINT TO READ YOUR OWN PROGRESS, and that is the shape of this whole domain.
- * `UserRoadmapProgressRepository.findByUserId` exists and no controller calls it, so a user can
- * submit a claim on a node and then has no way to ask what became of it. Consequences the UI
- * layers have to be built around, not worked around:
- *  - a node cannot be rendered as "verified" / "pending" / "rejected" for the signed-in user;
- *  - `submitVerification` returning `void` means even the immediate outcome is invisible;
- *  - re-submitting is the only way to change a claim, and it silently overwrites the existing
- *    row (`findByUserIdAndNodeId` then `save`), so there is nothing to warn the user about.
- * Raised as B21. Do not simulate the missing read with client-side state — that is the
- * `acceptedInSession` mistake this project already made once and spent a checkpoint undoing.
+ * READING PROGRESS BACK IS SOLVED NOW (B21 closed): `GET /users/{userId}/roadmap-progress`
+ * exists, and `submitVerification` returns the resulting row rather than `void` — so a node can be
+ * rendered as verified / pending / rejected and the immediate outcome of a claim is visible.
+ * Re-submitting still silently overwrites the existing row (`findByUserIdAndNodeId` then `save`),
+ * so there is nothing to warn the user about there. Do not simulate anything with client-side
+ * state — that is the `acceptedInSession` mistake this project already made once and undid.
  */
 export const skillVerificationApi = {
   /**
    * POST /v1/api/skills/verify — claim a node, backed by one of four tiers.
    *
-   * RETURNS `void`, AND THE FOUR TIERS DO COMPLETELY DIFFERENT THINGS. `submitVerificationRequest`
-   * branches on `tier` and the caller is told none of it:
-   *  - `SELF_VERIFIED`   → immediately VERIFIED, and awards reputation (`ROADMAP_SELF_VERIFIED`);
-   *  - `MOD_VERIFIED` / `QUIZ_VERIFIED` → PENDING_APPROVAL, waits for a moderator;
-   *  - `AUTO_CERTIFIED`  → checked on the spot and set VERIFIED **or REJECTED** right there.
+   * RETURNS THE RESULTING PROGRESS ROW (`RoadmapProgressDto` — `{nodeId, nodeName, tier, status,
+   * verifiedAt}`), which is what makes the outcome visible. The four tiers still do different
+   * things behind the one call, and now `status` says which happened:
+   *  - `SELF_VERIFIED`   → `VERIFIED` on the spot, and awards reputation (`ROADMAP_SELF_VERIFIED`);
+   *  - `MOD_VERIFIED` / `QUIZ_VERIFIED` → `PENDING_APPROVAL`, waits for a moderator;
+   *  - `AUTO_CERTIFIED`  → checked immediately and set `VERIFIED` **or `REJECTED`** right there —
+   *    still answering 200, so a caller must read `status`, not assume approval.
    *
-   * So a 200 does not mean "accepted" — an `AUTO_CERTIFIED` submission that failed its check is
-   * also a 200, with a rejected row behind it and no way to read that back (see the note above).
-   * A UI must not report success as approval.
+   * The DTO is the same public shape `GET /users/{id}/roadmap-progress` returns and deliberately
+   * carries no `proofUrl`/`proofImageKey`, so it is safe to hand straight back to the submitter.
    *
    * `AUTO_CERTIFIED` DEPENDS ON THE GITHUB DOMAIN. `verifyViaExternalApi` accepts the proof only
    * when `proofUrl` starts with `https://github.com/{the user's linked github username}/`, read
    * from the `github` module's stored stats. No linked account, no `proofUrl`, or a URL under
-   * someone else's name all fail — silently, per the above. That coupling is real and belongs in
-   * the UI layer through `features/github`'s barrel, not re-implemented here.
+   * someone else's name all come back `REJECTED` — now legible instead of silent.
    */
   submitVerification: (payload: SkillVerificationInput) =>
-    api.post<void>('/v1/api/skills/verify', payload).then((r) => r.data),
+    api.post<RoadmapProgress>('/v1/api/skills/verify', payload).then((r) => r.data),
 
   /**
    * GET /v1/api/skills/pending — the moderator queue: every row in `PENDING_APPROVAL`.

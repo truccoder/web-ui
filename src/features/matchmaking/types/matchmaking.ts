@@ -132,3 +132,30 @@ export type ProjectApplication = Schemas['ProjectApplicationResponseDto'];
 export type ProjectStatus = NonNullable<Project['status']>;
 export type PositionStatus = NonNullable<ProjectPosition['status']>;
 export type ApplicationStatus = NonNullable<ProjectApplication['status']>;
+
+/**
+ * ─── PROJECT MANAGEMENT, all new (BE `task/E4rkd1nF`). ────────────────────────────────────────
+ *
+ * `createProject` used to be the whole write story — a one-shot with no follow-up. The controller
+ * now lets the owner edit the project, walk its status `OPEN ↔ CLOSED → COMPLETED` (the last step
+ * one-way), add / edit / close / delete positions, read the team roster and remove a member; and
+ * an applicant can withdraw a still-`PENDING` application.
+ */
+
+/** One accepted member on a project, from `GET /v1/api/projects/{projectId}/members`. */
+export type ProjectMember = Schemas['ProjectMemberDto'];
+
+/** Body for `PUT /v1/api/projects/{projectId}` — title/description/banner/tags, no positions. */
+export type UpdateProjectInput = Schemas['UpdateProjectRequestDTO'];
+
+/** Body for `PATCH /v1/api/projects/{projectId}/status`. `COMPLETED` cannot be left (409). */
+export type UpdateProjectStatusInput = Schemas['UpdateProjectStatusRequestDTO'];
+
+/**
+ * Body for `PUT /v1/api/projects/positions/{positionId}` — same shape as the create body; a null
+ * `quantity` means "leave it", and a value below the seats already `ACCEPTED` is a 409.
+ */
+export type UpdatePositionInput = Schemas['ProjectPositionRequestDTO'];
+
+/** Body for `PATCH /v1/api/projects/positions/{positionId}/status`. `FILLED` is not settable. */
+export type UpdatePositionStatusInput = Schemas['UpdatePositionStatusRequestDTO'];

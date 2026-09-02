@@ -131,11 +131,14 @@ export function ProjectCard({ project, href }: { project: Project; href?: string
           )}
         </div>
 
-        {/* A closed project keeps its badge; an open one does not get one. `OPEN` is the default
-            state of everything on this screen, so labelling it would put an identical chip on
-            every card — the same argument that removed the `Khác` badge from crawled cards. */}
-        {project.status === 'CLOSED' && (
-          <Badge variant="neutral">{t('projects.status.CLOSED')}</Badge>
+        {/* A closed or completed project keeps its badge; an open one does not get one. `OPEN` is
+            the default state of everything on this screen, so labelling it would put an identical
+            chip on every card — the same argument that removed the `Khác` badge from crawled
+            cards. */}
+        {project.status && project.status !== 'OPEN' && (
+          <Badge variant={project.status === 'COMPLETED' ? 'success' : 'neutral'}>
+            {t(`projects.status.${project.status}`)}
+          </Badge>
         )}
       </div>
 

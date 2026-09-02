@@ -489,6 +489,9 @@ export const vi: Messages = {
       EVENT_REMINDER: 'Nhắc trước một ngày sự kiện bạn sẽ tham gia',
       BOOK_REVIEW: 'Có đánh giá mới cho sách của bạn',
       BOOK_PURCHASED: 'Có người mua sách của bạn',
+      PROJECT_APPLICATION_ACCEPTED: 'Đơn ứng tuyển dự án của bạn được nhận',
+      PROJECT_APPLICATION_REJECTED: 'Đơn ứng tuyển dự án của bạn bị từ chối',
+      PROJECT_MEMBER_REMOVED: 'Bạn bị loại khỏi một dự án',
     },
   },
 
@@ -772,9 +775,15 @@ export const vi: Messages = {
       proofImageRemove: 'Xoá ảnh',
       proofImageInvalid: 'Dùng ảnh JPEG, PNG hoặc WEBP dưới 20MB.',
       submit: 'Gửi',
-      // Tuyệt đối không dùng chữ "đã xác minh": endpoint không trả gì, và một yêu cầu
-      // AUTO_CERTIFIED bị từ chối vẫn trả 200. Xem ghi chú trong `skill-verification-form.tsx`.
+      done: 'Xong',
+      // Endpoint giờ trả về hàng kết quả, nên thông báo là kết quả thật — kể cả yêu cầu
+      // AUTO_CERTIFIED bị từ chối sau một 200. Xem `skill-verification-form.tsx`.
       submitted: 'Đã gửi. Kết quả tuỳ vào cách chứng minh bạn chọn.',
+      result: {
+        verified: 'Đã xác minh. Kỹ năng này giờ hiển thị trên trang cá nhân của bạn.',
+        pending: 'Đã gửi để duyệt. Kiểm duyệt viên sẽ quyết định.',
+        rejected: 'Bị từ chối. Minh chứng không khớp với tài khoản GitHub bạn đã liên kết.',
+      },
     },
     queue: {
       title: 'Chờ duyệt',
@@ -1716,6 +1725,7 @@ export const vi: Messages = {
     status: {
       OPEN: 'Đang mở',
       CLOSED: 'Đã đóng',
+      COMPLETED: 'Đã hoàn thành',
     },
     positionStatus: {
       OPEN: 'Đang mở',
@@ -1726,6 +1736,52 @@ export const vi: Messages = {
       PENDING: 'Đang chờ',
       ACCEPTED: 'Đã nhận',
       REJECTED: 'Đã từ chối',
+      REMOVED: 'Đã bị loại',
+    },
+    manage: {
+      edit: 'Sửa',
+      save: 'Lưu thay đổi',
+      editTitle: 'Sửa dự án',
+      editDesc: 'Đổi tên, mô tả, ảnh bìa và thẻ. Các vị trí được quản lý riêng ở dưới.',
+      editError: 'Không lưu được thay đổi. Vui lòng thử lại.',
+      changeStatus: 'Trạng thái dự án',
+      completedFinal: 'Dự án đã hoàn thành thì không mở lại được.',
+      completeConfirmTitle: 'Đánh dấu dự án đã hoàn thành?',
+      completeConfirmDesc:
+        'Thao tác này không thể hoàn tác — dự án đã hoàn thành không thể mở lại, không sửa được và không nhận đơn mới.',
+      completeConfirm: 'Đánh dấu hoàn thành',
+      statusError: 'Không đổi được trạng thái. Vui lòng thử lại.',
+      delete: 'Xoá',
+      deleteConfirmTitle: 'Xoá dự án này?',
+      deleteConfirmDesc:
+        'Dự án, mọi vị trí và mọi đơn ứng tuyển sẽ bị xoá vĩnh viễn, và điểm uy tín mà các thành viên đã nhận cũng bị gỡ. Không thể hoàn tác.',
+      deleteError: 'Không xoá được dự án. Vui lòng thử lại.',
+      addRole: 'Thêm vị trí',
+      editRole: 'Sửa vị trí',
+      roleSaveError: 'Không lưu được vị trí. Vui lòng thử lại.',
+      roleStatusError: 'Không đổi được vị trí. Có thể vị trí đã đủ người.',
+      positionQuantityLow: 'Không lưu được vị trí. Số lượng không thể ít hơn số người đã nhận.',
+      positionHasMembers: 'Loại các thành viên đã nhận trước khi xoá vị trí này.',
+      closeRole: 'Đóng vị trí',
+      reopenRole: 'Mở lại vị trí',
+      deleteRole: 'Xoá vị trí',
+      deleteRoleConfirmTitle: 'Xoá vị trí này?',
+      deleteRoleConfirmDesc:
+        'Các đơn đang chờ và đã từ chối của vị trí này bị xoá kèm. Vị trí còn thành viên đã nhận thì không xoá được.',
+      members: 'Thành viên',
+      noMembers: 'Chưa có thành viên nào',
+      membersError: 'Không tải được danh sách thành viên',
+      unknownMember: 'Thành viên ẩn danh',
+      removeMember: 'Loại',
+      removeMemberConfirmTitle: 'Loại ${name}?',
+      removeMemberConfirmDesc:
+        'Người này bị loại khỏi mọi vị trí họ giữ trong dự án, điểm uy tín họ nhận khi tham gia bị gỡ, và vị trí họ lấp sẽ mở lại.',
+      removeMemberError: 'Không loại được thành viên này. Vui lòng thử lại.',
+      withdraw: 'Rút đơn',
+      withdrawConfirmTitle: 'Rút đơn ứng tuyển này?',
+      withdrawConfirmDesc:
+        'Đơn sẽ bị xoá. Bạn có thể ứng tuyển lại khi vị trí còn mở, nhưng đó là một đơn mới.',
+      withdrawError: 'Không rút được đơn. Có thể chủ dự án đã xử lý.',
     },
     detail: {
       positions: 'Vị trí tuyển',

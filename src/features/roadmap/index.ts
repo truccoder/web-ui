@@ -7,10 +7,10 @@
  * them in one folder behind one barrel, however unrelated the two URL prefixes look.
  *
  * WHAT THIS DOMAIN CANNOT DO, established at 2a by reading the Java rather than by guessing from
- * endpoint names. Both are hard limits on the UI, not gaps to paper over:
- *  - **A user cannot read their own progress.** Nothing exposes
- *    `UserRoadmapProgressRepository.findByUserId`, and `submitVerification` returns `void`. A
- *    node cannot be shown as verified/pending/rejected for the signed-in user (B21).
+ * endpoint names:
+ *  - **Progress reads back now (B21 closed).** `GET /users/{userId}/roadmap-progress` exists and
+ *    `submitVerification` returns the resulting row, so a node can be shown as
+ *    verified/pending/rejected for the signed-in user and a claim's outcome is visible at once.
  *  - **The role gates do not work.** The five admin/moderator endpoints carry `@PreAuthorize`
  *    that never runs, because method security is not enabled backend-side (B20). The gate has to
  *    come from this app's own admin role until that is fixed.

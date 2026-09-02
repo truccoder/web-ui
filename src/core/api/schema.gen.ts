@@ -2678,7 +2678,7 @@ export interface components {
             referenceType?: string;
             title?: string;
             /** @enum {string} */
-            type?: "POST_LIKED" | "COMMENT_LIKED" | "POST_COMMENTED" | "POST_TAGGED" | "USER_MENTIONED" | "FRIEND_REQUEST" | "FRIEND_ACCEPTED" | "EVENT_RSVP" | "EVENT_REMINDER" | "BOOK_REVIEW" | "BOOK_PURCHASED" | "SKILL_VERIFIED" | "SKILL_REJECTED";
+            type?: "POST_LIKED" | "COMMENT_LIKED" | "POST_COMMENTED" | "POST_TAGGED" | "USER_MENTIONED" | "FRIEND_REQUEST" | "FRIEND_ACCEPTED" | "EVENT_RSVP" | "EVENT_REMINDER" | "BOOK_REVIEW" | "BOOK_PURCHASED" | "SKILL_VERIFIED" | "SKILL_REJECTED" | "PROJECT_APPLICATION_ACCEPTED" | "PROJECT_APPLICATION_REJECTED" | "PROJECT_MEMBER_REMOVED";
         };
         OAuthUrlResponseDto: {
             oauthUrl?: string;
@@ -2975,7 +2975,21 @@ export interface components {
             projectId?: number;
             projectTitle?: string;
             /** @enum {string} */
-            status?: "PENDING" | "ACCEPTED" | "REJECTED";
+            status?: "PENDING" | "ACCEPTED" | "REJECTED" | "REMOVED";
+        };
+        ProjectMemberDto: {
+            /** Format: int32 */
+            applicationId?: number;
+            /** Format: int32 */
+            userId?: number;
+            username?: string;
+            fullName?: string;
+            profilePictureUrl?: string;
+            /** Format: int32 */
+            positionId?: number;
+            positionTitle?: string;
+            /** Format: date-time */
+            joinedAt?: string;
         };
         ProjectPageResponseDto: {
             hasMore?: boolean;
@@ -3022,9 +3036,23 @@ export interface components {
             id?: number;
             positions?: components["schemas"]["ProjectPositionResponseDto"][];
             /** @enum {string} */
-            status?: "OPEN" | "CLOSED";
+            status?: "OPEN" | "CLOSED" | "COMPLETED";
             tags?: string[];
             title?: string;
+        };
+        UpdateProjectRequestDTO: {
+            title: string;
+            description: string;
+            bannerUrl?: string;
+            tags?: string[];
+        };
+        UpdateProjectStatusRequestDTO: {
+            /** @enum {string} */
+            status: "OPEN" | "CLOSED" | "COMPLETED";
+        };
+        UpdatePositionStatusRequestDTO: {
+            /** @enum {string} */
+            status: "OPEN" | "CLOSED";
         };
         PublicProfileResponse: {
             coverImageUrl?: string;
@@ -19105,7 +19133,10 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["RoadmapProgressDto"];
+                    "*/*": components["schemas"]["RoadmapProgressDto"];
+                };
             };
             /** @description Bad Request */
             400: {

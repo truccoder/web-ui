@@ -15,4 +15,9 @@ export type {
   ProjectStatus,
   PositionStatus,
   ApplicationStatus,
+  ProjectMember,
+  UpdateProjectInput,
+  UpdateProjectStatusInput,
+  UpdatePositionInput,
+  UpdatePositionStatusInput,
 } from './matchmaking';

@@ -20,6 +20,13 @@ export const matchmakingKeys = {
   projectApplications: (projectId: number) =>
     ['matchmaking', 'project', projectId, 'applications'] as const,
 
+  /**
+   * The accepted-member roster for one project. Shares the `['matchmaking','project',id]` prefix
+   * with `project` and `projectApplications` so a member removal — which also flips a position
+   * back to `OPEN` and moves an application to `REMOVED` — is swept by one `all` invalidation.
+   */
+  projectMembers: (projectId: number) => ['matchmaking', 'project', projectId, 'members'] as const,
+
   /** What the signed-in account has applied to. */
   myApplications: ['matchmaking', 'my-applications'] as const,
 

@@ -503,6 +503,9 @@ export const en = {
       EVENT_REMINDER: 'A day before an event you are going to',
       BOOK_REVIEW: 'New review on your book',
       BOOK_PURCHASED: 'Someone buys your book',
+      PROJECT_APPLICATION_ACCEPTED: 'Your project application is accepted',
+      PROJECT_APPLICATION_REJECTED: 'Your project application is declined',
+      PROJECT_MEMBER_REMOVED: 'You are removed from a project',
     },
   },
 
@@ -791,9 +794,15 @@ export const en = {
       proofImageRemove: 'Remove image',
       proofImageInvalid: 'Use a JPEG, PNG or WEBP under 20MB.',
       submit: 'Submit',
-      // Never "verified": the endpoint returns nothing, and an AUTO_CERTIFIED claim can be turned
-      // down while still answering 200. See the note in `skill-verification-form.tsx`.
+      done: 'Done',
+      // The endpoint returns the resulting row now, so the message is the real outcome — including
+      // an AUTO_CERTIFIED claim turned down behind a 200. See `skill-verification-form.tsx`.
       submitted: 'Submitted. The outcome depends on the option you picked.',
+      result: {
+        verified: 'Verified. This skill is now on your profile.',
+        pending: 'Submitted for review. A moderator will decide.',
+        rejected: 'Turned down. The proof did not check out against your linked GitHub account.',
+      },
     },
     queue: {
       title: 'Awaiting review',
@@ -1750,6 +1759,7 @@ export const en = {
     status: {
       OPEN: 'Open',
       CLOSED: 'Closed',
+      COMPLETED: 'Completed',
     },
     positionStatus: {
       OPEN: 'Open',
@@ -1760,6 +1770,54 @@ export const en = {
       PENDING: 'Pending',
       ACCEPTED: 'Accepted',
       REJECTED: 'Rejected',
+      REMOVED: 'Removed',
+    },
+    manage: {
+      edit: 'Edit',
+      save: 'Save changes',
+      editTitle: 'Edit project',
+      editDesc:
+        'Change the name, description, banner and tags. Roles are managed separately below.',
+      editError: 'Could not save the changes. Please try again.',
+      changeStatus: 'Project status',
+      completedFinal: 'A completed project cannot be reopened.',
+      completeConfirmTitle: 'Mark this project completed?',
+      completeConfirmDesc:
+        'This is final — a completed project cannot be reopened, edited or take new applications.',
+      completeConfirm: 'Mark completed',
+      statusError: 'Could not change the status. Please try again.',
+      delete: 'Delete',
+      deleteConfirmTitle: 'Delete this project?',
+      deleteConfirmDesc:
+        'The project, its roles and every application are permanently removed, and the reputation earned by accepted members is revoked. This cannot be undone.',
+      deleteError: 'Could not delete the project. Please try again.',
+      addRole: 'Add a role',
+      editRole: 'Edit role',
+      roleSaveError: 'Could not save the role. Please try again.',
+      roleStatusError: 'Could not change the role. It may already be full.',
+      positionQuantityLow:
+        'Could not save the role. The headcount cannot be below the people already accepted.',
+      positionHasMembers: 'Remove the accepted members before deleting this role.',
+      closeRole: 'Close role',
+      reopenRole: 'Reopen role',
+      deleteRole: 'Delete role',
+      deleteRoleConfirmTitle: 'Delete this role?',
+      deleteRoleConfirmDesc:
+        'Pending and rejected applications for this role are removed with it. A role with accepted members cannot be deleted.',
+      members: 'Team',
+      noMembers: 'No members yet',
+      membersError: 'Could not load the team',
+      unknownMember: 'Unknown member',
+      removeMember: 'Remove',
+      removeMemberConfirmTitle: 'Remove ${name}?',
+      removeMemberConfirmDesc:
+        'They are removed from every role they hold on this project, the reputation they earned by joining is revoked, and any role they filled reopens.',
+      removeMemberError: 'Could not remove this member. Please try again.',
+      withdraw: 'Withdraw',
+      withdrawConfirmTitle: 'Withdraw this application?',
+      withdrawConfirmDesc:
+        'The application is deleted. You can apply again while the role is open, but this is a fresh application.',
+      withdrawError: 'Could not withdraw. The owner may have already responded.',
     },
     detail: {
       positions: 'Open roles',

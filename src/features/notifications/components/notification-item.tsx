@@ -14,6 +14,9 @@ import {
   ThumbsUp,
   UserCheck,
   UserPlus,
+  UserRoundCheck,
+  UserRoundMinus,
+  UserRoundX,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useRelativeTime } from '@/shared/lib/format';
@@ -80,6 +83,14 @@ const TYPE_ICON: Record<NotificationType, LucideIcon> = {
   // about a claim rather than an error the reader made.
   SKILL_VERIFIED: BadgeCheck,
   SKILL_REJECTED: ShieldX,
+  // Project-owner decisions on a matchmaking application (BE `task/E4rkd1nF`). Distinct from the
+  // `FRIEND_*` people icons above — these three arrive in the same list and the round-user variants
+  // keep "your application was accepted" apart from "your friend request was accepted" at a glance.
+  // `actorId` is null on all three (a result, not a person acting on you), which the row does not
+  // render anyway.
+  PROJECT_APPLICATION_ACCEPTED: UserRoundCheck,
+  PROJECT_APPLICATION_REJECTED: UserRoundX,
+  PROJECT_MEMBER_REMOVED: UserRoundMinus,
 };
 
 /**
@@ -132,6 +143,9 @@ function hrefFor(notification: AppNotification): string | null {
   if (referenceId == null) return null;
   if (referenceType === 'POST') return `/posts/${referenceId}`;
   if (referenceType === 'BOOK') return `/books/${referenceId}`;
+  // The three `PROJECT_*` types all send `referenceType: "PROJECT"` with the project's id — a real
+  // routable id, unlike the friendship types — so they key off the reference like POST/BOOK do.
+  if (referenceType === 'PROJECT') return `/projects/${referenceId}`;
   /**
    * `COMMENT` NOW HAS AN ADDRESS, AND IT IS THE POST'S. This branch returned `null` for a year of
    * this file's life: `CommentService` and `CommentReactionService` both send `referenceType:

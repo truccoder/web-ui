@@ -8,7 +8,16 @@ import {
   type UseMutationOptions,
 } from '@tanstack/react-query';
 import { matchmakingApi } from '../api';
-import type { ApplyToPositionInput, CreateProjectInput, Project } from '../types/matchmaking';
+import type {
+  ApplyToPositionInput,
+  CreatePositionInput,
+  CreateProjectInput,
+  Project,
+  ProjectPosition,
+  ProjectStatus,
+  UpdatePositionInput,
+  UpdateProjectInput,
+} from '../types/matchmaking';
 import { matchmakingKeys } from './keys';
 
 /**
@@ -87,6 +96,21 @@ export function useMyApplications() {
   return useQuery({
     queryKey: matchmakingKeys.myApplications,
     queryFn: matchmakingApi.getMyApplications,
+  });
+}
+
+/**
+ * GET /projects/{id}/members — the team roster.
+ *
+ * `enabled` IS AN OPTIMISATION, NOT A PERMISSION GATE (unlike `useProjectApplications`): any
+ * signed-in user may read this, and the detail screen shows it to everyone. `undefined` keeps it
+ * idle while the id resolves.
+ */
+export function useProjectMembers(projectId: number | undefined) {
+  return useQuery({
+    queryKey: matchmakingKeys.projectMembers(projectId!),
+    queryFn: () => matchmakingApi.getProjectMembers(projectId!),
+    enabled: projectId !== undefined,
   });
 }
 
@@ -178,6 +202,184 @@ export function useRejectApplication(options?: MatchmakingMutationOptions<number
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (applicationId: number) => matchmakingApi.rejectApplication(applicationId),
+    ...options,
+    onSuccess: (data, variables, ...rest) => {
+      queryClient.invalidateQueries({ queryKey: matchmakingKeys.all });
+      options?.onSuccess?.(data, variables, ...rest);
+    },
+  });
+}
+
+/**
+ * ─── PROJECT MANAGEMENT (BE `task/E4rkd1nF`). ────────────────────────────────────────────────
+ *
+ * Every one of these invalidates the whole `matchmaking` namespace, for the same reason
+ * accept/reject do: the writes cross list boundaries. Editing a position can flip it
+ * `FILLED ↔ OPEN`; removing a member moves an application to `REMOVED`, reopens a role AND drops a
+ * name from the roster; deleting a project takes its positions and applications with it. A
+ * narrower key would leave one of those three reads stale.
+ */
+
+export interface UpdateProjectVariables {
+  projectId: number;
+  payload: UpdateProjectInput;
+}
+
+/** PUT /projects/{id}. 409 when the project is `COMPLETED`. */
+export function useUpdateProject(
+  options?: MatchmakingMutationOptions<UpdateProjectVariables, Project>
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ projectId, payload }: UpdateProjectVariables) =>
+      matchmakingApi.updateProject(projectId, payload),
+    ...options,
+    onSuccess: (data, variables, ...rest) => {
+      queryClient.invalidateQueries({ queryKey: matchmakingKeys.all });
+      options?.onSuccess?.(data, variables, ...rest);
+    },
+  });
+}
+
+export interface UpdateProjectStatusVariables {
+  projectId: number;
+  status: ProjectStatus;
+}
+
+/** PATCH /projects/{id}/status. `→ COMPLETED` is one-way (409 on any move out of it). */
+export function useUpdateProjectStatus(
+  options?: MatchmakingMutationOptions<UpdateProjectStatusVariables, Project>
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ projectId, status }: UpdateProjectStatusVariables) =>
+      matchmakingApi.updateProjectStatus(projectId, status),
+    ...options,
+    onSuccess: (data, variables, ...rest) => {
+      queryClient.invalidateQueries({ queryKey: matchmakingKeys.all });
+      options?.onSuccess?.(data, variables, ...rest);
+    },
+  });
+}
+
+/** DELETE /projects/{id} — hard delete. The caller's `onSuccess` navigates away. */
+export function useDeleteProject(options?: MatchmakingMutationOptions<number>) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (projectId: number) => matchmakingApi.deleteProject(projectId),
+    ...options,
+    onSuccess: (data, variables, ...rest) => {
+      queryClient.invalidateQueries({ queryKey: matchmakingKeys.all });
+      options?.onSuccess?.(data, variables, ...rest);
+    },
+  });
+}
+
+export interface AddPositionVariables {
+  projectId: number;
+  payload: CreatePositionInput;
+}
+
+/** POST /projects/{id}/positions. 409 when the project is `COMPLETED`. */
+export function useAddPosition(
+  options?: MatchmakingMutationOptions<AddPositionVariables, ProjectPosition>
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ projectId, payload }: AddPositionVariables) =>
+      matchmakingApi.addPosition(projectId, payload),
+    ...options,
+    onSuccess: (data, variables, ...rest) => {
+      queryClient.invalidateQueries({ queryKey: matchmakingKeys.all });
+      options?.onSuccess?.(data, variables, ...rest);
+    },
+  });
+}
+
+export interface UpdatePositionVariables {
+  positionId: number;
+  payload: UpdatePositionInput;
+}
+
+/** PUT /projects/positions/{id}. 409 when `quantity` is below the seats already `ACCEPTED`. */
+export function useUpdatePosition(
+  options?: MatchmakingMutationOptions<UpdatePositionVariables, ProjectPosition>
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ positionId, payload }: UpdatePositionVariables) =>
+      matchmakingApi.updatePosition(positionId, payload),
+    ...options,
+    onSuccess: (data, variables, ...rest) => {
+      queryClient.invalidateQueries({ queryKey: matchmakingKeys.all });
+      options?.onSuccess?.(data, variables, ...rest);
+    },
+  });
+}
+
+export interface UpdatePositionStatusVariables {
+  positionId: number;
+  status: 'OPEN' | 'CLOSED';
+}
+
+/** PATCH /projects/positions/{id}/status. Reopening a full role answers 409. */
+export function useUpdatePositionStatus(
+  options?: MatchmakingMutationOptions<UpdatePositionStatusVariables, ProjectPosition>
+) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ positionId, status }: UpdatePositionStatusVariables) =>
+      matchmakingApi.updatePositionStatus(positionId, status),
+    ...options,
+    onSuccess: (data, variables, ...rest) => {
+      queryClient.invalidateQueries({ queryKey: matchmakingKeys.all });
+      options?.onSuccess?.(data, variables, ...rest);
+    },
+  });
+}
+
+/** DELETE /projects/positions/{id}. 409 while any member is still `ACCEPTED` on it. */
+export function useDeletePosition(options?: MatchmakingMutationOptions<number>) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (positionId: number) => matchmakingApi.deletePosition(positionId),
+    ...options,
+    onSuccess: (data, variables, ...rest) => {
+      queryClient.invalidateQueries({ queryKey: matchmakingKeys.all });
+      options?.onSuccess?.(data, variables, ...rest);
+    },
+  });
+}
+
+export interface RemoveMemberVariables {
+  projectId: number;
+  userId: number;
+}
+
+/** DELETE /projects/{projectId}/members/{userId}. Removes them from every position they hold. */
+export function useRemoveMember(options?: MatchmakingMutationOptions<RemoveMemberVariables>) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ projectId, userId }: RemoveMemberVariables) =>
+      matchmakingApi.removeMember(projectId, userId),
+    ...options,
+    onSuccess: (data, variables, ...rest) => {
+      queryClient.invalidateQueries({ queryKey: matchmakingKeys.all });
+      options?.onSuccess?.(data, variables, ...rest);
+    },
+  });
+}
+
+/**
+ * DELETE /projects/applications/{applicationId} — the applicant withdraws.
+ *
+ * 409 once the owner has acted (only `PENDING` withdraws), which is a real race on a shared row:
+ * surface it rather than assuming the delete took.
+ */
+export function useWithdrawApplication(options?: MatchmakingMutationOptions<number>) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (applicationId: number) => matchmakingApi.withdrawApplication(applicationId),
     ...options,
     onSuccess: (data, variables, ...rest) => {
       queryClient.invalidateQueries({ queryKey: matchmakingKeys.all });

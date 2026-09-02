@@ -57,6 +57,12 @@ const MUTABLE_TYPES: NotificationType[] = [
   'EVENT_REMINDER',
   'BOOK_REVIEW',
   'BOOK_PURCHASED',
+  // Matchmaking decisions (BE `task/E4rkd1nF`). `PROJECT_APPLICATION_*` land on the applicant when
+  // the owner accepts or rejects; `PROJECT_MEMBER_REMOVED` when the owner drops them from a
+  // project. All three have a producer, so a switch here mutes something real.
+  'PROJECT_APPLICATION_ACCEPTED',
+  'PROJECT_APPLICATION_REJECTED',
+  'PROJECT_MEMBER_REMOVED',
 ];
 
 export function NotificationPreferences({ className }: NotificationPreferencesProps) {
