@@ -1288,6 +1288,13 @@ export const vi: Messages = {
       hideReviews: 'Ẩn đánh giá',
       reviewsError: 'Không thể tải đánh giá',
       noReviews: 'Chưa có đánh giá nào',
+      /* Gắn trên đánh giá do chính người đang đăng nhập viết — hàng duy nhất trong danh sách mà họ
+         sửa được bằng cách gửi lại biểu mẫu. */
+      yourReview: 'Đánh giá của bạn',
+      /* Không xác định được người đánh giá: mỗi đánh giá chỉ mang id người dùng, và cầu nối
+         id→username (`ReputationResponseDto.username`) rỗng với người đăng ký bằng mật khẩu. */
+      anonymousReviewer: 'Một người đọc',
+      viewReviewer: 'Xem trang của ${name}',
       feedbackPlaceholder: 'Viết đánh giá (không bắt buộc)',
       submitReview: 'Gửi',
       ratingLabel: 'Chấm điểm',

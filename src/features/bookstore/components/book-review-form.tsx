@@ -15,23 +15,33 @@ import { useCreateReview } from '../hooks';
  * this" error to guard, no separate edit endpoint, and no need for this component to know which
  * case it is in. The submit label says "send", not "add".
  *
- * IT DOES NOT PRE-FILL AN EXISTING REVIEW. `GET /reviews` returns every review with only a
- * `userId`, and the frontend has no reliable "which of these is mine" — `/profile/me` would give
- * the id, but that is a security-domain call this component has no business making, and getting it
- * wrong would show someone else's words in your own box. Submitting still overwrites correctly;
- * only the pre-fill is missing. Revisit when the backend exposes "my review for this book".
+ * IT PRE-FILLS THE READER'S EXISTING REVIEW when the composing page hands one in. This component
+ * does not go looking for it — matching `GET /reviews` (which carries only `userId`) against
+ * `/profile/me` is the page's job, and it already does that match to mark the row in
+ * `BookReviewList`. Passing the values in keeps this form a dumb control and keeps the one
+ * "which review is mine" decision in one place. The page re-keys the form on the review id so a
+ * late-arriving match seeds the fields once rather than fighting the reader's edits.
  */
 export interface BookReviewFormProps {
   bookId: number;
+  /** The reader's current rating for this book, when they have already reviewed it. */
+  initialRating?: number;
+  /** The reader's current written feedback, when they have already reviewed it. */
+  initialFeedback?: string;
   /** Called after a review is accepted, so the surrounding surface can react. */
   onSubmitted?: () => void;
 }
 
-export function BookReviewForm({ bookId, onSubmitted }: BookReviewFormProps) {
+export function BookReviewForm({
+  bookId,
+  initialRating,
+  initialFeedback,
+  onSubmitted,
+}: BookReviewFormProps) {
   const t = useT();
-  const [rating, setRating] = React.useState(0);
+  const [rating, setRating] = React.useState(initialRating ?? 0);
   const [hovered, setHovered] = React.useState(0);
-  const [feedback, setFeedback] = React.useState('');
+  const [feedback, setFeedback] = React.useState(initialFeedback ?? '');
   const { mutate, isPending, error, isError } = useCreateReview(bookId);
 
   // A 422 carries readable per-field messages in `details`; a 400 (malformed body) carries none and
@@ -49,14 +59,11 @@ export function BookReviewForm({ bookId, onSubmitted }: BookReviewFormProps) {
     // The backend rejects anything outside 1..5 with a 422; the button is disabled below so the
     // empty state never gets that far. This guard is for the Enter key inside the textarea.
     if (rating < 1) return;
+    // The text is left in place on success — this form doubles as the editor for an existing
+    // review (the endpoint upserts), so clearing it would hide what was just saved.
     mutate(
       { rating, feedback: feedback.trim() || undefined },
-      {
-        onSuccess: () => {
-          setFeedback('');
-          onSubmitted?.();
-        },
-      }
+      { onSuccess: () => onSubmitted?.() }
     );
   };
 

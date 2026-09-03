@@ -1314,6 +1314,13 @@ export const en = {
       hideReviews: 'Hide reviews',
       reviewsError: 'Could not load reviews',
       noReviews: 'No reviews yet',
+      /* Shown against a review the signed-in reader wrote — the one row on the list they can edit
+         by submitting the form again. */
+      yourReview: 'Your review',
+      /* The reviewer could not be named: a review carries only a user id, and the id→handle bridge
+         (`ReputationResponseDto.username`) is empty for anyone who signed up with a password. */
+      anonymousReviewer: 'A reader',
+      viewReviewer: "View ${name}'s profile",
       feedbackPlaceholder: 'Write a review (optional)',
       submitReview: 'Submit',
       ratingLabel: 'Your rating',

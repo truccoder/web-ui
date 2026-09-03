@@ -12,8 +12,10 @@ import {
   BookReviewList,
   StarRating,
   useBook,
+  useBookReviews,
   useRatingBreakdown,
 } from '@/features/bookstore';
+import { useMyProfile } from '@/features/security';
 import { formatCurrency, useIntlLocale } from '@/shared/lib/format';
 import { useT } from '@/core/i18n';
 
@@ -71,6 +73,16 @@ export default function BookDetailPage() {
    */
   const { data: breakdown } = useRatingBreakdown(bookId ?? 0, bookId !== undefined);
   const hasRatings = (breakdown?.totalRatings ?? 0) > 0;
+
+  /**
+   * The reader's own review, so the form opens as the editor for it rather than a blank slate.
+   * `GET /reviews` carries only `userId`, so the match is made here against `/profile/me` — the
+   * same match `BookReviewList` makes to mark and lift that row. Both reads are shared with the
+   * list's own queries through React Query, so this costs no extra request.
+   */
+  const { data: me } = useMyProfile();
+  const { data: reviews } = useBookReviews(bookId ?? 0, bookId !== undefined);
+  const myReview = me?.id != null ? reviews?.find((r) => r.userId === me.id) : undefined;
 
   // The cover is presigned at read time, but a URL can still expire in a tab left open, so the
   // placeholder is a state rather than a fallback that only exists in theory.
@@ -238,7 +250,12 @@ export default function BookDetailPage() {
            * form behind a purchase here would be the frontend inventing a rule the product does
            * not have, which is the same mistake `MessageUserButton` refused to make.
            */}
-          <BookReviewForm bookId={book.id} />
+          <BookReviewForm
+            key={myReview?.id ?? 'new'}
+            bookId={book.id}
+            initialRating={myReview?.rating ?? undefined}
+            initialFeedback={myReview?.feedback ?? undefined}
+          />
 
           <BookReviewList bookId={book.id} />
         </Card>
