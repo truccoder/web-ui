@@ -1796,6 +1796,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/api/projects/positions/{positionId}/job-description": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getJobDescription"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/api/projects/positions/{positionId}/status": {
         parameters: {
             query?: never;
@@ -2215,6 +2231,9 @@ export interface components {
             createdAt?: string;
             /** Format: int64 */
             id?: number;
+            postExcerpt?: string;
+            /** Format: int32 */
+            postId?: number;
             reason?: string;
             /** Format: date-time */
             reviewedAt?: string;
@@ -2338,6 +2357,12 @@ export interface components {
             totalPages?: number;
         };
         BookReviewResponseDto: {
+            /** Format: int32 */
+            authorEliteScore?: number;
+            authorFullName?: string;
+            authorLevelName?: string;
+            authorProfilePictureUrl?: string;
+            authorUsername?: string;
             /** Format: date-time */
             createdAt?: string;
             feedback?: string;
@@ -2654,9 +2679,13 @@ export interface components {
             requests?: components["schemas"]["PendingFriendRequestDto"][];
         };
         FriendSuggestionDto: {
+            matchedSkills?: string[];
             /** Format: int64 */
             mutualFriends?: number;
             profile?: components["schemas"]["UserProfileDto"];
+            sharedHashtags?: string[];
+            /** @enum {string} */
+            sharedRole?: "BACKEND" | "FRONTEND" | "FULLSTACK" | "MOBILE" | "DEVOPS" | "DATA_ML" | "SECURITY" | "QA" | "OTHER";
         };
         GithubLinkRequest: {
             code: string;
@@ -2694,7 +2723,7 @@ export interface components {
             postCount?: number;
             tag?: string;
         };
-        JobDescriptionResponseDto: {
+        JobDescriptionUrlResponse: {
             /** Format: date-time */
             renderedAt?: string;
             url?: string;
@@ -2823,7 +2852,7 @@ export interface components {
             referenceType?: string;
             title?: string;
             /** @enum {string} */
-            type?: "POST_LIKED" | "COMMENT_LIKED" | "POST_COMMENTED" | "POST_TAGGED" | "USER_MENTIONED" | "FRIEND_REQUEST" | "FRIEND_ACCEPTED" | "EVENT_RSVP" | "EVENT_REMINDER" | "BOOK_REVIEW" | "BOOK_PURCHASED" | "SKILL_VERIFIED" | "SKILL_REJECTED" | "PROJECT_APPLICATION_ACCEPTED" | "PROJECT_APPLICATION_REJECTED" | "PROJECT_MEMBER_REMOVED";
+            type?: "POST_LIKED" | "COMMENT_LIKED" | "POST_COMMENTED" | "POST_TAGGED" | "USER_MENTIONED" | "FRIEND_REQUEST" | "FRIEND_ACCEPTED" | "EVENT_RSVP" | "EVENT_REMINDER" | "BOOK_REVIEW" | "BOOK_PURCHASED" | "SKILL_VERIFIED" | "SKILL_REJECTED" | "PROJECT_APPLICATION_ACCEPTED" | "PROJECT_APPLICATION_REJECTED" | "PROJECT_MEMBER_REMOVED" | "POST_REJECTED" | "APPEAL_APPROVED" | "APPEAL_REJECTED";
         };
         OAuthUrlResponseDto: {
             oauthUrl?: string;
@@ -2965,6 +2994,7 @@ export interface components {
             /** Format: int32 */
             requesterId?: number;
             requesterProfilePictureUrl?: string;
+            requesterUsername?: string;
             /** @enum {string} */
             status?: "PENDING" | "ACCEPTED" | "REJECTED" | "CANCELLED";
         };
@@ -3148,8 +3178,8 @@ export interface components {
             niceToHave?: string[];
             /** Format: int32 */
             quantity?: number;
-            requirements: string[];
             requiredSkills: string[];
+            requirements: string[];
             responsibilities: string[];
             roleSummary: string;
             /** @enum {string} */
@@ -3166,8 +3196,8 @@ export interface components {
             niceToHave?: string[];
             /** Format: int32 */
             quantity?: number;
-            requirements?: string[];
             requiredSkills?: string[];
+            requirements?: string[];
             responsibilities?: string[];
             roleSummary?: string;
             /** @enum {string} */
@@ -3381,6 +3411,7 @@ export interface components {
             /** Format: int32 */
             addresseeId?: number;
             addresseeProfilePictureUrl?: string;
+            addresseeUsername?: string;
             /** Format: date-time */
             createdAt?: string;
             /** Format: int32 */
@@ -3595,6 +3626,7 @@ export interface components {
             description?: string;
             /** Format: int64 */
             id?: number;
+            postExcerpt?: string;
             /** Format: int32 */
             postId?: number;
             /** @enum {string} */
@@ -18293,6 +18325,118 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Payload Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ErrorResponseDto"];
+                };
+            };
+        };
+    };
+    getJobDescription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                positionId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["JobDescriptionUrlResponse"];
+                };
             };
             /** @description Bad Request */
             400: {

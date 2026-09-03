@@ -129,19 +129,30 @@ function PostPermalinkContent() {
         <Card>
           <Skeleton lines={4} />
         </Card>
-      ) : rejected ? (
+      ) : rejected && post ? (
         /* A RESTING STATE, AND THE ONE THE OLD GUESSWORK COULD NEVER REACH: a rejected post never
            enters the feed the check used to read, so it sat under "chờ kiểm duyệt" indefinitely.
-           Saying it plainly is the difference between an author who can act and one who waits. */
-        <Card className="flex flex-col items-center gap-[var(--nx-space-element)] px-4 py-10 text-center">
-          <ShieldX className="size-8 text-nx-text-muted" aria-hidden />
-          <div className="flex flex-col gap-[var(--nx-space-tight)]">
-            <p className="text-nx-body font-semibold text-nx-text-primary">
-              {t('post.rejected.title')}
-            </p>
-            <p className="text-nx-body-sm text-nx-text-secondary">{t('post.rejected.desc')}</p>
-          </div>
-        </Card>
+           Saying it plainly is the difference between an author who can act and one who waits.
+           THE NOTICE SITS ABOVE THE POST, NOT INSTEAD OF IT — deciding whether to appeal or
+           rewrite means rereading what was actually written, the same reasoning
+           `MyViolationsPanel` uses for `postExcerpt`. `PostVisibilityService` already returned
+           the full `FeedPostDataDto` here (author-only bypass, see the file JSDoc); withholding
+           it a second time in the UI only hid content the author is entitled to. Rendered via the
+           same `FeedPost` the feed uses rather than a stripped preview, so nothing about the post
+           — images, poll options, quiz body — needs a second rendering path just because it was
+           rejected. */
+        <>
+          <Card className="flex flex-col items-center gap-[var(--nx-space-element)] px-4 py-10 text-center">
+            <ShieldX className="size-8 text-nx-text-muted" aria-hidden />
+            <div className="flex flex-col gap-[var(--nx-space-tight)]">
+              <p className="text-nx-body font-semibold text-nx-text-primary">
+                {t('post.rejected.title')}
+              </p>
+              <p className="text-nx-body-sm text-nx-text-secondary">{t('post.rejected.desc')}</p>
+            </div>
+          </Card>
+          <FeedPost post={post} onChanged={() => refetch()} defaultCommentsOpen expanded />
+        </>
       ) : pendingReview ? (
         /* NOT AN ERROR STATE. The post was saved and the author can see it — it just has not been
            cleared for an audience yet. A post the author just wrote keeps re-reading underneath

@@ -109,6 +109,19 @@ export interface PostCardProps {
    * which values are worth showing.
    */
   postType?: string | null;
+  /**
+   * `PUBLIC` / `FRIENDS` / `PRIVATE`, shown beside the timestamp — but only when the caller
+   * passes it, which should be ONLY FOR THE POST'S OWN AUTHOR.
+   *
+   * `post-preview-dialog.tsx` used to say this was shown "nowhere else on a card", reasoning
+   * that "the feed only ever shows you posts you are already allowed to see" — true for a
+   * stranger reading the post, but not for the author looking at their own: every one of their
+   * posts renders regardless of its visibility, so nothing on the card told them which mode a
+   * given post was actually in once the composer's one-time confirmation had scrolled past.
+   * That is the literal complaint this prop answers. The caller is responsible for the
+   * author-only gate — the card itself has no notion of who is viewing it.
+   */
+  visibility?: string | null;
   commentCount?: number;
   /**
    * Type-specific content that reads BEFORE the free-text `content` — an ARTICLE's cover,
@@ -172,6 +185,7 @@ export function PostCard({
   hashtags,
   postType,
   commentCount,
+  visibility,
   header,
   body,
   media,
@@ -258,13 +272,19 @@ export function PostCard({
            * points at the post, which is exactly why they are two anchors and not one.
            */
           time={
-            <Link href={`/posts/${postId}`} className="hover:text-nx-text-primary hover:underline">
+            <Link href={`/posts/${postId}`} className="hover:text-nx-text-primary">
               {relativeTime(createdAt)}
               {/* ON THE TIMESTAMP, NOT AS A BADGE. "Edited" is a fact about WHEN this text became
                   what you are reading, so it belongs to the time, not beside the author's name
                   where a badge would compete with the reputation chip. Comments already say it
                   this way; posts could not until `updatedAt` existed. */}
               {isEdited ? <> · {t('post.comments.edited')}</> : null}
+              {/* SAME TREATMENT, SAME REASON: which audience a post reaches is also a fact about
+                  the post, not a badge competing with the reputation chip. See `visibility`'s own
+                  note on why this reaches the card at all — only the author's copy of a post
+                  gets it, so this line answers exactly the question the composer's one-time
+                  confirmation cannot: what is THIS post, right now, set to. */}
+              {visibility ? <> · {t(`createPost.visibility.${visibility}`)}</> : null}
             </Link>
           }
           rep={

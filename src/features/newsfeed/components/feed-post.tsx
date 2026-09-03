@@ -321,7 +321,51 @@ export function FeedPost({
 
   // 80 characters is roughly one full line of the 672 measure. Below that a post is a
   // status, not something with an argument in it to explain.
-  const explainable = (post.content?.trim().length ?? 0) >= 80;
+  //
+  // EVENT/POLL/LINK/BOOK fail this a different way: `content` there is a caption beside
+  // structured data (date/place, options, a URL, a book), not prose with a concept inside it —
+  // long or short, there is nothing for the model to unpack. QUIZ already explains itself
+  // per-question once graded (`QuizTaker`'s `result.explanations`), so a second, generic
+  // "explain this post" button beside it would just be a redundant, paid control. REGULAR and
+  // QNA stay on the length gate alone — both are free-form text that can genuinely run long.
+  //
+  // CODE_SNIPPET reads its own field instead (B46, closed on the backend 04/09):
+  // `ExplanationService.buildPrompt` now folds `codeSnippetDetails.code` into the prompt for
+  // this kind, so the substance worth explaining is the code, not the caption — and
+  // `post-composer.tsx` explicitly lets this kind post with an empty `content` ("may stand
+  // without prose"), so gating on `content` here left the typical snippet with no button at
+  // all. The threshold is lower than prose's 80: a snippet worth posting is rarely under a
+  // couple of lines, and unlike prose there is no filler padding it out.
+  const explainableType =
+    post.postType !== 'EVENT' &&
+    post.postType !== 'POLL' &&
+    post.postType !== 'LINK' &&
+    post.postType !== 'BOOK' &&
+    !post.quizDetails;
+  const codeSnippetLength = post.codeSnippetDetails?.code?.trim().length ?? 0;
+  const explainable =
+    explainableType &&
+    (post.postType === 'CODE_SNIPPET'
+      ? codeSnippetLength >= 20
+      : (post.content?.trim().length ?? 0) >= 80);
+
+  // What `ExplainPostAction` shows as "explaining this" and saves as `originalContent` on
+  // `/save`. Every other kind just hands over its own prose. CODE_SNIPPET hands over the code
+  // instead, fenced with its language so it reads as code rather than a wall of text, with the
+  // caption (if any) trailing after — same order the card itself renders them in. Passing
+  // `post.content` here (the caption) would make the "original" on screen and in the saved
+  // library disagree with what the button next to it is actually gated on.
+  const explainContent =
+    post.postType === 'CODE_SNIPPET' && post.codeSnippetDetails?.code
+      ? [
+          '```' + (post.codeSnippetDetails.language ?? ''),
+          post.codeSnippetDetails.code,
+          '```',
+          post.content?.trim() || null,
+        ]
+          .filter((line): line is string => Boolean(line))
+          .join('\n')
+      : (post.content ?? '');
 
   // `googlePlaceId`/`locationType`/`locationDetails` travel together on the resolve response
   // and the card's `location` prop is that same shape, so it is only built when all three
@@ -354,6 +398,10 @@ export function FeedPost({
       }}
       createdAt={post.createdAt}
       updatedAt={post.updatedAt}
+      // Author-only — see `PostCard`'s `visibility` note. A stranger already knows they can see
+      // this post (or it would 404), so telling them again adds nothing; the author is the one
+      // who cannot otherwise recall which mode a given post is in once they scroll past it.
+      visibility={isAuthor ? post.visibility : undefined}
       // While editing, the stored text is inside the editor's textarea; showing it above as
       // static copy too would put the same sentence on screen twice.
       content={editing ? undefined : post.content}
@@ -455,7 +503,7 @@ export function FeedPost({
               model, and unlike the controls above there is nothing here to preview — the button
               IS the request. */}
           {explainable && !isGuest && (
-            <ExplainPostAction postId={post.postId} postContent={post.content ?? ''} />
+            <ExplainPostAction postId={post.postId} postContent={explainContent} />
           )}
         </>
       }
@@ -541,7 +589,7 @@ export function FeedPost({
                       aria-label={t('post.commentCount', { count: post.commentCount })}
                       className={cn(
                         ACTION_COUNT,
-                        'hover:text-nx-text-primary hover:underline',
+                        'hover:text-nx-text-primary',
                         'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring'
                       )}
                     >
@@ -554,7 +602,7 @@ export function FeedPost({
                       aria-label={t('post.commentCount', { count: post.commentCount })}
                       className={cn(
                         ACTION_COUNT,
-                        'hover:text-nx-text-primary hover:underline',
+                        'hover:text-nx-text-primary',
                         'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring'
                       )}
                     >

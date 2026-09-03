@@ -162,9 +162,9 @@ export function ConversationView({
           /* The avatar and the name are one anchor here, not two as in the info pane: this is a
              32px row where two adjacent tap targets to the same place would only make each of
              them smaller. */
-          <Link href={titleHref} className="flex min-w-0 flex-1 items-center gap-3 hover:underline">
+          <Link href={titleHref} className="group flex min-w-0 flex-1 items-center gap-3">
             <Avatar src={header?.otherMemberImage ?? undefined} name={title} size="md" />
-            <span className="min-w-0 flex-1 truncate text-nx-ui font-semibold text-nx-text-primary">
+            <span className="min-w-0 flex-1 truncate text-nx-ui font-semibold text-nx-text-primary group-hover:text-nx-text-link-hover">
               {title}
             </span>
           </Link>

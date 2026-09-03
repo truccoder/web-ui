@@ -98,7 +98,7 @@ export function SectionLink({
     <Link
       href={href}
       className={cn(
-        'shrink-0 text-nx-body-sm text-nx-text-accent hover:underline',
+        'shrink-0 text-nx-body-sm text-nx-text-accent hover:text-nx-text-link-hover',
         'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring',
         className
       )}

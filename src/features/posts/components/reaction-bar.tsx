@@ -457,7 +457,7 @@ export function ReactionBar({ postId, count, actions, onChanged, className }: Re
               aria-label={t('post.reaction.count', { count })}
               className={cn(
                 ACTION_COUNT,
-                'hover:text-nx-text-primary hover:underline',
+                'hover:text-nx-text-primary',
                 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring'
               )}
             >

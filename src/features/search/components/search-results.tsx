@@ -65,7 +65,7 @@ function SectionHeading({
         <button
           type="button"
           onClick={onViewAll}
-          className="text-nx-caption text-nx-text-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
+          className="text-nx-caption text-nx-text-accent hover:text-nx-text-link-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
         >
           {t('search.viewAllInTab')}
         </button>

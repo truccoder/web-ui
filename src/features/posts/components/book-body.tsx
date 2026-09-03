@@ -108,7 +108,7 @@ export function BookBody({ book, actions, className }: BookBodyProps) {
         {bookId != null ? (
           <Link
             href={`/books/${bookId}`}
-            className="text-nx-ui font-semibold text-nx-text-primary hover:underline"
+            className="text-nx-ui font-semibold text-nx-text-primary hover:text-nx-text-link-hover"
           >
             {title}
           </Link>

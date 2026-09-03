@@ -108,7 +108,7 @@ export function ExplainPostAction({ postId, postContent }: ExplainPostActionProp
           {t('knowledge.explain.profileRequired')}{' '}
           <Link
             href={`/onboarding/professional?next=/posts/${postId}`}
-            className="font-medium text-nx-text-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
+            className="font-medium text-nx-text-accent hover:text-nx-text-link-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
           >
             {t('knowledge.explain.profileRequiredCta')}
           </Link>

@@ -11,8 +11,13 @@ import { cn } from '@/shared/lib/cn';
 export interface FriendListItemProps {
   name: string;
   avatarUrl?: string;
-  /** Mutual-friend count, request time, "awaiting", etc. */
+  /** Mutual-friend count, request time, "awaiting", etc. Single line, truncates. */
   subtitle?: React.ReactNode;
+  /**
+   * Extra content under `subtitle` that isn't a single truncated line — suggestion reason
+   * chips, for instance. Unlike `subtitle` it's free to wrap.
+   */
+  meta?: React.ReactNode;
   /** Buttons (accept/reject, add, cancel…). */
   actions?: React.ReactNode;
   /**
@@ -33,6 +38,7 @@ export function FriendListItem({
   name,
   avatarUrl,
   subtitle,
+  meta,
   actions,
   href,
   avatarSize = 'lg',
@@ -45,8 +51,11 @@ export function FriendListItem({
     <>
       <Avatar src={avatarUrl} name={name} size={avatarSize} />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-nx-ui font-medium text-nx-text-primary">{name}</p>
+        <p className="truncate text-nx-ui font-medium text-nx-text-primary group-hover:text-nx-text-link-hover">
+          {name}
+        </p>
         {subtitle && <p className="truncate text-nx-caption text-nx-text-muted">{subtitle}</p>}
+        {meta}
       </div>
     </>
   );
@@ -72,8 +81,8 @@ export function FriendListItem({
         <Link
           href={`/u/${encodeURIComponent(href)}`}
           className={cn(
-            'flex min-w-0 flex-1 items-center gap-3 rounded-nx-sm',
-            'hover:underline focus-visible:outline-2 focus-visible:outline-offset-2',
+            'group flex min-w-0 flex-1 items-center gap-3 rounded-nx-sm',
+            'focus-visible:outline-2 focus-visible:outline-offset-2',
             'focus-visible:outline-nx-focus-ring'
           )}
         >

@@ -318,7 +318,7 @@ export function Tabs({
             }
             onClick={() => onChange?.(item.id)}
             className={cn(
-              'inline-flex items-center gap-2 whitespace-nowrap',
+              'inline-flex cursor-pointer items-center gap-2 whitespace-nowrap',
               // COLOUR ONLY (§2.1) — no lift, no scale, no shadow.
               'transition-colors duration-[var(--nx-duration-fast)] ease-nx-out',
               item.iconOnly ? iconOnlySizeStyles[size] : sizeStyles[size],

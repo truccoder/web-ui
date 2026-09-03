@@ -96,8 +96,8 @@ export type CreatePositionInput = Schemas['ProjectPositionRequestDTO'];
  * anything to build.
  */
 export type JobDescriptionUrl = {
-  url: NonNullable<Schemas['JobDescriptionResponseDto']['url']>;
-  renderedAt: NonNullable<Schemas['JobDescriptionResponseDto']['renderedAt']>;
+  url: NonNullable<Schemas['JobDescriptionUrlResponse']['url']>;
+  renderedAt: NonNullable<Schemas['JobDescriptionUrlResponse']['renderedAt']>;
 };
 
 /**

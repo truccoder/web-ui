@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Star } from 'lucide-react';
+import { SendHorizontal, Star } from 'lucide-react';
 import { Button, Textarea } from '@/shared/components';
 import { getErrorDetails, getErrorMessage } from '@/shared/lib/api-error';
 import { useT } from '@/core/i18n';
@@ -106,15 +106,25 @@ export function BookReviewForm({
         onChange={(e) => setFeedback(e.target.value)}
         placeholder={t('post.book.feedbackPlaceholder')}
         error={errorText}
-        rows={2}
+        // Same compact single-row shape as the chat and comment composers: starts at one row and
+        // grows with the text, with the submit control living inside the field instead of on its
+        // own row below.
+        rows={1}
         autoResize
+        className="items-center"
+        trailing={
+          <Button
+            type="submit"
+            size="sm"
+            className="px-2"
+            icon={<SendHorizontal />}
+            aria-label={t('post.book.submitReview')}
+            title={t('post.book.submitReview')}
+            loading={isPending}
+            disabled={isPending || rating < 1}
+          />
+        }
       />
-
-      <div className="flex justify-end">
-        <Button type="submit" size="sm" loading={isPending} disabled={isPending || rating < 1}>
-          {t('post.book.submitReview')}
-        </Button>
-      </div>
     </form>
   );
 }

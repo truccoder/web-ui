@@ -422,7 +422,7 @@ function OpeningsSection() {
                 down the column and past the contribution graph this card shares a fold with. */}
               <Link
                 href={`/projects/${project.id}`}
-                className="line-clamp-2 text-nx-body-sm text-nx-text-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
+                className="line-clamp-2 text-nx-body-sm text-nx-text-primary hover:text-nx-text-link-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
               >
                 {project.title}
               </Link>
@@ -550,7 +550,7 @@ function ExternalSection() {
                 rel="noopener noreferrer"
                 className="group flex items-start gap-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
               >
-                <span className="line-clamp-2 text-nx-body-sm text-nx-text-primary group-hover:underline">
+                <span className="line-clamp-2 text-nx-body-sm text-nx-text-primary group-hover:text-nx-text-link-hover">
                   {item.title}
                 </span>
                 {/* eslint-disable-next-line no-restricted-syntax --

@@ -45,13 +45,21 @@ import { useMyViolations, useSubmitAppeal } from '../hooks/use-moderation';
  * rather than a constant. A real claim is worth reading in words: `SPAM` and `LOW` in a monospace
  * badge are database values, and this panel is where someone finds out why they were sanctioned.
  *
- * IT LINKS TO THE POST THE CLAIM IS ABOUT. `UserViolationDto` carries `postId` and nothing of the
- * post's content, so the row cannot render the post — but the reader is its author and
- * `/posts/{postId}` shows them their own post whatever its moderation status
+ * IT LINKS TO THE POST THE CLAIM IS ABOUT. `UserViolationDto` carries `postId`, and the reader is
+ * its author, so `/posts/{postId}` shows them their own post whatever its moderation status
  * (`PostVisibilityService` only 404s an uncleared post to everyone ELSE). Someone deciding whether
  * to appeal needs to reread what they wrote; the link is in the row and again in the appeal
  * dialog, next to the reason they are contesting. Same handoff `ModerationReportsTab` makes for
  * the admin side — a pointer at a post is shown as a way to open the post, not faked into a card.
+ *
+ * `postId` CAN GO NULL AFTER THE FACT, AND THAT IS THE FK, NOT A BUG. `t_user_violations.post_id`
+ * is `ON DELETE SET NULL` (V9): deleting the flagged post clears the pointer on every violation row
+ * that named it, and the link above simply stops rendering — with nothing left telling the reader
+ * which post it used to be. `postExcerpt` (V106) is the fix: a snapshot of the post's text taken at
+ * the moment the violation was recorded, independent of whether the row it points at still exists.
+ * It is optional on the DTO because it is not backfilled — a row written before V106, or through a
+ * call site still on the old 4-arg `recordViolation` overload, carries none — so the quote below
+ * renders only when one is present rather than assuming every row has it.
  */
 export function MyViolationsPanel() {
   const t = useT();
@@ -116,12 +124,23 @@ export function MyViolationsPanel() {
             )}
           </div>
 
+          {violation.postExcerpt && (
+            <p className="line-clamp-3 border-l-2 border-nx-border-default pl-3 text-nx-body-sm text-nx-text-secondary">
+              {violation.postExcerpt}
+            </p>
+          )}
+
           {violation.description && (
-            <p className="text-nx-body-sm text-nx-text-secondary">{violation.description}</p>
+            <p className="text-nx-body-sm text-nx-text-secondary">
+              <span className="font-medium text-nx-text-primary">
+                {t('moderationMine.violationReason')}
+              </span>{' '}
+              {violation.description}
+            </p>
           )}
 
           <div className="flex flex-wrap items-center gap-2">
-            {violation.postId != null && (
+            {violation.postId != null ? (
               <ButtonLink
                 href={`/posts/${violation.postId}`}
                 size="sm"
@@ -130,6 +149,12 @@ export function MyViolationsPanel() {
               >
                 {t('moderationMine.viewPost')}
               </ButtonLink>
+            ) : (
+              violation.postExcerpt && (
+                <span className="text-nx-caption text-nx-text-muted">
+                  {t('moderationMine.postDeleted')}
+                </span>
+              )
             )}
             {violation.appealPending ? (
               <span className="text-nx-caption text-nx-text-muted">
@@ -180,12 +205,20 @@ export function MyViolationsPanel() {
         }
       >
         <div className="flex flex-col gap-3">
+          {appealing?.postExcerpt && (
+            <p className="border-l-2 border-nx-border-default pl-3 text-nx-body-sm text-nx-text-secondary">
+              {appealing.postExcerpt}
+            </p>
+          )}
           {appealing?.description && (
             <p className="rounded-nx-sm bg-nx-surface-sunken px-3 py-2 text-nx-body-sm text-nx-text-secondary">
+              <span className="font-medium text-nx-text-primary">
+                {t('moderationMine.violationReason')}
+              </span>{' '}
               {appealing.description}
             </p>
           )}
-          {appealing?.postId != null && (
+          {appealing?.postId != null ? (
             <ButtonLink
               href={`/posts/${appealing.postId}`}
               size="sm"
@@ -195,6 +228,12 @@ export function MyViolationsPanel() {
             >
               {t('moderationMine.viewPost')}
             </ButtonLink>
+          ) : (
+            appealing?.postExcerpt && (
+              <span className="text-nx-caption text-nx-text-muted">
+                {t('moderationMine.postDeleted')}
+              </span>
+            )
           )}
           <Textarea
             rows={5}

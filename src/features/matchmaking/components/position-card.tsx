@@ -1,12 +1,23 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
+import dynamic from 'next/dynamic';
 import { Badge, Button, Card, Dialog, Textarea } from '@/shared/components';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { useT } from '@/core/i18n';
 import type { ProjectPosition } from '../types/matchmaking';
 import { useApplyToPosition } from '../hooks/use-matchmaking';
-import { JobDescriptionDialog } from './job-description-dialog';
+
+/**
+ * LOADED CLIENT-SIDE ONLY, AND NOT AS AN OPTIMISATION. `react-pdf` evaluates `DOMMatrix` at module
+ * scope, which does not exist in Node — a static import here fails the production build with
+ * "ReferenceError: DOMMatrix is not defined" while prerendering any route that reaches this card.
+ * Same guard bookstore's `BookActions` uses for `BookReaderDialog`, and for the same reason.
+ */
+const JobDescriptionDialog = dynamic(
+  () => import('./job-description-dialog').then((m) => m.JobDescriptionDialog),
+  { ssr: false }
+);
 
 /**
  * One role on a project, as a self-contained horizontal card — `project-detail.tsx` lays a row of

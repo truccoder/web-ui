@@ -1,19 +1,24 @@
 'use client';
 
 import Link from 'next/link';
-import { BookOpen, Star } from 'lucide-react';
+import { BookOpen, MessageCircle, Star } from 'lucide-react';
 import {
+  ACTION_GLYPH,
+  ACTION_GLYPH_BUTTON,
+  ACTION_GROUP,
   ArticleBody,
   CodeSnippetBody,
   LinkBody,
   PollBody,
   PostCard,
   QnaBody,
+  ReactionBar,
 } from '@/features/posts';
 import { useT } from '@/core/i18n';
 import { useIntlLocale } from '@/shared/lib/format';
 import { cn } from '@/shared/lib/cn';
 import type { SearchBook, SearchPost } from '../types/search';
+import { derivePostKind } from '../lib/post-kind';
 
 /**
  * One post in the results — now drawn by `PostCard` itself, the same card the feed and the
@@ -24,10 +29,32 @@ import type { SearchBook, SearchPost } from '../types/search';
  * from the real card. `PostCard` takes decomposed props precisely so `features/search` can reuse it
  * (see its own file note), so the job here is just the mapping `SearchPost` → those props.
  *
- * NO ACTION STRIP. `PostDto` carries no reaction summary the reader could act on, no live comment
- * count, and search is a read-only surface — so `actions` and `menu` stay empty and the card omits
- * its footer. The type-specific body is still assembled here because `PostDto` has no `postType`
- * field to switch on: whichever details block came back non-null is the body, and a post has one.
+ * ACTION STRIP: REACT, YES · COMMENT COUNT, NO. `PostDto` (the search payload's post shape) DOES
+ * carry `reactionSummary` — the same per-type map `FeedPostDataDto` has — so `ReactionBar` works
+ * here exactly as it does on the feed: it owns its own fetch (`useMyReaction`) and its own mutation
+ * (`useUpsertReaction`/`useRemoveReaction`), neither of which needs anything from this DTO beyond
+ * `postId`. What `PostDto` genuinely lacks is `commentCount` — unlike the feed payload, search never
+ * grew one — so there is no reliable signal for "does this post have comments to preview", and
+ * `CommentPreview` treats an absent count as zero and renders nothing. The comment glyph is shown
+ * anyway, as a plain link to the permalink with no number beside it: the same "absent count reads as
+ * not-supplied, not zero" rule `PostCard`'s own footer already applies to `commentCount`.
+ *
+ * `onChanged` ON THE BAR IS A NO-OP HERE, deliberately. `useSearch`'s own note says a search result
+ * is "a pure function of the term plus whatever the database held", never invalidated by a mutation
+ * elsewhere in the app — reacting does not change whether a post matches `q`, so there is nothing to
+ * refetch the way the feed refetches to pick up a moved count.
+ *
+ * `postType` IS DERIVED, NOT CARRIED. Same gap as the body switch below: `derivePostKind` (already
+ * built for the Posts tab's own filter) reads back which details block is non-null, once, and feeds
+ * both the badge row `PostCard` draws and the `body` switch here.
+ *
+ * STILL NO MENU. Edit needs `PostEditorState` built from every field the update DTO can send —
+ * `images`, `taggedUserIds`, `hashtags`, the location trio — and `PostDto` here carries none of
+ * them; mapping the fields that exist and leaving the rest `undefined` is exactly the
+ * `BeanUtils.copyProperties`-strips-what-it-is-not-given bug `feed-post.tsx`'s own note (`toEditorState`)
+ * was written to stop happening a second time. Delete/report do not have that hazard, but the
+ * omission is left as one line rather than split into a report-only menu — a future pass with a
+ * concrete need for it should draw it, not this one.
  */
 export interface PostResultCardProps {
   post: SearchPost;
@@ -102,10 +129,20 @@ function BookLine({ book }: { book: SearchBook }) {
 }
 
 export function PostResultCard({ post, className }: PostResultCardProps) {
+  const t = useT();
+  const postId = post.id ?? 0;
+
+  // `reactionSummary` is a per-type map (`{ LIKE: 3, INSIGHT: 1, … }`), same shape the feed's
+  // `PostCard` never sees directly — `FeedPostDataDto` flattens it to a single `likeCount` before
+  // it gets here, but search's `PostDto` does not, so the total is summed once at the call site.
+  const totalReactions = post.reactionSummary
+    ? Object.values(post.reactionSummary).reduce((sum, n) => sum + (n ?? 0), 0)
+    : undefined;
+
   return (
     <PostCard
       className={className}
-      postId={post.id ?? 0}
+      postId={postId}
       author={{
         id: post.authorId ?? 0,
         // `PostDto` carries the handle now, the same field the feed payload grew — so a result
@@ -120,6 +157,9 @@ export function PostResultCard({ post, className }: PostResultCardProps) {
       // payload genuinely carried nothing, which search does not do.
       createdAt={post.createdAt ?? ''}
       content={post.content}
+      // Derived, not carried — see the file note. Only feeds the badge row; nothing here branches
+      // on it the way the feed's `PostBody` switch does.
+      postType={derivePostKind(post)}
       // An article's title and summary read before the body copy in `content` — same order as
       // the feed card.
       header={post.articleDetails ? <ArticleBody details={post.articleDetails} /> : undefined}
@@ -130,10 +170,10 @@ export function PostResultCard({ post, className }: PostResultCardProps) {
             <p className="text-nx-ui font-medium text-nx-text-primary">{post.eventName}</p>
           )}
 
-          {/* Whichever block the post is built around. `PostDto` has no `postType`, so this cannot
-              switch the way the feed's `PostBody` does — it renders whatever came back non-null.
-              The quiz is left out on purpose: a search result is for recognising a post, not
-              sitting an exam in a card. */}
+          {/* Whichever block the post is built around — `derivePostKind` above names it for the
+              badge, but the body still renders whatever came back non-null rather than switching,
+              same as before. The quiz is left out on purpose: a search result is for recognising a
+              post, not sitting an exam in a card. */}
           {post.codeSnippetDetails && (
             <CodeSnippetBody
               details={post.codeSnippetDetails}
@@ -146,6 +186,27 @@ export function PostResultCard({ post, className }: PostResultCardProps) {
 
           {post.book && <BookLine book={post.book} />}
         </>
+      }
+      actions={
+        <ReactionBar
+          postId={postId}
+          count={totalReactions}
+          actions={
+            <div className={ACTION_GROUP}>
+              <Link
+                href={`/posts/${postId}`}
+                title={t('post.comments.show')}
+                className={cn(
+                  ACTION_GLYPH_BUTTON,
+                  'text-nx-text-secondary hover:text-nx-text-primary'
+                )}
+              >
+                <MessageCircle aria-hidden className={ACTION_GLYPH} />
+                <span className="sr-only">{t('post.comments.show')}</span>
+              </Link>
+            </div>
+          }
+        />
       }
     />
   );

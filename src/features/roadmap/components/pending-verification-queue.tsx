@@ -115,7 +115,7 @@ export function PendingVerificationQueue({ className }: PendingVerificationQueue
               href={row.proofUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="truncate font-mono text-nx-caption text-nx-text-accent hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
+              className="truncate font-mono text-nx-caption text-nx-text-accent hover:text-nx-text-link-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
             >
               {row.proofUrl}
             </a>

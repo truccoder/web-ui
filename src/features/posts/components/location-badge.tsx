@@ -60,7 +60,7 @@ export function LocationBadge({
           target="_blank"
           rel="noopener noreferrer"
           title={mapsLabel}
-          className="truncate text-nx-text-link hover:text-nx-text-link-hover hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
+          className="truncate text-nx-text-link hover:text-nx-text-link-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
         >
           {label}
         </a>

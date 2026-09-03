@@ -1,7 +1,7 @@
 'use client';
 
 import { UserPlus } from 'lucide-react';
-import { Button, EmptyState, Skeleton } from '@/shared/components';
+import { Badge, Button, EmptyState, Skeleton } from '@/shared/components';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { useT } from '@/core/i18n';
 import {
@@ -10,6 +10,9 @@ import {
   useSentRequests,
 } from '../hooks/use-friendship';
 import { FriendListItem } from './friend-list-item';
+
+/** Beyond this many, `matchedSkills` collapses to "A, B, C +N" rather than listing every name. */
+const MATCHED_SKILLS_PREVIEW_COUNT = 3;
 
 /**
  * The `/friends/suggestions` surface: people you may know
@@ -87,8 +90,30 @@ export function FriendSuggestions({ limit }: FriendSuggestionsProps = {}) {
 
       <div className="flex flex-col gap-4">
         {(limit === undefined ? suggestions : suggestions.slice(0, limit)).map(
-          ({ profile, mutualFriends }) => {
+          ({ profile, mutualFriends, sharedRole, matchedSkills, sharedHashtags }) => {
             const alreadySent = sentIds.has(profile.userId);
+
+            // `sharedRole`/`matchedSkills`/`sharedHashtags` are independent — any subset (including
+            // none) can be present regardless of `mutualFriends`. See `FriendSuggestion` on why.
+            const skillsLabel =
+              matchedSkills.length > 0
+                ? matchedSkills.length > MATCHED_SKILLS_PREVIEW_COUNT
+                  ? `${matchedSkills.slice(0, MATCHED_SKILLS_PREVIEW_COUNT).join(', ')} +${
+                      matchedSkills.length - MATCHED_SKILLS_PREVIEW_COUNT
+                    }`
+                  : matchedSkills.join(', ')
+                : null;
+            const reasonLine = [
+              sharedRole
+                ? t('friends.suggestions.sharedRole', {
+                    role: t(`knowledge.primaryRole.${sharedRole}`),
+                  })
+                : null,
+              skillsLabel ? t('friends.suggestions.matchedSkills', { skills: skillsLabel }) : null,
+            ]
+              .filter(Boolean)
+              .join(' · ');
+
             return (
               <div key={profile.userId}>
                 <FriendListItem
@@ -99,6 +124,26 @@ export function FriendSuggestions({ limit }: FriendSuggestionsProps = {}) {
                     mutualFriends > 0
                       ? t('friends.suggestions.mutualFriends', { count: mutualFriends })
                       : t('friends.suggestions.suggestedForYou')
+                  }
+                  meta={
+                    (reasonLine || sharedHashtags.length > 0) && (
+                      <div className="flex flex-col gap-1 pt-0.5">
+                        {reasonLine && (
+                          <p className="truncate text-nx-caption text-nx-text-muted">
+                            {reasonLine}
+                          </p>
+                        )}
+                        {sharedHashtags.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {sharedHashtags.map((tag) => (
+                              <Badge key={tag} variant="accent">
+                                #{tag}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )
                   }
                   actions={
                     <Button

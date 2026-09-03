@@ -118,7 +118,7 @@ export function ProjectCard({ project, href }: { project: Project; href?: string
   );
 
   return (
-    <Card className="group relative flex flex-col gap-[var(--nx-space-group)]">
+    <Card interactive className="relative flex flex-col gap-[var(--nx-space-group)]">
       <div className="flex items-start gap-3">
         {authorHref ? (
           <Link href={authorHref} className="relative z-10 shrink-0 rounded-nx-full">
@@ -128,13 +128,11 @@ export function ProjectCard({ project, href }: { project: Project; href?: string
           authorAvatar
         )}
         <div className="min-w-0 flex-1">
-          <p className="text-nx-heading font-semibold text-nx-text-primary group-hover:underline">
-            {project.title}
-          </p>
+          <p className="text-nx-heading font-semibold text-nx-text-primary">{project.title}</p>
           {authorHref ? (
             <Link
               href={authorHref}
-              className="relative z-10 block truncate text-nx-caption text-nx-text-muted hover:text-nx-text-primary hover:underline"
+              className="relative z-10 block truncate text-nx-caption text-nx-text-muted hover:text-nx-text-primary"
             >
               {project.authorFullName}
             </Link>
@@ -290,7 +288,7 @@ function SuggestedProjectCard({ suggestion }: { suggestion: SuggestedProject }) 
               {index > 0 && ' · '}
               <Link
                 href={`/projects/${project.id}#role-${position.id}`}
-                className="text-nx-text-accent hover:underline"
+                className="text-nx-text-accent hover:text-nx-text-link-hover"
               >
                 {position.title}
               </Link>

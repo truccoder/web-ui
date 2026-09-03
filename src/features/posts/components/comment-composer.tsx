@@ -120,11 +120,12 @@ export function CommentComposer({
         value={value}
         onChange={setValue}
         placeholder={placeholder ?? t('post.commentPlaceholder')}
-        // Grows with what is written instead of scrolling inside two fixed lines. It matters more
-        // now than it did: the send control lives at the bottom-right INSIDE the box, so the box's
-        // own height is the thing that has to follow the text.
+        // Grows with what is written instead of scrolling inside a fixed box. Starts at a single
+        // row — the same compact shape as the chat composer (`MessageComposer`) — rather than
+        // opening two lines tall before anything is typed.
         autoResize
-        rows={2}
+        rows={1}
+        className="items-center"
         autoFocus={autoFocus}
         onFocus={placeCaretAtEnd}
         onKeyDown={(event) => {

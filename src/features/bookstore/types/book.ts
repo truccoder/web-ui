@@ -99,10 +99,11 @@ export type Book = {
 /**
  * One review.
  *
- * `userId` ONLY — no name, no avatar, and the backend has no endpoint to look a user up by id
- * (only `/profile/me`). So a review list can show the text and the stars but **cannot show who
- * wrote it**. Same family of limitation as `/attendees` in `posts` and "no public profile
- * endpoint" in CLAUDE.md Phase 3.1. Not a UI oversight to be fixed later — a data ceiling.
+ * Carries `authorUsername`/`authorFullName`/`authorProfilePictureUrl`/`authorEliteScore`/
+ * `authorLevelName` alongside `userId` as of backend-debt B45 (closed 04/09) — the DTO used to
+ * carry only `userId`, so a review list could show the text and the stars but not who wrote it.
+ * `authorUsername` is still nullable (password sign-up never sets one), so a review can still be
+ * anonymous; it just no longer requires two extra requests to find out.
  *
  * There is no `updatedAt`, and `createdAt` does NOT change when a review is edited (the endpoint
  * upserts — see `CreateReviewRequest`). A timestamp shown next to a review is therefore the moment

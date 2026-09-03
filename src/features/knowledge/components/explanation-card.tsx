@@ -174,7 +174,7 @@ export function ExplanationCard({
               {showSource && explanation.postId != null && (
                 <Link
                   href={`/posts/${explanation.postId}`}
-                  className="ml-auto text-nx-caption text-nx-text-link hover:underline"
+                  className="ml-auto text-nx-caption text-nx-text-link hover:text-nx-text-link-hover"
                 >
                   {t('knowledge.explain.viewSource')}
                 </Link>
@@ -223,7 +223,7 @@ export function ExplanationCard({
                         href={link.url ?? undefined}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-nx-caption text-nx-text-link hover:underline"
+                        className="inline-flex items-center gap-1 text-nx-caption text-nx-text-link hover:text-nx-text-link-hover"
                       >
                         <ExternalLinkIcon className="h-3 w-3" />
                         {link.title ?? link.url}

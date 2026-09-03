@@ -93,11 +93,13 @@ function BlockedRow({
       {user.username ? (
         <Link
           href={`/u/${encodeURIComponent(user.username)}`}
-          className="flex min-w-0 flex-1 items-center gap-3 rounded-nx-sm hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
+          className="group flex min-w-0 flex-1 items-center gap-3 rounded-nx-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
         >
           <Avatar src={user.profilePictureUrl} name={name} size="lg" />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-nx-ui font-medium text-nx-text-primary">{name}</p>
+            <p className="truncate text-nx-ui font-medium text-nx-text-primary group-hover:text-nx-text-link-hover">
+              {name}
+            </p>
             <span className="truncate font-mono text-nx-caption text-nx-text-muted">
               @{user.username}
             </span>

@@ -96,7 +96,7 @@ export function ProjectDetail({ projectId, viewerId, onDeleted }: ProjectDetailP
             </h1>
             <p className="text-nx-caption text-nx-text-muted">
               {authorHref ? (
-                <Link href={authorHref} className="hover:text-nx-text-primary hover:underline">
+                <Link href={authorHref} className="hover:text-nx-text-primary">
                   {project.authorFullName}
                 </Link>
               ) : (
@@ -370,7 +370,7 @@ function OwnerInbox({
                 {applicantHref ? (
                   <Link
                     href={applicantHref}
-                    className="block truncate text-nx-ui font-medium text-nx-text-primary hover:underline"
+                    className="block truncate text-nx-ui font-medium text-nx-text-primary hover:text-nx-text-link-hover"
                   >
                     {application.applicantFullName}
                   </Link>

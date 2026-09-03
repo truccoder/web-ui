@@ -155,7 +155,13 @@ export function DeveloperIdentity({
   );
 
   return (
-    <div className={cn('flex items-start gap-2.5', className)} {...props}>
+    <div className={cn('flex items-center gap-2.5', className)} {...props}>
+      {/* CENTERED, NOT TOP-ALIGNED. The two text lines (name row + role/handle/meta) rarely fill
+          exactly the avatar's height — a `sm` avatar (24px) under two caption-sized lines (~37px)
+          left the avatar looking pinned to the top of its own row, floating above text that kept
+          going below it. Centering the row means the avatar sits in the middle of whatever the
+          text block turns out to be, one or two lines, and reads as one object instead of a
+          picture stacked oddly beside a paragraph. */}
       {/* THE AVATAR LINK IS THE SAME DESTINATION AS THE NAME, so it is hidden from the keyboard
           and from a screen reader rather than offered twice — `aria-hidden` + `tabIndex={-1}` is
           the standard fix for a redundant adjacent link, and the picture says nothing the name
@@ -181,7 +187,10 @@ export function DeveloperIdentity({
               the row. Putting the classes on the anchor (a blockified flex item) keeps the
               ellipsis working. */}
           {href ? (
-            <Link href={href} className={cn(nameClass, 'min-w-0 hover:underline', linkRing)}>
+            <Link
+              href={href}
+              className={cn(nameClass, 'min-w-0 hover:text-nx-text-link-hover', linkRing)}
+            >
               {name}
             </Link>
           ) : (

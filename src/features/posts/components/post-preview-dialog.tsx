@@ -229,9 +229,11 @@ export function PostPreviewDialog({
       }
     >
       <div className="flex min-w-0 flex-1 flex-col gap-3">
-        {/* VISIBILITY IS SAID IN WORDS HERE AND NOWHERE ELSE ON A CARD. The card itself does not
-            carry it — the feed only ever shows you posts you are already allowed to see — so the
-            last moment anyone can catch "wait, is this going out publicly?" is this one. */}
+        {/* VISIBILITY IS SAID IN WORDS HERE TOO, BEFORE THE POST EXISTS. `PostCard` now shows it
+            to the author on every one of their own posts (see its `visibility` prop) — that
+            closes the gap where a post's mode was unknowable after this dialog scrolled past —
+            but this is still the last moment to catch "wait, is this going out publicly?" before
+            anything is sent, so the badge stays here as well. */}
         <div className="flex flex-wrap items-center gap-2">
           <Eye className="size-4 shrink-0 text-nx-text-muted" aria-hidden />
           <span className="text-nx-body-sm text-nx-text-secondary">

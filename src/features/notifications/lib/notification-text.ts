@@ -119,6 +119,12 @@ const MATCHERS: Record<NotificationType, readonly Match[]> = {
       ['project']
     ),
   ],
+  // Three moderation types surfaced by the same regen that closed B49 (04/09) — none can have a
+  // pre-`messageKey` row (they did not exist in the enum before V104 shipped), so there is no
+  // English template to match and the empty array is the correct, permanent entry, not a stub.
+  POST_REJECTED: [],
+  APPEAL_APPROVED: [],
+  APPEAL_REJECTED: [],
 };
 
 /**
@@ -155,6 +161,9 @@ const LINE_KEYS: Record<string, string> = {
   PROJECT_APPLICATION_ACCEPTED: 'notifications.line.PROJECT_APPLICATION_ACCEPTED',
   PROJECT_APPLICATION_REJECTED: 'notifications.line.PROJECT_APPLICATION_REJECTED',
   PROJECT_MEMBER_REMOVED: 'notifications.line.PROJECT_MEMBER_REMOVED',
+  POST_REJECTED: 'notifications.line.POST_REJECTED',
+  APPEAL_APPROVED: 'notifications.line.APPEAL_APPROVED',
+  APPEAL_REJECTED: 'notifications.line.APPEAL_REJECTED',
 };
 
 /**

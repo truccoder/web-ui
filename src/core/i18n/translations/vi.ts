@@ -506,6 +506,9 @@ export const vi: Messages = {
       PROJECT_APPLICATION_ACCEPTED: 'Đơn ứng tuyển dự án của bạn được nhận',
       PROJECT_APPLICATION_REJECTED: 'Đơn ứng tuyển dự án của bạn bị từ chối',
       PROJECT_MEMBER_REMOVED: 'Bạn bị loại khỏi một dự án',
+      POST_REJECTED: 'Một bài viết của bạn bị kiểm duyệt từ chối',
+      APPEAL_APPROVED: 'Khiếu nại của bạn được chấp nhận',
+      APPEAL_REJECTED: 'Khiếu nại của bạn bị từ chối',
     },
     /**
      * DÒNG NỘI DUNG THEO TỪNG TYPE — B41. Backend gửi `messageKey` (vd `POST_LIKED`) +
@@ -534,6 +537,12 @@ export const vi: Messages = {
       PROJECT_APPLICATION_ACCEPTED: 'Đơn ứng tuyển vào “${project}” của bạn đã được chấp nhận',
       PROJECT_APPLICATION_REJECTED: 'Đơn ứng tuyển vào “${project}” của bạn đã bị từ chối',
       PROJECT_MEMBER_REMOVED: 'Bạn đã bị loại khỏi nhóm của “${project}”',
+      // Không dùng biến — khác phần còn lại của khối này, hình dạng `messageArgs` thật của 3 loại
+      // này chưa được xác nhận qua sự kiện thật (xem ghi chú ở `NotificationType`), nên không giả
+      // định tên biến có thể backend không gửi.
+      POST_REJECTED: 'Một bài viết của bạn đã bị từ chối vì vi phạm quy định cộng đồng',
+      APPEAL_APPROVED: 'Khiếu nại của bạn đã được chấp nhận',
+      APPEAL_REJECTED: 'Khiếu nại của bạn đã bị từ chối',
     },
   },
 
@@ -1247,7 +1256,7 @@ export const vi: Messages = {
     showMore: 'Xem thêm',
     openInMaps: 'Mở trong Google Maps',
     commentCount: '${count} bình luận',
-    commentPlaceholder: 'Viết bình luận...',
+    commentPlaceholder: 'Bình luận...',
     send: 'Gửi',
     event: {
       status: {
@@ -1703,6 +1712,8 @@ export const vi: Messages = {
       requestSent: 'Đã gửi lời mời',
       suggestedForYou: 'Gợi ý cho bạn',
       mutualFriends: '${count} bạn chung',
+      sharedRole: 'Cùng làm ${role}',
+      matchedSkills: 'Cùng biết: ${skills}',
       empty: {
         title: 'Không có gợi ý nào',
         desc: 'Chúng tôi sẽ gợi ý thêm bạn bè khi có người phù hợp với bạn.',
@@ -1758,7 +1769,9 @@ export const vi: Messages = {
     appealsEmptyTitle: 'Chưa có khiếu nại nào',
     appealsEmptyDesc: 'Khiếu nại bạn gửi từ tab vi phạm sẽ hiện ở đây kèm kết quả.',
     appeal: 'Khiếu nại',
+    violationReason: 'Nguyên nhân:',
     viewPost: 'Xem bài viết gốc',
+    postDeleted: 'Bài viết gốc đã bị xoá',
     appealPending: 'Đã gửi khiếu nại, đang chờ xét',
     appealsTitle: 'Khiếu nại của bạn',
     appealTitle: 'Gửi khiếu nại',

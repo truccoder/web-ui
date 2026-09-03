@@ -242,7 +242,10 @@ export function ProfessionalProfileWizard({ onDone, nextHref }: ProfessionalProf
               {t('onboarding.professional.back')}
             </Button>
           ) : nextHref ? (
-            <Link href={nextHref} className="text-nx-body-sm text-nx-text-muted hover:underline">
+            <Link
+              href={nextHref}
+              className="text-nx-body-sm text-nx-text-muted hover:text-nx-text-primary"
+            >
               {t('onboarding.professional.skip')}
             </Link>
           ) : (

@@ -521,6 +521,9 @@ export const en = {
       PROJECT_APPLICATION_ACCEPTED: 'Your project application is accepted',
       PROJECT_APPLICATION_REJECTED: 'Your project application is declined',
       PROJECT_MEMBER_REMOVED: 'You are removed from a project',
+      POST_REJECTED: 'One of your posts is rejected by moderation',
+      APPEAL_APPROVED: 'Your appeal is approved',
+      APPEAL_REJECTED: 'Your appeal is rejected',
     },
     /**
      * THE INSTANCE LINE PER TYPE — B41. The backend sends `messageKey` (e.g. `POST_LIKED`) +
@@ -549,6 +552,12 @@ export const en = {
       PROJECT_APPLICATION_ACCEPTED: 'Your application to “${project}” was accepted',
       PROJECT_APPLICATION_REJECTED: 'Your application to “${project}” was declined',
       PROJECT_MEMBER_REMOVED: 'You were removed from the team on “${project}”',
+      // No variables — unlike the rest of this block, the exact `messageArgs` shape for these
+      // three has not been confirmed against a live event (see the note on `NotificationType`),
+      // so nothing here assumes a var name that might not be sent.
+      POST_REJECTED: 'One of your posts was rejected for violating community guidelines',
+      APPEAL_APPROVED: 'Your appeal was approved',
+      APPEAL_REJECTED: 'Your appeal was rejected',
     },
   },
 
@@ -1737,6 +1746,8 @@ export const en = {
       requestSent: 'Request Sent',
       suggestedForYou: 'Suggested for you',
       mutualFriends: '${count} mutual friend(s)',
+      sharedRole: 'Both in ${role}',
+      matchedSkills: 'Shared skills: ${skills}',
       empty: {
         title: 'No suggestions',
         desc: "We'll suggest friends when there are matching people for you.",
@@ -1793,7 +1804,9 @@ export const en = {
     appealsEmptyDesc:
       'An appeal you submit from the violations tab shows up here with its outcome.',
     appeal: 'Appeal',
+    violationReason: 'Reason:',
     viewPost: 'View the original post',
+    postDeleted: 'The original post has been deleted',
     appealPending: 'Appeal submitted, awaiting review',
     appealsTitle: 'Your appeals',
     appealTitle: 'Submit an appeal',

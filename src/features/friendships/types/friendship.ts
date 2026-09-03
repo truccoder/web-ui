@@ -1,4 +1,5 @@
 import type { components } from '@/core/api/schema.gen';
+import type { PrimaryRole } from '@/features/knowledge';
 
 type Schemas = components['schemas'];
 
@@ -31,13 +32,18 @@ export type FriendListResponse = {
 } & Pick<Required<RawFriendList>, 'hasMore' | 'totalCount'>;
 
 type RawPending = Schemas['PendingFriendRequestDto'];
-/** An incoming request. Only the requester's picture is nullable. */
-export type PendingFriendRequest = Required<Omit<RawPending, 'requesterProfilePictureUrl'>> & {
+/**
+ * An incoming request. The requester's picture is nullable (no photo), and so is their
+ * username — password sign-up never sets one, same as `FriendProfile.username`.
+ */
+export type PendingFriendRequest = Required<
+  Omit<RawPending, 'requesterProfilePictureUrl' | 'requesterUsername'>
+> & {
   requesterProfilePictureUrl?: string;
+  requesterUsername?: string;
 };
 
 type RawSent = Schemas['SentFriendRequestDto'];
-/** An outgoing request. Only the addressee's picture is nullable. */
 /**
  * One page of friend requests, incoming or outgoing.
  *
@@ -55,13 +61,28 @@ export type FriendRequestPage<T> = {
   hasMore: boolean;
 };
 
-export type SentFriendRequest = Required<Omit<RawSent, 'addresseeProfilePictureUrl'>> & {
+/** An outgoing request. The addressee's picture and username are both nullable, same reasons. */
+export type SentFriendRequest = Required<
+  Omit<RawSent, 'addresseeProfilePictureUrl' | 'addresseeUsername'>
+> & {
   addresseeProfilePictureUrl?: string;
+  addresseeUsername?: string;
 };
 
-/** A suggested person plus the mutual-friend count. */
+/**
+ * A suggested person plus why they're suggested: the mutual-friend count, always present, and
+ * three independent reason fields the backend added later (`docs/friendsuggestionsreasons.md`).
+ * Each of `sharedRole`/`matchedSkills`/`sharedHashtags` can be absent even when the others are
+ * set — there is no "at least one reason" guarantee, since ranking is by `mutualFriends` alone.
+ */
 export type FriendSuggestion = {
   profile: FriendProfile;
+  /** Same `PrimaryRole` as caller and candidate, or null if they differ or either has no profile. */
+  sharedRole: PrimaryRole | null;
+  /** Intersection of known tech stacks, cased as the caller wrote theirs. Empty, never null. */
+  matchedSkills: string[];
+  /** Hashtags on a PUBLIC+approved post from both people, capped at 5. Empty, never null. */
+  sharedHashtags: string[];
 } & Pick<Required<Schemas['FriendSuggestionDto']>, 'mutualFriends'>;
 
 /** Copied from the Java enum `FriendRequestStatus`. */

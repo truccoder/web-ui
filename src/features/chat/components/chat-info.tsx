@@ -121,7 +121,7 @@ export function ChatInfo({ header, media, className }: ChatInfoProps) {
             </Link>
             <Link
               href={profileHref}
-              className="text-nx-heading font-semibold text-nx-text-primary hover:underline"
+              className="text-nx-heading font-semibold text-nx-text-primary hover:text-nx-text-link-hover"
             >
               {name}
             </Link>
@@ -246,13 +246,12 @@ export function ChatInfo({ header, media, className }: ChatInfoProps) {
                   rel="noopener noreferrer"
                   download
                   className={cn(
-                    'flex items-center gap-2 rounded-nx-sm py-1 text-nx-body-sm text-nx-text-primary',
-                    'hover:underline',
+                    'group flex items-center gap-2 rounded-nx-sm py-1 text-nx-body-sm text-nx-text-primary',
                     'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring'
                   )}
                 >
                   <FileText className="size-4 shrink-0 text-nx-text-secondary" aria-hidden />
-                  <span className="min-w-0 flex-1 truncate">
+                  <span className="min-w-0 flex-1 truncate group-hover:text-nx-text-link-hover">
                     {item.name ?? t('chat.fileAttachment')}
                   </span>
                   {item.size != null && (
@@ -292,7 +291,9 @@ function MemberRow({
   const identity = (
     <>
       <Avatar src={member.image ?? undefined} name={label} size="sm" />
-      <span className="min-w-0 flex-1 truncate text-nx-body-sm text-nx-text-primary">{label}</span>
+      <span className="min-w-0 flex-1 truncate text-nx-body-sm text-nx-text-primary group-hover:text-nx-text-link-hover">
+        {label}
+      </span>
     </>
   );
 
@@ -306,7 +307,7 @@ function MemberRow({
         href={`/u/${encodeURIComponent(username)}`}
         aria-label={viewProfileLabel}
         className={cn(
-          'flex items-center gap-2 rounded-nx-sm py-1 hover:underline',
+          'group flex items-center gap-2 rounded-nx-sm py-1',
           'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring'
         )}
       >

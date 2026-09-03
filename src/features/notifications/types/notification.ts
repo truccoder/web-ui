@@ -72,6 +72,14 @@ export type AppNotification = {
  * `EVENT_REMINDER` CARRIES `actorId: null` — a scheduler raised it, so there is no person who did
  * it. Anything rendering an avatar from `actorId` must handle that; `AppNotification` already
  * leaves the field nullable, which is why nothing broke when the producer landed.
+ *
+ * The "ALL 9" above is now stale narration, not a current count — `COMMENT_LIKED`,
+ * `USER_MENTIONED`, `SKILL_VERIFIED`/`SKILL_REJECTED` and the three `PROJECT_*` types were added
+ * later (see the per-type comments on `TYPE_ICON` in `notification-item.tsx` and `MATCHERS` in
+ * `notification-text.ts`), and `POST_REJECTED`/`APPEAL_APPROVED`/`APPEAL_REJECTED` surfaced in the
+ * 04/09 schema regen that closed backend-plan B49. **Not independently confirmed**: this session
+ * had no backend checkout open, so their producers were not grepped the way the ones above were —
+ * their live presence in the OpenAPI enum is the only evidence they are shipped.
  */
 export type NotificationType = NonNullable<Schemas['NotificationResponseDto']['type']>;
 

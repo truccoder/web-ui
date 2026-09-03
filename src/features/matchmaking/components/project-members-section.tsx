@@ -87,7 +87,7 @@ function MemberRow({
         {href ? (
           <Link
             href={href}
-            className="block truncate text-nx-ui font-medium text-nx-text-primary hover:underline"
+            className="block truncate text-nx-ui font-medium text-nx-text-primary hover:text-nx-text-link-hover"
           >
             {name}
           </Link>

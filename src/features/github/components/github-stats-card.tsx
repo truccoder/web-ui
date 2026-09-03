@@ -120,7 +120,7 @@ export function GithubStatsCard({ userId, readOnly = false, className }: GithubS
             href={`https://github.com/${data.githubUsername}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="font-mono text-nx-ui font-medium text-nx-text-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
+            className="font-mono text-nx-ui font-medium text-nx-text-primary hover:text-nx-text-link-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
           >
             {data.githubUsername}
           </a>

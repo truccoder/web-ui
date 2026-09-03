@@ -107,7 +107,7 @@ export function BookActions({ bookId, title, fileFormat, isFree }: BookActionsPr
               href={previewUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-nx-caption text-nx-text-link hover:underline"
+              className="text-nx-caption text-nx-text-link hover:text-nx-text-link-hover"
             >
               {t('post.book.openPreview')}
             </a>

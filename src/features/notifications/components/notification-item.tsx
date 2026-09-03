@@ -8,6 +8,8 @@ import {
   Heart,
   MessageSquare,
   MessageSquareQuote,
+  ShieldAlert,
+  ShieldCheck,
   ShieldX,
   ShoppingBag,
   Star,
@@ -92,6 +94,13 @@ const TYPE_ICON: Record<NotificationType, LucideIcon> = {
   PROJECT_APPLICATION_ACCEPTED: UserRoundCheck,
   PROJECT_APPLICATION_REJECTED: UserRoundX,
   PROJECT_MEMBER_REMOVED: UserRoundMinus,
+  // Surfaced by the same schema regen that closed B49 (04/09) — three moderation types the
+  // exhaustive `Record` caught immediately. `Shield*` rather than reusing `ShieldX` for both
+  // rejections: a post rejection and a declined appeal are different decisions even though both
+  // read as "no", and `APPEAL_APPROVED` needs its own positive counterpart to `ShieldX`.
+  POST_REJECTED: ShieldAlert,
+  APPEAL_APPROVED: ShieldCheck,
+  APPEAL_REJECTED: ShieldX,
 };
 
 /**
@@ -138,6 +147,18 @@ function hrefFor(notification: AppNotification): string | null {
    */
   if (notification.type === 'SKILL_VERIFIED' || notification.type === 'SKILL_REJECTED') {
     return '/profile';
+  }
+
+  /**
+   * MODERATION DECISIONS LAND ON `/moderation`, NOT ON THE RAW REFERENCE, same reasoning as
+   * skill decisions above: the actionable surface (the violation record with its appeal button,
+   * or the decided appeal with the reviewer's note) is more useful than the bare post, and for
+   * `POST_REJECTED` the post itself may no longer be visible in its usual places. Deep-linked via
+   * `useTabParam` on `ModerationPage`, same as the friendship routes above.
+   */
+  if (notification.type === 'POST_REJECTED') return '/moderation?tab=violations';
+  if (notification.type === 'APPEAL_APPROVED' || notification.type === 'APPEAL_REJECTED') {
+    return '/moderation?tab=appeals';
   }
 
   const { referenceType, referenceId } = notification;

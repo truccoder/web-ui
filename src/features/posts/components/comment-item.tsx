@@ -131,7 +131,7 @@ function withMentions(content: string): React.ReactNode {
       <Link
         key={start}
         href={`/u/${encodeURIComponent(handle)}`}
-        className="font-medium text-nx-text-accent hover:underline"
+        className="font-medium text-nx-text-accent hover:text-nx-text-link-hover"
       >
         @{handle}
       </Link>

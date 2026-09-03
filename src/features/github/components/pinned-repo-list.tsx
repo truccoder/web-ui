@@ -51,7 +51,7 @@ export function PinnedRepoList({ repos, className }: PinnedRepoListProps) {
                 rel="noopener noreferrer"
                 className="flex h-full flex-col gap-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
               >
-                <span className="font-mono text-nx-body-sm font-medium text-nx-text-primary hover:underline">
+                <span className="font-mono text-nx-body-sm font-medium text-nx-text-primary hover:text-nx-text-link-hover">
                   {repo.name}
                 </span>
 

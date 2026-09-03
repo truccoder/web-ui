@@ -128,6 +128,7 @@ export function FriendRequests({ tabSize = 'md' }: FriendRequestsProps = {}) {
                   <FriendListItem
                     name={req.requesterFullName}
                     avatarUrl={req.requesterProfilePictureUrl}
+                    href={req.requesterUsername}
                     subtitle={formatDate(req.createdAt)}
                     actions={
                       <>
@@ -177,6 +178,7 @@ export function FriendRequests({ tabSize = 'md' }: FriendRequestsProps = {}) {
                   <FriendListItem
                     name={req.addresseeFullName}
                     avatarUrl={req.addresseeProfilePictureUrl}
+                    href={req.addresseeUsername}
                     subtitle={t('friends.requests.awaiting')}
                     actions={
                       <Button

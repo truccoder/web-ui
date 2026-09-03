@@ -142,7 +142,7 @@ export function CommentPreview({ postId, commentCount, className }: CommentPrevi
                   {authorHref ? (
                     <Link
                       href={authorHref}
-                      className="font-medium text-nx-text-primary hover:underline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-nx-focus-ring"
+                      className="font-medium text-nx-text-primary hover:text-nx-text-link-hover focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-nx-focus-ring"
                     >
                       {comment.authorFullName ?? t('post.comments.unknownAuthor')}
                     </Link>
@@ -156,14 +156,14 @@ export function CommentPreview({ postId, commentCount, className }: CommentPrevi
                       pay for a `ResizeObserver` on every comment of every card in the feed. */}
                   <Link
                     href={href}
-                    className="line-clamp-2 text-nx-text-secondary hover:underline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-nx-focus-ring"
+                    className="line-clamp-2 text-nx-text-secondary hover:text-nx-text-primary focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-nx-focus-ring"
                   >
                     {comment.content}
                   </Link>
                 </span>
                 <Link
                   href={href}
-                  className="shrink-0 text-nx-caption text-nx-text-faint hover:underline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-nx-focus-ring"
+                  className="shrink-0 text-nx-caption text-nx-text-faint hover:text-nx-text-primary focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-nx-focus-ring"
                 >
                   {relativeTime(comment.createdAt)}
                 </Link>

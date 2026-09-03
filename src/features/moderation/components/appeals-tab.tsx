@@ -139,7 +139,7 @@ function AppealRow({ appeal }: { appeal: Appeal }) {
         {appeal.username ? (
           <Link
             href={`/u/${encodeURIComponent(appeal.username)}`}
-            className="text-nx-caption text-nx-text-muted hover:underline"
+            className="text-nx-caption text-nx-text-muted hover:text-nx-text-primary"
           >
             {appeal.userFullName} · @{appeal.username}
           </Link>

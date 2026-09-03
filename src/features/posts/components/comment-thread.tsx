@@ -375,7 +375,7 @@ export function CommentThread({
           className={cn(
             'self-start rounded-nx-sm px-1 py-1 text-nx-body-sm text-nx-text-muted',
             'transition-colors duration-[var(--nx-duration-fast)] ease-nx-out',
-            'hover:text-nx-text-primary hover:underline disabled:opacity-50',
+            'hover:text-nx-text-primary disabled:opacity-50',
             'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring'
           )}
         >

@@ -43,8 +43,8 @@ export {
   type ProjectDetailProps,
   PositionCard,
   type PositionCardProps,
-  JobDescriptionDialog,
-  type JobDescriptionDialogProps,
+  // `JobDescriptionDialog` is deliberately not exported here — see the comment in
+  // `components/index.ts`; it must stay behind `PositionCard`'s `next/dynamic({ ssr: false })`.
   PositionFormFields,
   type PositionFormFieldsProps,
   MyApplications,

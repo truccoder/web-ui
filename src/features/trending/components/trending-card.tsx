@@ -125,7 +125,7 @@ export function TrendingCard({ item, className }: TrendingCardProps) {
               'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring'
             )}
           >
-            <h3 className="text-nx-ui font-semibold text-nx-text-primary group-hover:underline">
+            <h3 className="text-nx-ui font-semibold text-nx-text-primary group-hover:text-nx-text-link-hover">
               {item.title ?? t('trending.untitled')}
             </h3>
             {/* eslint-disable-next-line no-restricted-syntax --

@@ -97,7 +97,7 @@ function ApplicationRow({ application }: { application: ProjectApplication }) {
         {canWithdraw && (
           <Button
             size="sm"
-            variant="ghost"
+            variant="secondary"
             className="ml-auto"
             loading={withdraw.isPending}
             onClick={() => {
@@ -113,7 +113,10 @@ function ApplicationRow({ application }: { application: ProjectApplication }) {
       <p className="text-nx-ui text-nx-text-primary">
         {/* The project is reachable, so its title is the link — an application row with no way
             back to what it is about would make the reader search for it by name. */}
-        <Link href={`/projects/${application.projectId}`} className="font-medium hover:underline">
+        <Link
+          href={`/projects/${application.projectId}`}
+          className="font-medium hover:text-nx-text-link-hover"
+        >
           {application.projectTitle}
         </Link>
         {application.positionTitle && (

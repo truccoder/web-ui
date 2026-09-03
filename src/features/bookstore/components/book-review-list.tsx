@@ -5,8 +5,7 @@ import Link from 'next/link';
 import { Avatar, Badge, EmptyState, Skeleton } from '@/shared/components';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { useT } from '@/core/i18n';
-import { useReputation } from '@/features/reputation';
-import { useMyProfile, usePublicProfile, type UserProfile } from '@/features/security';
+import { useMyProfile } from '@/features/security';
 import { useBookReviews } from '../hooks';
 import type { BookReview } from '../types/book';
 import { StarRating } from './star-rating';
@@ -14,25 +13,19 @@ import { StarRating } from './star-rating';
 /**
  * Every review on a book, each row named with the reader who wrote it.
  *
- * SHOWING THE REVIEWER WAS A CEILING UNTIL B38. `BookReviewResponseDto` still carries only
- * `userId` — no name, no handle, no avatar — and `/users/{username}/profile` is keyed by handle,
- * so for a long time a review could show its stars and its text but not its author (the same
- * family as `/attendees` in `posts`). `ReputationResponseDto.username` (B38, 02/09/2026) is the
- * bridge: `userId` → reputation → `username` → the public profile, which carries `fullName` and
- * `profilePictureUrl`. Each non-self row therefore costs two extra requests — acceptable on a
- * detail page with a handful of reviews, and logged as backend-debt B45 (put the author fields on
- * the review DTO directly, the same join `FeedPostDataDto` and, since B22, `CommentResponseDto`
- * already do).
+ * `BookReviewResponseDto` now carries `authorUsername`/`authorFullName`/`authorProfilePictureUrl`
+ * directly (backend-debt B45, closed 04/09) — reviews used to name only `userId`, so every non-self
+ * row cost two extra requests bridging id → reputation → public profile (B38). That bridge is gone;
+ * every row, including the reader's own, reads identity straight off the review payload now.
  *
- * WHEN THE BRIDGE IS EMPTY THE ROW STAYS ANONYMOUS rather than linking nowhere — `username` is
- * null for anyone who registered with a password (`AuthService.register` never sets one), so
- * those rows render a neutral avatar and the "A reader" label with no link, exactly the
- * fallback rule B13/B21/B35 and `ChatInfo` follow.
+ * WHEN THE AUTHOR HAS NO HANDLE the row stays anonymous rather than linking nowhere —
+ * `authorUsername` is null for anyone who registered with a password (`AuthService.register` never
+ * sets one), so those rows render a neutral avatar and the "A reader" label with no link, exactly
+ * the fallback rule B13/B21/B35 and `ChatInfo` follow.
  *
- * THE READER'S OWN REVIEW IS MARKED AND SORTED FIRST. `GET /profile/me` gives the id to match on;
- * the row it matches is tagged "Your review" and its identity is drawn from the profile already
- * loaded, with no reputation/profile lookup of its own. The composing page reads the same match to
- * pre-fill the form.
+ * THE READER'S OWN REVIEW IS STILL MARKED AND SORTED FIRST. `GET /profile/me` gives the id to match
+ * on; the row it matches is tagged "Your review" and pushed to the top. The composing page reads the
+ * same match to pre-fill the form.
  *
  * The timestamp is still NOT shown. The endpoint upserts and `createdAt` does not move when a
  * review is edited (measured) — there is no `updatedAt` at all, so a date here would claim a
@@ -84,7 +77,6 @@ export function BookReviewList({ bookId, enabled = true }: BookReviewListProps) 
           key={review.id}
           review={review}
           mine={me?.id != null && review.userId === me.id}
-          myProfile={me}
         />
       ))}
     </ul>
@@ -94,23 +86,14 @@ export function BookReviewList({ bookId, enabled = true }: BookReviewListProps) 
 interface ReviewRowProps {
   review: BookReview;
   mine: boolean;
-  myProfile: UserProfile | undefined;
 }
 
-function ReviewRow({ review, mine, myProfile }: ReviewRowProps) {
+function ReviewRow({ review, mine }: ReviewRowProps) {
   const t = useT();
 
-  // The reader's own identity is already in hand; look everyone else up. `useReputation` is
-  // disabled by its own `enabled` gate when the id is undefined, so a review with a null `userId`
-  // (should not happen, but the DTO allows it) simply stays anonymous.
-  const { data: reputation } = useReputation(mine ? undefined : (review.userId ?? undefined));
-  const username = mine ? myProfile?.username : reputation?.username;
-  const { data: publicProfile } = usePublicProfile(mine ? '' : (username ?? ''));
-
-  const fullName = mine ? myProfile?.fullName : (publicProfile?.fullName ?? undefined);
-  const picture = mine
-    ? myProfile?.profilePictureUrl
-    : (publicProfile?.profilePictureUrl ?? undefined);
+  const fullName = review.authorFullName ?? undefined;
+  const username = review.authorUsername ?? undefined;
+  const picture = review.authorProfilePictureUrl ?? undefined;
 
   const displayName = fullName || (username ? `@${username}` : t('post.book.anonymousReviewer'));
   // `encodeURIComponent` — a handle is user-chosen text, not a slug this app minted (same rule as
@@ -133,7 +116,7 @@ function ReviewRow({ review, mine, myProfile }: ReviewRowProps) {
           {href ? (
             <Link
               href={href}
-              className="truncate text-nx-caption font-medium text-nx-text-primary hover:underline"
+              className="truncate text-nx-caption font-medium text-nx-text-primary hover:text-nx-text-link-hover"
             >
               {displayName}
             </Link>

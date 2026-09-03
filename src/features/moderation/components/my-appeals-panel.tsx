@@ -1,6 +1,7 @@
 'use client';
 
-import { ApiErrorNotice, Badge, Card, EmptyState, Skeleton } from '@/shared/components';
+import { ExternalLink } from 'lucide-react';
+import { ApiErrorNotice, Badge, ButtonLink, Card, EmptyState, Skeleton } from '@/shared/components';
 import { formatDate, useIntlLocale } from '@/shared/lib/format';
 import { useT } from '@/core/i18n';
 import type { Appeal } from '../types/moderation';
@@ -31,12 +32,35 @@ function AppealRow({ appeal, localeTag }: { appeal: Appeal; localeTag: string })
             {t(`moderationMine.status.${appeal.status}`)}
           </Badge>
         )}
+        {appeal.violationType && (
+          <Badge variant="danger">{t(`moderation.violation.${appeal.violationType}`)}</Badge>
+        )}
         {appeal.createdAt && (
           <span className="text-nx-caption text-nx-text-muted">
             {formatDate(appeal.createdAt, localeTag)}
           </span>
         )}
       </div>
+
+      {/* WHICH VIOLATION THIS APPEAL IS ABOUT. `AppealDto` carries `violationType` and
+          `violationDescription` (B22-era fields the row simply never read) plus, since B50,
+          `postId`/`postExcerpt` — the same pair `UserViolationDto` got from B47, and for the same
+          reason: someone deciding whether a "Đã từ chối" appeal was fair needs to reread what was
+          actually flagged, not just their own argument for why it wasn't a violation. */}
+      {appeal.postExcerpt && (
+        <p className="line-clamp-3 border-l-2 border-nx-border-default pl-3 text-nx-body-sm text-nx-text-secondary">
+          {appeal.postExcerpt}
+        </p>
+      )}
+
+      {appeal.violationDescription && (
+        <p className="text-nx-body-sm text-nx-text-secondary">
+          <span className="font-medium text-nx-text-primary">
+            {t('moderationMine.violationReason')}
+          </span>{' '}
+          {appeal.violationDescription}
+        </p>
+      )}
 
       {appeal.reason && <p className="text-nx-body-sm text-nx-text-secondary">{appeal.reason}</p>}
 
@@ -46,6 +70,24 @@ function AppealRow({ appeal, localeTag }: { appeal: Appeal; localeTag: string })
         <p className="rounded-nx-sm bg-nx-surface-sunken px-3 py-2 text-nx-body-sm text-nx-text-primary">
           {appeal.reviewerNote}
         </p>
+      )}
+
+      {appeal.postId != null ? (
+        <ButtonLink
+          href={`/posts/${appeal.postId}`}
+          size="sm"
+          variant="ghost"
+          icon={<ExternalLink className="size-4" aria-hidden />}
+          className="w-fit"
+        >
+          {t('moderationMine.viewPost')}
+        </ButtonLink>
+      ) : (
+        appeal.postExcerpt && (
+          <span className="text-nx-caption text-nx-text-muted">
+            {t('moderationMine.postDeleted')}
+          </span>
+        )
       )}
     </div>
   );
