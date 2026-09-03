@@ -46,8 +46,25 @@ export function VaultNoteList() {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-nx-title-sm text-nx-text-primary">{t('knowledge.vault.title')}</h2>
+      {/**
+       * NO `<h2>` HERE ANY MORE — report §3.6 (C001).
+       *
+       * `/settings/vault` rendered the heading TWICE: this one, from `knowledge.vault.title`, sat
+       * directly under the `<Section>` heading the page wraps this component in, from
+       * `settings.vault.title`. Two different i18n keys carrying the identical Vietnamese string
+       * `'Ghi chú đã đồng bộ'` (`vi.ts:117` and `vi.ts:1544`), one above the other, each with its
+       * own and slightly contradictory description of the same thing.
+       *
+       * The cause is written in the page's own note: this block was MOVED here from `/knowledge`,
+       * and it brought its heading with it while the destination supplied one of its own. The
+       * component keeps the row — the clear-all button lives on it — and gives up the title, which
+       * now belongs to whoever mounts it.
+       *
+       * `scripts/i18n-parity.mjs` could not have caught this: it compares vi against en and their
+       * placeholders, not two keys against each other, and it has no idea which keys land on one
+       * screen together.
+       */}
+      <div className="flex items-center justify-end gap-3">
         {notes.length > 0 && (
           <Button
             size="sm"

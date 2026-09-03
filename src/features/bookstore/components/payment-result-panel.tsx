@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import Link from 'next/link';
 import {
   BookOpen,
   CheckCircle2,
@@ -12,7 +11,7 @@ import {
   RotateCw,
   XCircle,
 } from 'lucide-react';
-import { Button } from '@/shared/components';
+import { Button, ButtonLink } from '@/shared/components';
 import { useT } from '@/core/i18n';
 import { forgetPendingPayment, pendingPaymentExpiresAt } from '../lib/pending-payment';
 import { useDevSettlePayment, usePendingPaymentByRef, useSyncPaymentStatus } from '../hooks';
@@ -363,14 +362,14 @@ export function PaymentResultPanel({ transactionRef, mode = 'confirm' }: Payment
             cache clear) has no note to read the book id out of, and a link that cannot name its
             destination is worse than the newsfeed. */}
         {phase === 'paid' && settledBookId !== null && (
-          <Link href={`/books/${settledBookId}`}>
-            <Button icon={<BookOpen className="h-4 w-4" />}>{t('payment.backToBook')}</Button>
-          </Link>
+          <ButtonLink href={`/books/${settledBookId}`} icon={<BookOpen className="h-4 w-4" />}>
+            {t('payment.backToBook')}
+          </ButtonLink>
         )}
 
-        <Link href="/newsfeed">
-          <Button variant="ghost">{t('payment.backToNewsfeed')}</Button>
-        </Link>
+        <ButtonLink href="/newsfeed" variant="ghost">
+          {t('payment.backToNewsfeed')}
+        </ButtonLink>
       </div>
     </div>
   );

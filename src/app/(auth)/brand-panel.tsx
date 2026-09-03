@@ -149,7 +149,7 @@ export function BrandPanel() {
             lands. The two caps are written in different units because they are measuring different
             type, but they are chosen to agree: a console visibly narrower than the sentence above
             it reads as an inset quote instead of as the panel's second block. */}
-        <div className="max-w-[54ch] rounded-nx-md border border-nx-brand-ink-line bg-nx-brand-ink-block p-5 font-mono text-nx-code">
+        <div className="max-w-[54ch] rounded-nx-md border border-nx-brand-ink-line bg-nx-brand-ink-block py-[var(--nx-space-pad-y)] px-[var(--nx-space-pad)] font-mono text-nx-code">
           <Line tone="text">
             {/* The prompt glyph is faint so the command reads as the content of the line rather
                 than competing with it. */}

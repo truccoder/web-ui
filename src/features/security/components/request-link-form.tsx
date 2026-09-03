@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Link from 'next/link';
 import { ArrowLeft, KeyRound, Mail, Sparkles } from 'lucide-react';
-import { Button, Input } from '@/shared/components';
+import { Button, ButtonLink, Input } from '@/shared/components';
 import { AuthCard } from './auth-card';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { useT } from '@/core/i18n';
@@ -64,11 +64,9 @@ export function RequestLinkForm({ variant }: RequestLinkFormProps) {
           <h1 className="text-nx-title font-semibold text-nx-text-primary">{tk('successTitle')}</h1>
           <p className="text-nx-body-sm text-nx-text-secondary">{tk('successDesc')}</p>
         </div>
-        <Link href="/login" className="mt-5 block">
-          <Button variant="secondary" icon={<ArrowLeft />} className="w-full">
-            {tk('backToLogin')}
-          </Button>
-        </Link>
+        <ButtonLink href="/login" variant="secondary" icon={<ArrowLeft />} className="mt-5 w-full">
+          {tk('backToLogin')}
+        </ButtonLink>
       </AuthCard>
     );
   }

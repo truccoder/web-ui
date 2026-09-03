@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { CheckCircle2, ShieldCheck, XCircle } from 'lucide-react';
-import { Button, Input } from '@/shared/components';
+import { Button, ButtonLink, Input } from '@/shared/components';
 import { AuthCard } from './auth-card';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { useT } from '@/core/i18n';
@@ -47,11 +47,9 @@ export function ResetPasswordForm() {
             {t('auth.resetPassword.invalidDesc')}
           </p>
         </div>
-        <Link href="/forgot-password" className="mt-5 block">
-          <Button variant="secondary" className="w-full">
-            {t('auth.resetPassword.requestNewLink')}
-          </Button>
-        </Link>
+        <ButtonLink href="/forgot-password" variant="secondary" className="mt-5 w-full">
+          {t('auth.resetPassword.requestNewLink')}
+        </ButtonLink>
       </AuthCard>
     );
   }
@@ -70,9 +68,9 @@ export function ResetPasswordForm() {
             {t('auth.resetPassword.successDesc')}
           </p>
         </div>
-        <Link href="/login" className="mt-5 block">
-          <Button className="w-full">{t('auth.resetPassword.continue')}</Button>
-        </Link>
+        <ButtonLink href="/login" className="mt-5 w-full">
+          {t('auth.resetPassword.continue')}
+        </ButtonLink>
       </AuthCard>
     );
   }

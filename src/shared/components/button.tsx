@@ -1,4 +1,5 @@
 import * as React from 'react';
+import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/shared/lib/cn';
 
@@ -85,17 +86,46 @@ export function Button({
       type={type}
       disabled={isDisabled}
       aria-busy={loading || undefined}
-      className={cn(
-        'inline-flex items-center justify-center rounded-nx-sm font-medium',
-        'transition-colors duration-[var(--nx-duration-fast)] ease-nx-out',
-        'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring',
-        'disabled:pointer-events-none disabled:opacity-50',
-        sizeStyles[size],
-        variantStyles[variant],
-        className
-      )}
+      className={buttonClasses({ variant, size, className })}
       {...props}
     >
+      <ButtonContent loading={loading} icon={icon}>
+        {children}
+      </ButtonContent>
+    </button>
+  );
+}
+
+/**
+ * The button's look, without the button.
+ *
+ * EXTRACTED FOR `ButtonLink` BELOW, which is the only reason it exists — the styling had to stop
+ * being welded to a `<button>` element so that a NAVIGATION could wear it. Nothing else changed:
+ * `Button` calls this and renders exactly what it rendered before.
+ */
+export function buttonClasses({
+  variant = 'primary',
+  size = 'md',
+  className,
+}: Pick<ButtonProps, 'variant' | 'size' | 'className'>) {
+  return cn(
+    'inline-flex items-center justify-center rounded-nx-sm font-medium',
+    'transition-colors duration-[var(--nx-duration-fast)] ease-nx-out',
+    'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring',
+    'disabled:pointer-events-none disabled:opacity-50',
+    sizeStyles[size],
+    variantStyles[variant],
+    className
+  );
+}
+
+function ButtonContent({
+  loading,
+  icon,
+  children,
+}: Pick<ButtonProps, 'loading' | 'icon' | 'children'>) {
+  return (
+    <>
       {loading ? (
         <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden />
       ) : (
@@ -106,6 +136,43 @@ export function Button({
         )
       )}
       {children}
-    </button>
+    </>
+  );
+}
+
+export interface ButtonLinkProps
+  extends
+    Omit<React.ComponentPropsWithoutRef<typeof Link>, 'className'>,
+    Pick<ButtonProps, 'variant' | 'size' | 'icon' | 'className'> {}
+
+/**
+ * A LINK THAT LOOKS LIKE A BUTTON — and the point is that it is ONE element, not two.
+ *
+ * `docs/ui-audit-report.md` §3.8 (F001) found `<Link><Button>…</Button></Link>` at 21 sites,
+ * including `shared/api-error-notice.tsx`, which put it into every error state in the product.
+ * A `<button>` inside an `<a>` is invalid HTML — interactive content may not nest — and the
+ * consequence was measured with the keyboard rather than inferred: Tab stopped on the anchor,
+ * then stopped AGAIN on the button inside it, same label, one destination. A screen reader reads
+ * that as "link, Yêu cầu link mới… button, Yêu cầu link mới".
+ *
+ * The fix is not to style an anchor by hand — that is how the two drift apart — but to let the
+ * anchor wear the button's own classes, which is what `buttonClasses` above is for.
+ *
+ * NO `loading` AND NO `disabled`. A navigation has no pending state to report and cannot be
+ * disabled in any meaningful way; a control that needs either is a `Button` doing work, not a
+ * link. Leaving them off keeps that distinction visible at the call site.
+ */
+export function ButtonLink({
+  variant,
+  size,
+  icon,
+  className,
+  children,
+  ...props
+}: ButtonLinkProps) {
+  return (
+    <Link className={buttonClasses({ variant, size, className })} {...props}>
+      <ButtonContent icon={icon}>{children}</ButtonContent>
+    </Link>
   );
 }

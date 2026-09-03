@@ -1346,6 +1346,9 @@ export const en = {
      chrome (a wizard, not the summary-first form). */
   onboarding: {
     professional: {
+      /* The browser-tab title. Report G001: this route had no metadata at all and
+         reported the root layout's bare product name — see its `layout.tsx`. */
+      pageTitle: 'Set up your professional profile',
       stepOf: 'Step ${step} of ${total}',
       progressLabel: 'Setup progress',
       back: 'Back',
@@ -2005,6 +2008,9 @@ export const en = {
   },
 
   bookDetail: {
+    /* Accessible name for each bar in the rating breakdown — the bars became real
+       `ProgressBar`s (report B002) and a progressbar needs a label. */
+    ratingBarLabel: '${stars} stars',
     back: 'Back to the library',
     untitled: 'Untitled book',
     pages: 'Pages',

@@ -1,5 +1,11 @@
 export { BrandMark, type BrandMarkProps } from './brand-mark';
-export { Button, type ButtonProps } from './button';
+export {
+  Button,
+  ButtonLink,
+  buttonClasses,
+  type ButtonProps,
+  type ButtonLinkProps,
+} from './button';
 export { Input, type InputProps } from './input';
 export { Card, type CardProps } from './card';
 export { Dialog, type DialogProps } from './dialog';

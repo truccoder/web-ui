@@ -1,10 +1,9 @@
 'use client';
 
 import * as React from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Clock, Download, ShoppingCart } from 'lucide-react';
-import { Button } from '@/shared/components';
+import { Button, ButtonLink } from '@/shared/components';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { useT } from '@/core/i18n';
 import { extractOrderId, rememberPendingPayment } from '../lib/pending-payment';
@@ -106,11 +105,15 @@ export function BookPurchaseButton({ bookId, isFree, onDownloadReady }: BookPurc
     <div className="flex flex-col items-start gap-1">
       <div className="flex flex-wrap items-center gap-2">
         {pending && statusHref && (
-          <Link href={statusHref}>
-            <Button size="sm" variant="secondary" icon={<Clock className="h-3.5 w-3.5" />}>
-              {pending.recovered ? t('post.book.checkPayment') : t('post.book.resumePayment')}
-            </Button>
-          </Link>
+          <ButtonLink
+            href={statusHref}
+            size="sm"
+            variant="secondary"
+            icon={<Clock />}
+            className="h-3.5 w-3.5"
+          >
+            {pending.recovered ? t('post.book.checkPayment') : t('post.book.resumePayment')}
+          </ButtonLink>
         )}
 
         {(!pending || pending.recovered) && (

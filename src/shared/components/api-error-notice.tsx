@@ -1,11 +1,10 @@
 'use client';
 
-import Link from 'next/link';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { useT } from '@/core/i18n';
 import { cn } from '@/shared/lib/cn';
 import { resolveApiError } from '@/shared/lib/resolve-api-error';
-import { Button } from './button';
+import { Button, ButtonLink } from './button';
 import { EmptyState } from './empty-state';
 
 /**
@@ -62,11 +61,9 @@ export function ApiErrorNotice({
 
   const link =
     view.href && view.hrefLabelKey ? (
-      <Link href={view.href}>
-        <Button variant="secondary" size="sm">
-          {t(view.hrefLabelKey)}
-        </Button>
-      </Link>
+      <ButtonLink href={view.href} variant="secondary" size="sm">
+        {t(view.hrefLabelKey)}
+      </ButtonLink>
     ) : null;
 
   if (variant === 'inline' || view.tone === 'banner') {

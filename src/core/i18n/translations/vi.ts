@@ -1319,6 +1319,9 @@ export const vi: Messages = {
      tóm tắt trước). */
   onboarding: {
     professional: {
+      /* The browser-tab title. Report G001: this route had no metadata at all and
+         reported the root layout's bare product name — see its `layout.tsx`. */
+      pageTitle: 'Thiết lập hồ sơ nghề nghiệp',
       stepOf: 'Bước ${step} / ${total}',
       progressLabel: 'Tiến độ thiết lập',
       back: 'Quay lại',
@@ -1968,6 +1971,9 @@ export const vi: Messages = {
   },
 
   bookDetail: {
+    /* Accessible name for each bar in the rating breakdown — the bars became real
+       `ProgressBar`s (report B002) and a progressbar needs a label. */
+    ratingBarLabel: '${stars} sao',
     back: 'Về thư viện',
     untitled: 'Sách chưa đặt tên',
     pages: 'Số trang',

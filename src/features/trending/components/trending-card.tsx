@@ -128,6 +128,9 @@ export function TrendingCard({ item, className }: TrendingCardProps) {
             <h3 className="text-nx-ui font-semibold text-nx-text-primary group-hover:underline">
               {item.title ?? t('trending.untitled')}
             </h3>
+            {/* eslint-disable-next-line no-restricted-syntax --
+                R10 §3.2 exception: optical correction on an inline icon — the same external-link
+                arrow, and the same reason, as `ledger.tsx`. */}
             <ArrowUpRight className="mt-0.5 size-3.5 shrink-0 text-nx-text-muted" aria-hidden />
           </a>
         ) : (

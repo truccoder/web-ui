@@ -53,7 +53,19 @@ function ProjectDetailContent() {
   const backTo = safeBackTo(searchParams.get(BACK_TO_PARAM));
 
   return (
-    <div className="flex flex-col gap-[var(--nx-space-section)]">
+    /**
+     * THE BLOCK RUNG, NOT THE SECTION RUNG — the same argument `posts/[id]/page.tsx:94` already
+     * carries, applied to the page that did not know about it. Report §3.3 (B001).
+     *
+     * `--nx-space-section` (40) separates two things that each stand on their own. This column
+     * has exactly two children — the way BACK OUT of the project, and the project — so there is
+     * no section ↔ section pair here for 40 to be the distance of; it was only ever paying for
+     * "link → content", and at 40 the link floats in the middle of nothing with the content
+     * starting below the first comfortable line.
+     *
+     * The sections *inside* `ProjectDetail` keep their own 40. This is the boundary above them.
+     */
+    <div className="flex flex-col gap-[var(--nx-space-block)]">
       <Link
         href={backTo ?? '/projects'}
         className="inline-flex w-fit items-center gap-2 text-nx-body-sm text-nx-text-muted hover:text-nx-text-primary"

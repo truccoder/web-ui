@@ -302,6 +302,10 @@ export function MentionTextarea({
             {mentionRows.map((row, index) => (
               <li key={row.id}>
                 {index > 0 && mentionRows[index - 1].isFriend && !row.isFriend && (
+                  // R10 §3.2 EXCEPTION: this element is the hairline separator itself, so the
+                  // margin is its breathing room rather than a nudge standing in for one. The
+                  // same case, with the same reasoning, as `shared/components/menu.tsx`.
+                  // eslint-disable-next-line no-restricted-syntax -- the hairline's own breathing room
                   <div className="my-1 h-px bg-nx-border-subtle" />
                 )}
                 <button

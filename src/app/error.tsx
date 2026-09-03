@@ -1,9 +1,8 @@
 'use client';
 
 import { useEffect } from 'react';
-import Link from 'next/link';
 import { AlertTriangle } from 'lucide-react';
-import { Button, EmptyState } from '@/shared/components';
+import { Button, ButtonLink, EmptyState } from '@/shared/components';
 import { useT } from '@/core/i18n';
 
 /**
@@ -59,9 +58,9 @@ export default function AppError({
           action={
             <div className="flex items-center gap-2">
               <Button onClick={reset}>{t('error.retry')}</Button>
-              <Link href="/newsfeed">
-                <Button variant="secondary">{t('error.goHome')}</Button>
-              </Link>
+              <ButtonLink href="/newsfeed" variant="secondary">
+                {t('error.goHome')}
+              </ButtonLink>
             </div>
           }
         />

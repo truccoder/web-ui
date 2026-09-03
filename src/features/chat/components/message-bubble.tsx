@@ -58,6 +58,11 @@ export function MessageBubble({
         'flex items-end gap-2',
         isOwn ? 'flex-row-reverse' : 'flex-row',
         // Runs sit tight; a new speaker gets air.
+        // THE TRANSCRIPT HAS ITS OWN COURSE. R9 §1.3 and R14 §4 give the message list a
+        // separate vertical ladder, and R10 scopes this rule out of the transcript
+        // explicitly via `[data-nx-transcript]`. These two values are that course: `turn`
+        // between speakers, `utterance` within one speaker's run.
+        // eslint-disable-next-line no-restricted-syntax -- the transcript's own course
         position === 'single' || position === 'first' ? 'mt-3' : 'mt-0.5',
         className
       )}

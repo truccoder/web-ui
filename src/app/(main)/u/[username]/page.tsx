@@ -2,9 +2,8 @@
 
 import { Suspense } from 'react';
 import { useParams } from 'next/navigation';
-import Link from 'next/link';
 import {
-  Button,
+  ButtonLink,
   Card,
   EmptyState,
   ProfileHero,
@@ -213,9 +212,9 @@ function PublicProfileContent() {
            by the one thing that would make them available. */
         actions={
           isGuest ? (
-            <Link href={registerHref}>
-              <Button variant="secondary">{t('guest.profile.join')}</Button>
-            </Link>
+            <ButtonLink href={registerHref} variant="secondary">
+              {t('guest.profile.join')}
+            </ButtonLink>
           ) : (
             profile.id != null && (
               <>

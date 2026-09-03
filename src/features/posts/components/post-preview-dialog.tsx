@@ -242,7 +242,10 @@ export function PostPreviewDialog({
 
         {/* The sunken tray is what says "this is a picture of a card, not a card you are using".
             Without it the preview reads as a second feed that happens to hold one post. */}
-        <div onClickCapture={swallowNavigation} className="rounded-nx-md bg-nx-surface-sunken p-3">
+        <div
+          onClickCapture={swallowNavigation}
+          className="rounded-nx-md bg-nx-surface-sunken py-[var(--nx-space-pad-y)] px-[var(--nx-space-pad)]"
+        >
           <PostCard
             // There is no id yet. It reaches nothing but `data-post-id` and the two links above,
             // which are swallowed.

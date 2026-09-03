@@ -2,9 +2,8 @@
 
 import { useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
-import Link from 'next/link';
 import { CheckCircle2, Loader2, XCircle } from 'lucide-react';
-import { Button } from '@/shared/components';
+import { ButtonLink } from '@/shared/components';
 import { AuthCard } from './auth-card';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { useT } from '@/core/i18n';
@@ -36,11 +35,9 @@ export function VerifyEmailStatus() {
         title={t('auth.verifyEmail.invalidTitle')}
         desc={t('auth.verifyEmail.invalidDesc')}
         action={
-          <Link href="/login" className="mt-5 block">
-            <Button variant="secondary" className="w-full">
-              {t('auth.verifyEmail.backToLogin')}
-            </Button>
-          </Link>
+          <ButtonLink href="/login" variant="secondary" className="mt-5 w-full">
+            {t('auth.verifyEmail.backToLogin')}
+          </ButtonLink>
         }
       />
     );
@@ -54,11 +51,9 @@ export function VerifyEmailStatus() {
         title={t('auth.verifyEmail.failedTitle')}
         desc={getErrorMessage(verify.error, t('auth.verifyEmail.failedDesc'))}
         action={
-          <Link href="/login" className="mt-5 block">
-            <Button variant="secondary" className="w-full">
-              {t('auth.verifyEmail.backToLogin')}
-            </Button>
-          </Link>
+          <ButtonLink href="/login" variant="secondary" className="mt-5 w-full">
+            {t('auth.verifyEmail.backToLogin')}
+          </ButtonLink>
         }
       />
     );
@@ -72,9 +67,9 @@ export function VerifyEmailStatus() {
         title={t('auth.verifyEmail.verifiedTitle')}
         desc={t('auth.verifyEmail.verifiedDesc')}
         action={
-          <Link href="/login" className="mt-5 block">
-            <Button className="w-full">{t('auth.verifyEmail.continue')}</Button>
-          </Link>
+          <ButtonLink href="/login" className="mt-5 w-full">
+            {t('auth.verifyEmail.continue')}
+          </ButtonLink>
         }
       />
     );

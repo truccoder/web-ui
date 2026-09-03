@@ -46,8 +46,13 @@ export function EmptyState({
         className
       )}
     >
+      {/* NO `mb-1` ON THE ICON — report §3.2 (A004). A 4px margin on top of the column's own
+          `gap-2` made the distance under the icon 12, written with two mechanisms at once: a rung
+          and a nudge. R10 §3.2 is explicit that the sub-scale (hit 2 · pair 4) describes distance
+          INSIDE a component, and that a component sets it with `gap` rather than by pushing a
+          sibling. The column's rung now stands alone. */}
       {icon !== null && (
-        <div className="mb-1 text-nx-text-muted [&>svg]:size-8">{icon ?? <TerminalPrompt />}</div>
+        <div className="text-nx-text-muted [&>svg]:size-8">{icon ?? <TerminalPrompt />}</div>
       )}
       {title && <p className="text-nx-heading font-semibold text-nx-text-primary">{title}</p>}
       {description && (

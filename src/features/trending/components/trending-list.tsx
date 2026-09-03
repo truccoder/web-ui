@@ -92,10 +92,10 @@ export function TrendingList({ className }: TrendingListProps) {
       />
 
       {isFirstLoad ? (
-        // THE SAME GAP THE CARDS WILL USE. At 16 the three placeholders sat one rung further apart
-        // than the list that replaces them, so the whole column stepped upward the moment the
-        // query resolved — the one thing a skeleton exists to prevent.
-        <div className="flex flex-col gap-[var(--nx-space-element)]">
+        // THE SAME GAP THE CARDS WILL USE — the rule this line has always followed, now at the
+        // corrected rung. A skeleton one rung off the list that replaces it makes the whole
+        // column step the moment the query resolves, which is the one thing a skeleton prevents.
+        <div className="flex flex-col gap-[var(--nx-space-block)]">
           {Array.from({ length: 3 }).map((_, index) => (
             <CardSkeleton key={index} />
           ))}
@@ -125,9 +125,30 @@ export function TrendingList({ className }: TrendingListProps) {
       ) : items.length === 0 ? (
         <EmptyState title={t('trending.empty.title')} description={t('trending.empty.desc')} />
       ) : (
-        // Filled cards at the kit's 12 gap. The bare-member version this replaces came from a
-        // README passage the kit itself does not follow.
-        <div className="flex flex-col gap-[var(--nx-space-element)]">
+        /**
+         * CARD ↔ CARD IS THE BLOCK RUNG, 20 — and the comment that used to sit here claimed the
+         * opposite, which is why the wrong number survived so long. It read *"filled cards at the
+         * kit's 12 gap"*. That was measured against the kit at P1/A and is **false**: the kit's
+         * own feed column renders `rowGap: 20px` with cards at `16px 20px`, and a sweep of every
+         * card column in the kit found none at 12.
+         *
+         * Three sources agree on 20 and they were checked separately, because a confident comment
+         * is exactly what kept this from being noticed:
+         *   · `density-r9.md:15` — the shipped fitting's own table, `block (card ↔ card) … 20`.
+         *   · `adherence-r10` — "card ↔ card is the rung above vertical card padding". Padding
+         *     here is `pad-y` 16, so the rung above is 20.
+         *   · the rendered kit, measured rather than read.
+         *
+         * What 12 cost, in numbers rather than taste: text → text across a card boundary came to
+         * 16 + 12 + 16 = **44**, where R9 fixes that distance at **52**; and the gap BETWEEN two
+         * cards (12) was smaller than the padding INSIDE one (16), which is the proximity
+         * inversion the recessed-ground surface model exists to prevent — two cards read as one
+         * continuous strip instead of two objects.
+         *
+         * This is the default tab of the app's main screen, so it was also the first thing every
+         * reader saw. `e2e/layout.spec.ts` now asserts the 20. See report §3.2 (A001, A002).
+         */
+        <div className="flex flex-col gap-[var(--nx-space-block)]">
           {items.map((item) => (
             <TrendingCard key={item.id} item={item} />
           ))}
@@ -136,7 +157,7 @@ export function TrendingList({ className }: TrendingListProps) {
 
           {/* NO WRAPPER. This was a `flex flex-col gap-4` around one child — a gap between
               nothing and nothing, and a 16 that would have been wrong if a second child ever
-              arrived. The skeleton is a sibling of the cards, so it takes the column's own 12. */}
+              arrived. The skeleton is a sibling of the cards, so it takes the column's own 20. */}
           {isFetchingNextPage && <CardSkeleton />}
 
           {!hasNextPage && (

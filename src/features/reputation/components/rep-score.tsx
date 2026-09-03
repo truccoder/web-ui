@@ -108,6 +108,8 @@ export function RepScore({
   ...props
 }: RepScoreProps) {
   const localeTag = useIntlLocale();
+  /** The feed and comment rows, where the chip competes with a name for the same line. */
+  const compactLevel = size === 'sm';
 
   return (
     <span
@@ -139,10 +141,37 @@ export function RepScore({
             `aria-hidden` because it is punctuation between two facts, not a fact: the chip should
             be heard as "8,420 Expert", not "8,420 middle dot Expert".
           */}
-          <span aria-hidden className="text-nx-rep-strong">
-            ·
+          {/**
+           * ON THE COMPACT CHIP, THE LEVEL NAME STANDS DOWN ON SMALL SCREENS — report §3.5 (H001).
+           *
+           * The bug this closes: in a feed row the person's NAME was the only shrinkable item, so
+           * every pixel of overflow came out of it. Measured at 375, `Phạm Văn Hoà` wanted 98px
+           * and got 61 — a short name, cut — while `591 · Contributor` beside it kept all 132.
+           * Vietnamese names are long; this hit the app's main reading surface hardest.
+           *
+           * WHY THIS AND NOT `flex-shrink` TUNING. Four attempts were made to let the chip give
+           * ground gradually, and each produced a different artefact: a hard clip through the
+           * pill's rounded edge; a 3px sliver of a glyph; a dangling `·` with nothing after it;
+           * and a chip that escaped its box into the `⋯` menu. A pill has a background and a
+           * radius — unlike plain text it does not degrade, it either reads as a chip or as
+           * debris. So the chip does not shrink. It decides what to SAY.
+           *
+           * The score is the fact and is always shown. The level is an annotation on it, and
+           * below `sm` the compact chip drops the annotation and keeps the fact — which is also
+           * the design system's own ordering of the two.
+           *
+           * SCOPED TO `size === 'sm'`, deliberately: that is the feed row and the comment row,
+           * where the collision happens. The profile hero (`lg`) is a centred column with room to
+           * spare and keeps its full chip at every width.
+           */}
+          <span aria-hidden className={cn(compactLevel && 'hidden sm:inline')}>
+            <span className="text-nx-rep-strong">·</span>
           </span>
-          <span className="font-medium text-nx-rep-strong">{levelName}</span>
+          <span
+            className={cn('font-medium text-nx-rep-strong', compactLevel && 'hidden sm:inline')}
+          >
+            {levelName}
+          </span>
         </>
       )}
     </span>

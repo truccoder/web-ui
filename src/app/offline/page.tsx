@@ -77,6 +77,46 @@ export default function OfflinePage() {
           Thiết bị đang mất mạng. Những trang bạn đã mở trước đó vẫn đọc được; phần còn lại sẽ quay
           lại ngay khi có kết nối.
         </p>
+
+        {/*
+          A WAY OUT, AND IT HAD NONE — report §3.10 (I002). The screen said what was true and then
+          stopped: `actions: []`, measured. Every other error surface in the product ends in
+          something to press, and this is the one a reader reaches by accident rather than by
+          clicking, so it is the one that most needs to say what to do next.
+
+          A PLAIN LINK, NOT A BUTTON, and that is the constraint above being honoured rather than
+          worked around. This page must stay a server component with no client hooks — an
+          `onClick` retry would make it a client component and grow the very bundle the service
+          worker has to have cached for this page to be the thing that appears at all.
+
+          Navigating re-attempts the network by itself, so the anchor IS the retry. It points at
+          `/`, which `public/sw.js` precaches alongside this page: online it lands on the feed,
+          still offline it comes back here — which is the correct answer to "try again", not a
+          failure of it.
+        */}
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- a FULL navigation is the
+            point. `next/link` does a client-side transition, which the router can satisfy without
+            re-attempting the document fetch — and re-attempting the network IS what this control
+            is for. It also keeps this page's import list empty, which the note at the top of the
+            file explains is what makes it small enough to be worth precaching. */}
+        <a
+          href="/"
+          style={{
+            marginTop: 'var(--nx-space-tight)',
+            alignSelf: 'center',
+            display: 'inline-flex',
+            alignItems: 'center',
+            padding: 'var(--nx-space-tight) var(--nx-space-pad)',
+            borderRadius: 'var(--radius-nx-sm)',
+            border: '1px solid var(--nx-border-default)',
+            color: 'var(--nx-text-primary)',
+            fontSize: 'var(--text-nx-ui)',
+            fontWeight: 500,
+            textDecoration: 'none',
+          }}
+        >
+          Thử lại
+        </a>
       </div>
     </main>
   );

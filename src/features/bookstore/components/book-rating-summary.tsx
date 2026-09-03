@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Skeleton } from '@/shared/components';
+import { ProgressBar, Skeleton } from '@/shared/components';
 import { useT } from '@/core/i18n';
 import { useRatingBreakdown } from '../hooks';
 import { StarRating } from './star-rating';
@@ -68,12 +68,28 @@ export function BookRatingSummary({ bookId, enabled = true }: BookRatingSummaryP
           return (
             <div key={bucket.stars} className="flex items-center gap-2 text-nx-caption">
               <span className="w-3 shrink-0 tabular-nums text-nx-text-muted">{bucket.stars}</span>
-              <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-nx-full bg-nx-surface-sunken">
-                <div
-                  className="h-full rounded-nx-full bg-nx-text-primary"
-                  style={{ width: `${percent}%` }}
-                />
-              </div>
+              {/**
+               * `ProgressBar`, NOT A COPY OF IT — report §3.3 (B002).
+               *
+               * What stood here was `shared/components/progress-bar.tsx` re-typed: same `h-1.5`,
+               * same `overflow-hidden`, same rounded track on `surface-sunken`, same `h-full`
+               * fill. It differed in exactly one way, and that way was a defect: the fill was
+               * `bg-nx-text-primary` — a TEXT token used as a SURFACE.
+               *
+               * It looked fine in both themes only because a text colour is guaranteed to
+               * contrast with the ground; it would not have followed any future re-fitting of the
+               * surfaces, because it is not a surface token. A value that is right by coincidence
+               * is the kind of drift lint cannot see: the token exists, the class is legal, the
+               * role is wrong.
+               *
+               * Taking the primitive removes the copy as well as the token, so neither can drift
+               * again. The bar is now Elite Blue, like every other progress bar in the product.
+               */}
+              <ProgressBar
+                className="min-w-0 flex-1"
+                value={percent}
+                label={t('bookDetail.ratingBarLabel', { stars: bucket.stars })}
+              />
               <span className="w-6 shrink-0 text-right tabular-nums text-nx-text-muted">
                 {bucket.count}
               </span>

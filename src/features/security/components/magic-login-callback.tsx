@@ -2,9 +2,8 @@
 
 import { useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
-import Link from 'next/link';
 import { Loader2, XCircle } from 'lucide-react';
-import { Button } from '@/shared/components';
+import { ButtonLink } from '@/shared/components';
 import { AuthCard } from './auth-card';
 import { useT } from '@/core/i18n';
 import { useMagicLinkLogin } from '../hooks/use-recovery';
@@ -49,11 +48,9 @@ export function MagicLoginCallback({ onSuccess }: MagicLoginCallbackProps) {
             {t('auth.magicLogin.invalidDesc')}
           </p>
         </div>
-        <Link href="/magic-link" className="mt-5 block">
-          <Button variant="secondary" className="w-full">
-            {t('auth.magicLogin.requestNewLink')}
-          </Button>
-        </Link>
+        <ButtonLink href="/magic-link" variant="secondary" className="mt-5 w-full">
+          {t('auth.magicLogin.requestNewLink')}
+        </ButtonLink>
       </AuthCard>
     );
   }

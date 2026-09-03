@@ -36,6 +36,9 @@ export function AccountBanBanner() {
       role="alert"
       className="flex items-start gap-3 border-b border-nx-status-danger bg-nx-status-danger-bg px-4 py-3 text-nx-status-danger-fg"
     >
+      {/* eslint-disable-next-line no-restricted-syntax --
+          R10 §3.2 exception: optical correction on an inline icon. The shield is level with the
+          first line of a message that wraps, not with the block as a whole. */}
       <ShieldAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
       <div className="flex min-w-0 flex-col gap-0.5 text-nx-body-sm">
         <span className="font-medium">

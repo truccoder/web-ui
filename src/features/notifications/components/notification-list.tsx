@@ -31,7 +31,7 @@ export interface NotificationListProps {
 /** One row's worth of placeholder: the type badge, then two lines. */
 function ItemSkeleton() {
   return (
-    <div className="flex items-start gap-3 px-3 py-3">
+    <div className="flex items-start gap-3 px-5 py-3">
       <Skeleton circle height={36} />
       <div className="flex flex-1 flex-col gap-2">
         <Skeleton width={180} height={12} />

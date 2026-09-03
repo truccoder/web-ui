@@ -188,6 +188,18 @@ export function DeveloperIdentity({
             <span className={nameClass}>{name}</span>
           )}
 
+          {/**
+           * The chip is passed through untouched. Which of the two gives up space when the row is
+           * tight is decided inside `RepScore` — see the note there (report §3.5, H001). Four
+           * attempts at solving it from THIS side, by tuning `flex-shrink` and `min-w-0` on a
+           * wrapper, each produced a different artefact: a hard clip through the pill's rounded
+           * edge, a 3px sliver of a glyph, a dangling separator, and finally a chip that escaped
+           * its box and collided with the `⋯` menu.
+           *
+           * The lesson is in the last one. A pill has a background and a radius: unlike plain
+           * text it cannot degrade smoothly, so the fix is not to squeeze it but to decide what
+           * it shows. Only the component that owns the chip can make that call.
+           */}
           {rep}
 
           {/* Pushed right on its own rather than with a spacer element: the name may be long

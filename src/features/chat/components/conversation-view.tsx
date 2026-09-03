@@ -157,39 +157,59 @@ export function ConversationView({
         {actions && <div className="flex shrink-0 items-center gap-0.5">{actions}</div>}
       </div>
 
+      {/**
+       * THE TRANSCRIPT KEEPS A MEASURE — report §3.7 (E003).
+       *
+       * `--spacing-nx-chat-measure: 600px` has been declared in `globals.css` since the round-15
+       * transcription and had **zero consumers**: `grep` found only its own definition, and the
+       * running page agreed — `getPropertyValue` returned empty, because Tailwind v4 drops a theme
+       * variable nothing uses. A dead token in a layout file is worse than a missing one; it reads
+       * as a decision that was made.
+       *
+       * Without it the column simply grew with the viewport: measured at 1440 it was **840px** with
+       * `max-width: none`, and wider on a wider screen. The bubbles cap themselves at
+       * `min(448px, 72%)`, but that caps a BUBBLE, not the column — so timestamps, avatars and the
+       * date separators kept spanning the full 840, and the eye had to cross all of it to reach the
+       * time beside a two-word message.
+       *
+       * `mx-auto` on the inner column rather than a `max-w` on the scroller: the scrollbar belongs
+       * to the full width, the measure belongs to the content.
+       */}
       <div className="min-h-0 flex-1 overflow-y-auto px-3 py-2">
-        {isLoading ? (
-          <div className="flex flex-col gap-3 py-2">
-            {[64, 48, 72].map((width, index) => (
-              <Skeleton key={index} width={`${width}%`} height={36} radius={12} />
-            ))}
-          </div>
-        ) : error ? (
-          <EmptyState compact title={t('chat.loadError')} description={error} />
-        ) : messages.length === 0 ? (
-          <EmptyState compact title={t('chat.sayHi')} />
-        ) : (
-          <>
-            {messages.map((message, index) => {
-              const isOwn = message.senderId === myUserId;
-              const position = getMessagePosition(messages, index);
-              // The avatar belongs to the last bubble of a run, where it sits level with the
-              // bottom of the block rather than floating beside its middle.
-              const showAvatar = position === 'single' || position === 'last';
+        <div className="mx-auto w-full max-w-nx-chat-measure">
+          {isLoading ? (
+            <div className="flex flex-col gap-3 py-2">
+              {[64, 48, 72].map((width, index) => (
+                <Skeleton key={index} width={`${width}%`} height={36} radius={12} />
+              ))}
+            </div>
+          ) : error ? (
+            <EmptyState compact title={t('chat.loadError')} description={error} />
+          ) : messages.length === 0 ? (
+            <EmptyState compact title={t('chat.sayHi')} />
+          ) : (
+            <>
+              {messages.map((message, index) => {
+                const isOwn = message.senderId === myUserId;
+                const position = getMessagePosition(messages, index);
+                // The avatar belongs to the last bubble of a run, where it sits level with the
+                // bottom of the block rather than floating beside its middle.
+                const showAvatar = position === 'single' || position === 'last';
 
-              return (
-                <MessageBubble
-                  key={message.id}
-                  message={message}
-                  isOwn={isOwn}
-                  position={position}
-                  showAvatar={showAvatar}
-                />
-              );
-            })}
-            <div ref={bottomRef} />
-          </>
-        )}
+                return (
+                  <MessageBubble
+                    key={message.id}
+                    message={message}
+                    isOwn={isOwn}
+                    position={position}
+                    showAvatar={showAvatar}
+                  />
+                );
+              })}
+              <div ref={bottomRef} />
+            </>
+          )}
+        </div>
       </div>
 
       <MessageComposer onSend={onSend} disabled={isLoading || error !== null} />

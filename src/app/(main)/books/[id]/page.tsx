@@ -100,7 +100,7 @@ export default function BookDetailPage() {
 
   if (bookId === undefined || isError || (!isPending && !book)) {
     return (
-      <div className="flex flex-col gap-[var(--nx-space-section)]">
+      <div className="flex flex-col gap-[var(--nx-space-block)]">
         {back}
         <EmptyState
           title={t('bookDetail.notFoundTitle')}
@@ -112,7 +112,7 @@ export default function BookDetailPage() {
 
   if (isPending) {
     return (
-      <div className="flex flex-col gap-[var(--nx-space-section)]">
+      <div className="flex flex-col gap-[var(--nx-space-block)]">
         {back}
         <Card>
           <Skeleton lines={5} />
@@ -128,138 +128,157 @@ export default function BookDetailPage() {
       : formatCurrency(book.price, book.currency?.trim() || 'VND', localeTag);
 
   return (
-    <div className="flex flex-col gap-[var(--nx-space-section)]">
+    /**
+     * TWO RUNGS, NESTED, BECAUSE THIS PAGE HAS BOTH RELATIONSHIPS — report §3.3 (B001).
+     *
+     * `posts/[id]/page.tsx:94` already argued the general case: the link above the content is the
+     * way BACK OUT, not a second section, so 40 leaves it floating. Three of the four detail pages
+     * did not know about that argument, because each set ONE gap on its whole column and the back
+     * link happened to be its first child.
+     *
+     * `/projects/{id}` could simply take the block rung — its column has two children and no
+     * section pair at all. This page cannot: below the link there really are two sections, the
+     * book and its reviews, and 40 is the right distance between THEM. So the link is lifted out
+     * to a `block` 20 boundary and the sections keep their own 40 inside.
+     *
+     * (`/roadmap` needed nothing: its back link is already grouped with the track title at
+     * `tight` 8, so its 40 was a genuine section boundary all along — the audit's own reading of
+     * that one was wrong.)
+     */
+    <div className="flex flex-col gap-[var(--nx-space-block)]">
       {back}
 
-      <Card className="flex flex-col gap-5 sm:flex-row sm:items-start">
-        {showCover ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={book.coverImageUrl ?? undefined}
-            alt=""
-            className="h-[220px] w-[160px] shrink-0 self-center rounded-nx-sm object-cover sm:self-start"
-            onError={() => setCoverFailed(true)}
-          />
-        ) : (
-          /* Same placeholder rule as the catalogue: the title's first letter, so "no cover" does
+      <div className="flex flex-col gap-[var(--nx-space-section)]">
+        <Card className="flex flex-col gap-5 sm:flex-row sm:items-start">
+          {showCover ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={book.coverImageUrl ?? undefined}
+              alt=""
+              className="h-[220px] w-[160px] shrink-0 self-center rounded-nx-sm object-cover sm:self-start"
+              onError={() => setCoverFailed(true)}
+            />
+          ) : (
+            /* Same placeholder rule as the catalogue: the title's first letter, so "no cover" does
              not read as "broken image". `aria-hidden` because the title is right beside it. */
-          <div
-            className="flex h-[220px] w-[160px] shrink-0 items-center justify-center self-center rounded-nx-sm bg-nx-surface-sunken sm:self-start"
-            aria-hidden
-          >
-            <span className="text-[52px] font-semibold text-nx-text-faint">
-              {book.title?.trim()?.charAt(0)?.toUpperCase() || '?'}
-            </span>
-          </div>
-        )}
-
-        <div className="flex min-w-0 flex-1 flex-col gap-[var(--nx-space-tight)]">
-          <h1 className="text-nx-title font-semibold tracking-tight text-nx-text-primary">
-            {book.title || t('bookDetail.untitled')}
-          </h1>
-
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="font-mono text-nx-body-sm tabular-nums font-medium text-nx-text-primary">
-              {price}
-            </span>
-            {book.fileFormat && (
-              <Badge mono variant="neutral">
-                {book.fileFormat}
-              </Badge>
-            )}
-            {/* Only once rated — `avgRating` is 0 on an unrated book, and a row of empty stars
-                reads as "rated badly" rather than "not rated". */}
-            {book.reviewCount && book.avgRating ? (
-              <StarRating rating={book.avgRating} size={13} />
-            ) : null}
-          </div>
-
-          {book.description && (
-            <p className="mt-1 whitespace-pre-wrap text-nx-body-sm text-nx-text-secondary">
-              {book.description}
-            </p>
-          )}
-
-          {/**
-           * THE THREE FACTS THE CATALOGUE CARD HAD NO ROOM FOR.
-           *
-           * Each guards on its own presence rather than on one shared flag: `totalPages` is null
-           * for an EPUB the backend could not page, `fileSizeBytes` is always set, and
-           * `downloadCount` is 0 rather than null on a book nobody has taken. Better no number
-           * than a wrong number, field by field.
-           */}
-          <dl className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-nx-caption text-nx-text-muted">
-            {book.totalPages != null && (
-              <div className="inline-flex items-center gap-2">
-                <FileText className="size-3.5" aria-hidden />
-                <dt className="sr-only">{t('bookDetail.pages')}</dt>
-                <dd className="font-mono tabular-nums">
-                  {t('bookDetail.pageCount', { count: book.totalPages })}
-                </dd>
-              </div>
-            )}
-            {book.fileSizeBytes != null && (
-              <div className="inline-flex items-center gap-2">
-                <dt className="sr-only">{t('bookDetail.size')}</dt>
-                <dd className="font-mono tabular-nums">
-                  {/* MiB, not MB: the value is a byte count and the app is talking about a file,
-                      where the binary unit is what a file manager will agree with. */}
-                  {(book.fileSizeBytes / 1024 / 1024).toLocaleString(localeTag, {
-                    maximumFractionDigits: 1,
-                  })}{' '}
-                  MB
-                </dd>
-              </div>
-            )}
-            {book.downloadCount != null && (
-              <div className="inline-flex items-center gap-2">
-                <Download className="size-3.5" aria-hidden />
-                <dt className="sr-only">{t('bookDetail.downloads')}</dt>
-                <dd className="font-mono tabular-nums">
-                  {book.downloadCount.toLocaleString(localeTag)}
-                </dd>
-              </div>
-            )}
-          </dl>
-
-          {book.id != null && (
-            <div className="mt-3">
-              <BookActions
-                bookId={book.id}
-                title={book.title ?? ''}
-                fileFormat={book.fileFormat}
-                isFree={Boolean(book.isFree)}
-              />
+            <div
+              className="flex h-[220px] w-[160px] shrink-0 items-center justify-center self-center rounded-nx-sm bg-nx-surface-sunken sm:self-start"
+              aria-hidden
+            >
+              <span className="text-[52px] font-semibold text-nx-text-faint">
+                {book.title?.trim()?.charAt(0)?.toUpperCase() || '?'}
+              </span>
             </div>
           )}
-        </div>
-      </Card>
 
-      {book.id != null && (
-        <Card className="flex flex-col gap-4">
-          <h2 className="text-nx-heading font-semibold text-nx-text-primary">
-            {t('bookDetail.reviewsTitle')}
-          </h2>
+          <div className="flex min-w-0 flex-1 flex-col gap-[var(--nx-space-tight)]">
+            <h1 className="text-nx-title font-semibold tracking-tight text-nx-text-primary">
+              {book.title || t('bookDetail.untitled')}
+            </h1>
 
-          {hasRatings && <BookRatingSummary bookId={book.id} />}
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span className="font-mono text-nx-body-sm tabular-nums font-medium text-nx-text-primary">
+                {price}
+              </span>
+              {book.fileFormat && (
+                <Badge mono variant="neutral">
+                  {book.fileFormat}
+                </Badge>
+              )}
+              {/* Only once rated — `avgRating` is 0 on an unrated book, and a row of empty stars
+                reads as "rated badly" rather than "not rated". */}
+              {book.reviewCount && book.avgRating ? (
+                <StarRating rating={book.avgRating} size={13} />
+              ) : null}
+            </div>
 
-          {/**
-           * THE FORM IS OPEN TO EVERYONE, because the backend is. `createOrUpdateReview` checks
-           * nothing but that the book exists — no purchase gate, no author exclusion — and it
-           * UPSERTS, so a second submission edits the first rather than adding one. Hiding the
-           * form behind a purchase here would be the frontend inventing a rule the product does
-           * not have, which is the same mistake `MessageUserButton` refused to make.
-           */}
-          <BookReviewForm
-            key={myReview?.id ?? 'new'}
-            bookId={book.id}
-            initialRating={myReview?.rating ?? undefined}
-            initialFeedback={myReview?.feedback ?? undefined}
-          />
+            {book.description && (
+              <p className="mt-1 whitespace-pre-wrap text-nx-body-sm text-nx-text-secondary">
+                {book.description}
+              </p>
+            )}
 
-          <BookReviewList bookId={book.id} />
+            {/**
+             * THE THREE FACTS THE CATALOGUE CARD HAD NO ROOM FOR.
+             *
+             * Each guards on its own presence rather than on one shared flag: `totalPages` is null
+             * for an EPUB the backend could not page, `fileSizeBytes` is always set, and
+             * `downloadCount` is 0 rather than null on a book nobody has taken. Better no number
+             * than a wrong number, field by field.
+             */}
+            <dl className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-nx-caption text-nx-text-muted">
+              {book.totalPages != null && (
+                <div className="inline-flex items-center gap-2">
+                  <FileText className="size-3.5" aria-hidden />
+                  <dt className="sr-only">{t('bookDetail.pages')}</dt>
+                  <dd className="font-mono tabular-nums">
+                    {t('bookDetail.pageCount', { count: book.totalPages })}
+                  </dd>
+                </div>
+              )}
+              {book.fileSizeBytes != null && (
+                <div className="inline-flex items-center gap-2">
+                  <dt className="sr-only">{t('bookDetail.size')}</dt>
+                  <dd className="font-mono tabular-nums">
+                    {/* MiB, not MB: the value is a byte count and the app is talking about a file,
+                      where the binary unit is what a file manager will agree with. */}
+                    {(book.fileSizeBytes / 1024 / 1024).toLocaleString(localeTag, {
+                      maximumFractionDigits: 1,
+                    })}{' '}
+                    MB
+                  </dd>
+                </div>
+              )}
+              {book.downloadCount != null && (
+                <div className="inline-flex items-center gap-2">
+                  <Download className="size-3.5" aria-hidden />
+                  <dt className="sr-only">{t('bookDetail.downloads')}</dt>
+                  <dd className="font-mono tabular-nums">
+                    {book.downloadCount.toLocaleString(localeTag)}
+                  </dd>
+                </div>
+              )}
+            </dl>
+
+            {book.id != null && (
+              <div className="mt-3">
+                <BookActions
+                  bookId={book.id}
+                  title={book.title ?? ''}
+                  fileFormat={book.fileFormat}
+                  isFree={Boolean(book.isFree)}
+                />
+              </div>
+            )}
+          </div>
         </Card>
-      )}
+
+        {book.id != null && (
+          <Card className="flex flex-col gap-4">
+            <h2 className="text-nx-heading font-semibold text-nx-text-primary">
+              {t('bookDetail.reviewsTitle')}
+            </h2>
+
+            {hasRatings && <BookRatingSummary bookId={book.id} />}
+
+            {/**
+             * THE FORM IS OPEN TO EVERYONE, because the backend is. `createOrUpdateReview` checks
+             * nothing but that the book exists — no purchase gate, no author exclusion — and it
+             * UPSERTS, so a second submission edits the first rather than adding one. Hiding the
+             * form behind a purchase here would be the frontend inventing a rule the product does
+             * not have, which is the same mistake `MessageUserButton` refused to make.
+             */}
+            <BookReviewForm
+              key={myReview?.id ?? 'new'}
+              bookId={book.id}
+              initialRating={myReview?.rating ?? undefined}
+              initialFeedback={myReview?.feedback ?? undefined}
+            />
+
+            <BookReviewList bookId={book.id} />
+          </Card>
+        )}
+      </div>
     </div>
   );
 }

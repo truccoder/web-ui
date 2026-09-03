@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import Link from 'next/link';
 import { ArrowUpRight, Check } from 'lucide-react';
-import { Badge, Button, Card, Skeleton } from '@/shared/components';
+import { Badge, ButtonLink, Card, Skeleton } from '@/shared/components';
 import { useT } from '@/core/i18n';
 import { useIntlLocale, useRelativeTime } from '@/shared/lib/format';
 import { ContributionGraph, useGithubStats, isNotLinked } from '@/features/github';
@@ -187,14 +187,12 @@ export function GuestLedger() {
         <SectionHeading>{t('guest.ledger.overline')}</SectionHeading>
         <p className="text-nx-body-sm text-nx-text-secondary">{t('guest.ledger.body')}</p>
         <div className="flex flex-col gap-2">
-          <Link href={registerHref}>
-            <Button className="w-full">{t('guest.register')}</Button>
-          </Link>
-          <Link href={loginHref}>
-            <Button variant="secondary" className="w-full">
-              {t('guest.signIn')}
-            </Button>
-          </Link>
+          <ButtonLink href={registerHref} className="w-full">
+            {t('guest.register')}
+          </ButtonLink>
+          <ButtonLink href={loginHref} variant="secondary" className="w-full">
+            {t('guest.signIn')}
+          </ButtonLink>
         </div>
       </Card>
 
@@ -411,21 +409,29 @@ function OpeningsSection() {
 
       <ul className="flex flex-col gap-2.5">
         {rows.map(({ project, openCount, reasons }) => (
-          <li key={project.id} className="flex flex-col gap-0.5">
-            {/* THE TITLE WRAPS TO TWO LINES AND THEN STOPS. The drawable takes roughly four to five
+          // TWO GROUPS, NOT THREE PEERS — R10 §3.2, report §9. The matched-skills row used to
+          // hang off `mt-1`, a `pair` nudge pushing a sibling, on top of a column already set to
+          // `gap-0.5`. Splitting the identity pair (title + open roles) from the evidence row
+          // lets each distance be declared by a container: `hit` inside the pair, `tight` between
+          // the pair and the evidence. No margin, and the two distances stop being one number
+          // plus a shove.
+          <li key={project.id} className="flex flex-col gap-[var(--nx-space-tight)]">
+            <div className="flex flex-col gap-0.5">
+              {/* THE TITLE WRAPS TO TWO LINES AND THEN STOPS. The drawable takes roughly four to five
                 words a line; one long project name allowed to run would push the rows below it
                 down the column and past the contribution graph this card shares a fold with. */}
-            <Link
-              href={`/projects/${project.id}`}
-              className="line-clamp-2 text-nx-body-sm text-nx-text-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
-            >
-              {project.title}
-            </Link>
-            {/* The same sentence `/projects` uses, from the same key — the card and the board must
+              <Link
+                href={`/projects/${project.id}`}
+                className="line-clamp-2 text-nx-body-sm text-nx-text-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
+              >
+                {project.title}
+              </Link>
+              {/* The same sentence `/projects` uses, from the same key — the card and the board must
                 not disagree about how many roles a project has open. */}
-            <span className="text-nx-caption text-nx-text-muted">
-              {t('projects.openPositions', { count: openCount })}
-            </span>
+              <span className="text-nx-caption text-nx-text-muted">
+                {t('projects.openPositions', { count: openCount })}
+              </span>
+            </div>
 
             {/* WHY THIS ROW IS HERE, IN THE READER'S OWN WORDS — their skills and their stated
                 domains, as the backend matched them. A ranking whose order cannot be explained is
@@ -438,7 +444,7 @@ function OpeningsSection() {
                 and not only to a screen reader — they could as easily be the roles being hired
                 for. */}
             {reasons.length > 0 && (
-              <div className="mt-1 flex flex-wrap items-center gap-1">
+              <div className="flex flex-wrap items-center gap-1">
                 <span className="text-nx-caption text-nx-text-muted">{t('ledger.matchedOn')}</span>
                 {reasons.slice(0, LEDGER_REASONS).map((reason) => (
                   <Badge key={reason} variant="neutral">
@@ -547,6 +553,11 @@ function ExternalSection() {
                 <span className="line-clamp-2 text-nx-body-sm text-nx-text-primary group-hover:underline">
                   {item.title}
                 </span>
+                {/* eslint-disable-next-line no-restricted-syntax --
+                    R10 §3.2 exception: an optical correction on an inline icon, and it belongs on
+                    the icon. The arrow sits beside a line of text and its glyph box is taller
+                    than its ink, so without the nudge it reads as sitting above the line it
+                    points out of. */}
                 <ArrowUpRight className="mt-0.5 size-3.5 shrink-0 text-nx-text-muted" aria-hidden />
               </a>
             ) : (

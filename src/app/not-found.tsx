@@ -1,6 +1,5 @@
-import Link from 'next/link';
 import { Compass } from 'lucide-react';
-import { Button, EmptyState } from '@/shared/components';
+import { ButtonLink, EmptyState } from '@/shared/components';
 import { getMessages, pageMetadata } from '@/core/i18n/server';
 
 /**
@@ -37,9 +36,9 @@ export default async function NotFound() {
         title={messages.notFound.title}
         description={messages.notFound.description}
         action={
-          <Link href="/newsfeed">
-            <Button variant="secondary">{messages.notFound.goHome}</Button>
-          </Link>
+          <ButtonLink href="/newsfeed" variant="secondary">
+            {messages.notFound.goHome}
+          </ButtonLink>
         }
       />
     </main>

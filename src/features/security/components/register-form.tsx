@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { ArrowLeft, Camera, Mail } from 'lucide-react';
-import { Avatar, Button, Input } from '@/shared/components';
+import { Avatar, Button, ButtonLink, Input } from '@/shared/components';
 import { AuthCard } from './auth-card';
 import { PasswordInput } from './password-input';
 import { getErrorMessage } from '@/shared/lib/api-error';
@@ -103,11 +103,14 @@ export function RegisterForm() {
             {t('auth.register.checkEmailDesc', { email: submittedEmail })}
           </p>
         </div>
-        <Link href={loginHref} className="mt-5 block">
-          <Button variant="secondary" icon={<ArrowLeft />} className="w-full">
-            {t('auth.register.backToLogin')}
-          </Button>
-        </Link>
+        <ButtonLink
+          href={loginHref}
+          variant="secondary"
+          icon={<ArrowLeft />}
+          className="mt-5 w-full"
+        >
+          {t('auth.register.backToLogin')}
+        </ButtonLink>
       </AuthCard>
     );
   }

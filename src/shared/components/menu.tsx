@@ -302,6 +302,11 @@ export function Menu({
     >
       {items.map((item, index) =>
         isSeparator(item) ? (
+          // R10 §3.2 EXCEPTION, read to the end of the rule: it says a small vertical margin
+          // usually means a SEPARATION DEVICE is missing. Here the device is present — this
+          // element IS the hairline — so the margin is its own breathing room rather than a
+          // substitute for one.
+          // eslint-disable-next-line no-restricted-syntax -- the hairline's own breathing room
           <div key={index} role="separator" className="my-1 h-px bg-nx-border-subtle" />
         ) : (
           <div

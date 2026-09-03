@@ -24,7 +24,7 @@ import {
 import {
   Avatar,
   BrandMark,
-  Button,
+  ButtonLink,
   CommandPalette,
   Drawer,
   IconButton,
@@ -471,14 +471,17 @@ function GuestAuthActions() {
     <div className="flex items-center gap-2">
       {/* The secondary sits first and drops below 576: two buttons plus a brand do not fit a
           phone bar, and "sign in" is the one a returning reader is looking for. */}
-      <Link href={registerHref} className="hidden min-[576px]:block">
-        <Button size="sm" variant="secondary">
-          {t('guest.register')}
-        </Button>
-      </Link>
-      <Link href={loginHref}>
-        <Button size="sm">{t('guest.signIn')}</Button>
-      </Link>
+      <ButtonLink
+        href={registerHref}
+        size="sm"
+        variant="secondary"
+        className="hidden min-[576px]:block"
+      >
+        {t('guest.register')}
+      </ButtonLink>
+      <ButtonLink href={loginHref} size="sm">
+        {t('guest.signIn')}
+      </ButtonLink>
     </div>
   );
 }
@@ -1195,7 +1198,25 @@ function ChatsTrail({ onOpenMenu }: { onOpenMenu: () => void }) {
       title={t('nav.chats')}
       atTop
       leading={
-        <IconButton label={t('nav.openMenu')} className="lg:hidden" onClick={onOpenMenu}>
+        /**
+         * NO `lg:hidden` HERE, AND THAT IS THE FIX FOR A REAL DEAD END — see report §3.7 (E001).
+         *
+         * Everywhere else in the shell `lg:hidden` on this button is right, because at `lg` the
+         * RAIL arrives and takes over navigation: the hamburger steps aside for something better.
+         * `/chats` is the one tenant where that trade does not hold. It is full-bleed, so the rail
+         * is `hidden` at EVERY width (`isFullBleed ? 'hidden' : 'lg:flex'` below), and the top bar
+         * is dropped as well. The convention was copied into a context where the thing it defers
+         * to no longer exists.
+         *
+         * Measured before the change, at 1440: the button was in the DOM with `width: 0`, and the
+         * whole page offered exactly ONE link out of it — `← Bảng tin`. Reaching `/friends`,
+         * `/library`, `/profile` or `/settings` meant going to the feed first, with nothing on
+         * screen saying so. At 375 it was fine, so the defect existed only on the widest screens.
+         *
+         * The Drawer it opens is width-independent and already holds every destination, so the
+         * button simply stays.
+         */
+        <IconButton label={t('nav.openMenu')} onClick={onOpenMenu}>
           <MenuIcon />
         </IconButton>
       }

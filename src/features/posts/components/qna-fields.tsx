@@ -35,6 +35,9 @@ export function QnaFields() {
 
   return (
     <div className="flex gap-2 rounded-nx-sm bg-nx-status-info-bg px-3 py-2.5 text-nx-status-info-fg">
+      {/* eslint-disable-next-line no-restricted-syntax --
+          R10 §3.2 exception: optical correction on an inline icon, level with the first line of
+          the hint beside it. */}
       <HelpCircle className="mt-0.5 size-4 shrink-0" aria-hidden />
       <div className="flex flex-col gap-0.5">
         <p className="text-nx-body-sm font-medium">{t('createPost.qna.noticeTitle')}</p>

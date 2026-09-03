@@ -50,7 +50,16 @@ export function ConversationRow({
       onClick={() => onSelect(conversation.id)}
       aria-current={isActive ? 'true' : undefined}
       className={cn(
-        'flex w-full items-center gap-3 rounded-nx-md px-3 py-2.5 text-left',
+        /**
+         * THE ROW INSET IS `pad-y` 12 / `pad` 20, not 10/12 — `density-r14.md:155` fixes it and
+         * calls it "R13's rung move, unchanged". Report §3.7 (E002).
+         *
+         * The horizontal half already reached 20 by accident: the column around this row adds its
+         * own `px-2` (8), so 12 + 8 landed on the right total by a split the ladder does not name.
+         * Paying it here makes the row's own inset legible without having to add up two files —
+         * `--nx-space-pad-half` is the token for a deliberate split, and this was not one.
+         */
+        'flex w-full items-center gap-3 rounded-nx-md px-5 py-3 text-left',
         'transition-colors duration-[var(--nx-duration-fast)] ease-nx-out',
         'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring',
         isActive ? 'bg-nx-accent-soft' : 'hover:bg-nx-surface-sunken',
@@ -59,7 +68,24 @@ export function ConversationRow({
     >
       <Avatar src={conversation.otherMemberImage ?? undefined} name={title} size="lg" />
 
-      <span className="min-w-0 flex-1">
+      {/**
+       * `gap-2` (tight 8) ON THE STACK, replacing a `mt-0.5` on the second line — report §3.7
+       * (E002), and this is the exact defect `density-r14.md` §3 was written to fix.
+       *
+       * That section quotes the owner — *"Trong btn này spacing không đẹp… có khoảng cách giữa
+       * tên và tin nhắn"* — and describes the cause as *"a plain `<div>` with no `gap`, so its two
+       * lines were separated by line-height alone: the only stacked pair in the kit that inherited
+       * zero instead of declaring a rung"*. Measured here before the change: this wrapper was
+       * `min-w-0 flex-1`, `display: block`, `gap: normal`, and the 2px between the lines came from
+       * `mt-0.5` on the second one. Word for word the same shape.
+       *
+       * The rung is `tight` 8, and R14 gives the reason: the name and the last message are TWO
+       * READINGS — who, and what they last said — not one thing wrapping onto a second line.
+       *
+       * Declaring it as a `gap` also matters beyond this row: a margin is invisible to the
+       * ladder-measuring probe and untouched by a refit, which is the same trap D002 records.
+       */}
+      <span className="flex min-w-0 flex-1 flex-col gap-[var(--nx-space-tight)]">
         <span className="flex items-baseline justify-between gap-2">
           <span
             className={cn(
@@ -79,7 +105,7 @@ export function ConversationRow({
           )}
         </span>
 
-        <span className="mt-0.5 flex items-center justify-between gap-2">
+        <span className="flex items-center justify-between gap-2">
           <span
             className={cn(
               'truncate text-nx-body-sm',

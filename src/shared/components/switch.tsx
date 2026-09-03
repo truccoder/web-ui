@@ -65,6 +65,10 @@ export function Switch({
         className={cn(
           // `mt-0.5` keeps the track optically centred on the first line of the label when a
           // description wraps a second line under it.
+          // R10 §3.2 EXCEPTION, and the note directly above is the reason: this is a
+          // correction on the CONTROL, aligning it to the first line of a label that may
+          // wrap — not a gap between two things read separately.
+          // eslint-disable-next-line no-restricted-syntax -- optical alignment of the control
           'relative mt-0.5 block h-4.5 w-8 shrink-0 rounded-nx-full',
           'bg-nx-border-strong',
           'transition-colors duration-[var(--nx-duration-base)] ease-nx-out',
@@ -85,8 +89,12 @@ export function Switch({
         />
       </label>
 
+      {/* `tight` 8 ON THE WRAPPER, not `mt-0.5` on the description — R10 §3.2, report §9. Two
+          readings inside one control (what it is, and what it does) are a rung, and a component
+          declares a rung with `gap` rather than by pushing its second child down. The wrapper
+          holds exactly these two, so the gap lands on nothing else. */}
       {(label || description) && (
-        <div className="min-w-0">
+        <div className="flex min-w-0 flex-col gap-[var(--nx-space-tight)]">
           {label && (
             <label
               htmlFor={inputId}
@@ -95,9 +103,7 @@ export function Switch({
               {label}
             </label>
           )}
-          {description && (
-            <p className="mt-0.5 text-nx-body-sm text-nx-text-secondary">{description}</p>
-          )}
+          {description && <p className="text-nx-body-sm text-nx-text-secondary">{description}</p>}
         </div>
       )}
     </div>

@@ -255,7 +255,7 @@ export function ExplainPostAction({ postId, postContent }: ExplainPostActionProp
        * someone who really does just want another roll of the dice.
        */}
       {feedbackOpen && (
-        <div className="space-y-2 rounded-nx-md border border-nx-border-subtle p-3">
+        <div className="space-y-2 rounded-nx-md border border-nx-border-subtle py-[var(--nx-space-pad-y)] px-[var(--nx-space-pad)]">
           <Textarea
             label={t('knowledge.explain.feedbackLabel')}
             hint={t('knowledge.explain.feedbackHint')}

@@ -224,7 +224,9 @@ export function ProfileHero({
           not move when the block below the name grows. See the head of the file for the arithmetic
           that pairs this with `-mt-16`. Below `sm` the row is a centred column and `items-center`
           is horizontal centring, which is still what it wants. */}
-      <div className="flex flex-col items-center gap-5 px-[var(--nx-space-pad)] py-[var(--nx-space-pad-y)] sm:flex-row sm:items-start">
+      {/* `sm:flex-wrap` — report §3.5 (H002). See the note on the actions block at the foot of
+          this row for what it fixes and why wrapping is the right release valve. */}
+      <div className="flex flex-col items-center gap-5 px-[var(--nx-space-pad)] py-[var(--nx-space-pad-y)] sm:flex-row sm:flex-wrap sm:items-start">
         {/* `flex`, AND IT IS LOAD-BEARING RATHER THAN TIDINESS. `Avatar` renders an `inline-flex`
             span, so inside a plain block this div sits on a text baseline and the line box adds the
             descender gap under it: the wrapper measured 96 × 103 around a 96 × 96 picture. That is
@@ -248,7 +250,18 @@ export function ProfileHero({
           {avatarOverlay}
         </div>
 
-        <div className="min-w-0 flex-1 text-center sm:text-left">
+        {/* `sm:min-w-80` IS WHAT MAKES THE WRAP ABOVE ACTUALLY FIRE, and it is not a magic number
+            for its own sake. A flex item wraps when it does not fit at its FLEX-BASIS, and this
+            column is `flex-1` — basis 0 — so without a floor it silently shrinks to nothing and
+            the line never breaks, which is exactly the failure H002 describes and the same trap
+            H001 fell into one component over.
+
+            The floor only has to be large enough to push the actions onto their own line; once
+            they go, this column takes the whole row (514 at the 1440 canvas) and the meta line has
+            room to spare. Measured: it wrapped to two lines at 249 and sits on one at 340.
+
+            Below `sm` the row is a centred column and the floor is irrelevant, so it is scoped. */}
+        <div className="min-w-0 flex-1 text-center sm:min-w-80 sm:text-left">
           {/* The score sits BESIDE THE NAME, as the kit's profile hero does — reputation is the
               product's central claim, so it is part of the identity line rather than a fact you
               scroll to. The reputation card in the first tab still owns the progress to the next
@@ -272,7 +285,27 @@ export function ProfileHero({
           {footer}
         </div>
 
-        {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
+        {/**
+         * THE ACTIONS WRAP INSTEAD OF SQUEEZING THE IDENTITY — report §3.5 (H002).
+         *
+         * Measured at 1440 on someone else's profile, before this change: the row is 630 wide and
+         * split avatar 96 · identity **249** · actions **245**. Three buttons were taking as much
+         * room as the block carrying the person's name, role, handle, join date and verified-skill
+         * count — and because the actions are `shrink-0`, the identity was the only part that
+         * could give, so its meta line wrapped to two lines at the WIDEST viewport the product has.
+         *
+         * It showed only on other people's profiles: your own has a single "Thêm ảnh bìa" button,
+         * so the version that broke was the version most visitors see. And below `sm` the row is
+         * already a centred column, which is why the mobile layout read BETTER than the desktop
+         * one — a sign the horizontal proportions were never settled rather than that mobile was
+         * favoured.
+         *
+         * `flex-wrap` on the row plus `basis-full` here when it wraps: the buttons keep their size
+         * and drop to their own line once the identity needs the width. Buttons, unlike a filled
+         * pill (see H001) or truncated prose, wrap without leaving anything to look at — which is
+         * why this one gets a release valve where the reputation chip got a decision.
+         */}
+        {actions && <div className="flex shrink-0 items-center gap-2 sm:ml-auto">{actions}</div>}
       </div>
     </Card>
   );

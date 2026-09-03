@@ -92,7 +92,32 @@ export function KnowledgeLibrary() {
       : data.explanations.filter((explanation) => explanation.category === category);
 
   return (
-    <div className="space-y-3">
+    /**
+     * ONE `space-y-3` USED TO SERVE TWO DIFFERENT RELATIONSHIPS HERE, which is why no single
+     * number could have been right. Its direct children are the filter row AND every
+     * `ExplanationCard`, so 12 was being paid both for "a control block ↔ the content it filters"
+     * and for "card ↔ card". They are different rungs: `group` 16 and `block` 20.
+     *
+     * The cards carry a full card inset (`16px 20px`), so at 12 the gap BETWEEN two of them was
+     * smaller than the padding INSIDE one — the same proximity inversion `/newsfeed?tab=tech`
+     * had, on a different screen. `adherence-r10` states it directly: *"a block ↔ block gap of 12
+     * must become var(--nx-space-block)"*.
+     *
+     * SO THE COLUMN IS TWO COLUMNS NOW, one rung each, rather than one column carrying a number
+     * that is a compromise between two answers. Outer: `group` 16, the filter row ↔ the list it
+     * filters. Inner: `block` 20, card ↔ card. Nesting is the only way a flex column can hold two
+     * different distances, and the alternative — picking whichever rung hurts less — is what
+     * produced the 12.
+     *
+     * AND IT IS A `gap` NOW, NOT `space-y-*`. That part is not cosmetic: `space-y-*` sets margins
+     * on the siblings, so the container's computed `rowGap` reads `normal` — invisible to the
+     * ladder-measuring probe in `docs/ui-audit-plan.md` §03, and untouched by any future refit of
+     * the ladder's values. `globals.css:604` makes the same argument about a stray literal: the
+     * next refitting silently skips whatever did not declare a rung.
+     *
+     * See report §3.4 (D001, D002). `e2e/layout.spec.ts` asserts the 20.
+     */
+    <div className="flex flex-col gap-[var(--nx-space-group)]">
       <div className="flex flex-wrap items-center justify-between gap-2">
         {/* THE COUNT IS OF WHAT IS ON SCREEN, and it says so against the total when a topic is
             picked. "12 bản giải thích" over a filtered list of three would be a number about a
@@ -131,13 +156,15 @@ export function KnowledgeLibrary() {
           description={t('knowledge.library.emptyCategoryDesc')}
         />
       ) : (
-        visible.map((explanation) => (
-          <ExplanationCard
-            key={explanation.id ?? explanation.postId}
-            explanation={explanation}
-            showSource
-          />
-        ))
+        <div className="flex flex-col gap-[var(--nx-space-block)]">
+          {visible.map((explanation) => (
+            <ExplanationCard
+              key={explanation.id ?? explanation.postId}
+              explanation={explanation}
+              showSource
+            />
+          ))}
+        </div>
       )}
     </div>
   );

@@ -2,9 +2,8 @@
 
 import { useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
-import Link from 'next/link';
 import { AlertCircle, Loader2 } from 'lucide-react';
-import { Button } from '@/shared/components';
+import { ButtonLink } from '@/shared/components';
 import { AuthCard } from './auth-card';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { useT } from '@/core/i18n';
@@ -71,11 +70,9 @@ export function OAuthCallback({ provider, onSuccess }: OAuthCallbackProps) {
             {message}
           </p>
         </div>
-        <Link href="/login" className="mt-5 block">
-          <Button variant="secondary" className="w-full">
-            {t('auth.oauth.backToLogin')}
-          </Button>
-        </Link>
+        <ButtonLink href="/login" variant="secondary" className="mt-5 w-full">
+          {t('auth.oauth.backToLogin')}
+        </ButtonLink>
       </AuthCard>
     );
   }

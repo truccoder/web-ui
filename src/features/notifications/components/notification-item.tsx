@@ -239,7 +239,7 @@ export function NotificationItem({ notification, onRead, className }: Notificati
   );
 
   const shared = cn(
-    'flex w-full items-start gap-3 rounded-nx-md px-3 py-3 text-left',
+    'flex w-full items-start gap-3 rounded-nx-md px-5 py-3 text-left',
     'transition-colors duration-[var(--nx-duration-fast)] ease-nx-out',
     'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring',
     unread && 'bg-nx-accent-soft/40',
