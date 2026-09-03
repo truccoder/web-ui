@@ -38,7 +38,7 @@ import { NotificationBell } from '@/features/notifications';
 // Imported from the module rather than the barrel: the barrel's members were being
 // split into a chunk this route never loaded, so the hook silently never ran.
 import { useNotificationStream } from '@/features/notifications/hooks/use-notification-stream';
-import { clearFeedScroll } from '@/features/newsfeed';
+import { clearFeedScroll, useRecordPermalinkOrigin } from '@/features/newsfeed';
 import { AccountBanBanner } from '@/features/moderation';
 import { ProfileRequiredRedirect } from '@/features/knowledge';
 import { SearchBar } from '@/features/search';
@@ -623,6 +623,15 @@ export function MainShell({ children }: { children: React.ReactNode }) {
   // exists for exactly this. Passing it here rather than early-returning keeps hook order stable
   // across the sign-in that flips it.
   useNotificationStream(!isGuest);
+
+  /**
+   * Remembers the last page that was not a post permalink, so `/posts/{id}`'s `←` returns the
+   * reader to wherever they opened the post from — a profile, notifications, search — instead of
+   * always to the feed. Mounted here because this shell is the one thing that outlives every
+   * `(main)` navigation; see `usePermalinkBackLink`.
+   */
+  useRecordPermalinkOrigin();
+
   const router = useRouter();
   const pathname = usePathname();
   const brandHome = useBrandHome();

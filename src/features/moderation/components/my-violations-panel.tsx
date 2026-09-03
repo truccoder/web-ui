@@ -1,10 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import { ExternalLink } from 'lucide-react';
 import {
   ApiErrorNotice,
   Badge,
   Button,
+  ButtonLink,
   Card,
   Dialog,
   EmptyState,
@@ -42,6 +44,14 @@ import { useMyViolations, useSubmitAppeal } from '../hooks/use-moderation';
  * queue asks for it (`ModerationPostsTab`), so the stored value is a real claim about this post
  * rather than a constant. A real claim is worth reading in words: `SPAM` and `LOW` in a monospace
  * badge are database values, and this panel is where someone finds out why they were sanctioned.
+ *
+ * IT LINKS TO THE POST THE CLAIM IS ABOUT. `UserViolationDto` carries `postId` and nothing of the
+ * post's content, so the row cannot render the post — but the reader is its author and
+ * `/posts/{postId}` shows them their own post whatever its moderation status
+ * (`PostVisibilityService` only 404s an uncleared post to everyone ELSE). Someone deciding whether
+ * to appeal needs to reread what they wrote; the link is in the row and again in the appeal
+ * dialog, next to the reason they are contesting. Same handoff `ModerationReportsTab` makes for
+ * the admin side — a pointer at a post is shown as a way to open the post, not faked into a card.
  */
 export function MyViolationsPanel() {
   const t = useT();
@@ -110,7 +120,17 @@ export function MyViolationsPanel() {
             <p className="text-nx-body-sm text-nx-text-secondary">{violation.description}</p>
           )}
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {violation.postId != null && (
+              <ButtonLink
+                href={`/posts/${violation.postId}`}
+                size="sm"
+                variant="ghost"
+                icon={<ExternalLink className="size-4" aria-hidden />}
+              >
+                {t('moderationMine.viewPost')}
+              </ButtonLink>
+            )}
             {violation.appealPending ? (
               <span className="text-nx-caption text-nx-text-muted">
                 {t('moderationMine.appealPending')}
@@ -164,6 +184,17 @@ export function MyViolationsPanel() {
             <p className="rounded-nx-sm bg-nx-surface-sunken px-3 py-2 text-nx-body-sm text-nx-text-secondary">
               {appealing.description}
             </p>
+          )}
+          {appealing?.postId != null && (
+            <ButtonLink
+              href={`/posts/${appealing.postId}`}
+              size="sm"
+              variant="secondary"
+              icon={<ExternalLink className="size-4" aria-hidden />}
+              className="w-fit"
+            >
+              {t('moderationMine.viewPost')}
+            </ButtonLink>
           )}
           <Textarea
             rows={5}

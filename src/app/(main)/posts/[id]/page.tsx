@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Clock, ShieldX } from 'lucide-react';
 import { Card, EmptyState, Skeleton } from '@/shared/components';
-import { FeedPost, useFeedReturnHref, usePost } from '@/features/newsfeed';
+import { FeedPost, usePermalinkBackLink, usePost } from '@/features/newsfeed';
 import { useT } from '@/core/i18n';
 
 /**
@@ -71,13 +71,18 @@ function PostPermalinkContent() {
   const status = post?.moderationStatus ?? 'APPROVED';
 
   /**
-   * WHERE `← Về bảng tin` GOES. Bare `/newsfeed` now opens on `Công nghệ` — the crawler's stream,
-   * which holds no posts and restores no scroll — so returning there drops a reader who came from
-   * a feed column onto the wrong tab at the top. `useFeedReturnHref` reads the column the feed
-   * last recorded and resolves to `/newsfeed?tab=<scope>`; it stays `/newsfeed` when the permalink
-   * was reached from a shared link or a notification instead.
+   * WHERE THE `←` GOES, and it is no longer always the feed. `usePermalinkBackLink` returns the
+   * page the reader opened this post from — a profile, notifications, search — or, when that page
+   * was the feed, the exact column they were reading (`/newsfeed?tab=<scope>`, which pairs with
+   * `useScrollRestoration`). A permalink reached from a shared link or a notification, with no
+   * origin recorded, falls back to the bare feed — the behaviour that predates this.
+   *
+   * `toFeed` DRIVES BOTH THE LABEL AND THE SCROLL. The word names the destination (an arrow means
+   * "back", the word means "to where"), so a return to a profile cannot keep saying "Về bảng tin".
+   * And only the feed link hands scroll to `useScrollRestoration` with `scroll={false}`; a return
+   * to any other page takes the router's default scroll-to-top.
    */
-  const backHref = useFeedReturnHref();
+  const { href: backHref, toFeed } = usePermalinkBackLink();
 
   const notFound = postId === undefined || isError || (!isPending && !post);
   /**
@@ -99,19 +104,20 @@ function PostPermalinkContent() {
        filter, the composer and every card, so the permalink now opens on the same rhythm as the
        screen it was reached from. */
     <div className="flex flex-col gap-[var(--nx-space-block)]">
-      {/* `scroll={false}` HANDS SCROLL TO `useScrollRestoration`.
+      {/* `scroll={false}` — FOR A RETURN TO THE FEED ONLY — HANDS SCROLL TO `useScrollRestoration`.
           Next scrolls a forward navigation to the top, and it does so AFTER the destination has
           rendered — so the feed's restore ran, put the reader back at 2713, and the router then
-          reset it to 0 a beat later. Measured. Telling the router not to scroll for this one link
+          reset it to 0 a beat later. Measured. Telling the router not to scroll for that one case
           leaves exactly one thing setting the position, which is the hook that knows where the
-          reader was. Every other link into the feed keeps the default. */}
+          reader was. A return to a profile or search has no such hook, so it takes the router's
+          default scroll-to-top like every other forward navigation. */}
       <Link
         href={backHref}
-        scroll={false}
+        scroll={toFeed ? false : undefined}
         className="inline-flex w-fit items-center gap-2 text-nx-body-sm text-nx-text-muted hover:text-nx-text-primary"
       >
         <ArrowLeft className="size-4" aria-hidden />
-        {t('post.backToFeed')}
+        {toFeed ? t('post.backToFeed') : t('post.back')}
       </Link>
 
       {notFound ? (

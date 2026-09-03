@@ -1,6 +1,6 @@
 'use client';
 
-import { Disclosure, Section, SectionLink } from '@/shared/components';
+import { Section, SectionLink } from '@/shared/components';
 import { BlockedUsersList } from '@/features/blocks';
 import { ChangePasswordForm, ProfileInfoForm } from '@/features/security';
 import { useT } from '@/core/i18n';
@@ -8,9 +8,10 @@ import { useT } from '@/core/i18n';
 /**
  * `/profile` → `Tài khoản`: the account as an object you administer.
  *
- * TWO `Disclosure`S, CLOSED BY DEFAULT, plus one pointer. Name and password are forms most
- * visitors never open; a closed accordion shows both titles at a glance and only pays for the one
- * that is clicked.
+ * PLAIN `Section`S, ALL OPEN. Name, password and the blocked list were `Disclosure`s closed by
+ * default — the owner asked for the accordion gone, so every section shows its content directly
+ * now. The tab is already the filter; a second click to reveal each form inside it was one gate
+ * too many.
  *
  * MODERATION MOVED TO ITS OWN ROUTE. The violations list and the appeal flow were a `Disclosure`
  * here; a rejected post and an automatic seven-day ban are serious enough that folding them into
@@ -23,13 +24,13 @@ export function AccountPanel() {
 
   return (
     <div className="flex flex-col gap-[var(--nx-space-section)]">
-      <Disclosure title={t('profile.info.title')} description={t('profile.info.desc')}>
+      <Section title={t('profile.info.title')} description={t('profile.info.desc')}>
         <ProfileInfoForm />
-      </Disclosure>
+      </Section>
 
-      <Disclosure title={t('profile.password.title')} description={t('profile.password.desc')}>
+      <Section title={t('profile.password.title')} description={t('profile.password.desc')}>
         <ChangePasswordForm />
-      </Disclosure>
+      </Section>
 
       <Section
         title={t('moderationMine.title')}
@@ -39,9 +40,9 @@ export function AccountPanel() {
         <></>
       </Section>
 
-      <Disclosure title={t('blocks.title')}>
+      <Section title={t('blocks.title')}>
         <BlockedUsersList />
-      </Disclosure>
+      </Section>
     </div>
   );
 }

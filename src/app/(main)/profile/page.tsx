@@ -6,6 +6,7 @@ import { useTabParam } from '@/shared/lib/use-tab-param';
 import { RepScore, useReputation } from '@/features/reputation';
 import { ProfileIdentityCard, useMyProfile } from '@/features/security';
 import { usePendingRequests } from '@/features/friendships';
+import { UserPosts } from '@/features/newsfeed';
 import { useT } from '@/core/i18n';
 import { AccountPanel } from './account-panel';
 import { OverviewPanel } from './overview-panel';
@@ -27,12 +28,13 @@ import { ProfessionalPanel } from './professional-panel';
  * name, change a password) sat at the very bottom of it. The length was never the symptom of a
  * page holding too much; it was the symptom of a page refusing to say what belongs with what.
  *
- * SO: A HERO AND THREE TABS. The hero is who you are and is always on screen — name, handle,
+ * SO: A HERO AND FOUR TABS. The hero is who you are and is always on screen — name, handle,
  * email, avatar, and the Elite Score chip beside the name, which is where `/u/{username}` has
- * always put it. The three tabs are the three questions the rest of the page answers:
+ * always put it. The tabs are the questions the rest of the page answers:
  *
  * | tab | what it holds | why together |
  * | --- | --- | --- |
+ * | Bài viết | what you have written inside the product | the same tab `/u/{username}` opens on, so both views of one account lead with the work — and it is the default here for the same reason it is there |
  * | Tổng quan | Elite Score progress, friend counts, incoming requests | what the app makes of you, and the one thing here that is waiting on you |
  * | Chuyên môn | professional profile, verified skills, GitHub | ordered by how hard the claim is to make: what you say you do → what the app has verified → what your code shows |
  * | Tài khoản | name, password, violations, blocked people | the account as an object you administer, including the two decisions made *about* it |
@@ -78,7 +80,7 @@ import { ProfessionalPanel } from './professional-panel';
  * and `./account-panel`; `Section` graduated to `@/shared/components` once `/u/[username]` turned
  * out to need the same thing four times over.
  */
-const TAB_IDS = ['overview', 'professional', 'account'] as const;
+const TAB_IDS = ['posts', 'overview', 'professional', 'account'] as const;
 type TabId = (typeof TAB_IDS)[number];
 
 export default function ProfilePage() {
@@ -110,7 +112,7 @@ function ProfileContent() {
   // Was fifteen lines of `useSearchParams` + `useState` + `history.replaceState` here, duplicated
   // almost verbatim on `/u/[username]` and simply absent on the three pages that needed it too.
   // The hook's own header carries the reasoning that used to live in this comment.
-  const [tab, onTabChange] = useTabParam<TabId>(TAB_IDS, 'overview');
+  const [tab, onTabChange] = useTabParam<TabId>(TAB_IDS, 'posts');
 
   return (
     <div className="flex flex-col gap-[var(--nx-space-section)]">
@@ -142,6 +144,7 @@ function ProfileContent() {
             onChange={onTabChange}
             className="flex-1"
             tabs={[
+              { id: 'posts', label: t('profile.tabs.posts') },
               {
                 id: 'overview',
                 label: t('profile.tabs.overview'),
@@ -155,13 +158,16 @@ function ProfileContent() {
           />
         </Card>
 
-        {/* THREE COMPONENTS RATHER THAN THREE BLOCKS OF JSX, so that a closed panel is UNMOUNTED
+        {/* ONE COMPONENT PER TAB RATHER THAN BLOCKS OF JSX, so that a closed panel is UNMOUNTED
             and its queries never fire. The page used to ask for everything on every visit —
             reputation, friends, pending requests, the professional profile, roadmap progress,
-            GitHub stats, violations, the block list — to fill three screens nobody had scrolled
+            GitHub stats, violations, the block list — to fill screens nobody had scrolled
             to. Inline `{tab === … && <div>…}` would have rendered the same thing but kept every
             `use*` call at the top of this function, where React runs it regardless of which
             branch is taken. */}
+        {/* `Bài viết` — the owner's own posts. `UserPosts` shows the caller everything they wrote
+            (the backend widens the list from the JWT), and it carries its own empty state. */}
+        {tab === 'posts' && <UserPosts userId={profile?.id} />}
         {tab === 'overview' && <OverviewPanel />}
         {tab === 'professional' && <ProfessionalPanel userId={profile?.id} />}
         {tab === 'account' && <AccountPanel />}
