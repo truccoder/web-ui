@@ -200,8 +200,9 @@ export const en = {
     expiresIn: 'The order expires in ${time}',
     openMomo: 'Open the MoMo payment page',
     checkAgain: 'Check again',
-    // Shown only in non-production builds (B27) — calls `dev-settle` directly, a shortcut for a
-    // demo with no phone on hand to scan MoMo's QR.
+    // Shown in non-production builds, or when `NEXT_PUBLIC_ENABLE_DEV_PAYMENT_BYPASS` is set (B27)
+    // — calls `dev-settle` directly, a shortcut for a demo when MoMo errors or there is no phone on
+    // hand to scan its QR.
     devSettle: 'Mark as paid (demo)',
   },
 

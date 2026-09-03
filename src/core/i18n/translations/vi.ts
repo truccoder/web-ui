@@ -195,8 +195,9 @@ export const vi: Messages = {
     expiresIn: 'Đơn hàng hết hạn sau ${time}',
     openMomo: 'Mở trang thanh toán MoMo',
     checkAgain: 'Kiểm tra lại',
-    // Chỉ hiện ở build không phải production (B27) — nút gọi thẳng `dev-settle`, đường tắt cho
-    // buổi demo khi không có điện thoại quét mã QR MoMo trong tay.
+    // Hiện ở build không phải production, hoặc khi bật `NEXT_PUBLIC_ENABLE_DEV_PAYMENT_BYPASS`
+    // (B27) — nút gọi thẳng `dev-settle`, đường tắt cho buổi demo khi MoMo lỗi hoặc không có điện
+    // thoại quét mã QR trong tay.
     devSettle: 'Đánh dấu đã thanh toán (demo)',
   },
 
