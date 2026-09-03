@@ -77,6 +77,22 @@ const POLL: Record<
   await: { maxAttempts: 80, delayMs: (attempt) => (attempt <= 10 ? 3000 : 10000) },
 };
 
+/**
+ * WHETHER THE "mark as paid" SHORTCUT IS OFFERED AT ALL.
+ *
+ * True in every non-production build automatically. It is ALSO switchable on in a production build
+ * with `NEXT_PUBLIC_ENABLE_DEV_PAYMENT_BYPASS=true` — a deployed demo/staging frontend runs
+ * `next build`, so `NODE_ENV` is `'production'` there and the automatic gate alone would hide the
+ * button on exactly the environment a live demo uses. The flag is opt-in and absent from real
+ * deployments, so this cannot leak into a genuine production site by default.
+ *
+ * The backend still has the final say: `dev-settle` only exists under the `dev` Spring profile and
+ * 404s otherwise, which the button treats as "not available here" and hides itself for good.
+ */
+const DEV_PAYMENT_BYPASS_ENABLED =
+  process.env.NODE_ENV !== 'production' ||
+  process.env.NEXT_PUBLIC_ENABLE_DEV_PAYMENT_BYPASS === 'true';
+
 type Phase = 'checking' | 'paid' | 'unconfirmed' | 'failed';
 
 export interface PaymentResultPanelProps {
@@ -100,13 +116,20 @@ export function PaymentResultPanel({ transactionRef, mode = 'confirm' }: Payment
   /**
    * THE DEMO SHORTCUT (BE `211f073`, B27). `dev-settle` only exists when the backend runs its
    * `dev` Spring profile — everywhere else the route 404s, which this side has no way to know in
-   * advance without calling it. So the gate here is the BUILD, not the backend: hidden outright
-   * in a production bundle, offered in every other build, and hidden FOR THE REST OF THIS SCREEN
-   * the first time it 404s (`missing` below) rather than shown as a broken button on every retry.
+   * advance without calling it. So the gate here is the BUILD (see `DEV_PAYMENT_BYPASS_ENABLED`),
+   * not the backend: off in a production bundle unless `NEXT_PUBLIC_ENABLE_DEV_PAYMENT_BYPASS` is
+   * set, on in every other build, and hidden FOR THE REST OF THIS SCREEN the first time it 404s
+   * (`missing` below) rather than shown as a broken button on every retry.
    *
    * A BUILD GATE, NOT A DOMAIN CHECK — this is a tool for whoever is running the app on a dev or
    * staging machine, not for a real buyer, and `localhost` during a production build test would
    * make a domain check lie in exactly the direction that matters.
+   *
+   * OFFERED IN EVERY UNFINISHED PHASE, not just `checking`. MoMo can error on its own confirmation
+   * screen and never redirect back, so the buyer sits here until the poll gives up and the phase
+   * turns `unconfirmed` — which is precisely when they need the escape hatch, so it must not
+   * disappear at that moment. On success it re-runs the poll (`retry`), which is what captures the
+   * book id, drops the pending note and moves to `paid`.
    */
   const devSettle = useDevSettlePayment();
   const [devSettleMissing, setDevSettleMissing] = React.useState(false);
@@ -311,29 +334,28 @@ export function PaymentResultPanel({ transactionRef, mode = 'confirm' }: Payment
         )}
 
         {/* See the state declaration above for why the gate is the build and not the backend. */}
-        {process.env.NODE_ENV !== 'production' &&
-          !devSettleMissing &&
-          transactionRef &&
-          phase === 'checking' &&
-          mode === 'await' && (
-            <Button
-              variant="secondary"
-              icon={<FlaskConical className="h-4 w-4" />}
-              loading={devSettle.isPending}
-              onClick={() =>
-                devSettle.mutate(transactionRef, {
-                  // A 404 here means this backend is not running the `dev` profile — the button
-                  // has nothing to offer for the rest of this screen, so it hides rather than
-                  // sitting there failing the same way on every press. `onSuccess` needs no
-                  // handling: the poll effect above is already mid-flight and will see
-                  // `paid: true` on its next attempt.
-                  onError: () => setDevSettleMissing(true),
-                })
-              }
-            >
-              {t('payment.devSettle')}
-            </Button>
-          )}
+        {DEV_PAYMENT_BYPASS_ENABLED && !devSettleMissing && transactionRef && phase !== 'paid' && (
+          <Button
+            variant="secondary"
+            icon={<FlaskConical className="h-4 w-4" />}
+            loading={devSettle.isPending}
+            onClick={() =>
+              devSettle.mutate(transactionRef, {
+                // A 404 here means this backend is not running the `dev` profile — the button
+                // has nothing to offer for the rest of this screen, so it hides rather than
+                // sitting there failing the same way on every press.
+                onError: () => setDevSettleMissing(true),
+                // Re-run the poll so a phase that had already stopped (`unconfirmed` / `failed`)
+                // picks the settled purchase up: `retry` bumps `runId`, the effect starts a
+                // fresh attempt, sees `paid: true`, and runs the book-id capture + note cleanup
+                // that only lives in that success path.
+                onSuccess: () => retry(),
+              })
+            }
+          >
+            {t('payment.devSettle')}
+          </Button>
+        )}
 
         {/* THE WAY BACK TO WHAT WAS JUST BOUGHT — the book's page is where the download button
             is. Only on success, and only when this browser is the one that started the payment:

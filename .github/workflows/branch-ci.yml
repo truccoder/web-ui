@@ -35,13 +35,19 @@ jobs:
             exit 1
           fi
 
+      # `github.event.head_commit.message` goes through `env:`, never straight into the script.
+      # Interpolating `${{ ... }}` inline lets any character in the commit message — a quote, a
+      # backtick, `$(...)` — break out of the string and run as a command (a message containing
+      # `"mark as paid"` did exactly that, invoking `as`). Via `env` the runner sets it as a real
+      # environment variable and the shell never re-parses it.
       - name: Validate commit message
+        env:
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
         run: |
-          COMMIT_MSG="${{ github.event.head_commit.message }}"
-
           echo "Commit message: $COMMIT_MSG"
 
-          if [[ ! "$COMMIT_MSG" =~ ^\[[A-Za-z0-9]+\] ]]; then
+          # Only the first line has to match — a multi-line body is fine.
+          if [[ ! "${COMMIT_MSG%%$'\n'*}" =~ ^\[[A-Za-z0-9]+\] ]]; then
             echo "❌ Invalid commit message format."
             exit 1
           fi
