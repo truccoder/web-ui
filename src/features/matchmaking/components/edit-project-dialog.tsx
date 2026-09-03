@@ -9,14 +9,19 @@ import { useT } from '@/core/i18n';
 import type { Project } from '../types/matchmaking';
 import { useUpdateProject } from '../hooks/use-matchmaking';
 
+const COMPANY_TEXT_MAX = 4000;
+
 /**
- * Edit a project's title, description, banner and tags — `PUT /v1/api/projects/{id}`.
+ * Edit a project's title, description, company copy, banner and tags — `PUT /v1/api/projects/{id}`.
  *
  * ROLES ARE NOT HERE. The backend has a separate per-position surface (add / edit / close /
  * delete), and `UpdateProjectRequestDTO` deliberately carries no `positions` — so this dialog
  * mirrors the top half of `CreateProjectDialog` and nothing else. Kept on plain `useState` for the
  * same reason that dialog is: it is the shape the feature already uses, and matching it keeps the
  * two forms readable side by side.
+ *
+ * `companyOverview` / `companyCulture` (BE `V105`) edit here too — the backend rebuilds every
+ * role's JD PDF when the project changes, so a fix to the company blurb reaches all of them.
  *
  * A `COMPLETED` PROJECT IS FROZEN — the backend answers 409 — so the surrounding controls hide the
  * edit button in that state; if one slips through, the mutation error is shown in the dialog.
@@ -31,6 +36,8 @@ export function EditProjectDialog({ project, open, onClose }: EditProjectDialogP
   const t = useT();
   const [title, setTitle] = useState(project.title ?? '');
   const [description, setDescription] = useState(project.description ?? '');
+  const [companyOverview, setCompanyOverview] = useState(project.companyOverview ?? '');
+  const [companyCulture, setCompanyCulture] = useState(project.companyCulture ?? '');
   const [tags, setTags] = useState((project.tags ?? []).join(', '));
   const [bannerUrl, setBannerUrl] = useState<string | null>(project.bannerUrl ?? null);
   const [bannerError, setBannerError] = useState<string | null>(null);
@@ -48,6 +55,8 @@ export function EditProjectDialog({ project, open, onClose }: EditProjectDialogP
     setWasOpen(true);
     setTitle(project.title ?? '');
     setDescription(project.description ?? '');
+    setCompanyOverview(project.companyOverview ?? '');
+    setCompanyCulture(project.companyCulture ?? '');
     setTags((project.tags ?? []).join(', '));
     setBannerUrl(project.bannerUrl ?? null);
     setBannerError(null);
@@ -81,6 +90,8 @@ export function EditProjectDialog({ project, open, onClose }: EditProjectDialogP
   const canSubmit =
     title.trim().length > 0 &&
     description.trim().length > 0 &&
+    companyOverview.length <= COMPANY_TEXT_MAX &&
+    companyCulture.length <= COMPANY_TEXT_MAX &&
     !update.isPending &&
     !bannerUpload.isPending;
 
@@ -108,6 +119,8 @@ export function EditProjectDialog({ project, open, onClose }: EditProjectDialogP
                   payload: {
                     title: title.trim(),
                     description: description.trim(),
+                    companyOverview: companyOverview.trim() || undefined,
+                    companyCulture: companyCulture.trim() || undefined,
                     bannerUrl: bannerUrl ?? undefined,
                     tags: tags
                       .split(',')
@@ -146,6 +159,41 @@ export function EditProjectDialog({ project, open, onClose }: EditProjectDialogP
           onChange={(event) => setTags(event.target.value)}
           placeholder={t('projects.create.tagsPlaceholder')}
         />
+
+        <section className="flex flex-col gap-[var(--nx-space-element)] rounded-nx-sm border border-nx-border-subtle bg-nx-surface-sunken p-4">
+          <div className="flex flex-col gap-[var(--nx-space-pair)]">
+            <h3 className="text-nx-ui font-semibold text-nx-text-primary">
+              {t('projects.create.team.heading')}
+            </h3>
+            <p className="text-nx-caption text-nx-text-muted">{t('projects.create.team.note')}</p>
+          </div>
+          <Textarea
+            rows={3}
+            label={t('projects.create.team.overviewLabel')}
+            value={companyOverview}
+            onChange={(event) => setCompanyOverview(event.target.value)}
+            placeholder={t('projects.create.team.overviewPlaceholder')}
+            maxLength={COMPANY_TEXT_MAX}
+            error={
+              companyOverview.length > COMPANY_TEXT_MAX
+                ? t('projects.create.team.tooLong')
+                : undefined
+            }
+          />
+          <Textarea
+            rows={3}
+            label={t('projects.create.team.cultureLabel')}
+            value={companyCulture}
+            onChange={(event) => setCompanyCulture(event.target.value)}
+            placeholder={t('projects.create.team.culturePlaceholder')}
+            maxLength={COMPANY_TEXT_MAX}
+            error={
+              companyCulture.length > COMPANY_TEXT_MAX
+                ? t('projects.create.team.tooLong')
+                : undefined
+            }
+          />
+        </section>
 
         <div className="flex flex-col gap-2">
           <span className="text-nx-body-sm font-medium text-nx-text-primary">

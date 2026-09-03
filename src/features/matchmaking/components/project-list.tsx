@@ -1,7 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { ApiErrorNotice, Avatar, Badge, Card, EmptyState, Skeleton } from '@/shared/components';
+import {
+  ApiErrorNotice,
+  Avatar,
+  Badge,
+  Card,
+  EmptyState,
+  SectionLink,
+  Skeleton,
+} from '@/shared/components';
 import { useInfiniteScroll } from '@/shared/lib/use-infinite-scroll';
 import { useT } from '@/core/i18n';
 import type { Project, SuggestedProject } from '../types/matchmaking';
@@ -110,26 +118,23 @@ export function ProjectCard({ project, href }: { project: Project; href?: string
   );
 
   return (
-    <Card className="flex flex-col gap-[var(--nx-space-group)]">
+    <Card className="group relative flex flex-col gap-[var(--nx-space-group)]">
       <div className="flex items-start gap-3">
         {authorHref ? (
-          <Link href={authorHref} className="shrink-0 rounded-nx-full">
+          <Link href={authorHref} className="relative z-10 shrink-0 rounded-nx-full">
             {authorAvatar}
           </Link>
         ) : (
           authorAvatar
         )}
         <div className="min-w-0 flex-1">
-          <Link
-            href={href ?? `/projects/${project.id}`}
-            className="text-nx-heading font-semibold text-nx-text-primary hover:underline"
-          >
+          <p className="text-nx-heading font-semibold text-nx-text-primary group-hover:underline">
             {project.title}
-          </Link>
+          </p>
           {authorHref ? (
             <Link
               href={authorHref}
-              className="block truncate text-nx-caption text-nx-text-muted hover:text-nx-text-primary hover:underline"
+              className="relative z-10 block truncate text-nx-caption text-nx-text-muted hover:text-nx-text-primary hover:underline"
             >
               {project.authorFullName}
             </Link>
@@ -183,6 +188,17 @@ export function ProjectCard({ project, href }: { project: Project; href?: string
           ))}
         </div>
       )}
+
+      {/* THE WHOLE CARD IS THE LINK TO THE PROJECT. An absolutely-positioned overlay anchor —
+          LAST in the DOM so it paints over the non-interactive body — rather than wrapping the
+          card in `<Link>`, because the card carries its own nested links (the author, keyed up
+          with `relative z-10`). Same stretched-link shape the book grid cell uses, adapted for a
+          card that is not link-only. */}
+      <Link
+        href={href ?? `/projects/${project.id}`}
+        aria-label={project.title ?? undefined}
+        className="absolute inset-0 rounded-nx-md focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-nx-focus-ring"
+      />
     </Card>
   );
 }
@@ -194,20 +210,25 @@ export function ProjectCard({ project, href }: { project: Project; href?: string
  * a role; here, a person sees which open projects fit THEM, scored against their own professional
  * profile (`knowledge`).
  *
- * RENDERS NOTHING ON AN EMPTY LIST, and that is the common case, not a failure state — a caller
- * with no professional profile row gets `[]` outright, and the backend already drops anything
- * that scores 0. A visible "no matches" block for what is usually just "you have not filled in a
- * profile yet" would be a permanent fixture on this screen for most people.
+ * SHOWS AN EMPTY STATE NOW, NOT NOTHING (JD spec step 6). The suggestion endpoint got stricter —
+ * it drops any project that does not clear the role's skills AND experience bar — so `[]` is more
+ * common than it was, and "nothing here" without a word reads as a broken block. `[]` still cannot
+ * tell "no profile yet" from "nothing matched", so the copy covers both and points at the whole
+ * board below.
  *
  * REUSES `ProjectCard` rather than a bespoke row: it is the same project, and the match reason
- * (`matchedSkills` / `matchedDomains`) is additive information alongside it, not a different way
- * of presenting a project.
+ * (`qualifiedPositionIds` / `matchedSkills` / `matchedDomains`) is additive information alongside
+ * it, not a different way of presenting a project.
  */
 export function SuggestedProjects() {
   const t = useT();
   const { data, isPending, isError } = useSuggestedProjects(5);
 
-  if (isPending || isError || !data || data.length === 0) return null;
+  // A load failure falls through to the full board below rather than showing an error here — this
+  // is a "for you" cut, not the list itself.
+  if (isPending || isError) return null;
+
+  const suggestions = data ?? [];
 
   return (
     <div className="flex flex-col gap-[var(--nx-space-block)]">
@@ -218,26 +239,65 @@ export function SuggestedProjects() {
         <p className="text-nx-caption text-nx-text-muted">{t('projects.suggested.subtitle')}</p>
       </div>
 
-      <ul className="flex flex-col gap-[var(--nx-space-block)]">
-        {data.map((suggestion) => (
-          <li key={suggestion.project?.id}>
-            <SuggestedProjectCard suggestion={suggestion} />
-          </li>
-        ))}
-      </ul>
+      {suggestions.length === 0 ? (
+        <EmptyState
+          compact
+          title={t('projects.suggested.emptyTitle')}
+          description={t('projects.suggested.emptyDesc')}
+          action={
+            <SectionLink href="/profile?tab=professional">
+              {t('projects.suggested.fillProfile')}
+            </SectionLink>
+          }
+        />
+      ) : (
+        <ul className="flex flex-col gap-[var(--nx-space-block)]">
+          {suggestions.map((suggestion) => (
+            <li key={suggestion.project?.id}>
+              <SuggestedProjectCard suggestion={suggestion} />
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
 
 function SuggestedProjectCard({ suggestion }: { suggestion: SuggestedProject }) {
   const t = useT();
-  if (!suggestion.project) return null;
+  const project = suggestion.project;
+  if (!project) return null;
 
   const reasons = [...(suggestion.matchedSkills ?? []), ...(suggestion.matchedDomains ?? [])];
 
+  // `qualifiedPositionIds` (BE `V105`) — the roles on this project the caller actually clears, and
+  // never empty when the project is suggested at all. Naming them and linking to the exact role
+  // card beats dropping someone onto the project page to work out which one is for them.
+  const positions = project.positions ?? [];
+  const qualified = (suggestion.qualifiedPositionIds ?? [])
+    .map((id) => positions.find((position) => position.id === id))
+    .filter((position): position is NonNullable<typeof position> => position != null);
+
   return (
     <div className="flex flex-col gap-[var(--nx-space-tight)]">
-      <ProjectCard project={suggestion.project} />
+      <ProjectCard project={project} />
+
+      {qualified.length > 0 && (
+        <p className="text-nx-caption text-nx-text-secondary">
+          {t('projects.suggested.qualified')}{' '}
+          {qualified.map((position, index) => (
+            <span key={position.id}>
+              {index > 0 && ' · '}
+              <Link
+                href={`/projects/${project.id}#role-${position.id}`}
+                className="text-nx-text-accent hover:underline"
+              >
+                {position.title}
+              </Link>
+            </span>
+          ))}
+        </p>
+      )}
 
       {/* The reason ships with the recommendation (backend javadoc on `SuggestedProjectDto`) so
           it renders here rather than being recomputed against `requiredSkills` client-side —

@@ -36,4 +36,15 @@ export const matchmakingKeys = {
 
   /** Projects ranked against the caller's own professional profile. */
   suggestedProjects: (limit: number) => ['matchmaking', 'suggested-projects', limit] as const,
+
+  /**
+   * The presigned URL for one role's generated job-description PDF (BE `V105`).
+   *
+   * Under the `matchmaking` prefix on purpose: the backend rebuilds this PDF whenever the role OR
+   * its project is edited, and `useUpdatePosition` / `useUpdateProject` / `useUpdatePositionStatus`
+   * all already sweep `all` on success — so a stale signed URL for an old render is dropped by the
+   * same invalidation that refreshes the project read, with no key of its own to remember.
+   */
+  jobDescription: (positionId: number) =>
+    ['matchmaking', 'position', positionId, 'job-description'] as const,
 };

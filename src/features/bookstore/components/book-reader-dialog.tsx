@@ -1,30 +1,25 @@
 'use client';
 
 import * as React from 'react';
-import { Document, Page, pdfjs } from 'react-pdf';
+import { Document, Page } from 'react-pdf';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button, Dialog, EmptyState, Skeleton } from '@/shared/components';
+import '@/shared/pdf/worker';
 import { useT } from '@/core/i18n';
 import { useBookPreviewUrl } from '../hooks';
 
 /**
  * In-app paged reader for a book's PDF sample.
  *
- * THE WORKER IS SELF-HOSTED, AND THAT IS THE POINT OF REBUILDING THIS FILE. The legacy version set
- * `workerSrc` to `https://unpkg.com/pdfjs-dist@<version>/build/pdf.worker.min.mjs` — a third-party
- * CDN on the critical path of an app that otherwise only talks to its own backend. That was one of
- * the three reasons `pdf-preview.tsx` was cut at P2.4c-4, and the note there deferred the call on
- * this reader to "the bookstore domain", which is now. `new URL(..., import.meta.url)` makes the
- * bundler resolve the worker out of `node_modules` and emit it as an asset of this app, so the
- * behaviour is unchanged and the outbound request is gone.
+ * THE pdf.js WORKER SETUP MOVED to `@/shared/pdf/worker`, imported above for its side effect —
+ * matchmaking's job-description dialog renders `react-pdf` too, and one module owning `workerSrc`
+ * is what stops the two drifting apart when `pdfjs-dist` is bumped. It is still self-hosted out of
+ * `node_modules`, not a CDN; that was one of the three reasons `pdf-preview.tsx` was cut at
+ * P2.4c-4.
  *
  * Only PDFs reach this component. EPUB has no in-app renderer, and `BookActions` sends that format
  * to the presigned URL instead rather than pretending otherwise.
  */
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url
-).toString();
 
 /** Cap so a page never renders wider than the dialog can show. */
 const MAX_PAGE_WIDTH = 480;

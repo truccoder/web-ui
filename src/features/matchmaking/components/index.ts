@@ -1,5 +1,8 @@
 export { ProjectList, ProjectCard, SuggestedProjects } from './project-list';
 export { ProjectDetail, type ProjectDetailProps } from './project-detail';
+export { PositionCard, type PositionCardProps } from './position-card';
+export { JobDescriptionDialog, type JobDescriptionDialogProps } from './job-description-dialog';
+export { PositionFormFields, type PositionFormFieldsProps } from './position-form-fields';
 export { MyApplications } from './my-applications';
 export { CreateProjectDialog, type CreateProjectDialogProps } from './create-project-dialog';
 export { EditProjectDialog, type EditProjectDialogProps } from './edit-project-dialog';

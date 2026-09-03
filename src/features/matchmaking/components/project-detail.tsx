@@ -1,24 +1,13 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
 import Link from 'next/link';
-import {
-  Avatar,
-  Badge,
-  Button,
-  Card,
-  Dialog,
-  EmptyState,
-  Skeleton,
-  Textarea,
-} from '@/shared/components';
+import { Avatar, Badge, Button, Card, EmptyState, Skeleton } from '@/shared/components';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { formatDate, useIntlLocale } from '@/shared/lib/format';
 import { useT } from '@/core/i18n';
 import type { ProjectApplication, ProjectPosition } from '../types/matchmaking';
 import {
   useAcceptApplication,
-  useApplyToPosition,
   useProject,
   useProjectApplications,
   useRejectApplication,
@@ -26,6 +15,7 @@ import {
 } from '../hooks/use-matchmaking';
 import { ProjectOwnerControls } from './project-owner-controls';
 import { AddPositionButton, PositionOwnerControls } from './position-owner-controls';
+import { PositionCard } from './position-card';
 import { ProjectMembersSection } from './project-members-section';
 
 /**
@@ -146,15 +136,25 @@ export function ProjectDetail({ projectId, viewerId, onDeleted }: ProjectDetailP
           // create request. It is not an error and does not read as one.
           <EmptyState compact title={t('projects.detail.noPositions')} />
         ) : (
-          <ul className="flex flex-col gap-[var(--nx-space-block)]">
+          // Two cards per row from `sm`; `items-stretch` (the grid default) keeps a row the same
+          // height and `mt-auto` on each card's button row lines the actions up.
+          <ul className="grid gap-[var(--nx-space-block)] sm:grid-cols-2">
             {positions.map((position) => (
-              <li key={position.id}>
+              <li
+                key={position.id}
+                id={position.id != null ? `role-${position.id}` : undefined}
+                className="scroll-mt-24"
+              >
                 <PositionCard
                   position={position}
-                  isOwner={isOwner}
                   canApply={!isOwner && project.status === 'OPEN'}
                   ownerControls={
-                    isOwner ? <PositionOwnerControls position={position} /> : undefined
+                    isOwner ? (
+                      <>
+                        {position.status === 'OPEN' && <MatchingCandidates position={position} />}
+                        <PositionOwnerControls position={position} />
+                      </>
+                    ) : undefined
                   }
                 />
               </li>
@@ -179,132 +179,6 @@ export function ProjectDetail({ projectId, viewerId, onDeleted }: ProjectDetailP
         </section>
       )}
     </div>
-  );
-}
-
-function PositionCard({
-  position,
-  isOwner,
-  canApply,
-  ownerControls,
-}: {
-  position: ProjectPosition;
-  /** Whether the viewer owns this project — the candidate ranking is theirs alone to see. */
-  isOwner: boolean;
-  canApply: boolean;
-  /** The owner's edit / status / delete row, rendered inside the card below the role details. */
-  ownerControls?: ReactNode;
-}) {
-  const t = useT();
-  const [open, setOpen] = useState(false);
-  const [message, setMessage] = useState('');
-  const apply = useApplyToPosition();
-
-  const isOpen = position.status === 'OPEN';
-
-  return (
-    <Card className="flex flex-col gap-[var(--nx-space-tight)]">
-      <div className="flex items-start gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="text-nx-ui font-medium text-nx-text-primary">{position.title}</p>
-          {position.description && (
-            <p className="mt-0.5 whitespace-pre-wrap text-nx-body-sm text-nx-text-secondary">
-              {position.description}
-            </p>
-          )}
-        </div>
-
-        {/* The button is only offered on an open role. A filled one says so instead — the API
-            refuses the call with "Position is not open for applications", and a button that
-            exists to produce that error is a trap. */}
-        {canApply && isOpen ? (
-          <Button
-            size="sm"
-            onClick={() => {
-              apply.reset();
-              setMessage('');
-              setOpen(true);
-            }}
-          >
-            {t('projects.apply')}
-          </Button>
-        ) : (
-          <Badge variant="neutral">
-            {t(`projects.positionStatus.${position.status ?? 'OPEN'}`)}
-          </Badge>
-        )}
-      </div>
-
-      <div className="flex flex-wrap items-center gap-[var(--nx-space-pair)]">
-        {position.quantity != null && position.quantity > 1 && (
-          <span className="text-nx-caption text-nx-text-muted">
-            {t('projects.quantity', { count: position.quantity })}
-          </span>
-        )}
-        {position.requiredSkills?.map((skill) => (
-          <Badge key={skill} variant="accent">
-            {skill}
-          </Badge>
-        ))}
-      </div>
-
-      {/* OWNER ONLY, AND THE GATE IS NOT COSMETIC. `GET /positions/{id}/suggested-candidates` is
-          owner-scoped and answers **403** to everyone else, so rendering this for a visitor sent
-          one guaranteed-refused request per open position — three per page on a typical project —
-          which the component then swallowed as "an empty result". Asking a question whose answer is
-          already known is the same rule `core/api/axios`'s guest allow-list follows, and the cost
-          of breaking it here was a page that could not be told apart from a broken one while
-          reading the network tab. Measured 02/09 on `/projects/4050`: 3 × 403. */}
-      {isOpen && isOwner && <MatchingCandidates position={position} />}
-
-      {ownerControls}
-
-      <Dialog
-        open={open}
-        onClose={() => setOpen(false)}
-        width={560}
-        title={t('projects.applyTitle', { title: position.title ?? '' })}
-        description={t('projects.applyDesc')}
-        footer={
-          <>
-            <Button variant="ghost" onClick={() => setOpen(false)}>
-              {t('projects.cancel')}
-            </Button>
-            <Button
-              loading={apply.isPending}
-              // The server accepts an empty message — `ApplicationRequestDTO.message` carries no
-              // validation at all — so this gate is the product's, not the API's. An application
-              // with nothing in it gives the owner nothing to decide on.
-              disabled={message.trim().length === 0}
-              onClick={() => {
-                if (position.id == null) return;
-                apply.mutate(
-                  { positionId: position.id, payload: { message: message.trim() } },
-                  { onSuccess: () => setOpen(false) }
-                );
-              }}
-            >
-              {t('projects.submitApplication')}
-            </Button>
-          </>
-        }
-      >
-        <div className="flex flex-col gap-3">
-          <Textarea
-            rows={5}
-            value={message}
-            onChange={(event) => setMessage(event.target.value)}
-            placeholder={t('projects.messagePlaceholder')}
-            aria-label={t('projects.messageLabel')}
-          />
-          {apply.isError && (
-            <p role="alert" className="text-nx-body-sm text-nx-status-danger-fg">
-              {getErrorMessage(apply.error, t('projects.applyError'))}
-            </p>
-          )}
-        </div>
-      </Dialog>
-    </Card>
   );
 }
 
@@ -387,6 +261,13 @@ function MatchingCandidates({ position }: { position: ProjectPosition }) {
 
               <span className="font-mono text-nx-caption tabular-nums text-nx-text-faint">
                 {t('projects.matching.score', { score: candidate.matchScore })}
+              </span>
+
+              {/* `skillCoveragePercent` (BE `V105`) — the share of THIS role's required skills the
+                  candidate has, 0–100. Easier to read than the raw `matchScore` beside it: a
+                  percentage has a scale everyone already knows. */}
+              <span className="font-mono text-nx-caption tabular-nums text-nx-text-secondary">
+                {t('projects.matching.coverage', { percent: candidate.skillCoveragePercent })}
               </span>
 
               {/* The skills this person shares with the position are the reason they are on the

@@ -6,6 +6,7 @@ export type {
   CreatePositionInput,
   CreateProjectInput,
   ApplyToPositionInput,
+  JobDescriptionUrl,
 } from './matchmaking';
 export type {
   Project,

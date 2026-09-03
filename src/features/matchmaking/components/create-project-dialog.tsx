@@ -6,30 +6,30 @@ import { Button, Dialog, Input, ProgressBar, Textarea } from '@/shared/component
 import { ACCEPTED_MEDIA_TYPES, MAX_MEDIA_FILE_BYTES, useUploadMedia } from '@/features/media';
 import { getErrorMessage } from '@/shared/lib/api-error';
 import { useT } from '@/core/i18n';
-import type { CreatePositionInput } from '../types/matchmaking';
+import {
+  emptyPositionDraft,
+  isPositionDraftEmpty,
+  isPositionDraftValid,
+  toPositionRequest,
+  type PositionDraft,
+} from '../lib/position-form';
 import { useCreateProject } from '../hooks/use-matchmaking';
+import { PositionFormFields } from './position-form-fields';
 
 /**
  * Create a project and its roles, in one shot.
  *
- * IT IS ONE SHOT BECAUSE THE API IS. There is no endpoint to add, rename or remove a position
- * afterwards — whatever this form sends is the permanent set — so the dialog has to let someone
- * build the whole list before submitting, and the copy has to say that the list is final rather
- * than implying it can be edited later.
+ * EACH ROLE IS NOW A FULL JOB DESCRIPTION (BE `V105`). `roleSummary`, two multi-line lists and at
+ * least one skill are required server-side — a role with no skills is a 422, not a silently empty
+ * shortlist — so the per-role block is `PositionFormFields` (shared with the edit surfaces) and the
+ * form validates against the same rules before it will submit.
  *
- * IT NAVIGATES TO WHAT IT MADE, which is new. `createProject` used to answer `void` and discard
- * the id the service had already generated, so the creator could not be shown their own project;
- * the backend now returns the full DTO and `onCreated` receives it.
+ * COMPANY-LEVEL COPY IS WRITTEN ONCE. `companyOverview` / `companyCulture` sit at the project level
+ * and every role's generated JD reuses them, which is why they are their own section here with that
+ * said in as many words.
  *
- * SKILLS ARE COMMA-SEPARATED TEXT, not a picker. `requiredSkills` is a free-form `string[]` on the
- * backend with no catalogue behind it — there is no endpoint listing valid skills — so a picker
- * would have to invent its options. It matters more than it looks: `suggestCandidates` matches
- * these strings against professional profiles, and a position with no skills returns an empty
- * shortlist without querying anything.
- *
- * `tags` FOLLOWS THE SAME COMMA-SEPARATED SHAPE (BE `ecc53bb`, B26) and is optional — a project
- * without tags still scores on skill overlap alone in `GET /projects/suggested`, it just carries
- * no weight on the domain half of that match.
+ * SKILLS DRIVE THE MATCH. `requiredSkills` is what `suggestCandidates` runs against; there is no
+ * skill catalogue on the backend, so the chip field invents nothing — it just captures strings.
  */
 export interface CreateProjectDialogProps {
   open: boolean;
@@ -37,21 +37,19 @@ export interface CreateProjectDialogProps {
   onCreated?: (projectId: number) => void;
 }
 
-const emptyPosition = (): CreatePositionInput => ({
-  title: '',
-  description: '',
-  requiredSkills: [],
-  quantity: 1,
-});
+const COMPANY_TEXT_MAX = 4000;
 
 export function CreateProjectDialog({ open, onClose, onCreated }: CreateProjectDialogProps) {
   const t = useT();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [companyOverview, setCompanyOverview] = useState('');
+  const [companyCulture, setCompanyCulture] = useState('');
   const [tags, setTags] = useState('');
   const [bannerUrl, setBannerUrl] = useState<string | null>(null);
   const [bannerError, setBannerError] = useState<string | null>(null);
-  const [positions, setPositions] = useState<CreatePositionInput[]>([emptyPosition()]);
+  const [positions, setPositions] = useState<PositionDraft[]>([emptyPositionDraft()]);
+  const [showErrors, setShowErrors] = useState(false);
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
   const create = useCreateProject();
@@ -83,10 +81,13 @@ export function CreateProjectDialog({ open, onClose, onCreated }: CreateProjectD
   const reset = () => {
     setTitle('');
     setDescription('');
+    setCompanyOverview('');
+    setCompanyCulture('');
     setTags('');
     setBannerUrl(null);
     setBannerError(null);
-    setPositions([emptyPosition()]);
+    setPositions([emptyPositionDraft()]);
+    setShowErrors(false);
     create.reset();
   };
 
@@ -95,24 +96,55 @@ export function CreateProjectDialog({ open, onClose, onCreated }: CreateProjectD
     reset();
   };
 
-  const updatePosition = (index: number, patch: Partial<CreatePositionInput>) =>
-    setPositions((prev) => prev.map((row, i) => (i === index ? { ...row, ...patch } : row)));
+  const updatePosition = (index: number, next: PositionDraft) =>
+    setPositions((prev) => prev.map((row, i) => (i === index ? next : row)));
 
-  // `title` and `description` are `@NotBlank` server-side; a position row is only sent if it has a
-  // title, so an untouched blank row is dropped rather than rejected.
-  const filled = positions.filter((position) => position.title.trim().length > 0);
+  // An untouched row is dropped rather than validated; every row someone actually started must be
+  // complete before the form will send.
+  const startedPositions = positions.filter((position) => !isPositionDraftEmpty(position));
+  const positionsOk = startedPositions.every(isPositionDraftValid);
+  const companyOk =
+    companyOverview.length <= COMPANY_TEXT_MAX && companyCulture.length <= COMPANY_TEXT_MAX;
+
   const canSubmit =
     title.trim().length > 0 &&
     description.trim().length > 0 &&
+    companyOk &&
+    positionsOk &&
     !create.isPending &&
     !bannerUpload.isPending;
+
+  const submit = () => {
+    setShowErrors(true);
+    if (!canSubmit) return;
+    create.mutate(
+      {
+        title: title.trim(),
+        description: description.trim(),
+        companyOverview: companyOverview.trim() || undefined,
+        companyCulture: companyCulture.trim() || undefined,
+        bannerUrl: bannerUrl ?? undefined,
+        tags: tags
+          .split(',')
+          .map((tag) => tag.trim())
+          .filter(Boolean),
+        positions: startedPositions.map(toPositionRequest),
+      },
+      {
+        onSuccess: (project) => {
+          close();
+          if (project.id != null) onCreated?.(project.id);
+        },
+      }
+    );
+  };
 
   return (
     <Dialog
       open={open}
       onClose={close}
-      width={560}
-      maxHeight="80vh"
+      width={640}
+      maxHeight="85vh"
       title={t('projects.create.title')}
       description={t('projects.create.desc')}
       footer={
@@ -122,46 +154,23 @@ export function CreateProjectDialog({ open, onClose, onCreated }: CreateProjectD
           </Button>
           <Button
             loading={create.isPending}
-            disabled={!canSubmit}
-            onClick={() =>
-              create.mutate(
-                {
-                  title: title.trim(),
-                  description: description.trim(),
-                  bannerUrl: bannerUrl ?? undefined,
-                  tags: tags
-                    .split(',')
-                    .map((tag) => tag.trim())
-                    .filter(Boolean),
-                  positions: filled.map((position) => ({
-                    ...position,
-                    title: position.title.trim(),
-                    description: position.description?.trim() || undefined,
-                    // `@Min(1)`; the backend defaults a missing value to 1, so only send a real one.
-                    quantity:
-                      position.quantity && position.quantity >= 1 ? position.quantity : undefined,
-                  })),
-                },
-                {
-                  onSuccess: (project) => {
-                    close();
-                    if (project.id != null) onCreated?.(project.id);
-                  },
-                }
-              )
-            }
+            disabled={(showErrors && !canSubmit) || create.isPending || bannerUpload.isPending}
+            onClick={submit}
           >
             {t('projects.create.submit')}
           </Button>
         </>
       }
     >
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-5">
         <Input
           label={t('projects.create.projectTitle')}
           value={title}
           onChange={(event) => setTitle(event.target.value)}
           placeholder={t('projects.create.projectTitlePlaceholder')}
+          error={
+            showErrors && title.trim().length === 0 ? t('projects.create.titleRequired') : undefined
+          }
         />
 
         <Textarea
@@ -170,6 +179,11 @@ export function CreateProjectDialog({ open, onClose, onCreated }: CreateProjectD
           onChange={(event) => setDescription(event.target.value)}
           placeholder={t('projects.create.descriptionPlaceholder')}
           aria-label={t('projects.create.description')}
+          error={
+            showErrors && description.trim().length === 0
+              ? t('projects.create.descriptionRequired')
+              : undefined
+          }
         />
 
         <Input
@@ -226,27 +240,57 @@ export function CreateProjectDialog({ open, onClose, onCreated }: CreateProjectD
           {bannerError && <p className="text-nx-micro text-nx-status-danger-fg">{bannerError}</p>}
         </div>
 
+        {/* ── Company-level copy, reused by every role's JD. ──────────────────────────────── */}
+        <section className="flex flex-col gap-[var(--nx-space-element)] rounded-nx-sm border border-nx-border-subtle bg-nx-surface-sunken p-4">
+          <div className="flex flex-col gap-[var(--nx-space-pair)]">
+            <h3 className="text-nx-ui font-semibold text-nx-text-primary">
+              {t('projects.create.team.heading')}
+            </h3>
+            <p className="text-nx-caption text-nx-text-muted">{t('projects.create.team.note')}</p>
+          </div>
+          <Textarea
+            rows={3}
+            label={t('projects.create.team.overviewLabel')}
+            value={companyOverview}
+            onChange={(event) => setCompanyOverview(event.target.value)}
+            placeholder={t('projects.create.team.overviewPlaceholder')}
+            maxLength={COMPANY_TEXT_MAX}
+            error={
+              companyOverview.length > COMPANY_TEXT_MAX
+                ? t('projects.create.team.tooLong')
+                : undefined
+            }
+          />
+          <Textarea
+            rows={3}
+            label={t('projects.create.team.cultureLabel')}
+            value={companyCulture}
+            onChange={(event) => setCompanyCulture(event.target.value)}
+            placeholder={t('projects.create.team.culturePlaceholder')}
+            maxLength={COMPANY_TEXT_MAX}
+            error={
+              companyCulture.length > COMPANY_TEXT_MAX
+                ? t('projects.create.team.tooLong')
+                : undefined
+            }
+          />
+        </section>
+
         <div className="flex flex-col gap-3">
           <p className="text-nx-body-sm font-medium text-nx-text-primary">
             {t('projects.create.positions')}
           </p>
-          {/* Said in the form rather than in a tooltip, because it is the one thing about this
-              dialog a person could not guess and cannot undo. */}
           <p className="text-nx-caption text-nx-text-muted">{t('projects.create.positionsNote')}</p>
 
           {positions.map((position, index) => (
             <div
               key={index}
-              className="flex flex-col gap-2 rounded-nx-sm border border-nx-border-default bg-nx-surface-sunken p-3"
+              className="flex flex-col gap-3 rounded-nx-sm border border-nx-border-default bg-nx-surface-sunken p-4"
             >
-              <div className="flex items-center gap-2">
-                <Input
-                  className="flex-1"
-                  value={position.title}
-                  onChange={(event) => updatePosition(index, { title: event.target.value })}
-                  placeholder={t('projects.create.positionTitlePlaceholder')}
-                  aria-label={t('projects.create.positionTitle')}
-                />
+              <div className="flex items-center justify-between">
+                <span className="text-nx-caption font-medium text-nx-text-muted">
+                  {t('projects.create.roleN', { n: index + 1 })}
+                </span>
                 {positions.length > 1 && (
                   <Button
                     size="sm"
@@ -258,41 +302,10 @@ export function CreateProjectDialog({ open, onClose, onCreated }: CreateProjectD
                 )}
               </div>
 
-              <Input
-                value={(position.requiredSkills ?? []).join(', ')}
-                onChange={(event) =>
-                  updatePosition(index, {
-                    requiredSkills: event.target.value
-                      .split(',')
-                      .map((skill) => skill.trim())
-                      .filter(Boolean),
-                  })
-                }
-                placeholder={t('projects.create.skillsPlaceholder')}
-                aria-label={t('projects.create.skills')}
-              />
-
-              <Textarea
-                rows={2}
-                value={position.description ?? ''}
-                onChange={(event) => updatePosition(index, { description: event.target.value })}
-                placeholder={t('projects.create.positionDescriptionPlaceholder')}
-                aria-label={t('projects.create.positionDescription')}
-              />
-
-              <Input
-                type="number"
-                min={1}
-                value={String(position.quantity ?? 1)}
-                onChange={(event) => {
-                  const n = Number(event.target.value);
-                  updatePosition(index, {
-                    quantity: Number.isFinite(n) && n >= 1 ? Math.floor(n) : 1,
-                  });
-                }}
-                label={t('projects.create.positionQuantity')}
-                hint={t('projects.create.positionQuantityHint')}
-                wrapperClassName="w-32"
+              <PositionFormFields
+                value={position}
+                onChange={(next) => updatePosition(index, next)}
+                showErrors={showErrors && !isPositionDraftEmpty(position)}
               />
             </div>
           ))}
@@ -301,7 +314,8 @@ export function CreateProjectDialog({ open, onClose, onCreated }: CreateProjectD
             size="sm"
             variant="secondary"
             icon={<Plus />}
-            onClick={() => setPositions((prev) => [...prev, emptyPosition()])}
+            className="self-start"
+            onClick={() => setPositions((prev) => [...prev, emptyPositionDraft()])}
           >
             {t('projects.create.addPosition')}
           </Button>

@@ -52,7 +52,7 @@ export type PrimaryRole = NonNullable<Schemas['SuggestedCandidateDto']['primaryR
 export type SuggestedCandidate = {
   [K in keyof Required<Schemas['SuggestedCandidateDto']>]: K extends 'userId'
     ? NonNullable<Schemas['SuggestedCandidateDto'][K]>
-    : K extends 'matchScore' | 'matchedSkills'
+    : K extends 'matchScore' | 'matchedSkills' | 'skillCoveragePercent'
       ? NonNullable<Schemas['SuggestedCandidateDto'][K]>
       : Required<Schemas['SuggestedCandidateDto']>[K] | null;
 };
@@ -70,13 +70,35 @@ export type SuggestedCandidate = {
 export type SuggestedProject = Schemas['SuggestedProjectDto'];
 
 /**
- * One position on a new project.
+ * One position on a new project — now a full job-description shape (BE `V105`/`task/Ei3AfDgd`).
  *
- * `title` is `@NotBlank`; `quantity` is `@Min(1)` and defaults to 1 server-side when omitted.
- * `requiredSkills` drives the candidate suggestion — a position with no skills makes
- * `suggestCandidates` return an empty list without querying anything.
+ * `description` IS GONE and four fields are now REQUIRED: `roleSummary` (40–2000 chars),
+ * `responsibilities` (2–15 items), `requirements` (2–15 items) and `requiredSkills` (1–20 items).
+ * `title` stays `@NotBlank`; `quantity` is `@Min(1)` and defaults to 1 server-side when omitted;
+ * `niceToHave`, `minYearsExperience` and `seniorityLevel` are optional.
+ *
+ * THE OLD NOTE HERE IS NOW WRONG AND IS QUOTED SO NOBODY REINSTATES THE BEHAVIOUR IT DESCRIBED: "a
+ * position with no skills makes `suggestCandidates` return an empty list without querying
+ * anything." A position with no `requiredSkills` is a **422** now — the server rejects it outright
+ * — because the most common way to post a role was also the surest way to have no candidates. The
+ * form must validate against the table in `docs/FEPlanJobDescription.md` so 422 is only ever a
+ * safety net.
  */
 export type CreatePositionInput = Schemas['ProjectPositionRequestDTO'];
+
+/**
+ * `{ url, renderedAt }` from `GET /v1/api/projects/positions/{positionId}/job-description` — a
+ * presigned URL (24h) for the role's generated JD PDF, plus when the backend last rendered it.
+ *
+ * Same shape and lifecycle as the bookstore's `PresignedUrl`: presigned, short-lived, re-fetched
+ * through a hook rather than stored. The FIRST read of a role is slow (~1s) because the backend
+ * builds the PDF before signing — `hasJobDescription` on the position says whether there is
+ * anything to build.
+ */
+export type JobDescriptionUrl = {
+  url: NonNullable<Schemas['JobDescriptionResponseDto']['url']>;
+  renderedAt: NonNullable<Schemas['JobDescriptionResponseDto']['renderedAt']>;
+};
 
 /**
  * Body for `POST /v1/api/projects`.

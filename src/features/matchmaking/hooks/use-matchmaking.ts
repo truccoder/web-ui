@@ -144,6 +144,27 @@ export function useSuggestedProjects(limit = 10) {
   });
 }
 
+/**
+ * GET /positions/{positionId}/job-description — the presigned URL for a role's generated JD PDF
+ * (BE `V105`). Copied from `useBookPreviewUrl`: `enabled` is required, not defaulted, because the
+ * caller is a dialog that must not sign anything until it is opened, and `staleTime` is an hour so
+ * the cached URL stays well inside its own 24-hour life while a reopened dialog skips the round
+ * trip.
+ *
+ * NO DEDICATED INVALIDATION NEEDED. The backend rebuilds this PDF when the role or its project is
+ * edited, but `useUpdatePosition` / `useUpdateProject` / `useUpdatePositionStatus` already sweep
+ * the whole `matchmaking` namespace on success, and `matchmakingKeys.jobDescription` sits under it
+ * — see that key's note.
+ */
+export function useJobDescriptionUrl(positionId: number | undefined, enabled: boolean) {
+  return useQuery({
+    queryKey: matchmakingKeys.jobDescription(positionId!),
+    queryFn: () => matchmakingApi.getJobDescriptionUrl(positionId!),
+    enabled: enabled && positionId !== undefined && Number.isFinite(positionId),
+    staleTime: 60 * 60_000,
+  });
+}
+
 /** POST /projects. Returns the created project, ids included, so the caller can open it. */
 export function useCreateProject(
   options?: MatchmakingMutationOptions<CreateProjectInput, Project>

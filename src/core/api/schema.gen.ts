@@ -2694,6 +2694,11 @@ export interface components {
             postCount?: number;
             tag?: string;
         };
+        JobDescriptionResponseDto: {
+            /** Format: date-time */
+            renderedAt?: string;
+            url?: string;
+        };
         JsonNode: Record<string, never>;
         KnowledgeLibraryResponseDto: {
             explanations?: components["schemas"]["ExplanationResponseDto"][];
@@ -3138,25 +3143,43 @@ export interface components {
             nextCursor?: number;
         };
         ProjectPositionRequestDTO: {
-            description?: string;
+            /** Format: int32 */
+            minYearsExperience?: number;
+            niceToHave?: string[];
             /** Format: int32 */
             quantity?: number;
-            requiredSkills?: string[];
+            requirements: string[];
+            requiredSkills: string[];
+            responsibilities: string[];
+            roleSummary: string;
+            /** @enum {string} */
+            seniorityLevel?: "JUNIOR" | "MID" | "SENIOR" | "LEAD" | "PRINCIPAL";
             title: string;
         };
         ProjectPositionResponseDto: {
             description?: string;
+            hasJobDescription?: boolean;
             /** Format: int32 */
             id?: number;
             /** Format: int32 */
+            minYearsExperience?: number;
+            niceToHave?: string[];
+            /** Format: int32 */
             quantity?: number;
+            requirements?: string[];
             requiredSkills?: string[];
+            responsibilities?: string[];
+            roleSummary?: string;
+            /** @enum {string} */
+            seniorityLevel?: "JUNIOR" | "MID" | "SENIOR" | "LEAD" | "PRINCIPAL";
             /** @enum {string} */
             status?: "OPEN" | "FILLED" | "CLOSED";
             title?: string;
         };
         ProjectRequestDTO: {
             bannerUrl?: string;
+            companyCulture?: string;
+            companyOverview?: string;
             description: string;
             positions?: components["schemas"]["ProjectPositionRequestDTO"][];
             tags?: string[];
@@ -3169,6 +3192,8 @@ export interface components {
             authorProfilePictureUrl?: string;
             authorUsername?: string;
             bannerUrl?: string;
+            companyCulture?: string;
+            companyOverview?: string;
             /** Format: date-time */
             createdAt?: string;
             description?: string;
@@ -3402,6 +3427,8 @@ export interface components {
             /** @enum {string} */
             seniorityLevel?: "JUNIOR" | "MID" | "SENIOR" | "LEAD" | "PRINCIPAL";
             /** Format: int32 */
+            skillCoveragePercent?: number;
+            /** Format: int32 */
             userId?: number;
             /** Format: int32 */
             yearsOfExperience?: number;
@@ -3412,6 +3439,7 @@ export interface components {
             matchedDomains?: string[];
             matchedSkills?: string[];
             project?: components["schemas"]["ProjectResponseDto"];
+            qualifiedPositionIds?: number[];
         };
         SuggestionDto: {
             /** Format: int32 */
@@ -3512,6 +3540,8 @@ export interface components {
         };
         UpdateProjectRequestDTO: {
             bannerUrl?: string;
+            companyCulture?: string;
+            companyOverview?: string;
             description: string;
             tags?: string[];
             title: string;

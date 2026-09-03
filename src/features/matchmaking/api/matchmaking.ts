@@ -3,6 +3,7 @@ import type {
   ApplyToPositionInput,
   CreatePositionInput,
   CreateProjectInput,
+  JobDescriptionUrl,
   Project,
   ProjectApplication,
   ProjectMember,
@@ -211,6 +212,24 @@ export const matchmakingApi = {
    */
   getProjectMembers: (projectId: number) =>
     api.get<ProjectMember[]>(`/v1/api/projects/${projectId}/members`).then((r) => r.data),
+
+  /**
+   * GET /v1/api/projects/positions/{positionId}/job-description — a 24-hour presigned URL for the
+   * role's generated JD PDF, plus its `renderedAt` (BE `V105`, `task/Ei3AfDgd`).
+   *
+   * SAME CONTRACT AS `bookApi.getPreviewUrl`: no side effect worth gating, cheap to re-sign, so a
+   * plain query. Only call it for a position whose `hasJobDescription` is true — a role from before
+   * V105 has no content and the endpoint would build a near-blank PDF.
+   *
+   * THE FIRST READ OF A ROLE IS SLOW (~1s): the backend renders the PDF before it signs. **503**
+   * when the `job-descriptions` bucket is missing (a fresh dev environment needs `docker compose
+   * up` once for `minio-init` to create it) — treat it as "this role's PDF storage is broken", the
+   * same way `getBook` treats its own 503.
+   */
+  getJobDescriptionUrl: (positionId: number) =>
+    api
+      .get<JobDescriptionUrl>(`/v1/api/projects/positions/${positionId}/job-description`)
+      .then((r) => r.data),
 
   /**
    * DELETE /v1/api/projects/{projectId}/members/{userId} — 204.
