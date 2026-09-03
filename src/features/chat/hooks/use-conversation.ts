@@ -1,9 +1,15 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import type { Channel, LocalMessage, MessageResponse } from 'stream-chat';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { Attachment, Channel, LocalMessage, MessageResponse } from 'stream-chat';
 import { useChatClient } from './use-chat-client';
-import type { ChatConversation, ChatMessage } from '../types/chat';
+import type {
+  ChatAttachment,
+  ChatConversation,
+  ChatMediaItem,
+  ChatMessage,
+  ChatSharedMedia,
+} from '../types/chat';
 
 /**
  * One open conversation: its messages, its header details, and sending.
@@ -14,6 +20,61 @@ import type { ChatConversation, ChatMessage } from '../types/chat';
 
 const CHANNEL_TYPE = 'messaging';
 
+/** Attachment types the shared-media list collects — the same set `toChatAttachment` keeps. */
+const MEDIA_ATTACHMENT_TYPES = ['image', 'file', 'video', 'audio'];
+
+/** How far back the one-shot history search reaches. Newer items beyond it still arrive live. */
+const SHARED_MEDIA_LIMIT = 60;
+
+/**
+ * Maps one Stream attachment onto this feature's shape, or drops it.
+ *
+ * `image` AND `file` ONLY. Stream tags an uploaded picture `image` and an uploaded document
+ * `file`; `sendFile` on a video or audio clip comes back tagged `video`/`audio`, which render the
+ * same download row here. Everything else — link previews Stream unfurled from a pasted URL, Giphy,
+ * location — is returned `null` and filtered out, so a message that merely contains a link does not
+ * sprout a broken thumbnail.
+ */
+function toChatAttachment(attachment: Attachment): ChatAttachment | null {
+  const name = attachment.fallback ?? attachment.title ?? null;
+  const mimeType = attachment.mime_type ?? null;
+  const size = typeof attachment.file_size === 'number' ? attachment.file_size : null;
+
+  if (attachment.type === 'image' && attachment.image_url) {
+    return { kind: 'image', url: attachment.image_url, name, mimeType, size };
+  }
+
+  if (attachment.type === 'file' || attachment.type === 'video' || attachment.type === 'audio') {
+    const url = attachment.asset_url ?? attachment.image_url;
+    if (url) return { kind: 'file', url, name, mimeType, size };
+  }
+
+  return null;
+}
+
+/** The reverse: this feature's attachment as the payload `channel.sendMessage` wants. */
+function toStreamAttachment(attachment: ChatAttachment): Attachment {
+  if (attachment.kind === 'image') {
+    return { type: 'image', image_url: attachment.url, fallback: attachment.name ?? undefined };
+  }
+  return {
+    type: 'file',
+    asset_url: attachment.url,
+    title: attachment.name ?? undefined,
+    mime_type: attachment.mimeType ?? undefined,
+    file_size: attachment.size ?? undefined,
+  };
+}
+
+/** The attachments on one message, each stamped with when the message was sent. */
+function toMediaItems(message: LocalMessage | MessageResponse): ChatMediaItem[] {
+  const sentAt = message.created_at ? new Date(message.created_at).toISOString() : '';
+  return (message.attachments ?? [])
+    .map(toChatAttachment)
+    .filter((attachment): attachment is ChatAttachment => attachment !== null)
+    .map((attachment) => ({ ...attachment, sentAt, messageId: message.id }));
+}
+
 /** Maps Stream's message onto this feature's shape, so components never import `stream-chat`. */
 function toMessage(message: LocalMessage | MessageResponse): ChatMessage {
   return {
@@ -22,6 +83,9 @@ function toMessage(message: LocalMessage | MessageResponse): ChatMessage {
     senderId: message.user?.id ?? '',
     senderName: message.user?.name ?? null,
     senderImage: (message.user?.image as string | undefined) ?? null,
+    attachments: (message.attachments ?? [])
+      .map(toChatAttachment)
+      .filter((attachment): attachment is ChatAttachment => attachment !== null),
     createdAt: message.created_at ? new Date(message.created_at).toISOString() : '',
   };
 }
@@ -32,7 +96,13 @@ function toHeader(
   myUserId: string
 ): Pick<
   ChatConversation,
-  'id' | 'name' | 'otherMemberId' | 'otherMemberName' | 'otherMemberImage' | 'memberCount'
+  | 'id'
+  | 'name'
+  | 'otherMemberId'
+  | 'otherMemberName'
+  | 'otherMemberImage'
+  | 'memberCount'
+  | 'members'
 > {
   const members = Object.values(channel.state.members);
 
@@ -48,6 +118,11 @@ function toHeader(
     otherMemberName: other?.user?.name ?? null,
     otherMemberImage: (other?.user?.image as string | undefined) ?? null,
     memberCount: members.length,
+    members: members.map((member) => ({
+      id: member.user_id ?? member.user?.id ?? '',
+      name: member.user?.name ?? null,
+      image: (member.user?.image as string | undefined) ?? null,
+    })),
   };
 }
 
@@ -76,6 +151,16 @@ export function useConversation(conversationId: string | null) {
     header: ConversationHeader;
   } | null>(null);
   const [failure, setFailure] = useState<{ forId: string; message: string } | null>(null);
+
+  /**
+   * The history half of the shared-media list — one `channel.search` per open, tagged like
+   * `loaded` so a stale conversation's results are never read. The live half is derived from
+   * `messages` below and merged on render.
+   */
+  const [mediaHistory, setMediaHistory] = useState<{
+    forId: string;
+    items: ChatMediaItem[];
+  } | null>(null);
 
   const isCurrent = Boolean(conversationId) && loaded?.forId === conversationId;
   const messages = isCurrent ? loaded!.messages : NO_MESSAGES;
@@ -123,6 +208,28 @@ export function useConversation(conversationId: string | null) {
          * open will try again.
          */
         channel.markRead().catch(() => {});
+
+        /**
+         * THE SHARED-MEDIA HISTORY — one search on `attachments.type`, newest first. Best-effort:
+         * an app with search disabled throws here, and the list falls back to whatever the
+         * transcript has loaded rather than the pane erroring. Not awaited into the render path —
+         * the messages are what the reader opened the conversation for.
+         */
+        channel
+          .search(
+            { 'attachments.type': { $in: MEDIA_ATTACHMENT_TYPES } },
+            { limit: SHARED_MEDIA_LIMIT, sort: { created_at: -1 } }
+          )
+          .then((response) => {
+            if (cancelled) return;
+            setMediaHistory({
+              forId: conversationId,
+              items: response.results.flatMap((result) => toMediaItems(result.message)),
+            });
+          })
+          .catch(() => {
+            if (!cancelled) setMediaHistory({ forId: conversationId, items: [] });
+          });
       } catch (err) {
         if (!cancelled) {
           setFailure({
@@ -168,21 +275,85 @@ export function useConversation(conversationId: string | null) {
   }, [client, userId, conversationId]);
 
   /**
-   * Sends a message.
+   * Sends a message — text, attachments, or both.
    *
    * NO OPTIMISTIC APPEND. The SDK echoes the sent message back through `message.new` within the
    * same round trip, and `sync` picks it up — adding a local copy first would show it twice for
-   * that instant, then need reconciling by id. Empty and whitespace-only text is refused here
-   * because Stream accepts it and it renders as a blank bubble nobody can delete.
+   * that instant, then need reconciling by id. A message with neither text nor an attachment is
+   * refused here because Stream accepts it and it renders as a blank bubble nobody can delete;
+   * whitespace-only text with no attachment is the same case.
    */
-  const send = useCallback(async (text: string) => {
+  const send = useCallback(async (text: string, attachments: ChatAttachment[] = []) => {
     const channel = channelRef.current;
     const trimmed = text.trim();
 
-    if (!channel || !trimmed) return;
+    if (!channel) return;
+    if (!trimmed && attachments.length === 0) return;
 
-    await channel.sendMessage({ text: trimmed });
+    await channel.sendMessage({
+      text: trimmed,
+      attachments: attachments.length > 0 ? attachments.map(toStreamAttachment) : undefined,
+    });
   }, []);
 
-  return { messages, header, isLoading, error, send };
+  /**
+   * Uploads one file to the channel's store and returns the attachment to hand back to `send`.
+   *
+   * TWO ENDPOINTS, PICKED BY MIME. `sendImage` puts the file through Stream's image pipeline —
+   * resizing, a `thumb_url`, CDN delivery — which is only right for an actual image; everything
+   * else goes through `sendFile` and comes back as a plain asset URL. Upload and send are separate
+   * steps on purpose: the composer shows a thumbnail the moment the upload resolves and only
+   * commits the message when the person hits send, so a change of mind costs nothing sent.
+   *
+   * The size ceiling and which types are offered are the composer's call — this just uploads what
+   * it is given and lets a Stream rejection propagate.
+   */
+  const uploadAttachment = useCallback(async (file: File): Promise<ChatAttachment> => {
+    const channel = channelRef.current;
+    if (!channel) throw new Error('Chat is not connected');
+
+    const isImage = file.type.startsWith('image/');
+    const response = isImage ? await channel.sendImage(file) : await channel.sendFile(file);
+
+    return {
+      kind: isImage ? 'image' : 'file',
+      url: response.file,
+      name: file.name,
+      mimeType: file.type || null,
+      size: file.size,
+    };
+  }, []);
+
+  /**
+   * THE SHARED-MEDIA LIST — history from the search, merged with whatever is in the loaded
+   * transcript so a file sent while the pane is open appears without a re-search. De-duped by
+   * `messageId + url` (live copy wins), newest first.
+   */
+  const media = useMemo<ChatSharedMedia>(() => {
+    const history = mediaHistory?.forId === conversationId ? mediaHistory.items : [];
+    const live: ChatMediaItem[] = messages.flatMap((message) =>
+      message.attachments.map((attachment) => ({
+        ...attachment,
+        sentAt: message.createdAt,
+        messageId: message.id,
+      }))
+    );
+
+    const seen = new Set<string>();
+    const ordered: ChatMediaItem[] = [];
+    for (const item of [...live, ...history]) {
+      const key = `${item.messageId}:${item.url}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      ordered.push(item);
+    }
+    ordered.sort((a, b) => b.sentAt.localeCompare(a.sentAt));
+
+    return {
+      images: ordered.filter((item) => item.kind === 'image'),
+      files: ordered.filter((item) => item.kind === 'file'),
+    };
+  }, [messages, mediaHistory, conversationId]);
+
+  return { messages, header, media, isLoading, error, send, uploadAttachment };
 }

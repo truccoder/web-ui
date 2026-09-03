@@ -6,15 +6,21 @@ import { ArrowLeft } from 'lucide-react';
 import { Avatar, EmptyState, Skeleton } from '@/shared/components';
 import { useT } from '@/core/i18n';
 import { cn } from '@/shared/lib/cn';
-import type { ChatConversation, ChatMessage } from '../types/chat';
+import type { ChatAttachment, ChatConversation, ChatMessage } from '../types/chat';
 import { getMessagePosition } from '../lib/grouping';
 import { MessageBubble } from './message-bubble';
 import { MessageComposer } from './message-composer';
 
-/** Just the identity part of a conversation — what the header needs. */
+/** Just the identity part of a conversation — what the header and the info column need. */
 export type ConversationHeaderData = Pick<
   ChatConversation,
-  'id' | 'name' | 'otherMemberId' | 'otherMemberName' | 'otherMemberImage' | 'memberCount'
+  | 'id'
+  | 'name'
+  | 'otherMemberId'
+  | 'otherMemberName'
+  | 'otherMemberImage'
+  | 'memberCount'
+  | 'members'
 >;
 
 /**
@@ -31,7 +37,12 @@ export interface ConversationViewProps {
   myUserId: string | null;
   isLoading: boolean;
   error: string | null;
-  onSend: (text: string) => Promise<void>;
+  onSend: (text: string, attachments?: ChatAttachment[]) => Promise<void>;
+  /**
+   * Uploads one picked file and resolves to the attachment `onSend` then commits. Given, the
+   * composer shows an attach button; omitted (a frame that does not want uploads), it does not.
+   */
+  onUpload?: (file: File) => Promise<ChatAttachment>;
   /** Rendered as a back arrow in the header when given — the mobile one-pane layout needs it. */
   onBack?: () => void;
   /**
@@ -79,6 +90,7 @@ export function ConversationView({
   isLoading,
   error,
   onSend,
+  onUpload,
   onBack,
   titleHref,
   actions,
@@ -112,7 +124,17 @@ export function ConversationView({
 
   return (
     <div className={cn('flex h-full flex-col', className)}>
-      <div className="flex items-center gap-3 border-b border-nx-border-subtle px-3 py-2.5">
+      {/**
+       * THE HEADER IS A PLANE CHANGE, NOT AN ELEVATION — owner asks, in two passes.
+       *
+       * It began as a transparent `border-b` row on the pane's own ground, which read as part of
+       * the transcript once that went full-width. A first pass lifted it with `surface-card` +
+       * `shadow-nx-2`; the owner rejected the shadow — *cái thanh này không được trồi lên so với 2
+       * bên*. So: the `surface-card` fill stays (it sits a step off the recessed transcript ground,
+       * same as both flanking columns), the shadow and the `z` lift are gone, and the `border-b`
+       * hairline comes back to seat the edge. Nothing here rises above the side columns.
+       */}
+      <div className="flex shrink-0 items-center gap-3 border-b border-nx-border-subtle bg-nx-surface-card px-3 py-2.5">
         {onBack && (
           <button
             type="button"
@@ -158,25 +180,19 @@ export function ConversationView({
       </div>
 
       {/**
-       * THE TRANSCRIPT KEEPS A MEASURE — report §3.7 (E003).
+       * THE TRANSCRIPT RUNS FULL-WIDTH — owner override of report §3.7 (E003).
        *
-       * `--spacing-nx-chat-measure: 600px` has been declared in `globals.css` since the round-15
-       * transcription and had **zero consumers**: `grep` found only its own definition, and the
-       * running page agreed — `getPropertyValue` returned empty, because Tailwind v4 drops a theme
-       * variable nothing uses. A dead token in a layout file is worse than a missing one; it reads
-       * as a decision that was made.
+       * E003 capped the column at `--spacing-nx-chat-measure` (600) and centred it with `mx-auto`
+       * to hold a readable line length. On the wide focus-mode pane that left a broad band of bare
+       * `surface-page` down each side of every message, and the owner read the screen as hard to
+       * track: *cho chat tràn hết khung*. The cap is gone; the transcript now fills the pane.
        *
-       * Without it the column simply grew with the viewport: measured at 1440 it was **840px** with
-       * `max-width: none`, and wider on a wider screen. The bubbles cap themselves at
-       * `min(448px, 72%)`, but that caps a BUBBLE, not the column — so timestamps, avatars and the
-       * date separators kept spanning the full 840, and the eye had to cross all of it to reach the
-       * time beside a two-word message.
-       *
-       * `mx-auto` on the inner column rather than a `max-w` on the scroller: the scrollbar belongs
-       * to the full width, the measure belongs to the content.
+       * The bubble still caps ITSELF at `min(28rem, 72%)` (see `MessageBubble`), so no single
+       * message spans the whole pane — only a run's alignment, the timestamps and the date
+       * separators widen out, which is the reach the owner wanted back.
        */}
       <div className="min-h-0 flex-1 overflow-y-auto px-3 py-2">
-        <div className="mx-auto w-full max-w-nx-chat-measure">
+        <div className="w-full">
           {isLoading ? (
             <div className="flex flex-col gap-3 py-2">
               {[64, 48, 72].map((width, index) => (
@@ -212,7 +228,7 @@ export function ConversationView({
         </div>
       </div>
 
-      <MessageComposer onSend={onSend} disabled={isLoading || error !== null} />
+      <MessageComposer onSend={onSend} onUpload={onUpload} disabled={isLoading || error !== null} />
     </div>
   );
 }

@@ -52,6 +52,11 @@ function toConversation(channel: Channel, myUserId: string): ChatConversation {
     otherMemberName: other?.user?.name ?? null,
     otherMemberImage: (other?.user?.image as string | undefined) ?? null,
     memberCount: members.length,
+    members: members.map((member) => ({
+      id: member.user_id ?? member.user?.id ?? '',
+      name: member.user?.name ?? null,
+      image: (member.user?.image as string | undefined) ?? null,
+    })),
     lastMessage: lastMessage?.text ?? null,
     lastMessageAt: lastMessage?.created_at ? new Date(lastMessage.created_at).toISOString() : null,
     unreadCount: channel.countUnread(),

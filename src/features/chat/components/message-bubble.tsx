@@ -1,8 +1,11 @@
 'use client';
 
+import { FileText } from 'lucide-react';
 import { Avatar } from '@/shared/components';
+import { useT } from '@/core/i18n';
 import { cn } from '@/shared/lib/cn';
 import type { ChatMessage } from '../types/chat';
+import { formatFileSize } from '../lib/format';
 import type { MessagePosition } from '../lib/grouping';
 
 /**
@@ -52,6 +55,21 @@ export function MessageBubble({
   showAvatar,
   className,
 }: MessageBubbleProps) {
+  const t = useT();
+
+  const images = message.attachments.filter((attachment) => attachment.kind === 'image');
+  const files = message.attachments.filter((attachment) => attachment.kind === 'file');
+  const hasText = message.text.length > 0;
+
+  // Once a bubble carries attachments the run-corner squaring stops applying — the blocks stack
+  // with their own full radius rather than reading as one welded column.
+  const textRadius =
+    message.attachments.length > 0 ? 'rounded-nx-lg' : bubbleRadius(isOwn, position);
+
+  const fillClass = isOwn
+    ? 'bg-nx-accent-fill text-nx-accent-fill-text'
+    : 'bg-nx-tint text-nx-text-primary';
+
   return (
     <div
       className={cn(
@@ -79,32 +97,76 @@ export function MessageBubble({
         )}
       </span>
 
+      {/**
+       * ONE COLUMN, ONE MEASURE. Images, file rows and the text bubble stack here and the
+       * `max-w` caps the widest of them — the same `min(28rem,72%)` a text-only bubble always had.
+       *
+       * THE INCOMING FILL IS `tint`, NOT `surface-sunken`, AND THAT IS A BUG FIX. R15 recessed the
+       * ground to gray-100 and `--nx-surface-sunken` is gray-100 too, so an incoming bubble on the
+       * transcript pane was grey-on-grey ("chat bị mất bg color"). `--nx-tint` is an alpha, so it
+       * darkens whatever plane it lands on by the same perceptual amount.
+       */}
       <div
         className={cn(
-          'max-w-[min(28rem,72%)] px-3 py-2',
-          'text-nx-body whitespace-pre-wrap break-words',
-          bubbleRadius(isOwn, position),
-          /**
-           * THE INCOMING BUBBLE IS `tint`, NOT `surface-sunken`, AND THAT IS A BUG FIX.
-           *
-           * R15 recessed the ground a step — `--nx-surface-page` went from gray-50 to gray-100 —
-           * and `--nx-surface-sunken` is gray-100 too. `/chats` paints its transcript pane
-           * `bg-nx-surface-page` (see `ChatMessenger`), so from that round on every incoming
-           * bubble was gray-100 laid on gray-100: the fill was still there, it just had nothing
-           * to say. Reported as "chat bị mất bg color", and the screenshot is a column of bare
-           * text with no bubble around it.
-           *
-           * A step off the ramp cannot fix it, because this component is rendered on TWO planes:
-           * the page ground here, and `surface-raised` (white) inside the floating window. Any
-           * fixed grey disappears into one of them. `--nx-tint` is the token the DS keeps for
-           * exactly that case — "the one fill that must read on EVERY plane, hence an alpha
-           * rather than a step off the ramp" — so it darkens the ground and the white window by
-           * the same perceptual amount, in both themes.
-           */
-          isOwn ? 'bg-nx-accent-fill text-nx-accent-fill-text' : 'bg-nx-tint text-nx-text-primary'
+          'flex min-w-0 max-w-[min(28rem,72%)] flex-col gap-1',
+          isOwn ? 'items-end' : 'items-start'
         )}
       >
-        {message.text}
+        {images.map((attachment, index) => (
+          <a
+            key={`image-${index}`}
+            href={attachment.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block max-w-full rounded-nx-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element -- Stream's CDN already serves a
+                sized image; next/image would proxy it for no gain and needs the host allow-listed. */}
+            <img
+              src={attachment.url}
+              alt={attachment.name ?? t('chat.imageAttachment')}
+              loading="lazy"
+              className="max-h-80 max-w-full rounded-nx-lg"
+            />
+          </a>
+        ))}
+
+        {files.map((attachment, index) => (
+          <a
+            key={`file-${index}`}
+            href={attachment.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            download
+            className={cn(
+              'flex max-w-full items-center gap-2 px-3 py-2 text-nx-body rounded-nx-lg',
+              'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nx-focus-ring',
+              fillClass
+            )}
+          >
+            <FileText className="size-4 shrink-0" aria-hidden />
+            <span className="min-w-0 flex-1 truncate">
+              {attachment.name ?? t('chat.fileAttachment')}
+            </span>
+            {attachment.size != null && (
+              <span className="shrink-0 text-nx-caption opacity-70">
+                {formatFileSize(attachment.size)}
+              </span>
+            )}
+          </a>
+        ))}
+
+        {hasText && (
+          <div
+            className={cn(
+              'max-w-full px-3 py-2 text-nx-body whitespace-pre-wrap break-words',
+              textRadius,
+              fillClass
+            )}
+          >
+            {message.text}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -72,6 +72,21 @@ export type ChatToken = {
  * `name` is null for a channel created without one: Stream does not synthesise a title for
  * member-based channels, so the UI derives a label from `otherMemberName` instead.
  */
+/**
+ * One channel member, mapped out of Stream's membership.
+ *
+ * NAME AND IMAGE COME FROM STREAM, NOT THE BACKEND. `GET /chat/token` upserts a user's name and
+ * avatar into Stream as a side effect, so a member Stream has seen carries both; one it has not
+ * falls back to the id as a name and no image. There is no handle here — Stream members do not
+ * carry one — which is why `ChatInfo` resolves it through `useReputations` for the profile link.
+ */
+export type ChatMember = {
+  /** Stream user id — the backend's numeric user id, as a string. */
+  id: string;
+  name: string | null;
+  image: string | null;
+};
+
 export type ChatConversation = {
   /** Stream's channel id (`channel.id`), unique within the `messaging` type. */
   id: string;
@@ -97,6 +112,12 @@ export type ChatConversation = {
    * it.
    */
   memberCount: number;
+  /**
+   * Every member of the channel, caller included — populated once the channel is watched (the
+   * list query and `useConversation` both watch, so it is filled wherever the UI reads it).
+   * `ChatInfo` shows this for a group in place of the bare count; a direct message ignores it.
+   */
+  members: ChatMember[];
   lastMessage: string | null;
   /** ISO-8601. Null when the conversation has no messages yet. */
   lastMessageAt: string | null;
@@ -142,6 +163,47 @@ export type GroupChatHandle = {
   [K in keyof Required<Schemas['GroupChatResponse']>]: NonNullable<Schemas['GroupChatResponse'][K]>;
 };
 
+/**
+ * One attachment on a message.
+ *
+ * TWO KINDS, DECIDED BY HOW IT RENDERS. `image` draws inline as a thumbnail; `file` draws as a
+ * download row with a name and a size. Stream keeps far more attachment types (`video`, `audio`,
+ * Giphy, location, link previews) — the mapper folds media into `file` and drops the rest, so a
+ * URL Stream auto-unfurled does not turn into a broken `<img>`.
+ */
+export type ChatAttachment = {
+  kind: 'image' | 'file';
+  /** `image_url` for an image, `asset_url` for a file. */
+  url: string;
+  /** Original filename when Stream kept it (`fallback` / `title`). */
+  name: string | null;
+  mimeType: string | null;
+  /** Bytes, when Stream reported it — only shown for files. */
+  size: number | null;
+};
+
+/** An attachment plus the moment its message was sent — what the shared-media list sorts on. */
+export type ChatMediaItem = ChatAttachment & {
+  /** ISO-8601. */
+  sentAt: string;
+  /** The message it belongs to — half of the de-dup key alongside `url`. */
+  messageId: string;
+};
+
+/**
+ * Every picture and file exchanged in one conversation, newest first.
+ *
+ * PART HISTORY, PART LIVE. The history comes from one `channel.search` on `attachments.type` when
+ * the pane opens; the live half is whatever is in the watched channel's loaded messages, so a file
+ * sent while the pane is open shows without a re-search. The two are merged and de-duped by
+ * `messageId + url`. When a Stream app has search disabled the history half is simply empty and
+ * the list is whatever the transcript has loaded.
+ */
+export type ChatSharedMedia = {
+  images: ChatMediaItem[];
+  files: ChatMediaItem[];
+};
+
 /** One message, mapped out of Stream's `MessageResponse`. */
 export type ChatMessage = {
   id: string;
@@ -150,6 +212,8 @@ export type ChatMessage = {
   senderId: string;
   senderName: string | null;
   senderImage: string | null;
+  /** Empty for a plain text message. */
+  attachments: ChatAttachment[];
   /** ISO-8601. */
   createdAt: string;
 };

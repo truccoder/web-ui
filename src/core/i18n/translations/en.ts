@@ -2194,6 +2194,13 @@ export const en = {
     unknownPerson: 'User',
     messagePlaceholder: 'Write a message...',
     send: 'Send',
+    attachFile: 'Attach a file',
+    removeAttachment: 'Remove ${name}',
+    attachmentUploading: 'Uploading',
+    attachmentFailed: 'Some files could not be uploaded.',
+    attachmentTooLarge: 'Files must be under ${size} MB.',
+    imageAttachment: 'Image',
+    fileAttachment: 'File',
     loadError: 'Could not open this conversation',
     connecting: 'Connecting...',
     connectionError: 'Could not reach the chat service. Reload the page to try again.',
@@ -2213,7 +2220,10 @@ export const en = {
       label: 'Conversation details',
       // Does not inflect at 1, following `profile.hero.verifiedSkills` and `github.repos`.
       memberCount: '${count} members',
+      membersHeading: 'Members',
       verifiedSkills: 'Verified skills',
+      sharedImages: 'Photos · ${count}',
+      sharedFiles: 'Files · ${count}',
       /* The accessible name for the avatar link — never rendered, so it carries the person's
          name rather than repeating what the visible link beside it already says. */
       viewProfile: '${name}’s profile',

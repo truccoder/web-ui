@@ -1953,7 +1953,7 @@ export const vi: Messages = {
     tabs: {
       browse: 'Duyệt sách',
       purchased: 'Sách đã mua',
-      mine: 'Sách tôi viết',
+      mine: 'Sách tôi đăng',
     },
     title: 'Thư viện',
     owned: 'Đã sở hữu',
@@ -2149,6 +2149,13 @@ export const vi: Messages = {
     unknownPerson: 'Người dùng',
     messagePlaceholder: 'Nhắn tin...',
     send: 'Gửi',
+    attachFile: 'Đính kèm tệp',
+    removeAttachment: 'Bỏ ${name}',
+    attachmentUploading: 'Đang tải lên',
+    attachmentFailed: 'Có tệp không tải lên được.',
+    attachmentTooLarge: 'Tệp phải nhỏ hơn ${size} MB.',
+    imageAttachment: 'Hình ảnh',
+    fileAttachment: 'Tệp',
     loadError: 'Không mở được cuộc trò chuyện',
     connecting: 'Đang kết nối...',
     connectionError: 'Không kết nối được tới dịch vụ chat. Tải lại trang để thử lại.',
@@ -2167,7 +2174,10 @@ export const vi: Messages = {
     info: {
       label: 'Thông tin cuộc trò chuyện',
       memberCount: '${count} thành viên',
+      membersHeading: 'Thành viên',
       verifiedSkills: 'Kỹ năng đã xác minh',
+      sharedImages: 'Ảnh · ${count}',
+      sharedFiles: 'Tệp · ${count}',
       /* Nhãn cho ảnh đại diện đã thành link — chữ "Xem trang cá nhân" không hiện ra màn hình,
          nó là tên của cái link cho trình đọc màn hình, nên phải kèm tên người. */
       viewProfile: 'Xem trang cá nhân của ${name}',

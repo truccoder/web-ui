@@ -59,9 +59,11 @@ export function ChatMessenger({
   const {
     messages,
     header,
+    media,
     isLoading: isConversationLoading,
     error,
     send,
+    uploadAttachment,
   } = useConversation(activeConversationId);
 
   /**
@@ -148,6 +150,7 @@ export function ChatMessenger({
             isLoading={isConversationLoading}
             error={error}
             onSend={send}
+            onUpload={uploadAttachment}
             // Only meaningful on mobile, where the list is a separate screen. On desktop both
             // panes are visible, so the arrow would clear a selection for no reason — hidden
             // through the `data-slot` hook rather than by withholding the callback, because
@@ -164,7 +167,7 @@ export function ChatMessenger({
       {/* ONLY WITH A CONVERSATION OPEN — the column is about a person, and with nothing selected
           there is no person for it to be about. It hides itself below `xl` (its own class), which
           is the same order the shell folds in: the thing furthest from the content goes first. */}
-      {activeConversationId && <ChatInfo header={header} />}
+      {activeConversationId && <ChatInfo header={header} media={media} />}
     </div>
   );
 }
