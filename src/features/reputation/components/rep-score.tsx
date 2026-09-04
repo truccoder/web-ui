@@ -1,0 +1,179 @@
+'use client';
+
+import * as React from 'react';
+import { cn } from '@/shared/lib/cn';
+import { useIntlLocale } from '@/shared/lib/format';
+
+/**
+ * Hand-written from `RepScore.d.ts` + `RepScore.prompt.md` and the rendered
+ * `display.card` specimen. No design-system source was read.
+ *
+ * The Elite Score chip: mono digits behind an amber cursor bar. This is the ONE sanctioned
+ * amber accent in product UI (constitution §1.3) — never restyle it blue or neutral, and
+ * never reuse this look for something that isn't reputation.
+ *
+ * DEVIATION, mandatory: the DS component derives the level from the score via its own
+ * `REP_LEVELS` table and exposes `repLevel()`/`REP_LEVELS` helpers. This one takes
+ * `levelName` as a prop instead. Thresholds already exist twice — backend enum `RepLevel`
+ * and the DS table — and CLAUDE.md §1 forbids a third copy in the frontend, so the level
+ * always comes off the API response. With no `levelName`, the suffix is simply omitted;
+ * it is never guessed from the score.
+ *
+ * DEVIATION, minor: the specimen's digits are 11.5 / 12.5 / 16px, none of which exist in
+ * the type scale — a closed set per constitution §7.2, and §0 makes the constitution win.
+ * Mapped to the nearest tokens: micro 11 / caption 12 / body 15. Chip geometry (heights,
+ * padding, bar size) is component spec, not type, so it follows the specimen exactly.
+ */
+export interface RepScoreProps extends React.HTMLAttributes<HTMLSpanElement> {
+  /** Raw Elite Score, e.g. 8420 → "8,420". */
+  score?: number;
+  /** sm = inline in feed identity rows · md = default · lg = profile hero. @default "md" */
+  size?: 'sm' | 'md' | 'lg';
+  /** Append "· <level>". Requires `levelName` — nothing is derived from the score. */
+  showLevel?: boolean;
+  /** Level name straight from the API (`levelName`). */
+  levelName?: string;
+}
+
+/**
+ * `text-nx-*` carries the token's own line-height, which would beat a separate `leading-none`; the
+ * `/none` modifier sets both at once, as the specimen does.
+ *
+ * THE GAPS WERE 5 / 7 / 9 AND ARE NOW 4 / 4 / 8 — corrected by measuring the kit rather than by
+ * re-reading it. The note above claims this chip "follows the specimen exactly"; it did not. The
+ * rendered R15 chip is `height 20 · padding 0 6px · gap 4px · font 11` at `sm`, and ours matched on
+ * every number except the gap. 5 · 7 · 9 are on no scale the system has: round 5.1's sub-scale
+ * below `tight` is `2 · 4 · 8` and says outright that "5 · 6 · 7 are gone from both kits".
+ *
+ * Only `sm` appears in the kit's feed, so that one is measured. `md` and `lg` are placed on the
+ * nearest legal rungs rather than kept on numbers the ladder does not contain — stated here
+ * because it is an inference, not a measurement.
+ *
+ * Heights and horizontal padding are untouched: those ARE component-spec geometry, and sampling
+ * the kit shows padding legitimately using 6 and 7 where gaps never do.
+ */
+const sizeStyles: Record<NonNullable<RepScoreProps['size']>, string> = {
+  sm: 'h-5 gap-1 px-2 text-nx-micro/none',
+  md: 'h-6 gap-1 px-2 text-nx-caption/none',
+  lg: 'h-8 gap-2 px-2.5 text-nx-body/none',
+};
+
+/**
+ * WIDTHS ARE THE SPECIMEN'S; THE HEIGHT IS NO LONGER, and this one is a measurement, not a
+ * re-reading. The kit's bar heights (10 / 12 / 16px) are TALLER THAN THE TEXT THEY STAND
+ * BESIDE: Geist Mono's cap height is 0.73em, so at `lg` an 16px bar towers 2.5px over the
+ * digits' caps and — the part that actually shows — hangs 2.5px BELOW THE BASELINE. The
+ * baseline is the strongest horizontal in the chip; both `41` and the level name rest on it,
+ * and the one element that crosses it reads as having slipped down, however precisely it is
+ * centred. (It is centred: measured in Chromium, the bar's centre and the digits' ink centre
+ * agree to within half a pixel at all three sizes. The complaint was never about the centre.)
+ *
+ * `0.75em` puts the bar on the CAP BOX instead — top on the cap line, bottom on the baseline,
+ * nothing overhanging either — and ties it to the type, so it tracks the font size instead of
+ * being three px values that only happen to suit today's scale. A caret that spans the whole
+ * line (which is what the kit's number describes) is right for a text cursor and wrong here,
+ * where the bar is a mark beside a number rather than an insertion point in it.
+ */
+const barStyles: Record<NonNullable<RepScoreProps['size']>, string> = {
+  sm: 'h-[0.75em] w-[3px]',
+  md: 'h-[0.75em] w-1',
+  lg: 'h-[0.75em] w-[5px]',
+};
+
+/**
+ * Grouped below 10k ("8,420"), compacted above it ("15.8k") — matching the specimen, which
+ * shows 128 and 8,420 in full but 12.5k and 15.8k compacted. A whole number of thousands
+ * drops the decimal: 15000 → "15k".
+ *
+ * `localeTag` IS REQUIRED RATHER THAN DEFAULTED, because both branches carry a separator whose
+ * meaning flips between the app's two languages: `8,420` is eight thousand to an English reader
+ * and eight-point-four-two to a Vietnamese one, and `15.8k` inverts the same pair. A default here
+ * would let a caller render a false number without ever writing a locale down, so the type system
+ * asks instead. Vietnamese output is `8.420` and `15,8k`.
+ */
+export function formatRep(score = 0, localeTag: string): string {
+  if (score < 10_000) return score.toLocaleString(localeTag);
+  const thousands = score / 1000;
+  // `maximumFractionDigits: 1` does the specimen's "drop the decimal on a whole thousand" for
+  // free, and localises the decimal mark that `toFixed` would have hardcoded to a dot.
+  return `${thousands.toLocaleString(localeTag, { maximumFractionDigits: 1 })}k`;
+}
+
+export function RepScore({
+  score = 0,
+  size = 'md',
+  showLevel = false,
+  levelName,
+  className,
+  ...props
+}: RepScoreProps) {
+  const localeTag = useIntlLocale();
+  /** The feed and comment rows, where the chip competes with a name for the same line. */
+  const compactLevel = size === 'sm';
+
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center whitespace-nowrap rounded-nx-sm',
+        'border border-nx-rep-border bg-nx-rep-soft font-mono font-semibold text-nx-rep-text',
+        sizeStyles[size],
+        className
+      )}
+      {...props}
+    >
+      <span aria-hidden className={cn('shrink-0 rounded-[1.5px] bg-nx-rep', barStyles[size])} />
+      {formatRep(score, localeTag)}
+      {showLevel && levelName && (
+        <>
+          {/*
+            THE SEPARATOR IS ITS OWN ITEM, AND THE SPACE AFTER IT IS GONE. It used to be the text
+            `· {levelName}` inside one span, which put THREE different kinds of space in a row that
+            is only four elements long: the flex `gap` between the bar and the digits, the same
+            `gap` before the middot, and then — inside the text — a MONOSPACE space character.
+            A space in a mono face is a full advance cell (~0.6em, so ~9px at `lg`), so the room
+            after the middot was roughly double the room before it, and the chip read as leaning
+            left even though its padding is symmetric.
+
+            Split in two, every gap in the chip is the one `gap` token and nothing else. The middot
+            keeps its own optical breathing room from the mono cell it sits in, evenly on both
+            sides, which is what the cell is for.
+
+            `aria-hidden` because it is punctuation between two facts, not a fact: the chip should
+            be heard as "8,420 Expert", not "8,420 middle dot Expert".
+          */}
+          {/**
+           * ON THE COMPACT CHIP, THE LEVEL NAME STANDS DOWN ON SMALL SCREENS — report §3.5 (H001).
+           *
+           * The bug this closes: in a feed row the person's NAME was the only shrinkable item, so
+           * every pixel of overflow came out of it. Measured at 375, `Phạm Văn Hoà` wanted 98px
+           * and got 61 — a short name, cut — while `591 · Contributor` beside it kept all 132.
+           * Vietnamese names are long; this hit the app's main reading surface hardest.
+           *
+           * WHY THIS AND NOT `flex-shrink` TUNING. Four attempts were made to let the chip give
+           * ground gradually, and each produced a different artefact: a hard clip through the
+           * pill's rounded edge; a 3px sliver of a glyph; a dangling `·` with nothing after it;
+           * and a chip that escaped its box into the `⋯` menu. A pill has a background and a
+           * radius — unlike plain text it does not degrade, it either reads as a chip or as
+           * debris. So the chip does not shrink. It decides what to SAY.
+           *
+           * The score is the fact and is always shown. The level is an annotation on it, and
+           * below `sm` the compact chip drops the annotation and keeps the fact — which is also
+           * the design system's own ordering of the two.
+           *
+           * SCOPED TO `size === 'sm'`, deliberately: that is the feed row and the comment row,
+           * where the collision happens. The profile hero (`lg`) is a centred column with room to
+           * spare and keeps its full chip at every width.
+           */}
+          <span aria-hidden className={cn(compactLevel && 'hidden sm:inline')}>
+            <span className="text-nx-rep-strong">·</span>
+          </span>
+          <span
+            className={cn('font-medium text-nx-rep-strong', compactLevel && 'hidden sm:inline')}
+          >
+            {levelName}
+          </span>
+        </>
+      )}
+    </span>
+  );
+}

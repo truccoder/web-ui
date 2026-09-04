@@ -1,0 +1,376 @@
+'use client';
+
+import * as React from 'react';
+import {
+  BookOpen,
+  CheckCircle2,
+  Clock,
+  ExternalLink,
+  FlaskConical,
+  Loader2,
+  RotateCw,
+  XCircle,
+} from 'lucide-react';
+import { Button, ButtonLink } from '@/shared/components';
+import { useT } from '@/core/i18n';
+import { forgetPendingPayment, pendingPaymentExpiresAt } from '../lib/pending-payment';
+import { useDevSettlePayment, usePendingPaymentByRef, useSyncPaymentStatus } from '../hooks';
+
+/**
+ * The app's one payment-status surface — both the screen MoMo redirects to and the screen the app
+ * sits on while the buyer pays.
+ *
+ * IT POLLS, AND THAT IS THE WHOLE POINT OF REBUILDING IT. MoMo confirms a payment to the backend
+ * over a server-to-server webhook, which RACES the browser redirect — arriving before the webhook
+ * lands is the normal case, not the exception. The legacy version asked once and rendered
+ * "Payment failed" on `paid: false`, so a buyer whose money had left their account was told the
+ * payment failed. That is the defect this replaces.
+ *
+ * POLLING IS SAFE BECAUSE THE BACKEND GUARANTEES IT, not because it seems harmless.
+ * `syncPaymentStatus` is a write — it completes the purchase, stamps `paidAt`, and notifies the
+ * author — but `MomoService.applyResult` returns early on an already-`COMPLETED` purchase without
+ * rewriting fields or re-notifying, with a comment in the backend saying exactly that. The same
+ * commit that made this side wait longer also made a mid-flight result code (1000 / 7000 / 7002)
+ * leave the row PENDING instead of writing FAILED over a payment still in progress, which is what
+ * makes a long poll correct rather than merely tolerated.
+ *
+ * THE LOOP LIVES HERE, NOT IN THE HOOK. A `useQuery` with `refetchInterval` would hand the timing
+ * of a payment-completing write to React Query's refetch policy (mount, reconnect, retry). Here the
+ * bound and the give-up state are visible next to the copy that explains them to the buyer.
+ *
+ * RUNNING OUT OF ATTEMPTS IS NOT FAILURE. Unconfirmed means "we could not confirm yet", and it gets
+ * its own state — telling someone their payment failed when the truth is that the webhook is slow
+ * is the same mistake as the legacy version, one step later.
+ */
+
+/**
+ * The two jobs this screen does, which differ only in how long they are willing to wait.
+ *
+ * `confirm` — MoMo has redirected the browser back, which it only does once the order settled. The
+ * answer is expected within seconds and the only thing being waited on is the webhook.
+ *
+ * `await` — WE sent the buyer here, straight after opening MoMo in another tab, and the payment
+ * has not been made yet. On the wallet flow that MoMo now uses (`captureWallet`, since the card
+ * flow could not settle on the sandbox at all) the buyer typically scans the QR with a phone, so
+ * the thing being waited on is a HUMAN, and twelve seconds is not a wait — it is a shrug. This
+ * mode waits out the order's own lifetime instead, and offers the way back to MoMo's page while
+ * it does.
+ */
+export type PaymentResultMode = 'confirm' | 'await';
+
+/**
+ * How long each mode polls, and how patiently.
+ *
+ * `await` backs off after the first half-minute on purpose: a payment that is going to happen
+ * usually happens right after the scan, and the remaining twelve minutes are a person hunting for
+ * their phone. Ten fast attempts keep the good case feeling immediate; ten-second attempts after
+ * that keep a quarter of an hour of waiting from costing MoMo's query API 240 round trips.
+ */
+const POLL: Record<
+  PaymentResultMode,
+  { maxAttempts: number; delayMs: (attempt: number) => number }
+> = {
+  // Roughly 12 seconds — the webhook is server-to-server and either lands quickly or has failed.
+  confirm: { maxAttempts: 6, delayMs: () => 2000 },
+  // 10 x 3s + 70 x 10s ~ 12 minutes, inside MoMo's 15-minute order window.
+  await: { maxAttempts: 80, delayMs: (attempt) => (attempt <= 10 ? 3000 : 10000) },
+};
+
+/**
+ * WHETHER THE "mark as paid" SHORTCUT IS OFFERED AT ALL.
+ *
+ * True in every non-production build automatically. It is ALSO switchable on in a production build
+ * with `NEXT_PUBLIC_ENABLE_DEV_PAYMENT_BYPASS=true` — a deployed demo/staging frontend runs
+ * `next build`, so `NODE_ENV` is `'production'` there and the automatic gate alone would hide the
+ * button on exactly the environment a live demo uses. The flag is opt-in and absent from real
+ * deployments, so this cannot leak into a genuine production site by default.
+ *
+ * The backend still has the final say: `dev-settle` only exists under the `dev` Spring profile and
+ * 404s otherwise, which the button treats as "not available here" and hides itself for good.
+ */
+const DEV_PAYMENT_BYPASS_ENABLED =
+  process.env.NODE_ENV !== 'production' ||
+  process.env.NEXT_PUBLIC_ENABLE_DEV_PAYMENT_BYPASS === 'true';
+
+type Phase = 'checking' | 'paid' | 'unconfirmed' | 'failed';
+
+export interface PaymentResultPanelProps {
+  /** MoMo's `orderId` query parameter — the backend's own `transactionRef`. */
+  transactionRef: string | null;
+  /** @default 'confirm' */
+  mode?: PaymentResultMode;
+}
+
+/** `m:ss` left on the clock. Not a date, so `Intl` has nothing to offer it. */
+function formatRemaining(ms: number): string {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+}
+
+export function PaymentResultPanel({ transactionRef, mode = 'confirm' }: PaymentResultPanelProps) {
+  const t = useT();
+  const { mutate: sync } = useSyncPaymentStatus();
+  const [phase, setPhase] = React.useState<Phase>('checking');
+
+  /**
+   * THE DEMO SHORTCUT (BE `211f073`, B27). `dev-settle` only exists when the backend runs its
+   * `dev` Spring profile — everywhere else the route 404s, which this side has no way to know in
+   * advance without calling it. So the gate here is the BUILD (see `DEV_PAYMENT_BYPASS_ENABLED`),
+   * not the backend: off in a production bundle unless `NEXT_PUBLIC_ENABLE_DEV_PAYMENT_BYPASS` is
+   * set, on in every other build, and hidden FOR THE REST OF THIS SCREEN the first time it 404s
+   * (`missing` below) rather than shown as a broken button on every retry.
+   *
+   * A BUILD GATE, NOT A DOMAIN CHECK — this is a tool for whoever is running the app on a dev or
+   * staging machine, not for a real buyer, and `localhost` during a production build test would
+   * make a domain check lie in exactly the direction that matters.
+   *
+   * OFFERED IN EVERY UNFINISHED PHASE, not just `checking`. MoMo can error on its own confirmation
+   * screen and never redirect back, so the buyer sits here until the poll gives up and the phase
+   * turns `unconfirmed` — which is precisely when they need the escape hatch, so it must not
+   * disappear at that moment. On success it re-runs the poll (`retry`), which is what captures the
+   * book id, drops the pending note and moves to `paid`.
+   */
+  const devSettle = useDevSettlePayment();
+  const [devSettleMissing, setDevSettleMissing] = React.useState(false);
+
+  // Bumped by "check again", and part of the run key below so a second run is allowed to start on
+  // a ref the first run already finished with.
+  const [runId, setRunId] = React.useState(0);
+
+  const remembered = usePendingPaymentByRef(transactionRef);
+
+  /**
+   * The book this payment was for, kept past the moment the note is dropped.
+   *
+   * WITHOUT IT THE SUCCESS SCREEN IS A DEAD END. The only control under every phase was
+   * `Về trang bảng tin`, so the highest-intent moment in the product — money has just left the
+   * buyer's account — handed them the newsfeed and left them to find their way back to the book
+   * they bought. The download button lives on `/books/{id}` and nothing pointed at it.
+   *
+   * A COPY RATHER THAN A READ OF `remembered`, because `forgetPendingPayment` runs one line before
+   * `setPhase('paid')` — by the time the paid branch renders, the note is gone. This is captured
+   * on the way past.
+   */
+  const rememberedBookIdRef = React.useRef<number | null>(null);
+  const [settledBookId, setSettledBookId] = React.useState<number | null>(null);
+
+  // In an effect, not during render: `react-hooks/refs` forbids writing a ref while rendering, and
+  // the note arrives asynchronously anyway — `usePendingPaymentByRef` reads localStorage after
+  // mount, so the first render of this component genuinely has nothing to copy.
+  React.useEffect(() => {
+    if (remembered) rememberedBookIdRef.current = remembered.bookId;
+  }, [remembered]);
+
+  const attemptsRef = React.useRef(0);
+  const startedForRef = React.useRef<string | null>(null);
+  const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // `mutate` is stable, and the callbacks below only ever set state in response to a settled
+  // request — never synchronously inside the effect body, which `react-hooks/set-state-in-effect`
+  // forbids and which would cascade renders.
+  React.useEffect(() => {
+    if (!transactionRef) return;
+    const runKey = `${transactionRef}#${runId}`;
+    if (startedForRef.current === runKey) return;
+    startedForRef.current = runKey;
+    attemptsRef.current = 0;
+
+    const { maxAttempts, delayMs } = POLL[mode];
+
+    // A REQUEST ALREADY ON THE WIRE OUTLIVES THE RUN THAT SENT IT. Pressing "check again" starts a
+    // new run while the previous attempt may still be in flight; without this guard its callback
+    // would land afterwards, decide against the shared attempt counter and schedule a SECOND chain
+    // of polls beside the live one. The run key is captured in the closure, so a stale callback
+    // can see that it no longer owns the screen and drop out.
+    const isCurrentRun = () => startedForRef.current === runKey;
+
+    const attempt = () => {
+      attemptsRef.current += 1;
+      sync(transactionRef, {
+        onSuccess: (status) => {
+          if (!isCurrentRun()) return;
+          if (status.paid) {
+            // The purchase is done, so the browser's note about it has served its purpose. Dropping
+            // it here — rather than in the button that started it — is what makes the note
+            // self-clearing no matter which tab or device the payment finished on. The book id is
+            // lifted out first: the success screen links back to it.
+            setSettledBookId(rememberedBookIdRef.current);
+            forgetPendingPayment(transactionRef);
+            setPhase('paid');
+          } else if (attemptsRef.current < maxAttempts) {
+            timerRef.current = setTimeout(attempt, delayMs(attemptsRef.current));
+          } else {
+            setPhase('unconfirmed');
+          }
+        },
+        // A 404 means this ref is not one of ours — retrying cannot turn that into a yes, so the
+        // loop stops immediately rather than spending its whole budget on it. It is also the one
+        // answer that proves the remembered note is worthless (an entry left behind by another
+        // account on this browser reads exactly like this), so the note goes with it.
+        onError: () => {
+          if (!isCurrentRun()) return;
+          forgetPendingPayment(transactionRef);
+          setPhase('failed');
+        },
+      });
+    };
+
+    attempt();
+
+    return () => {
+      if (!timerRef.current) return;
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+      // AND LET THE NEXT RUN TAKE OVER. Clearing the timer without this leaves the chain dead:
+      // the guard at the top of the effect sees its own run key in `startedForRef` and returns
+      // early, so nothing reschedules — the screen then waits for ever on a payment that may
+      // already have settled, which is precisely what its own copy promises will not happen.
+      // Releasing the key only when a scheduled attempt was actually thrown away keeps the
+      // duplicate-run guard intact for every other case (including StrictMode's double mount,
+      // where the first attempt is still in flight and there is no timer to clear).
+      startedForRef.current = null;
+    };
+  }, [transactionRef, runId, mode, sync]);
+
+  // The countdown, and ONLY while there is something to count down to. An interval that outlives
+  // the wait would re-render a settled screen once a second for as long as it stayed open.
+  const expiresAt = remembered ? pendingPaymentExpiresAt(remembered) : null;
+  const showsCountdown = mode === 'await' && phase === 'checking' && expiresAt != null;
+  const [now, setNow] = React.useState(() => Date.now());
+  React.useEffect(() => {
+    if (!showsCountdown) return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [showsCountdown]);
+
+  const retry = () => {
+    setPhase('checking');
+    setRunId((id) => id + 1);
+  };
+
+  const view = !transactionRef
+    ? {
+        icon: <XCircle className="h-14 w-14 text-nx-status-danger" />,
+        title: t('payment.invalidTitle'),
+        description: t('payment.invalidDesc'),
+      }
+    : phase === 'checking'
+      ? mode === 'await'
+        ? {
+            icon: <Loader2 className="h-14 w-14 animate-spin text-nx-text-muted" />,
+            title: t('payment.awaitTitle'),
+            description: t('payment.awaitDesc'),
+          }
+        : {
+            icon: <Loader2 className="h-14 w-14 animate-spin text-nx-text-muted" />,
+            title: t('payment.checkingTitle'),
+            description: t('payment.checkingDesc'),
+          }
+      : phase === 'paid'
+        ? {
+            icon: <CheckCircle2 className="h-14 w-14 text-nx-status-success" />,
+            title: t('payment.successTitle'),
+            description: t('payment.successDesc'),
+          }
+        : phase === 'unconfirmed'
+          ? mode === 'await'
+            ? {
+                icon: <Clock className="h-14 w-14 text-nx-text-muted" />,
+                title: t('payment.awaitTimeoutTitle'),
+                description: t('payment.awaitTimeoutDesc'),
+              }
+            : {
+                icon: <Clock className="h-14 w-14 text-nx-text-muted" />,
+                title: t('payment.pendingTitle'),
+                description: t('payment.pendingDesc'),
+              }
+          : {
+              icon: <XCircle className="h-14 w-14 text-nx-status-danger" />,
+              title: t('payment.failedTitle'),
+              description: t('payment.failedDesc'),
+            };
+
+  // Only offered while the order can still be paid. A link to an expired MoMo page is a promise
+  // this side cannot keep, and `paymentUrl` is null for a ref recovered from the backend's
+  // rejection — the app never saw that order's page and cannot conjure it.
+  //
+  // Judged against the `now` above rather than a fresh `Date.now()`: reading the clock during a
+  // render is impure (`react-hooks/purity` rejects it outright, and it is right to — the answer
+  // would change between two renders React considers equivalent). `now` is the mount time until
+  // the countdown starts ticking, which is exactly the resolution this decision needs: an order's
+  // life is fifteen minutes, not a second.
+  const resumeUrl =
+    phase !== 'paid' && remembered?.paymentUrl && (expiresAt ?? 0) > now
+      ? remembered.paymentUrl
+      : null;
+
+  return (
+    <div className="flex max-w-sm flex-col items-center gap-3 text-center">
+      {view.icon}
+      <h1 className="text-nx-title font-semibold text-nx-text-primary">{view.title}</h1>
+      <p className="text-nx-body-sm text-nx-text-secondary">{view.description}</p>
+
+      {showsCountdown && (
+        <p className="text-nx-caption text-nx-text-muted">
+          {t('payment.expiresIn', { time: formatRemaining((expiresAt ?? 0) - now) })}
+        </p>
+      )}
+
+      <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+        {resumeUrl && (
+          <a href={resumeUrl} target="_blank" rel="noopener noreferrer">
+            <Button icon={<ExternalLink className="h-4 w-4" />}>{t('payment.openMomo')}</Button>
+          </a>
+        )}
+
+        {/* THE STATE THAT USED TO BE A DEAD END. "Not confirmed yet" is the one outcome that can
+            change without anything else happening, and the old copy could only tell the reader to
+            reload the page. Asking again is one request. */}
+        {phase === 'unconfirmed' && (
+          <Button variant="secondary" icon={<RotateCw className="h-4 w-4" />} onClick={retry}>
+            {t('payment.checkAgain')}
+          </Button>
+        )}
+
+        {/* See the state declaration above for why the gate is the build and not the backend. */}
+        {DEV_PAYMENT_BYPASS_ENABLED && !devSettleMissing && transactionRef && phase !== 'paid' && (
+          <Button
+            variant="secondary"
+            icon={<FlaskConical className="h-4 w-4" />}
+            loading={devSettle.isPending}
+            onClick={() =>
+              devSettle.mutate(transactionRef, {
+                // A 404 here means this backend is not running the `dev` profile — the button
+                // has nothing to offer for the rest of this screen, so it hides rather than
+                // sitting there failing the same way on every press.
+                onError: () => setDevSettleMissing(true),
+                // Re-run the poll so a phase that had already stopped (`unconfirmed` / `failed`)
+                // picks the settled purchase up: `retry` bumps `runId`, the effect starts a
+                // fresh attempt, sees `paid: true`, and runs the book-id capture + note cleanup
+                // that only lives in that success path.
+                onSuccess: () => retry(),
+              })
+            }
+          >
+            {t('payment.devSettle')}
+          </Button>
+        )}
+
+        {/* THE WAY BACK TO WHAT WAS JUST BOUGHT — the book's page is where the download button
+            is. Only on success, and only when this browser is the one that started the payment:
+            a cold deep link (`/payment/pending?orderId=…` opened on another device, or after a
+            cache clear) has no note to read the book id out of, and a link that cannot name its
+            destination is worse than the newsfeed. */}
+        {phase === 'paid' && settledBookId !== null && (
+          <ButtonLink href={`/books/${settledBookId}`} icon={<BookOpen className="h-4 w-4" />}>
+            {t('payment.backToBook')}
+          </ButtonLink>
+        )}
+
+        <ButtonLink href="/newsfeed" variant="ghost">
+          {t('payment.backToNewsfeed')}
+        </ButtonLink>
+      </div>
+    </div>
+  );
+}
